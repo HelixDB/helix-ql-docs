@@ -1,15 +1,3 @@
-
-# Helix Query Language Documentation
-
-## Table of Contents
-1. [Introduction](#introduction)
-2. [Schema Definition](#schema-definition)
-3. [Query Structure](#query-structure)
-4. [Traversal Steps](#traversal-steps)
-5. [Operations](#operations)
-6. [Property Access](#property-access)
-7. [Examples](#examples)
-
 ## Introduction
 
 Helix Query Language (HQL) is a graph query language designed for traversing and manipulating graph databases. It provides a declarative way to define schemas, query data, and perform graph operations.
@@ -17,9 +5,10 @@ Helix Query Language (HQL) is a graph query language designed for traversing and
 ## Schema Definition
 
 ### Node Schema
+
 Defines vertex types and their properties in the graph.
 
-```helix
+```rust
 V::Person {
     Name: String,
     Age: Integer,
@@ -28,10 +17,11 @@ V::Person {
 }
 ```
 
-### Edge Schema 
+### Edge Schema
+
 Defines relationships between nodes and their properties.
 
-```helix
+```rust
 E::Follows {
     From: Person,
     To: Person,
@@ -45,13 +35,15 @@ E::Follows {
 ## Query Structure
 
 ### Basic Query Syntax
-```helix
+
+```rust
 QUERY QueryName(param1, param2) =>
     result <- traversal_expression
     RETURN result
 ```
 
 ### Components:
+
 - `QUERY`: Keyword to start a query definition
 - `QueryName`: Identifier for the query
 - `parameters`: Input parameters in parentheses
@@ -64,7 +56,8 @@ QUERY QueryName(param1, param2) =>
 ### Starting Points
 
 1. **Vertex Selection**
-```helix
+
+```rust
 // All vertices
 V()
 
@@ -79,7 +72,8 @@ V<Person>("123", "456")
 ```
 
 2. **Edge Selection**
-```helix
+
+```rust
 // All edges
 E()
 
@@ -96,7 +90,8 @@ E<Follows>("123", "456")
 ### Navigation Steps
 
 1. **Outgoing Traversal**
-```helix
+
+```rust
 // Traverse to outgoing vertices
 ::Out()
 
@@ -111,7 +106,8 @@ E<Follows>("123", "456")
 ```
 
 2. **Incoming Traversal**
-```helix
+
+```rust
 // Traverse to incoming vertices
 ::In()
 
@@ -122,11 +118,12 @@ E<Follows>("123", "456")
 ::InE()
 
 // Traverse to incoming edges with edge type
-::InE<Follows>()  
+::InE<Follows>()
 ```
 
 3. **Bidirectional Traversal**
-```helix
+
+```rust
 // Traverse both directions for vertices
 ::Both()
 
@@ -141,7 +138,8 @@ E<Follows>("123", "456")
 ```
 
 4. **Vertex From Edge**
-```helix
+
+```rust
 ::OutV()  // Get source vertex
 ::InV()   // Get target vertex
 ::BothV() // Get both vertices
@@ -152,7 +150,8 @@ E<Follows>("123", "456")
 ### Adding Elements
 
 1. **Adding Vertices**
-```helix
+
+```rust
 // Add vertex with type
 AddV<Person>()
 
@@ -164,7 +163,8 @@ AddV<Person>({
 ```
 
 2. **Adding Edges**
-```helix
+
+```rust
 // Add edge between vertices
 AddE<Follows>()::From(vertex1)::To(vertex2)
 
@@ -178,12 +178,14 @@ AddE<Follows>({
 ### Filtering
 
 1. **Where Clause**
-```helix
+
+```rust
 ::WHERE(_::Props(Age)::GT(25))
 ```
 
 2. **Boolean Operations**
-```helix
+
+```rust
 // Greater than
 ::GT(value)
 
@@ -204,20 +206,23 @@ AddE<Follows>({
 ```
 
 3. **Existence Check**
-```helix
+
+```rust
 EXISTS(traversal_expression)
 ```
 
 ### Property Operations
 
 1. **Property Access**
-```helix
+
+```rust
 // Get specific properties
 ::Props(Name, Age)
 ```
 
 2. **Property Addition**
-```helix
+
+```rust
 // Add/update properties
 ::{
     NewField: "value",
@@ -228,14 +233,16 @@ EXISTS(traversal_expression)
 ### Aggregation
 
 1. **Count**
-```helix
+
+```rust
 ::COUNT
 ```
 
 ## Examples
 
 ### 1. Find Users Over 25 with Followers
-```helix
+
+```rust
 QUERY FindActiveUsers() =>
     users <- V<Person>()::WHERE(_::Props(Age)::GT(25))
     withFollowers <- users::WHERE(EXISTS(_::In<Follows>))
@@ -243,7 +250,8 @@ QUERY FindActiveUsers() =>
 ```
 
 ### 2. Create Friendship Between Users
-```helix
+
+```rust
 QUERY CreateFriendship(user1Id, user2Id) =>
     user1 <- V<Person>(user1Id)
     user2 <- V<Person>(user2Id)
@@ -252,7 +260,8 @@ QUERY CreateFriendship(user1Id, user2Id) =>
 ```
 
 ### 3. Get User's Friends with Age
-```helix
+
+```rust
 QUERY GetFriendsWithAge(userId) =>
     user <- V<Person>(userId)
     friends <- user::Out<Follows>::InV::Props(Name, Age)
@@ -260,7 +269,8 @@ QUERY GetFriendsWithAge(userId) =>
 ```
 
 ### 4. Complex Network Analysis
-```helix
+
+```rust
 QUERY AnalyzeNetwork(userId) =>
     user <- V<Person>(userId)
     activeConnections <- user::Out<Follows>
@@ -277,11 +287,13 @@ QUERY AnalyzeNetwork(userId) =>
 ## Best Practices
 
 1. **Query Organization**
+
    - Break complex queries into smaller, reusable parts
    - Use meaningful variable names
    - Comment complex traversals
 
 2. **Performance**
+
    - Filter early in traversals to reduce data set
    - Use specific vertex/edge types when possible
    - Avoid unnecessary property access

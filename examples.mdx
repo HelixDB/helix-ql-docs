@@ -1,0 +1,66 @@
+---
+title: Examples
+---
+
+### 1. Find Users Over 25 with Followers
+
+```rust
+QUERY FindActiveUsers() =>
+    users <- V<Person>()::WHERE(_::Props(Age)::GT(25))
+    withFollowers <- users::WHERE(EXISTS(_::In<Follows>))
+    RETURN withFollowers
+```
+
+### 2. Create Friendship Between Users
+
+```rust
+QUERY CreateFriendship(user1Id, user2Id) =>
+    user1 <- V<Person>(user1Id)
+    user2 <- V<Person>(user2Id)
+    friendship <- AddE<Follows>({Since: "2024"})::From(user1)::To(user2)
+    RETURN friendship
+```
+
+### 3. Get User's Friends with Age
+
+```rust
+QUERY GetFriendsWithAge(userId) =>
+    user <- V<Person>(userId)
+    friends <- user::Out<Follows>::InV::Props(Name, Age)
+    RETURN friends
+```
+
+### 4. Complex Network Analysis
+
+```rust
+QUERY AnalyzeNetwork(userId) =>
+    user <- V<Person>(userId)
+    activeConnections <- user::Out<Follows>
+        ::WHERE(_::Props(Weight)::GT(0.5))
+        ::InV
+        ::WHERE(_::Out::COUNT::GT(5))
+    result <- activeConnections::{
+        Name: _::Props(Name),
+        ConnectionCount: _::Out::COUNT
+    }
+    RETURN result
+```
+
+## Best Practices
+
+1. **Query Organization**
+
+   - Break complex queries into smaller, reusable parts
+   - Use meaningful variable names
+   - Comment complex traversals
+
+2. **Performance**
+
+   - Filter early in traversals to reduce data set
+   - Use specific vertex/edge types when possible
+   - Avoid unnecessary property access
+
+3. **Schema Design**
+   - Use clear, consistent naming conventions
+   - Define appropriate property types
+   - Document relationships between vertex types

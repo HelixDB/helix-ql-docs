@@ -1,0 +1,97 @@
+---
+title: "Traversal Steps"
+description: "Add image, video, and other HTML elements"
+icon: "circle-nodes"
+---
+
+### Starting Points
+
+1. **Vertex Selection**
+
+```rust
+// All vertices
+V()
+
+// Vertices of specific type
+V<Person>()
+
+// Vertex by ID
+V("123")
+
+// Vertices of type with IDs
+V<Person>("123", "456")
+```
+
+2. **Edge Selection**
+
+```rust
+// All edges
+E()
+
+// Edges of specific type
+E<Follows>
+
+// Edge by ID
+E("789")
+
+// Edge of type with IDs
+E<Follows>("123", "456")
+```
+
+### Navigation Steps
+
+1. **Outgoing Traversal**
+
+```rust
+// Traverse to outgoing vertices
+::Out()
+
+// Traverse to outgoing vertices with edge type
+::Out<Follows>()
+
+// Traverse to outgoing edges
+::OutE()
+
+// Traverse to outgoing edges with edge type
+::OutE<Follows>()
+```
+
+2. **Incoming Traversal**
+
+```rust
+// Traverse to incoming vertices
+::In()
+
+// Traverse to incoming vertices with edge type
+::In<Follows>()
+
+// Traverse to incoming edges
+::InE()
+
+// Traverse to incoming edges with edge type
+::InE<Follows>()
+```
+
+3. **Bidirectional Traversal**
+
+```rust
+// Traverse both directions for vertices
+::Both()
+
+// Traverse both directions for vertices with edge type
+::Both<Follows>()
+
+// Traverse both directions for edges
+::BothE()
+
+// Traverse both directions for edges with edge type
+::BothE<Follows>()
+```
+
+4. **Vertex From Edge**
+
+```rust
+::OutV()  // Get source vertex
+::InV()   // Get target vertex
+::BothV() // Get both vertices
+```

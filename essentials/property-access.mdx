@@ -1,0 +1,24 @@
+---
+title: "Property Access"
+description: "Mintlify gives you complete control over the look and feel of your documentation using the mint.json file"
+icon: "file"
+---
+
+### Property Operations
+
+1. **Property Access**
+
+```rust
+// Get specific properties
+::Props(Name, Age)
+```
+
+2. **Property Addition**
+
+```rust
+// Add/update properties
+::{
+    NewField: "value",
+    ComputedField: _::Out<Follows>::COUNT
+}
+```

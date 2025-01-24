@@ -1,0 +1,77 @@
+---
+title: "Operations"
+description: "The navigation field in mint.json defines the pages that go in the navigation menu"
+icon: "terminal"
+---
+
+### Adding Elements
+
+1. **Adding Vertices**
+
+```rust
+// Add vertex with type
+AddV<Person>()
+
+// Add vertex with properties
+AddV<Person>({
+    Name: "Alice",
+    Age: 30
+})
+```
+
+2. **Adding Edges**
+
+```rust
+// Add edge between vertices
+AddE<Follows>()::From(vertex1)::To(vertex2)
+
+// Add edge with properties
+AddE<Follows>({
+    Since: "2024",
+    Weight: 0.8
+})::From(vertex1)::To(vertex2)
+```
+
+### Filtering
+
+1. **Where Clause**
+
+```rust
+::WHERE(_::Props(Age)::GT(25))
+```
+
+2. **Boolean Operations**
+
+```rust
+// Greater than
+::GT(value)
+
+// Less than
+::LT(value)
+
+// Equals
+::EQ(value)
+
+// Not equals
+::NEQ(value)
+
+// Greater than or equal
+::GTE(value)
+
+// Less than or equal
+::LTE(value)
+```
+
+3. **Existence Check**
+
+```rust
+EXISTS(traversal_expression)
+```
+
+### Aggregation
+
+1. **Count**
+
+```rust
+::COUNT
+```

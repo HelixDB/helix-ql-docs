@@ -1,0 +1,33 @@
+---
+title: "Schema Definition"
+description: "Text, title, and styling in standard markdown"
+icon: "text-size"
+---
+
+### Node Schema
+
+Defines vertex types and their properties in the graph.
+
+```rust
+V::Person {
+    Name: String,
+    Age: Integer,
+    Active: Boolean,
+    Score: Float
+}
+```
+
+### Edge Schema
+
+Defines relationships between nodes and their properties.
+
+```rust
+E::Follows {
+    From: Person,
+    To: Person,
+    Properties {
+        Since: String,
+        Weight: Float
+    }
+}
+```
