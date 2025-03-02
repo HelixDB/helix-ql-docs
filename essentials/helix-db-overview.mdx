@@ -1,0 +1,116 @@
+---
+title: 'HelixDB Overview'
+description: 'Learn about HelixDB architecture, features, and capabilities'
+---
+
+# HelixDB Overview
+
+HelixDB is a high-performance graph database designed for modern applications that require complex relationship modeling and traversal. It combines the power of graph data structures with efficient storage and query capabilities.
+
+## Key Features
+
+- **High Performance**: Optimized for fast traversals and complex relationship queries
+- **ACID Compliance**: Ensures data integrity with full transaction support
+- **Native Graph Storage**: Purpose-built storage engine optimized for graph operations
+- **Native Vector Storage**: Purpose-built storage engine optimized for vector operations
+- **Flexible Schema**: Supports both schema-full and schema-less approaches
+- **Developer-Friendly**: Simple setup and intuitive APIs
+
+## Architecture
+
+HelixDB uses a distributed architecture with the following components:
+
+<AccordionGroup>
+  <Accordion title="Storage Layer">
+    Efficiently stores vertices, edges, and their properties using a specialized graph storage format that optimizes for both read and write operations.
+  </Accordion>
+  <Accordion title="Vector Layer">
+    Provides vector embeddings for semantic search and similarity queries.
+  </Accordion>
+  <Accordion title="Query Engine">
+    Processes and optimizes Helix Query Language (HQL) statements, transforming them into efficient execution plans.
+  </Accordion>
+  <Accordion title="Transaction Manager">
+    Ensures ACID compliance across operations, managing concurrent access and maintaining data consistency.
+  </Accordion>
+  <Accordion title="Index Manager">
+    Maintains indexes for fast property and topology lookups, significantly improving query performance.
+  </Accordion>
+  <Accordion title="Cluster Manager">
+    Handles distribution and replication in multi-node deployments, ensuring high availability and fault tolerance.
+  </Accordion>
+</AccordionGroup>
+
+## Data Model
+
+HelixDB follows the property graph model, which consists of:
+
+- **Vertices (Nodes)**: Represent entities with unique identifiers and properties
+- **Vectors**: Represent entities with unique identifiers and vector embeddings
+- **Edges**: Represent relationships between vertices, with directionality and properties
+- **Properties**: Key-value pairs attached to both vertices and edges
+- **Labels**: Categorize vertices and edges by type
+
+This model allows for rich representation of complex domains while maintaining query performance.
+{/* 
+## Performance Characteristics
+
+HelixDB is designed for high performance across various workloads:
+
+| Operation Type | Performance Characteristics |
+| -------------- | --------------------------- |
+| Vertex Lookup by ID | O(1) - Constant time |
+| Edge Traversal | O(log n) - Where n is the number of edges |
+| Property Filtering | O(1) with indexes, O(n) without |
+| Complex Pattern Matching | Optimized with adaptive query planning |
+| Write Operations | Optimized with batch processing and parallel execution |
+
+## Use Cases
+
+HelixDB excels in scenarios where relationships between data points are as important as the data itself:
+
+<CardGroup cols={2}>
+  <Card title="Social Networks" icon="users">
+    Model and query complex social relationships, friend recommendations, and influence analysis.
+  </Card>
+  <Card title="Recommendation Engines" icon="thumbs-up">
+    Generate personalized recommendations based on relationship patterns and user behavior.
+  </Card>
+  <Card title="Fraud Detection" icon="shield-halved">
+    Identify suspicious patterns in transaction networks and detect anomalies in real-time.
+  </Card>
+  <Card title="Knowledge Graphs" icon="brain">
+    Represent and query complex domain knowledge with semantic relationships.
+  </Card>
+  <Card title="Network Management" icon="network-wired">
+    Model infrastructure dependencies and analyze impact of changes or failures.
+  </Card>
+</CardGroup> */}
+
+{/* ## Comparison with Other Databases
+
+| Feature | HelixDB | Traditional RDBMS | Document DBs | Other Graph DBs |
+| ------- | ------- | ----------------- | ------------ | --------------- |
+| Relationship Modeling | Native | Foreign Keys | Embedded Documents | Native |
+| Query Language | HQL | SQL | JSON Query | Various |
+| Schema Flexibility | High | Low | High | Medium |
+| Traversal Performance | Excellent | Poor | Poor | Good |
+| ACID Compliance | Full | Full | Varies | Varies |
+| Horizontal Scaling | Yes | Limited | Yes | Varies | */}
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="essentials/installation">
+    Get started with HelixDB installation
+  </Card>
+  <Card title="Configuration" icon="gear" href="essentials/configuration">
+    Learn how to configure HelixDB for your needs
+  </Card>
+  <Card title="Schema Definition" icon="code" href="essentials/schema-definition">
+    Define your data model with HQL schemas
+  </Card>
+  <Card title="Query Structure" icon="terminal" href="essentials/query-structure">
+    Learn the basics of HQL query syntax
+  </Card>
+</CardGroup> 

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "HelixDB Docs",
+  "colors": {
+    "primary": "#ff66ff",
+    "light": "#ff66ff",
+    "dark": "#0D9373"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "examples"
+        ]
+      },
+      {
+        "group": "HelixDB",
+        "pages": [
+          "essentials/helix-db-overview",
+          "essentials/installation"
+        ]
+      },
+      {
+        "group": "Helix Query Language",
+        "pages": [
+          "essentials/schema-definition",
+          "essentials/query-structure",
+          "essentials/traversal-steps",
+          "essentials/operations",
+          "essentials/property-access"
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:founders@helix-db.com"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/HelixDB/helix-db",
+      "website": "https://www.helix-db.com"
+    }
+  }
+}

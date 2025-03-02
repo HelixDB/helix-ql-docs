@@ -1,14 +1,93 @@
-## Introduction
+# HelixDB Documentation
+
+## Part 1: HelixDB
+
+### Introduction to HelixDB
+
+HelixDB is a high-performance graph database designed for modern applications that require complex relationship modeling and traversal. It combines the power of graph data structures with efficient storage and query capabilities.
+
+### Key Features
+
+- **High Performance**: Optimized for fast traversals and complex relationship queries
+- **Scalable Architecture**: Designed to scale horizontally for large datasets
+- **ACID Compliance**: Ensures data integrity with full transaction support
+- **Native Graph Storage**: Purpose-built storage engine optimized for graph operations
+- **Flexible Schema**: Supports both schema-full and schema-less approaches
+- **Developer-Friendly**: Simple setup and intuitive APIs
+
+### Architecture
+
+HelixDB uses a distributed architecture with the following components:
+
+1. **Storage Layer**: Efficiently stores vertices, edges, and their properties
+2. **Query Engine**: Processes and optimizes Helix Query Language (HQL) statements
+3. **Transaction Manager**: Ensures ACID compliance across operations
+4. **Index Manager**: Maintains indexes for fast property and topology lookups
+5. **Cluster Manager**: Handles distribution and replication in multi-node deployments
+
+### Getting Started
+
+#### Installation
+
+```bash
+curl -sSL https://install.helix-db.com | bash
+```
+
+#### Configuration
+
+Basic configuration is done through the `helix.yaml` file:
+
+```yaml
+storage:
+  path: /data/helix
+  cache_size_mb: 1024
+
+network:
+  host: 0.0.0.0
+  port: 8182
+
+security:
+  enable_auth: true
+  auth_method: basic
+```
+
+#### Connecting
+
+```python
+from helixdb import HelixClient
+
+# Connect to HelixDB
+client = HelixClient("localhost:8182")
+
+# Create a session
+session = client.session()
+
+# Execute a query
+results = session.execute("QUERY GetPerson(id) => person <- V<Person>(id) RETURN person", 
+                         {"id": "123"})
+```
+
+### Use Cases
+
+- **Social Networks**: Model and query complex social relationships
+- **Recommendation Engines**: Generate personalized recommendations based on relationships
+- **Fraud Detection**: Identify suspicious patterns in transaction networks
+- **Knowledge Graphs**: Represent and query complex domain knowledge
+- **Network and IT Operations**: Model infrastructure dependencies and analyze impact
+
+## Part 2: Helix Query Language (HQL)
+
+### Introduction
 
 Helix Query Language (HQL) is a graph query language designed for traversing and manipulating graph databases. It provides a declarative way to define schemas, query data, and perform graph operations.
 
-## Schema Definition
+### Schema Definition
 
-### Node Schema
+#### Node Schema
 
 Defines vertex types and their properties in the graph.
 
-```rust
+```rust 
 V::Person {
     Name: String,
     Age: Integer,
@@ -17,7 +96,7 @@ V::Person {
 }
 ```
 
-### Edge Schema
+#### Edge Schema
 
 Defines relationships between nodes and their properties.
 
@@ -32,9 +111,9 @@ E::Follows {
 }
 ```
 
-## Query Structure
+### Query Structure
 
-### Basic Query Syntax
+#### Basic Query Syntax
 
 ```rust
 QUERY QueryName(param1, param2) =>
@@ -42,7 +121,7 @@ QUERY QueryName(param1, param2) =>
     RETURN result
 ```
 
-### Components:
+#### Components:
 
 - `QUERY`: Keyword to start a query definition
 - `QueryName`: Identifier for the query
@@ -51,9 +130,9 @@ QUERY QueryName(param1, param2) =>
 - `<-`: Assignment operator
 - `RETURN`: Specifies output values
 
-## Traversal Steps
+### Traversal Steps
 
-### Starting Points
+#### Starting Points
 
 1. **Vertex Selection**
 
@@ -87,7 +166,7 @@ E("789")
 E<Follows>("123", "456")
 ```
 
-### Navigation Steps
+#### Navigation Steps
 
 1. **Outgoing Traversal**
 
@@ -145,9 +224,9 @@ E<Follows>("123", "456")
 ::BothV() // Get both vertices
 ```
 
-## Operations
+### Operations
 
-### Adding Elements
+#### Adding Elements
 
 1. **Adding Vertices**
 
@@ -175,7 +254,7 @@ AddE<Follows>({
 })::From(vertex1)::To(vertex2)
 ```
 
-### Filtering
+#### Filtering
 
 1. **Where Clause**
 
@@ -211,7 +290,7 @@ AddE<Follows>({
 EXISTS(traversal_expression)
 ```
 
-### Property Operations
+#### Property Operations
 
 1. **Property Access**
 
@@ -230,7 +309,7 @@ EXISTS(traversal_expression)
 }
 ```
 
-### Aggregation
+#### Aggregation
 
 1. **Count**
 
@@ -238,9 +317,9 @@ EXISTS(traversal_expression)
 ::COUNT
 ```
 
-## Examples
+### Examples
 
-### 1. Find Users Over 25 with Followers
+#### 1. Find Users Over 25 with Followers
 
 ```rust
 QUERY FindActiveUsers() =>
@@ -249,7 +328,7 @@ QUERY FindActiveUsers() =>
     RETURN withFollowers
 ```
 
-### 2. Create Friendship Between Users
+#### 2. Create Friendship Between Users
 
 ```rust
 QUERY CreateFriendship(user1Id, user2Id) =>
@@ -259,7 +338,7 @@ QUERY CreateFriendship(user1Id, user2Id) =>
     RETURN friendship
 ```
 
-### 3. Get User's Friends with Age
+#### 3. Get User's Friends with Age
 
 ```rust
 QUERY GetFriendsWithAge(userId) =>
@@ -268,7 +347,7 @@ QUERY GetFriendsWithAge(userId) =>
     RETURN friends
 ```
 
-### 4. Complex Network Analysis
+#### 4. Complex Network Analysis
 
 ```rust
 QUERY AnalyzeNetwork(userId) =>
@@ -284,7 +363,7 @@ QUERY AnalyzeNetwork(userId) =>
     RETURN result
 ```
 
-## Best Practices
+### Best Practices
 
 1. **Query Organization**
 
