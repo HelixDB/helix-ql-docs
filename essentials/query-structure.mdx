@@ -7,7 +7,7 @@ icon: "code"
 ### Basic Query Syntax
 
 ```rust
-QUERY QueryName(param1, param2) =>
+QUERY QueryName(param1: Type, param2: Type) =>
     result <- traversal_expression
     RETURN result
 ```
@@ -17,6 +17,7 @@ QUERY QueryName(param1, param2) =>
 - `QUERY`: Keyword used to start a query definition
 - `QueryName`: User provided Identifier for the query
 - `parameters`: Input parameters in parentheses
+- `Type`: Type of the parameter (e.g. `String`, `Integer`, `Float`, `Boolean`, `Array` or schema Vertex/Edge)
 - `=>`: Separates query header from body
 - `<-`: Assignment operator
 - `RETURN`: Specifies output values

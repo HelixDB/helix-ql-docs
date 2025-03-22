@@ -1,5 +1,5 @@
 ---
-title: 'Installation'
+title: 'Local Installation'
 description: 'Get started with HelixDB installation on different platforms'
 ---
 
@@ -15,7 +15,6 @@ curl -sSL https://install.helix-db.com | bash
 ```
 
 
-
 ## Verifying Installation
 
 Next, verify that the HelixCLI is installed correctly by running the following command:
@@ -24,7 +23,44 @@ Next, verify that the HelixCLI is installed correctly by running the following c
 helix --version
 ```
 
+## install HelixDB
+```bash
+helix install
+```
 
+## Setup
+```bash
+helix init --path <path-to-create-helix-files>
+```
+
+## Writing Your First Query
+
+Write your schema and queries in the newly created `.hx` files. Click [here](../../essentials/query-structure) for more information about writing queries.
+
+
+## Checking the status of your queries (Optional)
+```bash
+cd <path-to-your-project>
+
+helix check
+```
+
+## Deploying your queries
+```bash
+cd <path-to-your-project>
+
+helix deploy --local
+```
+
+## Other HelixCLI commands
+
+- `helix instances`: Show all local instances
+
+- `helix stop <instance-id>`: Stop a local instance
+
+- `helix stop --all`: Stop all local instances
+
+- `helix start <instance-id>`:Start a local instance
 
 
 
