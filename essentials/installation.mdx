@@ -5,9 +5,10 @@ description: 'Get started with HelixDB installation on different platforms'
 
 # Installing HelixDB
 
-HelixDB can be used locally by installing the HelixCLI.
+HelixDB can be used locally by first installing the HelixCLI.
 
 ## HelixCLI installation
+First, run the following command to install the HelixCLI:
 
 ```bash
 curl -sSL https://install.helix-db.com | bash
@@ -15,19 +16,52 @@ curl -sSL https://install.helix-db.com | bash
 
 ## Verifying Installation
 
-To verify that HelixCLI is installed correctly:
+Next, verify that the HelixCLI is installed correctly by running the following command:
 
 ```bash
 helix --version
 ```
 
-## Install Helix
+
+## install HelixDB
 
 ```bash
 helix install
 ```
 
 ## Setup
+```bash
+helix init --path <path-to-create-helix-files>
+```
+
+## Writing Your First Query
+
+Write your schema and queries in the newly created `.hx` files. Click [here](../../essentials/query-structure) for more information about writing queries.
+
+
+## Checking the status of your queries (Optional)
+```bash
+cd <path-to-your-project>
+
+helix check
+```
+
+## Deploying your queries
+```bash
+cd <path-to-your-project>
+
+helix deploy --local
+```
+
+## Other HelixCLI commands
+
+- `helix instances`: Show all local instances
+
+- `helix stop <instance-id>`: Stop a local instance
+
+- `helix stop --all`: Stop all local instances
+
+- `helix start <instance-id>`:Start a local instance
 
 ```bash
 helix init --path <path-to-create-files-at>
@@ -60,16 +94,17 @@ helix deploy --local
 
 
 
+
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Configuration" icon="gear" href="essentials/configuration">
+  <Card title="Configuration (Coming Soon)" icon="gear" href="essentials/configuration">
     Learn how to configure HelixDB for your needs
   </Card>
-  <Card title="Schema Definition" icon="code" href="essentials/schema-definition">
+  <Card title="Schema Definition" icon="code" href="../../essentials/schema-definition">
     Define your data model with HQL schemas
   </Card>
-  <Card title="Client Libraries" icon="plug" href="essentials/client-libraries">
+  <Card title="Client Libraries (Coming Soon)" icon="plug" href="essentials/client-libraries">
     Connect to HelixDB from your application
   </Card>
-</CardGroup> 
+</CardGroup>
