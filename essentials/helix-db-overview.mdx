@@ -18,26 +18,15 @@ HelixDB is a high-performance graph-vector database designed for modern applicat
 
 ## Architecture
 
-HelixDB uses a distributed architecture with the following components:
-
 <AccordionGroup>
-  <Accordion title="Storage Layer">
-    Efficiently stores vertices, edges, and their properties using a specialized graph storage format that optimizes for both read and write operations.
+  <Accordion title="Graph Layer">
+    Efficiently stores nodes, edges, and their properties using a specialized graph storage format that optimizes for both read and write operations.
   </Accordion>
   <Accordion title="Vector Layer">
     Provides vector embeddings for semantic search and similarity queries.
   </Accordion>
   <Accordion title="Query Engine">
-    Processes and optimizes Helix Query Language (HQL) statements, transforming them into efficient execution plans.
-  </Accordion>
-  <Accordion title="Transaction Manager">
-    Ensures ACID compliance across operations, managing concurrent access and maintaining data consistency.
-  </Accordion>
-  <Accordion title="Index Manager">
-    Maintains indexes for fast property and topology lookups, significantly improving query performance.
-  </Accordion>
-  <Accordion title="Cluster Manager">
-    Handles distribution and replication in multi-node deployments, ensuring high availability and fault tolerance.
+    Processes and optimizes Helix Query Language (HQL) statements, transforming them into efficient rust code.
   </Accordion>
 </AccordionGroup>
 
