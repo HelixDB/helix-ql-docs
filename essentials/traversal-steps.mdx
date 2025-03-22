@@ -6,7 +6,7 @@ icon: "circle-nodes"
 
 ## Graph Traversal Fundamentals
 
-Graph traversal is the process of visiting vertices and edges in a graph. Helix QL provides a rich set of operations to navigate your graph data efficiently.
+Graph traversal is the process of visiting vertices and edges in a graph. HQL provides a rich set of operations to navigate your graph data efficiently.
 
 ## Selection Operations
 
@@ -28,16 +28,16 @@ Select vertices from your graph to begin traversal.
 QUERY GetUsers(userID: String) {
     // Select all vertices
     nodes <- V
-    
+
     // Select all User vertices
     users <- V<Users>
-    
+
     // Select a specific User by ID
     user <- V<User>(userID)
-    
+
     // Select multiple Users by IDs
     other_users <- V<Users>(userID, "other_uuid")
-    
+
     RETURN nodes, users, user, other_users
 }
 ```
@@ -59,16 +59,16 @@ Select edges from your graph to begin traversal.
 QUERY GetFollowers(edgeID: String) {
     // Select all edges
     edges <- E
-    
+
     // Select all Follows edges
     specific_edges <- E<Follows>
-    
+
     // Select a specific Follows edge by ID
     follow_edge <- E<Follows>(edgeID)
-    
+
     // Select multiple Follows edges by IDs
     other_edges <- E<Follows>(edgeID, "other_edge_id")
-    
+
     RETURN edges, specific_edges, follow_edge, other_edges
 }
 ```
@@ -96,16 +96,16 @@ Move from vertices to their connected vertices.
 QUERY GetFriendsAndFollowers(userID: String) {
     // Find user by ID
     user <- V<User>(userID)
-    
+
     // Get users that this user follows (outgoing direction)
     following <- user::Out<Follows>
-    
+
     // Get users that follow this user (incoming direction)
     followers <- user::In<Follows>
-    
+
     // Get all connections in both directions
     connections <- user::Both<Follows>
-    
+
     RETURN following, followers, connections
 }
 ```
@@ -129,16 +129,16 @@ Move from vertices to their connected edges.
 QUERY GetUserRelationships(userID: String) {
     // Find user by ID
     user <- V<User>(userID)
-    
+
     // Get all outgoing relationship edges
     outgoing_relationships <- user::OutE
-    
+
     // Get only outgoing "Follows" edges
     follows_edges <- user::OutE<Follows>
-    
+
     // Get incoming "Follows" edges
     followed_by_edges <- user::InE<Follows>
-    
+
     RETURN outgoing_relationships, follows_edges, followed_by_edges
 }
 ```
@@ -159,16 +159,16 @@ Move from edges to their connected vertices.
 QUERY GetFollowRelationshipDetails(relationshipID: String) {
     // Find a specific Follows relationship by ID
     relationship <- E<Follows>(relationshipID)
-    
+
     // Get the user who initiated the follow (source)
     follower <- relationship::OutV
-    
+
     // Get the user being followed (target)
     followed <- relationship::InV
-    
+
     // Get both users involved in the relationship
     both_users <- relationship::BothV
-    
+
     RETURN follower, followed, both_users
 }
 ```
@@ -176,25 +176,25 @@ QUERY GetFollowRelationshipDetails(relationshipID: String) {
 
 ## Combining Traversal Steps
 
-Helix QL allows you to chain traversal operations to create complex graph queries.
+HQL allows you to chain traversal operations to create complex graph queries.
 
 <Accordion title="Example: Chained Traversal">
 ```rust
 QUERY GetFriendsOfFriends(userID: String) {
     // Find user by ID
     user <- V<User>(userID)
-    
+
     // Get users that this user follows
     following <- user::Out<Follows>
-    
+
     // Get users that those users follow (friends of friends)
     friends_of_friends <- following::Out<Follows>
-    
+
     RETURN following, friends_of_friends
 }
 ```
 </Accordion>
 
-## Advanced Traversal Patterns
+## Advanced Traversal Patterns (Coming Soon)
 
 For more complex traversal patterns and operations, see the [Advanced Traversal](/advanced/traversal) documentation.

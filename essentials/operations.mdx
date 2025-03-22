@@ -6,7 +6,7 @@ icon: "terminal"
 
 ## Graph Operations Overview
 
-Helix QL provides a rich set of operations to create, modify, filter, and aggregate graph data. These operations allow you to build powerful graph applications with concise, expressive queries.
+HQL provides a rich set of operations to create, modify, filter, and aggregate graph data. These operations allow you to build powerful graph applications with concise, expressive queries.
 
 ## Creation Operations
 
@@ -26,14 +26,14 @@ Create new vertices in your graph.
 QUERY CreateUsers {
     // Add a simple user vertex
     basic_user <- AddV<User>
-    
+
     // Add a user with properties
     detailed_user <- AddV<User>({
         name: "Alice Johnson",
         age: 30,
         email: "alice@example.com"
     })
-    
+
     RETURN basic_user, detailed_user
 }
 ```
@@ -54,17 +54,17 @@ QUERY CreateRelationships(user1ID: String, user2ID: String) {
     // Get the users by their IDs
     user1 <- V<User>(user1ID)
     user2 <- V<User>(user2ID)
-    
+
     // Create a simple follows relationship
     follows <- AddE<Follows>::From(user1)::To(user2)
-    
+
     // Create a detailed friendship with properties
     friendship <- AddE<Friends>({
         since: "2024-01-15",
         strength: 0.85,
         tags: ["college", "roommates"]
     })::From(user1)::To(user2)
-    
+
     RETURN follows, friendship
 }
 ```
@@ -87,13 +87,13 @@ Filter elements based on specific conditions.
 QUERY GetAdultUsers {
     // Get all users
     all_users <- V<User>
-    
+
     // Filter to only users over 18
     adult_users <- all_users::WHERE(_::Props("age")::GT(18))
-    
+
     // Filter to users with specific name pattern
     johns <- all_users::WHERE(_::Props("name")::CONTAINS("John"))
-    
+
     RETURN adult_users, johns
 }
 ```
@@ -117,16 +117,16 @@ Compare property values against specified values.
 ```rust
 QUERY FilterUsers {
     users <- V<User>
-    
+
     // Users with age greater than 30
     older_users <- users::WHERE(_::Props("age")::GT(30))
-    
+
     // Users with premium status
     premium_users <- users::WHERE(_::Props("status")::EQ("premium"))
-    
+
     // Users with rating at least 4.0
     highly_rated <- users::WHERE(_::Props("rating")::GTE(4.0))
-    
+
     RETURN older_users, premium_users, highly_rated
 }
 ```
@@ -145,16 +145,16 @@ Check if elements exist that match a given condition.
 QUERY CheckUserConnections(userID: String) {
     // Get the user
     user <- V<User>(userID)
-    
+
     // Check if user has any followers
     has_followers <- EXISTS(user::In<Follows>)
-    
+
     // Check if user follows anyone
     follows_others <- EXISTS(user::Out<Follows>)
-    
+
     // Check if user has premium status
     is_premium <- EXISTS(user::WHERE(_::Props("status")::EQ("premium")))
-    
+
     RETURN has_followers, follows_others, is_premium
 }
 ```
@@ -177,16 +177,16 @@ Count the number of elements in a traversal.
 QUERY UserStatistics(userID: String) {
     // Get the user
     user <- V<User>(userID)
-    
+
     // Count followers
     follower_count <- user::In<Follows>::COUNT
-    
+
     // Count users being followed
     following_count <- user::Out<Follows>::COUNT
-    
+
     // Count posts
     post_count <- user::Out<Posted>::COUNT
-    
+
     RETURN follower_count, following_count, post_count
 }
 ```
@@ -208,19 +208,19 @@ Perform various aggregation operations on property values.
 QUERY ProductStatistics {
     // Get all products
     products <- V<Product>
-    
+
     // Calculate average price
     avg_price <- products::Props("price")::AVG
-    
+
     // Find highest price
     max_price <- products::Props("price")::MAX
-    
+
     // Find lowest price
     min_price <- products::Props("price")::MIN
-    
+
     // Calculate total inventory value
     total_value <- products::Props("price")::SUM
-    
+
     RETURN avg_price, max_price, min_price, total_value
 }
 ```
@@ -228,7 +228,7 @@ QUERY ProductStatistics {
 
 ## Combining Operations
 
-Helix QL allows you to chain operations to create complex queries.
+HQL allows you to chain operations to create complex queries.
 
 <Accordion title="Example: Combined Operations">
 ```rust
@@ -237,14 +237,14 @@ QUERY AdvancedUserQuery(minAge: Int) {
     active_users <- V<User>::WHERE(_::Props("status")::EQ("active"))
     eligible_users <- active_users::WHERE(_::Props("age")::GT(minAge))
     popular_users <- eligible_users::WHERE(EXISTS(_::In<Follows>))
-    
+
     // Count their posts and get average engagement
     user_stats <- popular_users::MAP({
         user: _,
         post_count: _::Out<Posted>::COUNT,
         avg_engagement: _::Out<Posted>::Props("engagement")::AVG
     })
-    
+
     RETURN user_stats
 }
 ```
