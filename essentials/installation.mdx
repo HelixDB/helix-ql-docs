@@ -13,8 +13,6 @@ HelixDB can be used locally by installing the HelixCLI.
 curl -sSL https://install.helix-db.com | bash
 ```
 
-
-
 ## Verifying Installation
 
 To verify that HelixCLI is installed correctly:
@@ -23,7 +21,42 @@ To verify that HelixCLI is installed correctly:
 helix --version
 ```
 
+## Install Helix
 
+```bash
+helix install
+```
+
+## Setup
+
+```bash
+helix init --path <path-to-create-files-at>
+```
+
+## Write queries
+
+Write your schema and queries in the newly created .hx files. [Click here](./query-structure.mdx) for more information about writing queries
+
+## Check your queries (optional)
+
+```bash
+cd <path-to-your-project>
+helix check
+```
+
+## Deploy your queries
+
+```bash
+cd <path-to-your-project>
+helix deploy --local
+```
+
+## Other commands
+
+`helix instances` to see your local instances.
+`helix stop <instance-id>` to stop your local instances.
+`helix stop --all` to stop all your local instances.
+`helix start <instance-id>` to start your local instances.
 
 
 
