@@ -1,19 +1,28 @@
 ---
-title: "Property Access"
-description: "Mintlify gives you complete control over the look and feel of your documentation using the mint.json file"
+title: "Properties"
+description: "Accessing or modifying properties of a node, edge, or vector"
 icon: "key"
 ---
 
-### Property Operations
-
-1. **Property Access**
+## 1. Property Access
 
 ```rust
 // Get specific properties
 ::{Name, Age}
 ```
+Appending the above to the end of a traversal will return an object with the specified properties like so:
+```rust
+[
+    {
+        Name: "John",
+        Age: 30
+    }, 
+    ...
+]
+```
 
-2. **Property Addition**
+
+## 2. Property Addition
 
 ```rust
 // Add/update properties
@@ -21,4 +30,15 @@ icon: "key"
     NewField: "value",
     ComputedField: _::Out<Follows>::COUNT
 }
+```
+By defining new properties, you can modify the object returned by the traversal. The above will return an object like so:
+```rust
+[
+    {
+        <Other Properties>,
+        NewField: "value",
+        ComputedField: <Some Number>
+    }, 
+    ...
+]
 ```

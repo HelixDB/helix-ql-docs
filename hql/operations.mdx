@@ -12,16 +12,16 @@ Helix QL provides a rich set of operations to create, modify, filter, and aggreg
 
 These operations allow you to add new elements to your graph.
 
-### Adding Vertices (`AddN`)
+### Adding Nodes (`AddN`)
 
-Create new vertices in your graph.
+Create new nodes in your graph.
 
 | Syntax | Description |
 |--------|-------------|
 | `AddN<Type>` | Add a node of the specified type |
 | `AddN<Type>({properties})` | Add a node with properties |
 
-<Accordion title="Example: Adding Vertices">
+<Accordion title="Example: Adding Nodes">
 ```rust
 QUERY CreateUsers {
     // Add a simple user node
@@ -41,7 +41,7 @@ QUERY CreateUsers {
 
 ### Adding Edges (`AddE`)
 
-Create connections between vertices in your graph.
+Create connections between nodes in your graph.
 
 | Syntax | Description |
 |--------|-------------|

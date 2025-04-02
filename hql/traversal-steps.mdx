@@ -74,6 +74,25 @@ QUERY GetFollowers(edgeID: String) {
 ```
 </Accordion>
 
+### Anonymous Traveral (`_`)
+
+Continue a traversal without breaking the overall traversal flow.
+
+| Syntax | Description |
+|--------|-------------|
+| `_` | Select all nodes/edges you were just traversing |
+| `_<Type>` | Select all nodes/edges (from the last step) with a specific type |
+| `_("id")` | Filter the last step by ID |
+| `_<Type>("id1", "id2")` | Filter the last step by IDs and define its type for correctness |
+
+<Accordion title="Example: Anonymous Traversal">
+```rust
+QUERY FindActiveUsers() =>
+    users <- N<Person>::WHERE(_::{Age}::GT(25))
+    withFollowers <- users::WHERE(EXISTS(_::In<Follows>))
+    RETURN withFollowers
+```
+</Accordion>
 ## Traversal Operations
 
 Once you've selected your starting points, these operations allow you to navigate through the graph.
