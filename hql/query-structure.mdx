@@ -1,7 +1,7 @@
 ---
 title: "Query Structure"
 description: "Display inline code and code blocks"
-icon: "code"
+icon: "code-branch"
 ---
 
 ### Basic Query Syntax
@@ -17,7 +17,9 @@ QUERY QueryName(param1: Type, param2: Type) =>
 - `QUERY`: Keyword to start a query definition
 - `QueryName`: Identifier for the query
 - `parameters`: Input parameters in parentheses
-- `Type`: Type of the parameter (e.g. `String`, `Integer`, `Float`, `Boolean`, `Array` or schema Vertex/Edge)
+- `Type`: Type of the parameter (e.g. `String`, `Integer`, `Float`, `Boolean`, `Array` or schema Node/Edge)
 - `=>`: Separates query header from body
 - `<-`: Assignment operator
 - `RETURN`: Specifies output values
+
+See next page for traversal_expression...

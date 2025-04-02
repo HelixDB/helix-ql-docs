@@ -1,0 +1,45 @@
+---
+title: 'HelixDB Overview'
+description: 'Learn about HelixDB architecture, features, and capabilities'
+icon: 'house'
+---
+
+# HelixDB Overview
+
+HelixDB is a graph-vector database designed for modern applications that require complex relationship modeling and traversal. It combines the power of graph data structures for explicit relationships with vector embeddings for semantic search.
+
+## Key Features
+
+- **High Performance**: Optimized for fast traversals and insertions
+- **Native Graph Storage**: Purpose-built storage engine optimized for graph operations
+- **Native Vector Storage**: Purpose-built storage engine optimized for vector operations
+- **Type Safety**: Explicit type definitions to ensure data integrity
+- **Developer-Friendly**: Simple setup and intuitive APIs
+
+## Architecture
+
+<AccordionGroup>
+  <Accordion title="Graph Layer">
+    Efficiently stores nodes, edges, and their properties using a specialized graph storage format that optimizes for both read and write operations.
+  </Accordion>
+  <Accordion title="Vector Layer">
+    Provides vector embeddings for semantic search and similarity queries.
+  </Accordion>
+  <Accordion title="Query Engine">
+    Compiles HQL code directly into the database engine, allowing for lighning fast queries.
+  </Accordion>
+</AccordionGroup>
+
+## Data Model
+
+HelixDB follows the property graph model, which consists of:
+
+- **Nodes**: Represent entities with unique identifiers and properties
+- **Vectors**: Represent entities with unique identifiers and vector embeddings
+- **Edges**: Represent relationships between nodes and/or vectors, with directionality and properties
+- **Properties**: Key-value pairs attached to both nodes, vectors and edges
+- **Labels**: Categorize nodes and edges by type
+
+This model allows for rich representation of complex domains while maintaining query performance.
+
+

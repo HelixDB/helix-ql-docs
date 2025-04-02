@@ -1,0 +1,49 @@
+---
+title: Examples
+description: 'Examples of HelixDB queries'
+---
+
+### 1. Find Users Over 25 with Followers
+
+```rust
+QUERY FindActiveUsers() =>
+    users <- N<Person>::WHERE(_::{Age}::GT(25))
+    withFollowers <- users::WHERE(EXISTS(_::In<Follows>))
+    RETURN withFollowers
+```
+
+### 2. Create Friendship Between Users
+
+```rust
+QUERY CreateFriendship(user1Id, user2Id) =>
+    user1 <- N<Person>(user1Id)
+    user2 <- N<Person>(user2Id)
+    friendship <- AddE<Follows>({Since: "2024"})::From(user1)::To(user2)
+    RETURN friendship
+```
+
+### 3. Get User's Friends with Age
+
+```rust
+QUERY GetFriendsWithAge(userId) =>
+    user <- N<Person>(userId)
+    friends <- user::Out<Follows>::InN::{Name, Age}
+    RETURN friends
+```
+
+### 4. Complex Network Analysis
+
+```rust
+QUERY AnalyzeNetwork(userId) =>
+    user <- N<Person>(userId)
+    activeConnections <- user::Out<Follows>
+        ::WHERE(_::{Weight}::GT(0.5))
+        ::InN
+        ::WHERE(_::Out::COUNT::GT(5))
+    result <- activeConnections::{
+        Name: _::{Name},
+        ConnectionCount: _::Out::COUNT
+    }
+    RETURN result
+```
+

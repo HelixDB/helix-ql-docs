@@ -11,27 +11,35 @@
   "navigation": {
     "groups": [
       {
+        "group": "Introduction",
+        "pages": [
+          "introduction/overview",
+          "introduction/examples"
+        ]
+      },
+      {
+        "group": "What is HelixDB?",
+        "pages": [
+          "what-is/helix-overview",
+          "what-is/graph-database",
+          "what-is/vector-database",
+          "what-is/hql"
+        ]
+      },
+      {
         "group": "Get Started",
         "pages": [
-          "introduction",
-          "examples"
+          "get-started/installation"
         ]
       },
       {
-        "group": "HelixDB",
+        "group": "HQL (Helix Query Language)",
         "pages": [
-          "essentials/helix-db-overview",
-          "essentials/installation"
-        ]
-      },
-      {
-        "group": "Helix Query Language",
-        "pages": [
-          "essentials/schema-definition",
-          "essentials/query-structure",
-          "essentials/traversal-steps",
-          "essentials/operations",
-          "essentials/property-access"
+          "hql/schema-definition",
+          "hql/query-structure",
+          "hql/traversal-steps",
+          "hql/operations",
+          "hql/property-access"
         ]
       }
     ]

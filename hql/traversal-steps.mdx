@@ -1,42 +1,42 @@
 ---
 title: "Traversal Steps"
 description: "Navigate and traverse your graph with powerful query operations"
-icon: "circle-nodes"
+icon: "route"
 ---
 
 ## Graph Traversal Fundamentals
 
-Graph traversal is the process of visiting vertices and edges in a graph. Helix QL provides a rich set of operations to navigate your graph data efficiently.
+Graph traversal is the process of visiting nodes and edges in a graph. Helix QL provides a rich set of operations to navigate your graph data efficiently.
 
 ## Selection Operations
 
 These operations serve as starting points for your graph traversals.
 
-### Vertex Selection (`V`)
+### Node Selection (`N`)
 
-Select vertices from your graph to begin traversal.
+Select nodes from your graph to begin traversal.
 
 | Syntax | Description |
 |--------|-------------|
-| `V` | Select all vertices in the graph |
-| `V<Type>` | Select all vertices of a specific type |
-| `V("id")` | Select a vertex by its ID |
-| `V<Type>("id1", "id2")` | Select vertices of a specific type with given IDs |
+| `N` | Select all nodes in the graph |
+| `N<Type>` | Select all nodes of a specific type |
+| `N("id")` | Select a node by its ID |
+| `N<Type>("id1", "id2")` | Select nodes of a specific with given IDs and define its type for correctness |
 
-<Accordion title="Example: Vertex Selection">
+<Accordion title="Example: Node Selection">
 ```rust
 QUERY GetUsers(userID: String) {
-    // Select all vertices
-    nodes <- V
+    // Select all nodes
+    nodes <- N
     
-    // Select all User vertices
-    users <- V<Users>
+    // Select all User nodes
+    users <- N<Users>
     
     // Select a specific User by ID
-    user <- V<User>(userID)
+    user <- N<User>(userID)
     
     // Select multiple Users by IDs
-    other_users <- V<Users>(userID, "other_uuid")
+    other_users <- N<Users>(userID, "other_uuid")
     
     RETURN nodes, users, user, other_users
 }
@@ -78,24 +78,24 @@ QUERY GetFollowers(edgeID: String) {
 
 Once you've selected your starting points, these operations allow you to navigate through the graph.
 
-### Vertex-to-Vertex Navigation
+### Node-to-Node Navigation
 
-Move from vertices to their connected vertices.
+Move from nodes to their connected nodes.
 
 | Operation | Description |
 |-----------|-------------|
-| `::Out` | Traverse to vertices connected by outgoing edges |
-| `::Out<EdgeType>` | Traverse to vertices connected by outgoing edges of specific type |
-| `::In` | Traverse to vertices connected by incoming edges |
-| `::In<EdgeType>` | Traverse to vertices connected by incoming edges of specific type |
-| `::Both` | Traverse to vertices connected by edges in either direction |
-| `::Both<EdgeType>` | Traverse to vertices connected by edges of specific type in either direction |
+| `::Out` | Traverse to nodes connected by outgoing edges |
+| `::Out<EdgeType>` | Traverse to nodes connected by outgoing edges of specific type |
+| `::In` | Traverse to nodes connected by incoming edges |
+| `::In<EdgeType>` | Traverse to nodes connected by incoming edges of specific type |
+| `::Both` | Traverse to nodes connected by edges in either direction |
+| `::Both<EdgeType>` | Traverse to nodes connected by edges of specific type in either direction |
 
-<Accordion title="Example: Vertex-to-Vertex Navigation">
+<Accordion title="Example: Node-to-Node Navigation">
 ```rust
 QUERY GetFriendsAndFollowers(userID: String) {
     // Find user by ID
-    user <- V<User>(userID)
+    user <- N<User>(userID)
     
     // Get users that this user follows (outgoing direction)
     following <- user::Out<Follows>
@@ -111,24 +111,24 @@ QUERY GetFriendsAndFollowers(userID: String) {
 ```
 </Accordion>
 
-### Vertex-to-Edge Navigation
+### Node-to-Edge Navigation
 
-Move from vertices to their connected edges.
+Move from nodes to their connected edges.
 
 | Operation | Description |
 |-----------|-------------|
-| `::OutE` | Get outgoing edges from vertices |
+| `::OutE` | Get outgoing edges from nodes |
 | `::OutE<EdgeType>` | Get outgoing edges of specific type |
-| `::InE` | Get incoming edges to vertices |
+| `::InE` | Get incoming edges to nodes |
 | `::InE<EdgeType>` | Get incoming edges of specific type |
 | `::BothE` | Get edges in either direction |
 | `::BothE<EdgeType>` | Get edges of specific type in either direction |
 
-<Accordion title="Example: Vertex-to-Edge Navigation">
+<Accordion title="Example: Node-to-Edge Navigation">
 ```rust
 QUERY GetUserRelationships(userID: String) {
     // Find user by ID
-    user <- V<User>(userID)
+    user <- N<User>(userID)
     
     // Get all outgoing relationship edges
     outgoing_relationships <- user::OutE
@@ -144,29 +144,29 @@ QUERY GetUserRelationships(userID: String) {
 ```
 </Accordion>
 
-### Edge-to-Vertex Navigation
+### Edge-to-Node Navigation
 
-Move from edges to their connected vertices.
+Move from edges to their connected nodes.
 
 | Operation | Description |
 |-----------|-------------|
-| `::OutV` | Get source vertex (where edge starts) |
-| `::InV` | Get target vertex (where edge ends) |
-| `::BothV` | Get both source and target vertices |
+| `::OutN` | Get source node (where edge starts) |
+| `::InN` | Get target node (where edge ends) |
+| `::BothV` | Get both source and target nodes |
 
-<Accordion title="Example: Edge-to-Vertex Navigation">
+<Accordion title="Example: Edge-to-Node Navigation">
 ```rust
 QUERY GetFollowRelationshipDetails(relationshipID: String) {
     // Find a specific Follows relationship by ID
     relationship <- E<Follows>(relationshipID)
     
     // Get the user who initiated the follow (source)
-    follower <- relationship::OutV
+    follower <- relationship::OutN
     
     // Get the user being followed (target)
-    followed <- relationship::InV
+    followed <- relationship::InN
     
-    // Get both users involved in the relationship
+    // Get both users InNolved in the relationship
     both_users <- relationship::BothV
     
     RETURN follower, followed, both_users
@@ -182,19 +182,12 @@ Helix QL allows you to chain traversal operations to create complex graph querie
 ```rust
 QUERY GetFriendsOfFriends(userID: String) {
     // Find user by ID
-    user <- V<User>(userID)
+    user <- N<User>(userID)
     
-    // Get users that this user follows
-    following <- user::Out<Follows>
+    // Get users that this user follows and then users they follow (friends of friends)
+    friends_of_friends <- user::Out<Follows>::Out<Follows>
     
-    // Get users that those users follow (friends of friends)
-    friends_of_friends <- following::Out<Follows>
-    
-    RETURN following, friends_of_friends
+    RETURN friends_of_friends
 }
 ```
 </Accordion>
-
-## Advanced Traversal Patterns
-
-For more complex traversal patterns and operations, see the [Advanced Traversal](/advanced/traversal) documentation.

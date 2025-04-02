@@ -1,15 +1,15 @@
 ---
 title: "Schema Definition"
 description: "Text, title, and styling in standard markdown"
-icon: "text-size"
+icon: "table"
 ---
 
 ### Node Schema
 
-Defines vertex types and their properties in the graph.
+Defines node types and their properties in the graph.
 
 ```rust
-V::Person {
+N::Person {
     Name: String,
     Age: Integer,
     Active: Boolean,
@@ -30,4 +30,12 @@ E::Follows {
         Weight: Float
     }
 }
+```
+
+### Vector Schema
+
+Defines the vector type.
+
+```rust
+V::PersonVector
 ```
