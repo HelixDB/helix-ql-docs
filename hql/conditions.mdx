@@ -1,0 +1,122 @@
+---
+title: "Conditions"
+description: "Filter and conditionally select elements in your graph"
+icon: "merge"
+---
+
+## Filtering Operations
+
+These operations allow you to filter and select specific elements from your graph based on conditions.
+
+### Where Clause
+
+Filter elements based on specific conditions.
+
+| Syntax | Description |
+|--------|-------------|
+| `::WHERE(condition)` | Filter elements that satisfy the condition |
+
+<Accordion title="Example: Using WHERE">
+```rust
+QUERY GetAdultUsers {
+    // Get all users
+    all_users <- N<User>
+    
+    // Filter to only users over 18
+    adult_users <- all_users::WHERE(_::{age}::GT(18))
+    
+    // Filter to users with specific name pattern
+    johns <- all_users::WHERE(_::{name}::EQ("John"))
+    
+    RETURN adult_users, johns
+}
+```
+</Accordion>
+
+### Comparison Operations
+
+Returns a boolean value, which can be used in a WHERE clause to filter elements.
+
+| Operation | Description | Example |
+|-----------|-------------|---------|
+| `::GT(value)` | Greater than | `::WHERE(_::{age}::GT(25))` |
+| `::LT(value)` | Less than | `::WHERE(_::{age}::LT(30))` |
+| `::EQ(value)` | Equals | `::WHERE(_::{status}::EQ("active"))` |
+| `::NEQ(value)` | Not equals | `::WHERE(_::{status}::NEQ("deleted"))` |
+| `::GTE(value)` | Greater than or equal | `::WHERE(_::{rating}::GTE(4.5))` |
+| `::LTE(value)` | Less than or equal | `::WHERE(_::{priority}::LTE(2))` |
+
+<Accordion title="Example: Comparison Operations">
+```rust
+QUERY FilterUsers {
+    users <- N<User>
+    
+    // Users with age greater than 30
+    older_users <- users::WHERE(_::{age}::GT(30))
+    
+    // Users with premium status
+    premium_users <- users::WHERE(_::{status}::EQ("premium"))
+    
+    // Users with rating at least 4.0
+    highly_rated <- users::WHERE(_::{rating}::GTE(4.0))
+    
+    RETURN older_users, premium_users, highly_rated
+}
+```
+</Accordion>
+
+### Existence Check
+
+Check if elements exist that match a given condition.
+
+| Syntax | Description |
+|--------|-------------|
+| `EXISTS(traversal)` | Returns true if the traversal returns any elements |
+
+<Accordion title="Example: Existence Check">
+```rust
+QUERY CheckUserConnections(userID: String) {
+    // Get the user
+    user <- N<User>(userID)
+    
+    // Check if user has any followers
+    has_followers <- EXISTS(user::In<Follows>)
+    
+    // Check if user follows anyone
+    follows_others <- EXISTS(user::Out<Follows>)
+    
+    // Check if user has premium status
+    is_premium <- EXISTS(user::WHERE(_::{status}::EQ("premium")))
+    
+    RETURN has_followers, follows_others, is_premium
+}
+```
+</Accordion>
+
+### Count
+
+Count the number of elements in a traversal.
+
+| Syntax | Description |
+|--------|-------------|
+| `::COUNT` | Count the number of elements |
+
+<Accordion title="Example: Count Operation">
+```rust
+QUERY UserStatistics(userID: String) {
+    // Get the user
+    user <- N<User>(userID)
+    
+    // Count followers
+    follower_count <- user::In<Follows>::COUNT
+    
+    // Count users being followed
+    following_count <- user::Out<Follows>::COUNT
+    
+    // Count posts
+    post_count <- user::Out<Posted>::COUNT
+    
+    RETURN follower_count, following_count, post_count
+}
+```
+</Accordion>

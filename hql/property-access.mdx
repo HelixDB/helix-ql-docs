@@ -6,6 +6,8 @@ icon: "key"
 
 ## 1. Property Access
 
+### Accessing Properties
+
 ```rust
 // Get specific properties
 ::{Name, Age}
@@ -19,6 +21,24 @@ Appending the above to the end of a traversal will return an object with the spe
     }, 
     ...
 ]
+```
+### Accessing the ID
+
+```rust
+// Get the ID of the selected element using the standard access
+::{id}
+
+// Or use the ID function
+::ID
+```
+### Spread Operator
+Using the spread operator, you can include all properties of the selected element in the returned object.
+
+```rust
+::{
+    userID: id,
+    .. // this is the spread operator to include everything else as is
+}
 ```
 
 
@@ -41,4 +61,58 @@ By defining new properties, you can modify the object returned by the traversal.
     }, 
     ...
 ]
+```
+
+## 3. Property Exclusion
+If you want to access all properties except for a few, you can use the exclude operator.
+```rust
+// Get all properties except for the id and the name
+::!{
+    id, name
+}
+```
+
+## 4. Nested Mappings
+If you want to access a propertis that traverse from the selected element, you can use the nested variable to continue the traversal.
+
+```rust
+// Defines **usr** as a variable that can me used inside the mapping
+::|usr|{
+            following: usr::In<Follows>,
+            posts: posts::{
+                postID: ID,
+                creatorID: usr::ID,
+                .. // this is the spread operator to include everything else as is
+            },
+        }
+```
+
+<Accordion title="Example">
+```rust
+QUERY findFriends(userID: String) =>
+  user <- N<User>(userID)
+  posts <- user::Out<Posts>::RANGE(20)
+  RETURN user::|usr|{
+            ID, name, age, 
+            following: usr::In<Follows>,
+            posts: posts::{
+                postID: ID,
+                creatorID: usr::ID,
+                ..
+            },
+        }
+```
+</Accordion>
+
+
+## 5. Returning a Range
+
+To return an certain amount of elements, you can use the `RANGE` function.
+
+```rust
+// Get the first 10 users
+users <- N<User>::RANGE(0, 10)
+
+// Get 10 users starting from the 10th user
+users <- N<User>::RANGE(10, 20)
 ```

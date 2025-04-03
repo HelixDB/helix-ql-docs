@@ -23,10 +23,12 @@ Create new nodes in your graph.
 
 <Accordion title="Example: Adding Nodes">
 ```rust
-QUERY CreateUsers {
-    // Add a simple user node
+QUERY CreateUsers () =>
+    // Create an empty user node
     basic_user <- AddN<User>
-    
+    // You could also write it like this
+    AddN<User>
+
     // Add a user with properties
     detailed_user <- AddN<User>({
         name: "Alice Johnson",
@@ -35,7 +37,6 @@ QUERY CreateUsers {
     })
     
     RETURN basic_user, detailed_user
-}
 ```
 </Accordion>
 
@@ -50,7 +51,7 @@ Create connections between nodes in your graph.
 
 <Accordion title="Example: Adding Edges">
 ```rust
-QUERY CreateRelationships(user1ID: String, user2ID: String) {
+QUERY CreateRelationships(user1ID: String, user2ID: String) =>
     // Get the users by their IDs
     user1 <- N<User>(user1ID)
     user2 <- N<User>(user2ID)
@@ -66,190 +67,60 @@ QUERY CreateRelationships(user1ID: String, user2ID: String) {
     })::From(user1)::To(user2)
     
     RETURN follows, friendship
-}
 ```
 </Accordion>
 
-## Filtering Operations
+You can also use the `AddE` operation in the middle of a traversal to add edges between a list of nodes or vectors.
 
-These operations allow you to filter and select specific elements from your graph based on conditions.
+<Accordion title="Example: Adding Edges in a Traversal">
+```rust
+QUERY CreateFriendships(user1ID: String, user2ID: String) =>
+    // This makes every user in the database follow the user with ID user1ID
+    user1 <- N<User>::AddE<Follows>::To(N(user1ID))
 
-### Where Clause
+    // This makes user with userID2 follow every user in the database
+    user1 <- N<User>::AddE<Follows>::From(N(user1ID))
 
-Filter elements based on specific conditions.
+    RETURN friendship
+```
+</Accordion>
+### Updating Elements (`UPDATE`)
+
+Update the properties of existing elements.
 
 | Syntax | Description |
 |--------|-------------|
-| `::WHERE(condition)` | Filter elements that satisfy the condition |
+| `::UPDATE({<properties_list>})` | overwrites the listed properties with the new values |
+| `::UPDATE({name: "John"})` | Updates the name of the selected element to "John" |
 
-<Accordion title="Example: Using WHERE">
+<Accordion title="Example: Adding Edges">
 ```rust
-QUERY GetAdultUsers {
-    // Get all users
-    all_users <- N<User>
-    
-    // Filter to only users over 18
-    adult_users <- all_users::WHERE(_::{age}::GT(18))
-    
-    // Filter to users with specific name pattern
-    johns <- all_users::WHERE(_::{name}::CONTAINS("John"))
-    
-    RETURN adult_users, johns
-}
+QUERY UpdateUser(userID: String) =>
+    // Updates all "Person" nodes to have name "John"
+    updatedUsers <- N<Person>::UPDATE({name: "John"})
+
+
+    RETURN NONE
 ```
 </Accordion>
 
-### Comparison Operations
 
-Compare property values against specified values.
+### Dropping Elements (`DROP`)
 
-| Operation | Description | Example |
-|-----------|-------------|---------|
-| `::GT(value)` | Greater than | `::WHERE(_::{age}::GT(25))` |
-| `::LT(value)` | Less than | `::WHERE(_::{age}::LT(30))` |
-| `::EQ(value)` | Equals | `::WHERE(_::{status}::EQ("active"))` |
-| `::NEQ(value)` | Not equals | `::WHERE(_::{status}::NEQ("deleted"))` |
-| `::GTE(value)` | Greater than or equal | `::WHERE(_::{rating}::GTE(4.5))` |
-| `::LTE(value)` | Less than or equal | `::WHERE(_::{priority}::LTE(2))` |
-| `::CONTAINS(value)` | Contains substring | `::WHERE(_::{name}::CONTAINS("Smith"))` |
-
-<Accordion title="Example: Comparison Operations">
-```rust
-QUERY FilterUsers {
-    users <- N<User>
-    
-    // Users with age greater than 30
-    older_users <- users::WHERE(_::{age}::GT(30))
-    
-    // Users with premium status
-    premium_users <- users::WHERE(_::{status}::EQ("premium"))
-    
-    // Users with rating at least 4.0
-    highly_rated <- users::WHERE(_::{rating}::GTE(4.0))
-    
-    RETURN older_users, premium_users, highly_rated
-}
-```
-</Accordion>
-
-### Existence Check
-
-Check if elements exist that match a given condition.
+Drop/Delete elements from your database.
 
 | Syntax | Description |
 |--------|-------------|
-| `EXISTS(traversal)` | Returns true if the traversal returns any elements |
+| `DROP <elements>` | Elements can be defined by a traversal or by variable reference to the elements |
 
-<Accordion title="Example: Existence Check">
+<Accordion title="Example: Adding Edges">
 ```rust
-QUERY CheckUserConnections(userID: String) {
-    // Get the user
-    user <- N<User>(userID)
+QUERY DropFollowing(user1: String) =>
+    // Removes all people that user1 follows from his/her following list
+    DROP N(user1)::Out<Follows>
     
-    // Check if user has any followers
-    has_followers <- EXISTS(user::In<Follows>)
-    
-    // Check if user follows anyone
-    follows_others <- EXISTS(user::Out<Follows>)
-    
-    // Check if user has premium status
-    is_premium <- EXISTS(user::WHERE(_::{status}::EQ("premium")))
-    
-    RETURN has_followers, follows_others, is_premium
-}
+    RETURN NONE
+
 ```
 </Accordion>
 
-## Aggregation Operations
-
-These operations allow you to perform calculations and aggregations on graph elements.
-
-### Count
-
-Count the number of elements in a traversal.
-
-| Syntax | Description |
-|--------|-------------|
-| `::COUNT` | Count the number of elements |
-
-<Accordion title="Example: Count Operation">
-```rust
-QUERY UserStatistics(userID: String) {
-    // Get the user
-    user <- N<User>(userID)
-    
-    // Count followers
-    follower_count <- user::In<Follows>::COUNT
-    
-    // Count users being followed
-    following_count <- user::Out<Follows>::COUNT
-    
-    // Count posts
-    post_count <- user::Out<Posted>::COUNT
-    
-    RETURN follower_count, following_count, post_count
-}
-```
-</Accordion>
-
-### Other Aggregations
-
-Perform various aggregation operations on property values.
-
-| Operation | Description |
-|-----------|-------------|
-| `::SUM` | Sum of property values |
-| `::AVG` | Average of property values |
-| `::MIN` | Minimum property value |
-| `::MAX` | Maximum property value |
-
-<Accordion title="Example: Aggregation Operations">
-```rust
-QUERY ProductStatistics {
-    // Get all products
-    products <- N<Product>
-    
-    // Calculate average price
-    avg_price <- products::{price}::AVG
-    
-    // Find highest price
-    max_price <- products::{price}::MAX
-    
-    // Find lowest price
-    min_price <- products::{price}::MIN
-    
-    // Calculate total InNentory value
-    total_value <- products::{price}::SUM
-    
-    RETURN avg_price, max_price, min_price, total_value
-}
-```
-</Accordion>
-
-## Combining Operations
-
-Helix QL allows you to chain operations to create complex queries.
-
-<Accordion title="Example: Combined Operations">
-```rust
-QUERY AdvancedUserQuery(minAge: Int) {
-    // Find active users above minimum age with at least one follower
-    active_users <- N<User>::WHERE(_::{status}::EQ("active"))
-    eligible_users <- active_users::WHERE(_::{age}::GT(minAge))
-    popular_users <- eligible_users::WHERE(EXISTS(_::In<Follows>))
-    
-    // Count their posts and get average engagement
-    user_stats <- popular_users::MAP({
-        user: _,
-        post_count: _::Out<Posted>::COUNT,
-        avg_engagement: _::Out<Posted>::{engagement}::AVG
-    })
-    
-    RETURN user_stats
-}
-```
-</Accordion>
-
-## Advanced Operations
-
-For more complex operations and advanced query patterns, see the [Advanced Operations](/advanced/operations) documentation.

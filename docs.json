@@ -33,13 +33,14 @@
         ]
       },
       {
-        "group": "HQL (Helix Query Language)",
+        "group": "HelixQL",
         "pages": [
           "hql/schema-definition",
           "hql/query-structure",
           "hql/traversal-steps",
           "hql/operations",
-          "hql/property-access"
+          "hql/property-access",
+          "hql/conditions"
         ]
       }
     ]
