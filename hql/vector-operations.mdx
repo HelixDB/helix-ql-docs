@@ -1,0 +1,61 @@
+---
+title: "Vector Operations"
+description: "Use vector operations to query and manipulate vector data in HelixDB"
+icon: "vector"
+---
+
+## Vector Operations Fundamentals
+
+Vector operations are used to insert and query vector data in HelixDB.
+
+## Insert Operations
+
+### Insert Vector
+
+| Syntax | Description |
+|--------|-------------|
+| `AddV<Type>(vector)` | Insert a new vector into the table. Note the vector MUST be a float array. |
+
+<Accordion title="Example: Insert Vector">
+```rust
+QUERY InsertVector(vector: [Float]) {
+    // Insert a new vector into the table
+    vector <- AddV<Vector>(vector)
+    RETURN vector
+}
+```
+</Accordion>
+
+
+### Bulk Insert Vectors
+
+| Syntax | Description |
+|--------|-------------|
+| `BatchAddV<Type>(vector)` | Insert an array of new vectors into the table. Note the vector MUST be a array of float arrays. |
+
+<Accordion title="Example: Bulk Insert Vectors">
+```rust
+QUERY BulkInsertVectors(vectors: [[Float]]) {
+    // Insert an array of new vectors into the table
+    vectors <- BatchAddV<Vector>(vectors)
+    RETURN vectors
+}
+```
+</Accordion>
+
+## Query Operations
+
+### Query Vector
+
+| Syntax | Description |
+|--------|-------------|
+| `GetV<Type>(vector, k)` | Search for similar vectors to the query vector. Note the vector MUST be a float array. |
+
+<Accordion title="Example: Query Vector">
+```rust
+QUERY QueryVector(vector: [Float], k: Integer) {
+    // Search for similar vectors to the query vector
+    vectors <- GetV<Vector>(vector, k) // k is the number of similar vectors to return
+    RETURN vectors
+}
+```
