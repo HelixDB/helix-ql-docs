@@ -20,7 +20,7 @@ Select nodes from your graph to begin traversal.
 |--------|-------------|
 | `N` | Select all nodes in the graph |
 | `N<Type>` | Select all nodes of a specific type |
-| `N("id")` | Select a node by its ID |
+| `N<Type>("id")` | Select a node by its ID |
 | `N<Type>("id1", "id2")` | Select nodes of a specific with given IDs and define its type for correctness |
 
 <Accordion title="Example: Node Selection">
@@ -51,7 +51,7 @@ Select edges from your graph to begin traversal.
 |--------|-------------|
 | `E` | Select all edges in the graph |
 | `E<Type>` | Select all edges of a specific type |
-| `E("id")` | Select an edge by its ID |
+| `E<Type>("id")` | Select an edge by its ID |
 | `E<Type>("id1", "id2")` | Select edges of a specific type with given IDs |
 
 <Accordion title="Example: Edge Selection">
@@ -77,13 +77,7 @@ QUERY GetFollowers(edgeID: String) {
 ### Anonymous Traveral (`_`)
 
 Continue a traversal without breaking the overall traversal flow.
-
-| Syntax | Description |
-|--------|-------------|
-| `_` | Select all nodes/edges you were just traversing |
-| `_<Type>` | Select all nodes/edges (from the last step) with a specific type |
-| `_("id")` | Filter the last step by ID |
-| `_<Type>("id1", "id2")` | Filter the last step by IDs and define its type for correctness |
+Useful for an inner traversal where you don't want it to affect the overall traversal.
 
 <Accordion title="Example: Anonymous Traversal">
 ```rust
@@ -103,11 +97,8 @@ Move from nodes to their connected nodes.
 
 | Operation | Description |
 |-----------|-------------|
-| `::Out` | Traverse to nodes connected by outgoing edges |
 | `::Out<EdgeType>` | Traverse to nodes connected by outgoing edges of specific type |
-| `::In` | Traverse to nodes connected by incoming edges |
 | `::In<EdgeType>` | Traverse to nodes connected by incoming edges of specific type |
-| `::Both` | Traverse to nodes connected by edges in either direction |
 | `::Both<EdgeType>` | Traverse to nodes connected by edges of specific type in either direction |
 
 <Accordion title="Example: Node-to-Node Navigation">
@@ -136,11 +127,8 @@ Move from nodes to their connected edges.
 
 | Operation | Description |
 |-----------|-------------|
-| `::OutE` | Get outgoing edges from nodes |
 | `::OutE<EdgeType>` | Get outgoing edges of specific type |
-| `::InE` | Get incoming edges to nodes |
 | `::InE<EdgeType>` | Get incoming edges of specific type |
-| `::BothE` | Get edges in either direction |
 | `::BothE<EdgeType>` | Get edges of specific type in either direction |
 
 <Accordion title="Example: Node-to-Edge Navigation">
@@ -149,16 +137,16 @@ QUERY GetUserRelationships(userID: String) {
     // Find user by ID
     user <- N<User>(userID)
     
-    // Get all outgoing relationship edges
-    outgoing_relationships <- user::OutE
-    
     // Get only outgoing "Follows" edges
     follows_edges <- user::OutE<Follows>
     
     // Get incoming "Follows" edges
     followed_by_edges <- user::InE<Follows>
+
+    // Get all edges in both directions
+    all_edges <- user::BothE<Follows>
     
-    RETURN outgoing_relationships, follows_edges, followed_by_edges
+    RETURN follows_edges, followed_by_edges, all_edges
 }
 ```
 </Accordion>
@@ -171,7 +159,6 @@ Move from edges to their connected nodes.
 |-----------|-------------|
 | `::OutN` | Get source node (where edge starts) |
 | `::InN` | Get target node (where edge ends) |
-| `::BothV` | Get both source and target nodes |
 
 <Accordion title="Example: Edge-to-Node Navigation">
 ```rust
@@ -184,9 +171,6 @@ QUERY GetFollowRelationshipDetails(relationshipID: String) {
     
     // Get the user being followed (target)
     followed <- relationship::InN
-    
-    // Get both users InNolved in the relationship
-    both_users <- relationship::BothV
     
     RETURN follower, followed, both_users
 }

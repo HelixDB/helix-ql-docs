@@ -117,7 +117,7 @@ Drop/Delete elements from your database.
 ```rust
 QUERY DropFollowing(user1: String) =>
     // Removes all people that user1 follows from his/her following list
-    DROP N(user1)::Out<Follows>
+    DROP N<User>(user1)::Out<Follows>
     
     RETURN NONE
 

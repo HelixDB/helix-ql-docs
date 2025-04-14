@@ -1,7 +1,7 @@
 ---
-title: 'Exporting SQL Data and Ingesting into Helix'
-description: 'Learn how to export your SQL data and ingest it into Helix'
-icon: 'database'
+title: "Exporting SQL To Helix"
+description: "Learn how to export your SQL data and ingest it into Helix"
+icon: "database"
 ---
 
 # Exporting SQL Data and Ingesting into Helix
@@ -12,7 +12,7 @@ This guide will walk you through the process of exporting your SQL data, uploadi
 
 1. **SSH into the Instance**
 
-   First, SSH into the instance that has access to your PostgreSQL database. 
+   First, SSH into the instance that has access to your PostgreSQL database.
    Ensure this instance can access the database you want to ingest.
 
    ```bash
@@ -37,11 +37,11 @@ This guide will walk you through the process of exporting your SQL data, uploadi
 
    - Replace `<username>`, `<password>`, `<host>`, `<port>`, and `<dbname>` with your PostgreSQL credentials and connection details.
 
-| Short Flag | Long Flag    | Description                                                                       |
-| ---------- | ------------ | --------------------------------------------------------------------------------- |
-| `-i`       | `--instance` | Specifies the name of the instance you are uploading for.                         |
-| `-t`       | `--type`     | Specifies the database type, which is `pg` for PostgreSQL or `sqlite` for SQLite. |
-| `-s`       | `--ssl`      | Required for cloud databases like AWS RDS. Not needed for local databases.        |
+| Short Flag | Long Flag    | Description                                                             |
+| ---------- | ------------ | ----------------------------------------------------------------------- |
+| `-i`       | `--instance` | Specifies the name of the instance you are uploading for.               |
+| `-t`       | `--type`     | Specifies the database type, which is `pg` for PostgreSQL               |
+| `-s`       | `--ssl`      | Required for dbs in the cloud like AWS RDS but not for local databases. |
 
 4. **Upload Data to S3**
 

@@ -47,17 +47,16 @@ Using the spread operator, you can include all properties of the selected elemen
 ```rust
 // Add/update properties
 ::{
-    NewField: "value",
-    ComputedField: _::Out<Follows>::COUNT
+    userID: id, // accesses the id of each user
+    followerCount: _::In<Follows>::COUNT // counts  the number of users that follow each user
 }
 ```
 By defining new properties, you can modify the object returned by the traversal. The above will return an object like so:
 ```rust
 [
     {
-        <Other Properties>,
-        NewField: "value",
-        ComputedField: <Some Number>
+        userID: <id>,
+        followerCount: <Some Number>
     }, 
     ...
 ]
@@ -77,11 +76,11 @@ If you want to access a propertis that traverse from the selected element, you c
 
 ```rust
 // Defines **usr** as a variable that can me used inside the mapping
-::|usr|{
-            following: usr::In<Follows>,
+::|item|{
+            following: item::In<Follows>,
             posts: posts::{
                 postID: ID,
-                creatorID: usr::ID,
+                creatorID: item::ID,
                 .. // this is the spread operator to include everything else as is
             },
         }
@@ -93,11 +92,11 @@ QUERY findFriends(userID: String) =>
   user <- N<User>(userID)
   posts <- user::Out<Posts>::RANGE(20)
   RETURN user::|usr|{
-            ID, name, age, 
-            following: usr::In<Follows>,
+            ID, name, age, // accesses these properties from each `usr`
+            following: usr::In<Follows>, // accesses the `following` property from each `usr`
             posts: posts::{
-                postID: ID,
-                creatorID: usr::ID,
+                postID: ID, // accesses the `postID` property from each `posts`
+                creatorID: usr::ID, // accesses the `ID` property from each `usr` and maps it to `creatorID`
                 ..
             },
         }

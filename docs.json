@@ -29,7 +29,8 @@
       {
         "group": "Get Started",
         "pages": [
-          "get-started/installation"
+          "get-started/installation",
+          "get-started/sql-ingestion"
         ]
       },
       {
