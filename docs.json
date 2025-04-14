@@ -20,10 +20,10 @@
       {
         "group": "What is HelixDB?",
         "pages": [
-          "what-is/helix-overview",
-          "what-is/graph-database",
-          "what-is/vector-database",
-          "what-is/hql"
+          "info/helix-overview",
+          "info/graph-database",
+          "info/vector-database",
+          "info/hql"
         ]
       },
       {
