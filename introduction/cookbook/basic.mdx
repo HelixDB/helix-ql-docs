@@ -1,0 +1,144 @@
+---
+title: "A basic example"
+description: "A basic example of how to use HelixDB"
+---
+
+We're going to create a simple social network where users can follow each other and create posts.
+
+---
+
+### Step 1: Define the schema in schema.hx
+
+We're going to define the schema for our social network in `schema.hx`.
+We're going to have `User` nodes where users can `Follow` other users.
+We're also going to have `Post` nodes where users can `Create` posts.
+
+```rust [expandable]
+N::User {
+    name: String,
+    age: U32,
+    email: String,
+    created_at: I32,
+    updated_at: I32,
+}
+
+N::Post {
+    content: String,
+    created_at: I32,
+    updated_at: I32,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+    Properties: {
+        since: I32,
+    }
+}
+
+E::Created {
+    From: User,
+    To: Post,
+    Properties: {
+        created_at: I32,
+    }
+}
+```
+
+---
+
+### Step 2: Inserting data
+
+Creating a user is done by inserting a new node into the graph.
+
+```rust
+QUERY CreateUser(name: String, age: U32, email: String, now: I32) =>
+    user <- AddN<User>({name, age, email, created_at: now, updated_at: now})
+    RETURN user
+```
+
+To let users follow another user, we need to create an edge between them.
+
+```rust [expandable]
+QUERY CreateFollow(follower_id: String, followed_id: String, now: I32) =>
+    follower <- N<User>(follower_id)
+    followed <- N<User>(followed_id)
+    AddE<Follows>({since: now})::From(follower)::To(followed)
+    RETURN "success"
+```
+
+To create a post, we need to create a post node and an edge between the user and the post.
+
+```rust [expandable]
+QUERY CreatePost(user_id: String, content: String, now: I32) =>
+    user <- N<User>(user_id)
+    post <- AddN<Post>({content, created_at: now, updated_at: now})
+    AddE<Created>({created_at: now})::From(user)::To(post)
+    RETURN post
+```
+
+---
+
+### Step 3: Query the data
+
+To get all users, we can use the following query:
+
+```rust
+QUERY GetUsers() =>
+    users <- N<User>
+    RETURN users
+```
+
+To get all posts, we can use the following query:
+
+```rust
+QUERY GetPosts() =>
+    posts <- N<Post>
+    RETURN posts
+```
+
+To get all posts by a user, we can use the following query:
+
+```rust
+QUERY GetPostsByUser(user_id: String) =>
+    posts <- N<User>(user_id)::Out<Created>
+    RETURN posts
+```
+
+To get all users that a user follows, we can use the following query:
+
+```rust
+QUERY GetFollowedUsers(user_id: String) =>
+    followed <- N<User>(user_id)::Out<Follows>
+    RETURN followed
+```
+
+As a more complex example,
+we could have a query that loads an page containing the posts of users that a user follows.
+To do this we are going to remap the posts to have a field containing information about the user that created the post.
+
+```rust
+QUERY GetFollowedUsersPosts(user_id: String) =>
+    followers <- N<User>(user_id)::Out<Follows>
+    posts <- followers::Out<Created>::Range(0, 40)
+    RETURN posts::{
+        post: Content,
+        creatorID: _::In<Created>::ID,
+    }
+```
+
+<Accordion title="JSON output">
+```json [expandable]
+"posts": [
+    {
+        "post": "Hello, world!",
+        "creatorID": "123"
+    },
+    {
+        "post": "Hello, world!",
+        "creatorID": "123"
+    },
+    ... // up to 40 posts
+]
+```
+</Accordion>

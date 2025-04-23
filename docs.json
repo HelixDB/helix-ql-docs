@@ -15,13 +15,13 @@
         "pages": [
           {
             "group": "Overview",
-            "icon": "book-open",
-            "pages": ["info/graph-database", "info/vector-database", "info/hql"]
+            "icon": "house",
+            "pages": ["info/helix-info", "info/hql"]
           },
           {
-            "group": "Examples",
-            "icon": "pencil",
-            "pages": ["introduction/examples"]
+            "group": "Cookbook",
+            "icon": "book",
+            "pages": ["introduction/cookbook/basic"]
           },
           "get-started/installation",
           "get-started/sql-ingestion"
