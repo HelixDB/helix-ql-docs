@@ -1,0 +1,63 @@
+---
+title: "Source Steps"
+---
+
+## Selection Operations
+
+These operations serve as starting points for your graph traversals.
+
+### `N`
+
+Select nodes from your graph to begin traversal.
+
+```rust
+N<Type>(node_id)
+```
+
+**Example:**
+
+```rust [expandable]
+QUERY GetUsers(userID: String) {
+    // Select all nodes
+    nodes <- N
+    
+    // Select all User nodes
+    users <- N<Users>
+    
+    // Select a specific User by ID
+    user <- N<User>(userID)
+    
+    // Select multiple Users by IDs
+    other_users <- N<Users>(userID, "other_uuid")
+    
+    RETURN nodes, users, user, other_users
+}
+```
+
+### `E`
+
+Select edges from your graph to begin traversal.
+
+```rust
+E<Type>(edge_id)
+```
+
+**Example:**
+
+```rust [expandable]
+QUERY GetFollowers(edgeID: String) {
+    // Select all edges
+    edges <- E
+    
+    // Select all Follows edges
+    specific_edges <- E<Follows>
+    
+    // Select a specific Follows edge by ID
+    follow_edge <- E<Follows>(edgeID)
+    
+    // Select multiple Follows edges by IDs
+    other_edges <- E<Follows>(edgeID, "other_edge_id")
+    
+    RETURN edges, specific_edges, follow_edge, other_edges
+}
+```
