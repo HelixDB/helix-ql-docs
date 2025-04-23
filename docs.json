@@ -61,6 +61,14 @@
               "hql/steps/operations"
             ]
           },
+          {
+            "group": "Vector Operations",
+            "icon": "vector-polygon",
+            "pages": [
+              "hql/vectors/inserting",
+              "hql/vectors/searching"
+            ]
+          },
           "hql/types"
         ]
       }
