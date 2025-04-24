@@ -16,7 +16,7 @@
           {
             "group": "Overview",
             "icon": "house",
-            "pages": ["info/helix-info", "info/hql"]
+            "pages": [ "info/hql"]
           },
           {
             "group": "Cookbook",
