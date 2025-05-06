@@ -1,0 +1,117 @@
+---
+title: "Property Access"
+description: "Accessing or modifying properties of a node, edge, or vector"
+---
+
+### Accessing Properties
+
+You can access properties of an item by using the name of the property as defined
+in the schema.
+```rust
+// Get specific properties
+::{<SchemaFieldNames>}
+```
+<Accordion title="Example">
+**In schema.hx:**
+```rust
+N::User{
+    Name: String, 
+    Email: String,
+    Age: U32,
+    Posts: U32
+}
+```
+
+**In query.hx:**
+
+```rust {3}
+QUERY findUsers() =>
+    users <- N<User>::RANGE(0, 10)
+    RETURN users::{ Name, Age }
+```
+Here we are accessing the `Name` and `Age` properties of each user.
+
+**JSON Output:**
+
+```rust
+"users": [
+    {
+        "Name": "John",
+        "Age": 30
+    },
+    ...
+]
+```
+</Accordion>
+
+---
+
+### Accessing the ID
+
+```rust
+::ID
+```
+
+```rust
+QUERY findUsers() =>
+    users <- N<User>::RANGE(0, 10)
+    RETURN users::ID
+```
+<Accordion title="JSON Output">
+```json
+"users": [
+    {
+        "id": "c2ca233f-0cd8-4fae-8136-b40593792071"
+    },
+    ...
+]
+```
+</Accordion>
+
+---
+
+### Spread Operator
+
+Using the spread operator, you can remap values while including all 
+other properties of the selected element in the returned object.
+
+```rust
+::{
+    userID: ID,
+    .. 
+}
+```
+
+<Accordion title="Example">
+**In schema.hx:**
+```rust
+N::User{
+    name: String,
+    age: U32,
+}
+```
+
+**In query.hx:**
+```rust
+QUERY findUsers() =>
+    users <- N<User>::RANGE(0, 10)
+    RETURN users::{
+        userID: ID,
+        .. 
+    }
+```
+
+**JSON Output:**
+```json
+"users": [
+    {
+        "userID": "c2ca233f-0cd8-4fae-8136-b40593792071",
+        "name": "John",
+        "age": 30
+    },
+    ...
+]
+```
+</Accordion>
+
+---

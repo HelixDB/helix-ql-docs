@@ -1,0 +1,25 @@
+---
+title: "Deleting Items"
+---
+
+### `DROP`
+
+Drops elements from your database. The `DROP` effects the elements returned by the traversal.
+
+```rust
+DROP <traversal>
+```
+You can use the drop on any traversal that returns a list of elements. 
+`DROP` will do nothing if the result of the expression is not a list of elements or if the list is empty.
+
+**Example:**
+
+```rust
+QUERY DropFollowing(userID: String) =>
+    DROP N<User>(userID)::Out<Follows>
+    RETURN NONE
+```
+
+This query will drop all of the `Out` nodes of the user.
+
+

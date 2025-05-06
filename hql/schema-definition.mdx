@@ -9,11 +9,9 @@ icon: "table"
 Defines node types and their properties in the graph.
 
 ```rust
-N::Person {
-    Name: String,
-    Age: Integer,
-    Active: Boolean,
-    Score: Float
+N::NodeType {
+  field1: String,
+  field2: U32
 }
 ```
 
@@ -22,13 +20,13 @@ N::Person {
 Defines relationships between nodes and their properties.
 
 ```rust
-E::Follows {
-    From: Person,
-    To: Person,
-    Properties: {
-        Since: String,
-        Weight: Float
-    }
+E::EdgeType {
+  To: String,
+  From: String,
+  Properties: {
+    field1: String,
+    field2: U32
+  }
 }
 ```
 
@@ -37,5 +35,8 @@ E::Follows {
 Defines the vector type.
 
 ```rust
-V::PersonVector
+V::VectorType {
+  field1: String,
+  field2: U32
+}
 ```

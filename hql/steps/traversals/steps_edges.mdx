@@ -1,0 +1,39 @@
+---
+title: "Traversals from Edges"
+---
+
+## `FromN`
+
+Get the node that the edge originates from.
+
+```rust
+::FromN
+```
+
+**Example:**
+
+```rust 
+QUERY GetFollowRelationshipDetails(relationshipID: String) {
+    follower <- E<Follows>(relationshipID)::FromN
+    RETURN follower
+}
+```
+
+---
+
+## `ToN`
+
+Get the node that the edge points to.
+
+```rust
+::ToN
+```
+
+**Example:**
+
+```rust 
+QUERY GetFollowRelationshipDetails(relationshipID: String) {
+    followed_user <- E<Follows>(relationshipID)::ToN
+    RETURN followed_user
+}
+```

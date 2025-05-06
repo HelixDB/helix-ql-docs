@@ -11,24 +11,18 @@
   "navigation": {
     "groups": [
       {
-        "group": "Introduction",
+        "group": "Getting Started",
         "pages": [
-          "introduction/overview",
-          "introduction/examples"
-        ]
-      },
-      {
-        "group": "What is HelixDB?",
-        "pages": [
-          "info/helix-overview",
-          "info/graph-database",
-          "info/vector-database",
-          "info/hql"
-        ]
-      },
-      {
-        "group": "Get Started",
-        "pages": [
+          {
+            "group": "Overview",
+            "icon": "house",
+            "pages": [ "info/hql"]
+          },
+          {
+            "group": "Cookbook",
+            "icon": "book",
+            "pages": ["introduction/cookbook/basic"]
+          },
           "get-started/installation",
           "get-started/sql-ingestion"
         ]
@@ -38,10 +32,44 @@
         "pages": [
           "hql/schema-definition",
           "hql/query-structure",
-          "hql/traversal-steps",
-          "hql/operations",
-          "hql/property-access",
-          "hql/conditions"
+          {
+            "group": "Graph Traversals",
+            "icon": "route",
+            "pages": [
+              "hql/source/source",
+              "hql/source/adding",
+              {
+                "group": "Traversal Steps",
+                "pages": [
+                  "hql/steps/traversals/steps_nodes",
+                  "hql/steps/traversals/steps_edges"
+                ]
+              },
+              "hql/steps/conditions",
+              "hql/steps/anonymous",
+              {
+                "group": "Item Properties",
+                "pages": [
+                  "hql/steps/properties/property-access",
+                  "hql/steps/properties/property-additions",
+                  "hql/steps/properties/property-exclusion",
+                  "hql/steps/properties/property-remappings"
+                ]
+              },
+              "hql/steps/deleting",
+              "hql/steps/updating",
+              "hql/steps/operations"
+            ]
+          },
+          {
+            "group": "Vector Operations",
+            "icon": "vector-polygon",
+            "pages": [
+              "hql/vectors/inserting",
+              "hql/vectors/searching"
+            ]
+          },
+          "hql/types"
         ]
       }
     ]

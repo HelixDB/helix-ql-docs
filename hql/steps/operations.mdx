@@ -1,0 +1,52 @@
+---
+title: "Operational Steps"
+description: "Manipulate and query your graph data with powerful operations"
+---
+
+### `COUNT`
+
+Count the number of elements in a traversal.
+
+```rust
+::COUNT
+```
+
+**Example:**
+
+```rust
+QUERY UserStatistics() =>
+    user_count <- N<User>::COUNT
+    RETURN user_count
+```
+
+---
+
+### `RANGE`
+
+Get a range of elements from a traversal. 
+The range is inclusive of the start, but exclusive of the end. 
+e.g. `RANGE(0, 10)` will return 10 elements 0 through 9.
+
+Both the start and end are required, and must be a positive integer.
+
+```rust
+::RANGE(start, end)
+```
+
+**Example:**
+
+```rust
+QUERY GetRange(start: U32, end: U32) =>
+    range <- N<User>::RANGE(start, end)
+    RETURN range
+```
+
+---
+
+### Coming Soon
+
+- `DEDUP`
+- `ORDER_BY`
+- `GROUP_BY`
+- Pattern matching
+

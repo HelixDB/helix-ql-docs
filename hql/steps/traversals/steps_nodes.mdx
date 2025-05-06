@@ -1,0 +1,83 @@
+---
+title: "Traversals from Nodes"
+description: "Once you've selected your starting points, these operations allow you to navigate through the graph."
+---
+
+### The Idea
+
+HelixQL is strongly typed. That means it stops you traversing edges or accessing properties that don't exist.
+
+
+## `Out`
+
+Get the nodes connected by outgoing edges of specific type.
+
+```rust
+::Out<EdgeType>
+```
+
+**Example:**
+
+```rust 
+QUERY GetFriendsAndFollowers(userID: String) {
+    following <- N<User>(userID)::Out<Follows>
+    RETURN following
+}
+```
+
+---
+
+## `In`
+
+Get the nodes connected by incoming edges of specific type.
+
+```rust
+::In<EdgeType>
+```
+
+**Example:**
+
+```rust 
+QUERY GetUserRelationships(userID: String) {
+    following <- N<User>(userID)::In<Follows>
+    RETURN following
+}
+```
+
+---
+
+## `OutE`
+
+Get the edges connected by outgoing edges of specific type.
+
+```rust
+::OutE<EdgeType>
+```
+
+**Example:**
+
+```rust 
+QUERY GetFollowRelationshipDetails(userID: String) {
+    following <- N<User>(userID)::OutE<Follows>
+    RETURN following
+}
+```
+
+---
+
+## `InE`
+
+Get the edges connected by incoming edges of specific type.
+
+```rust
+::InE<EdgeType>
+```
+
+**Example:**
+
+```rust 
+QUERY GetFollowRelationshipDetails(userID: String) {
+    following <- N<User>(userID)::InE<Follows>
+    RETURN following
+}
+```
