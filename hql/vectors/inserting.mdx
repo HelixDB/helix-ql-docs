@@ -19,7 +19,7 @@ In schema.hx:
 
 ```rust
 V::Document {
-    text: String
+    content: String
     created_at: I64
 }
 ```
@@ -27,11 +27,11 @@ V::Document {
 In query.hx:
 
 ```rust
-QUERY InsertVector (vector: [F64]) =>
+QUERY InsertVector (vector: [F64], content: String, created_at: I64) =>
     // Create an empty user node
     basic_user <- AddV<Document>(vector)
     // You could also write it like this with properties
-    AddV<Document>(vector, { text: "Hello, world!", created_at: 1713849600 })
+    AddV<Document>(vector, { content: content, created_at: created_at })
     RETURN basic_user
 ```
 ---
