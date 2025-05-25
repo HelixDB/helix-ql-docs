@@ -58,7 +58,8 @@
               },
               "hql/steps/deleting",
               "hql/steps/updating",
-              "hql/steps/operations"
+              "hql/steps/operations",
+              "hql/shortest_path"
             ]
           },
           {
