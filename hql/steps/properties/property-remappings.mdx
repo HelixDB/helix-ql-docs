@@ -50,12 +50,12 @@ The following is an overview of the syntax:
 
 ```rust
 ::|item_name|{
-            field: item_name::traversal,
-            new_field: other::{
-                nested_field: item_name::ID, // here we access the ID from the outer scope
-                ..
-            },
-        }
+    field: item_name::traversal,
+    new_field: other::{
+        nested_field: item_name::ID, // here we access the ID from the outer scope
+        ..
+    },
+}
 ```
 
 The important thing to note here, is that if we were to access the `ID` like we have shown previously:

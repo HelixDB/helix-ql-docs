@@ -1,0 +1,18 @@
+---
+title: "Overview"
+description: "A quick look at HelixQL and the inspiration behind it."
+---
+
+HelixQL is a strongly typed, compiled query language for HelixDB.
+It was inspired from a combination of Gremlin, Cypher and Rust. 
+
+## Why yet another query language?
+
+Over the past few years, we've used gremlin extensively for graph queries.
+It's powerful and very expressive, but it's also extremely verbose and horrible to read after any substantial complexity.
+
+The other major issue is that it's obviously completely dynamic and is parsed at runtime when the query is executed. 
+This leads to a horrible developer experience, not knowing if the query is valid until runtime.
+
+Building a new query language from scratch is obviously a big undertaking, 
+but we thought it was a necessary step to improve the developer experience and making building with graphs better.

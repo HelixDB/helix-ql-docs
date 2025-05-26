@@ -120,9 +120,9 @@ To do this we are going to remap the posts to have a field containing informatio
 ```rust
 QUERY GetFollowedUsersPosts(user_id: String) =>
     followers <- N<User>(user_id)::Out<Follows>
-    posts <- followers::Out<Created>::Range(0, 40)
+    posts <- followers::Out<Created>::RANGE(0, 40)
     RETURN posts::{
-        post: Content,
+        post: content,
         creatorID: _::In<Created>::ID,
     }
 ```

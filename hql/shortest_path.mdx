@@ -14,7 +14,7 @@ Find the shortest path between two nodes.
 
 **Example:**
 
-```rust 
+```rust
 QUERY GetShortestPath(from_id: ID, to_id: ID) {
     path_to <- N<User>(from_id)::ShortestPath::To(to_id)
     path_from <- N<User>(from_id)::ShortestPath::From(to_id)
@@ -22,7 +22,7 @@ QUERY GetShortestPath(from_id: ID, to_id: ID) {
 }
 ```
 
---- 
+---
 
 **Return Type of `ShortestPath`:**
 

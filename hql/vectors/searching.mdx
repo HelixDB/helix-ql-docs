@@ -31,24 +31,25 @@ QUERY SearchVector (vector: [F64], k: I64) =>
     documents <- SearchV<Document>(vector, k)
     RETURN documents
 ```
+
 ---
+
 **Note:**
 Currently, we only support using an array of `F64` values to represent the vector.
-We will be adding support for different types such as `F32`, binary vectors and 
+We will be adding support for different types such as `F32`, binary vectors and
 more in the very near future. Please reach out to us if you need a different vector type.
 
 ---
 
-### Prefiltering
+<!-- ### Prefiltering
 
 You can prefilter the results of a search by adding a `PREFILTER` clause to the query.
-The condition in the `PREFILTER` step must evaluate to a boolean value. 
+The condition in the `PREFILTER` step must evaluate to a boolean value.
 
 ```rust
 SearchV<Type>(vector)::PREFILTER(<boolean_expression>)
 ```
-
-**Example:**
+ **Example:**
 
 ```rust
 QUERY SearchVector (vector: [F64], now: I64) =>
@@ -57,15 +58,16 @@ QUERY SearchVector (vector: [F64], now: I64) =>
 ```
 
 The condition is applied through out the search process. At each step, when the HNSW algorithm
-looks at the nearest neighbors, it will only consider nodes that satisfy the condition. 
+looks at the nearest neighbors, it will only consider nodes that satisfy the condition.
 This means that the final results have only been influenced by other vectors that satisfy the condition.
+-->
 
 ---
 
 ### Postfiltering
 
 You can postfilter the results of a search by adding a `WHERE` clause to the query.
-The condition in the `WHERE` step must evaluate to a boolean value. 
+The condition in the `WHERE` step must evaluate to a boolean value.
 
 ```rust
 SearchV<Type>(vector)::WHERE(<boolean_expression>)
@@ -80,4 +82,4 @@ QUERY SearchVector (vector: [F64], now: I64) =>
     RETURN documents
 ```
 
-The condition is applied after the search has been completed. 
+The condition is applied after the search has been completed.

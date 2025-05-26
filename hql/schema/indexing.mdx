@@ -1,0 +1,27 @@
+---
+title: "Secondary Indexing"
+description: "Indexing a field of a node as a global secondary index."
+---
+
+To do this, you can use the `INDEX` keyword.
+
+```rust
+N::NodeType {
+  INDEX field1: String,
+  field2: U32
+}
+```
+
+This internally creates a table for the indexed field.
+To query a node by the indexed field, you can use object syntax:
+
+```rust
+QUERY getByIndex(index_field: String) {
+    node <- N<User>({field1: index_field})
+    RETURN node
+}
+```
+
+---
+
+**Note:** You can currectly only use indexing with nodes. Indexing for edges and vectors is not supported yet.

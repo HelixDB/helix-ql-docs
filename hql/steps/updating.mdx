@@ -24,7 +24,7 @@ N::Person {
 In query.hx:
 
 ```rust
-QUERY UpdateUser(userID: String) =>
+QUERY UpdateUser(userID: ID) =>
     updatedUsers <- N<Person>(userID)::UPDATE({name: "John", age: 25})
     RETURN updatedUsers
 ```
@@ -34,8 +34,8 @@ QUERY UpdateUser(userID: String) =>
 The following examples would not work as the types don't match:
 
 ```rust [expandable]
-QUERY UpdateUser(userID: String) =>
-    updatedUsers <- N<Person>::UPDATE({ email: "john@example.com" })
-    updatedUsers <- N<Person>::UPDATE({ age: "Hello" })
+QUERY UpdateUser(userID: ID) =>
+    updatedUsers <- N<Person>(userID)::UPDATE({ email: "john@example.com" })
+    updatedUsers <- N<Person>(userID)::UPDATE({ age: "Hello" })
     RETURN updatedUsers
 ```

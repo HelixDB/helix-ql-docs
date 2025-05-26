@@ -15,7 +15,7 @@ You can use the drop on any traversal that returns a list of elements.
 **Example:**
 
 ```rust
-QUERY DropFollowing(userID: String) =>
+QUERY DropFollowing(userID: ID) =>
     DROP N<User>(userID)::Out<Follows>
     RETURN NONE
 ```

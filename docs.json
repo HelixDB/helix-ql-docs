@@ -30,7 +30,16 @@
       {
         "group": "HelixQL",
         "pages": [
-          "hql/schema-definition",
+          "hql/overview",
+          {
+            "group": "Schema Definitions",
+            "icon": "table",
+            "pages": [
+              "hql/schema/schema-definition",
+              "hql/schema/indexing",
+              "hql/schema/default"
+            ]
+          },
           "hql/query-structure",
           {
             "group": "Graph Traversals",

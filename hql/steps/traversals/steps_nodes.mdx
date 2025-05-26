@@ -19,7 +19,7 @@ Get the nodes connected by outgoing edges of specific type.
 **Example:**
 
 ```rust 
-QUERY GetUserFollowing(userID: String) {
+QUERY GetUserFollowing(userID: ID) {
     following <- N<User>(userID)::Out<Follows>
     RETURN following
 }
@@ -38,7 +38,7 @@ Get the nodes connected by incoming edges of specific type.
 **Example:**
 
 ```rust 
-QUERY GetUserFollowers(userID: String) {
+QUERY GetUserFollowers(userID: ID) {
     followers <- N<User>(userID)::In<Follows>
     RETURN followers
 }
@@ -57,7 +57,7 @@ Get the edges connected by outgoing edges of specific type.
 **Example:**
 
 ```rust 
-QUERY GetFollowingDetails(userID: String) {
+QUERY GetFollowingDetails(userID: ID) {
     following <- N<User>(userID)::OutE<Follows>
     RETURN following
 }
@@ -76,7 +76,7 @@ Get the edges connected by incoming edges of specific type.
 **Example:**
 
 ```rust 
-QUERY GetFollowersDetails(userID: String) {
+QUERY GetFollowersDetails(userID: ID) {
     followers <- N<User>(userID)::InE<Follows>
     RETURN followers
 }

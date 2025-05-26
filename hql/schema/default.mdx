@@ -1,0 +1,27 @@
+---
+title: "Default Values"
+description: "Setting default schema."
+---
+
+Sometimes, you may want to set default values for item fields
+
+```rust
+N::NodeType {
+  field1: String DEFAULT "default",
+  field2: U32 DEFAULT 0
+}
+```
+Helix will use the default value if a value is not provided when inserting the item.
+
+---
+
+#### Example
+
+In the example below, the `age` field has not been provided when inserting the item so the default value of `0` will be used.
+
+```rust
+QUERY createUser(name: String) {
+    user <- AddN<User>({name}) 
+    RETURN user
+}
+```

@@ -13,7 +13,7 @@ Get the node that the edge originates from.
 **Example:**
 
 ```rust 
-QUERY GetFollowerFromRelationship(relationshipID: String) {
+QUERY GetFollowerFromRelationship(relationshipID: ID) {
     follower <- E<Follows>(relationshipID)::FromN
     RETURN follower
 }
@@ -32,7 +32,7 @@ Get the node that the edge points to.
 **Example:**
 
 ```rust 
-QUERY GetFollowingFromRelationship(relationshipID: String) {
+QUERY GetFollowingFromRelationship(relationshipID: ID) {
     followed_user <- E<Follows>(relationshipID)::ToN
     RETURN followed_user
 }
