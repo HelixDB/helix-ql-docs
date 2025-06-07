@@ -60,7 +60,7 @@ QUERY CreateUser(name: String, age: U32, email: String) =>
 To let users follow another user, we need to create an edge between them.
 
 ```rust [expandable]
-QUERY CreateFollow(follower_id: String, followed_id: String) =>
+QUERY CreateFollow(follower_id: ID, followed_id: ID) =>
     follower <- N<User>(follower_id)
     followed <- N<User>(followed_id)
     AddE<Follows>::From(follower)::To(followed) // don't need to specify the `since` property because it has a default value
@@ -194,7 +194,7 @@ QUERY CreateUser(name: String, age: U32, email: String) =>
     RETURN user
 
 
-QUERY CreateFollow(follower_id: String, followed_id: String) =>
+QUERY CreateFollow(follower_id: ID, followed_id: ID) =>
     follower <- N<User>(follower_id)
     followed <- N<User>(followed_id)
     AddE<Follows>::From(follower)::To(followed) // don't need to specify the `since` property because it has a default value
