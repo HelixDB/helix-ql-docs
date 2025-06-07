@@ -18,21 +18,21 @@ N::User {
     name: String,
     age: U32,
     email: String,
-    created_at: I32,
-    updated_at: I32,
+    created_at: Date DEFAULT NOW,
+    updated_at: Date DEFAULT NOW,
 }
 
 N::Post {
     content: String,
-    created_at: I32,
-    updated_at: I32,
+    created_at: Date DEFAULT NOW,
+    updated_at: Date DEFAULT NOW,
 }
 
 E::Follows {
     From: User,
     To: User,
     Properties: {
-        since: I32 DEFAULT NOW,
+        since: Date DEFAULT NOW,
     }
 }
 
@@ -40,7 +40,7 @@ E::Created {
     From: User,
     To: Post,
     Properties: {
-        created_at: I32 DEFAULT NOW,
+        created_at: Date DEFAULT NOW,
     }
 }
 ```
@@ -52,15 +52,15 @@ E::Created {
 Creating a user is done by inserting a new node into the graph.
 
 ```rust
-QUERY CreateUser(name: String, age: U32, email: String, now: I32) =>
-    user <- AddN<User>({name: name, age: age, email: email, created_at: now, updated_at: now})
+QUERY CreateUser(name: String, age: U32, email: String) =>
+    user <- AddN<User>({name: name, age: age, email: email})
     RETURN user
 ```
 
 To let users follow another user, we need to create an edge between them.
 
 ```rust [expandable]
-QUERY CreateFollow(follower_id: String, followed_id: String, now: I32) =>
+QUERY CreateFollow(follower_id: String, followed_id: String) =>
     follower <- N<User>(follower_id)
     followed <- N<User>(followed_id)
     AddE<Follows>::From(follower)::To(followed) // don't need to specify the `since` property because it has a default value
@@ -70,9 +70,9 @@ QUERY CreateFollow(follower_id: String, followed_id: String, now: I32) =>
 To create a post, we need to create a post node and an edge between the user and the post.
 
 ```rust [expandable]
-QUERY CreatePost(user_id: String, content: String, now: I32) =>
+QUERY CreatePost(user_id: ID, content: String) =>
     user <- N<User>(user_id)
-    post <- AddN<Post>({content: content, created_at: now, updated_at: now})
+    post <- AddN<Post>({content: content})
     AddE<Created>::From(user)::To(post) // don't need to specify the `created_at` property because it has a default value
     RETURN post
 ```
