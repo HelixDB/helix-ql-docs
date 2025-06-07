@@ -32,7 +32,7 @@ E::Follows {
     From: User,
     To: User,
     Properties: {
-        since: I32,
+        since: I32 DEFAULT NOW,
     }
 }
 
@@ -40,7 +40,7 @@ E::Created {
     From: User,
     To: Post,
     Properties: {
-        created_at: I32,
+        created_at: I32 DEFAULT NOW,
     }
 }
 ```
@@ -53,7 +53,7 @@ Creating a user is done by inserting a new node into the graph.
 
 ```rust
 QUERY CreateUser(name: String, age: U32, email: String, now: I32) =>
-    user <- AddN<User>({name, age, email, created_at: now, updated_at: now})
+    user <- AddN<User>({name: name, age: age, email: email, created_at: now, updated_at: now})
     RETURN user
 ```
 
@@ -63,7 +63,7 @@ To let users follow another user, we need to create an edge between them.
 QUERY CreateFollow(follower_id: String, followed_id: String, now: I32) =>
     follower <- N<User>(follower_id)
     followed <- N<User>(followed_id)
-    AddE<Follows>({since: now})::From(follower)::To(followed)
+    AddE<Follows>::From(follower)::To(followed) // don't need to specify the `since` property because it has a default value
     RETURN "success"
 ```
 
@@ -72,8 +72,8 @@ To create a post, we need to create a post node and an edge between the user and
 ```rust [expandable]
 QUERY CreatePost(user_id: String, content: String, now: I32) =>
     user <- N<User>(user_id)
-    post <- AddN<Post>({content, created_at: now, updated_at: now})
-    AddE<Created>({created_at: now})::From(user)::To(post)
+    post <- AddN<Post>({content: content, created_at: now, updated_at: now})
+    AddE<Created>::From(user)::To(post) // don't need to specify the `created_at` property because it has a default value
     RETURN post
 ```
 
@@ -100,7 +100,7 @@ QUERY GetPosts() =>
 To get all posts by a user, we can use the following query:
 
 ```rust
-QUERY GetPostsByUser(user_id: String) =>
+QUERY GetPostsByUser(user_id: ID) =>
     posts <- N<User>(user_id)::Out<Created>
     RETURN posts
 ```
@@ -108,7 +108,7 @@ QUERY GetPostsByUser(user_id: String) =>
 To get all users that a user follows, we can use the following query:
 
 ```rust
-QUERY GetFollowedUsers(user_id: String) =>
+QUERY GetFollowedUsers(user_id: ID) =>
     followed <- N<User>(user_id)::Out<Follows>
     RETURN followed
 ```
@@ -118,7 +118,7 @@ we could have a query that loads an page containing the posts of users that a us
 To do this we are going to remap the posts to have a field containing information about the user that created the post.
 
 ```rust
-QUERY GetFollowedUsersPosts(user_id: String) =>
+QUERY GetFollowedUsersPosts(user_id: ID) =>
     followers <- N<User>(user_id)::Out<Follows>
     posts <- followers::Out<Created>::RANGE(0, 40)
     RETURN posts::{
