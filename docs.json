@@ -21,7 +21,7 @@
           {
             "group": "Cookbook",
             "icon": "book",
-            "pages": ["introduction/cookbbok/basic"]
+            "pages": ["introduction/cookbook/basic"]
           },
           "get-started/installation",
           "get-started/sql-ingestion"
