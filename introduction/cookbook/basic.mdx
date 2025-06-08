@@ -7,8 +7,10 @@ We're going to create a simple social network where users can follow each other 
 
 ### Full code
 
+Schema:
+
 ```rust [expandable]
-N::User {
+ N::User {
     name: String,
     age: U32,
     email: String,
@@ -38,7 +40,11 @@ E::Created {
     }
 }
 
+```
 
+Queries:
+
+```rust [expandable]
 QUERY CreateUser(name: String, age: U32, email: String) =>
     user <- AddN<User>({name: name, age: age, email: email})
     RETURN user
