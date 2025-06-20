@@ -39,29 +39,6 @@ Currently, we only support using an array of `F64` values to represent the vecto
 We will be adding support for different types such as `F32`, binary vectors and
 more in the very near future. Please reach out to us if you need a different vector type.
 
-<!-- ---
-
-### Prefiltering
-
-You can prefilter the results of a search by adding a `PREFILTER` clause to the query.
-The condition in the `PREFILTER` step must evaluate to a boolean value.
-
-```rust
-SearchV<Type>(vector)::PREFILTER(<boolean_expression>)
-```
- **Example:**
-
-```rust
-QUERY SearchVector (vector: [F64], now: I64) =>
-    documents <- SearchV<Document>(vector)::PREFILTER(_::{created_at}::LTE(now))
-    RETURN documents
-```
-
-The condition is applied through out the search process. At each step, when the HNSW algorithm
-looks at the nearest neighbors, it will only consider nodes that satisfy the condition.
-This means that the final results have only been influenced by other vectors that satisfy the condition.
--->
-
 ---
 
 ### Postfiltering
