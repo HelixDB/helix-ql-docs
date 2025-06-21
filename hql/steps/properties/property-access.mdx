@@ -54,7 +54,7 @@ Here we are accessing the `Name` and `Age` properties of each user.
 
 ```rust
 QUERY findUsers() =>
-    users <- N<User>::RANGE(0, 10)
+    users <- N<User>::RANGE(0, 1)
     RETURN users::ID
 ```
 <Accordion title="JSON Output">

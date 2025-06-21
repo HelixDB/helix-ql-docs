@@ -76,7 +76,7 @@ In the case where you want to filter by multiple conditions,
 instead of writing multiple `WHERE` steps, you can use the `AND` and `OR` operations
 to chain the conditions together.
 
-Both `AND` and `OR` take a list of expressions that evaluate to a boolean value. 
+Both `AND` and `OR` take a list of expressions that evaluate to a boolean value.
 `AND` and `OR` will return a boolean value themselves.
 
 **`AND`**
@@ -96,12 +96,14 @@ Both `AND` and `OR` take a list of expressions that evaluate to a boolean value.
 <Accordion title="AND Example" default>
 
 ```rust
-::WHERE(
-    AND(
-        _::{age}::GT(18), 
-        _::{age}::LT(30)
-    )
-)
+QUERY GetUsers(name: String) =>
+    users <- N<User>::WHERE(
+                AND(
+                    _::{age}::GT(18),
+                    _::{age}::LT(30)
+                )
+            )
+    RETURN users
 ```
 
 </Accordion>
@@ -109,12 +111,14 @@ Both `AND` and `OR` take a list of expressions that evaluate to a boolean value.
 <Accordion title="OR Example">
 
 ```rust
-::WHERE(
-    OR(
-        _::{age}::GT(18), 
-        _::{age}::LT(30)
-    )
-)
+QUERY GetUsers(name: String) =>
+    users <- N<User>::WHERE(
+                OR(
+                    _::{age}::GT(18),
+                    _::{age}::LT(30)
+                )
+            )
+    RETURN users
 ```
 
 </Accordion>
@@ -122,15 +126,17 @@ Both `AND` and `OR` take a list of expressions that evaluate to a boolean value.
 <Accordion title="Using AND and OR Together">
 
 ```rust
-::WHERE(
-    AND(
-        _::{age}::GT(18), 
-        OR(
-            _::{name}::EQ("John"), 
-            _::{name}::EQ("Jane")
-        )
-    )
-)
+QUERY GetUsers(name: String) =>
+    users <- N<User>::WHERE(
+                AND(
+                    _::{age}::GT(18),
+                    OR(
+                        _::{name}::EQ("John"),
+                        _::{name}::EQ("Jane")
+                    )
+                )
+            )
+    RETURN users
 ```
 
 </Accordion>

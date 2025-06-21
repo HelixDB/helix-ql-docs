@@ -17,7 +17,7 @@ You can use the drop on any traversal that returns a list of elements.
 ```rust
 QUERY DropFollowing(userID: ID) =>
     DROP N<User>(userID)::Out<Follows>
-    RETURN NONE
+    RETURN "Success"
 ```
 
 This query will drop all of the `Out` nodes of the user.
