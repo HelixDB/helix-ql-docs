@@ -24,7 +24,9 @@
             "pages": ["introduction/cookbook/basic"]
           },
           "get-started/installation",
-          "get-started/sql-ingestion"
+          "get-started/sql-ingestion",
+          "get-started/helix-mcp",
+          "get-started/helix-py"
         ]
       },
       {
