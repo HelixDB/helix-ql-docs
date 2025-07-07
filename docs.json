@@ -9,79 +9,126 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "groups": [
+    "tabs": [
       {
-        "group": "Getting Started",
-        "pages": [
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
           {
-            "group": "Overview",
-            "icon": "house",
-            "pages": [ "info/hql"]
+            "group": "Getting Started",
+            "pages": [
+              "documentation/getting-started/intro",
+              "documentation/getting-started/installation",
+              "documentation/getting-started/quick-start",
+              "documentation/getting-started/helixdb",
+              "documentation/getting-started/graph-database"
+            ]
           },
           {
-            "group": "Cookbook",
-            "icon": "book",
-            "pages": ["introduction/cookbook/basic"]
+            "group": "SDKs",
+            "pages": [
+              "documentation/sdks/helix-py"
+            ]
           },
-          "get-started/installation",
-          "get-started/sql-ingestion",
-          "get-started/helix-mcp",
-          "get-started/helix-py"
+          {
+            "group": "Essentials",
+            "pages": [
+              "documentation/infra/overview",
+              "documentation/infra/types",
+              {
+                "group": "Schema Definitions",
+                "icon": "table",
+                "pages": [
+                  "documentation/infra/schema/schema-definition",
+                  "documentation/infra/schema/indexing",
+                  "documentation/infra/schema/default"
+                ]
+              },
+              "documentation/infra/query-structure",
+              "documentation/infra/config"
+            ]
+          },
+          {
+            "group": "HelixQL",
+            "pages": [
+              "documentation/hql/hql"
+            ]
+          },
+          {
+            "group": "Migration",
+            "pages": [
+              "documentation/migration/sql-ingestion"
+            ]
+          }
         ]
       },
       {
-        "group": "HelixQL",
+        "tab": "Features",
         "pages": [
-          "hql/overview",
+          "features/mcp/helix-mcp"
+        ]
+      },
+      {
+        "tab": "Guides",
+        "icon": "user-chef",
+        "groups": [
           {
-            "group": "Schema Definitions",
-            "icon": "table",
+            "group": "Guides",
             "pages": [
-              "hql/schema/schema-definition",
-              "hql/schema/indexing",
-              "hql/schema/default"
-            ]
-          },
-          "hql/query-structure",
-          {
-            "group": "Graph Traversals",
-            "icon": "route",
-            "pages": [
-              "hql/source/source",
-              "hql/source/adding",
+              "guides/overview",
               {
-                "group": "Traversal Steps",
+                "group": "The Basics",
                 "pages": [
-                  "hql/steps/traversals/steps_nodes",
-                  "hql/steps/traversals/steps_edges"
+                  "guides/the-basics/sample"
                 ]
               },
-              "hql/steps/conditions",
-              "hql/steps/anonymous",
               {
-                "group": "Item Properties",
+                "group": "Social Network",
                 "pages": [
-                  "hql/steps/properties/property-access",
-                  "hql/steps/properties/property-additions",
-                  "hql/steps/properties/property-exclusion",
-                  "hql/steps/properties/property-remappings"
+                  "guides/socialnetwork/basic"
                 ]
               },
-              "hql/steps/deleting",
-              "hql/steps/updating",
-              "hql/steps/operations",
-              "hql/shortest_path"
+              {
+                "group": "MCP",
+                "pages": [
+                  "guides/mcp/mcp-guide"
+                ]
+              },
+              {
+                "group": "Professors",
+                "pages": [
+                  "guides/professors/prof"
+                ]
+              }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "tab": "Cloud Service",
+        "icon": "cloud-arrow-up",
+        "groups": [
           {
-            "group": "Vector Operations",
-            "icon": "vector-polygon",
+            "group": "Overview",
             "pages": [
-              "hql/vectors/inserting",
-              "hql/vectors/searching"
+              "helix-cloud/overview"
             ]
-          },
-          "hql/types"
+          }
+        ]
+      },
+      {
+        "tab": "Blogs",
+        "icon": "pen",
+        "pages": [
+          "blogs/sample"
+        ]
+      },
+      {
+        "tab": "Change Log",
+        "icon": "pen",
+        "pages": [
+          "change-log/helixdb",
+          "change-log/helix-py"
         ]
       }
     ]
