@@ -117,34 +117,23 @@
                     {
                         "group": "Guides",
                         "pages": [
-                            "guides/overview",
-                            {
-                                "group": "The Basics",
-                                "pages": [
-                                    "guides/the-basics/sample"
-                                ]
-                            },
-                            {
-                                "group": "Social Network",
-                                "pages": [
-                                    "guides/socialnetwork/social"
-                                ]
-                            },
-                            {
-                                "group": "MCP",
-                                "pages": [
-                                    "guides/mcp/mcp-guide"
-                                ]
-                            },
-                            {
-                                "group": "Professors",
-                                "pages": [
-                                    "guides/professors/prof",
-                                    "guides/professors/helixdb_setup",
-                                    "guides/professors/backend_setup"
-                                ]
-                            },
-                            "guides/deploying"
+                            "guides/deploying",
+                            "guides/mcp-guide"
+                        ]
+                    },
+                    {
+                        "group": "Tutorials",
+                        "pages": [
+                          "guides/socialnetwork/social",
+                          {
+                              "group": "Professors",
+                              "pages": [
+                                  "guides/professors/prof",
+                                  "guides/professors/helixdb_setup",
+                                  "guides/professors/backend_setup"
+                              ]
+                          },
+                          "guides/code-index"
                         ]
                     }
                 ]
