@@ -3,7 +3,7 @@ title: "Conditional Steps"
 description: "These operations allow you to filter and select specific elements from your graph based on conditions."
 ---
 
-## `WHERE` Clause
+## `WHERE`
 
 Filter elements based on specific conditions.
 
@@ -14,7 +14,7 @@ Filter elements based on specific conditions.
 The condition in the `WHERE` step must evaluate to a boolean value.
 If the condition is not met, the element will be filtered out.
 
-**Example:**
+### Example
 
 ```rust
 QUERY GetAdultUsers {
@@ -36,13 +36,15 @@ The following operations can be used to compare values.
 `EQ` and `NEQ` can be used to compare strings, booleans, and numbers.
 `GT`, `GTE`, `LT`, and `LTE` can only be used to compare numbers.
 
-**String, Boolean, and Number Operations**
+### String, Boolean, and Number Operations
+
 | Operation | Description | Example |
 | -------------- | ----------- | ------------------------------------ |
 | `::EQ(value)` | Equals | `::WHERE(_::{status}::EQ("active"))` |
 | `::NEQ(value)` | Not equals | `::WHERE(_::{age}::NEQ(25))` |
 
-**Number Operations**
+### Number Operations
+
 | Operation | Description | Example |
 | -------------- | --------------------- | -------------------------------- |
 | `::GT(value)` | Greater than | `::WHERE(_::{age}::GT(25))` |
@@ -52,7 +54,7 @@ The following operations can be used to compare values.
 
 ---
 
-## Exists Clause `EXISTS`
+## `EXISTS`
 
 Returns true if a traversal has any results. Otherwise, it returns false.
 
@@ -60,7 +62,7 @@ Returns true if a traversal has any results. Otherwise, it returns false.
 EXISTS(<traversal>)
 ```
 
-**Example:**
+### Example
 
 ```rust
 QUERY GetUsersWithFollowers() {
@@ -71,7 +73,7 @@ QUERY GetUsersWithFollowers() {
 
 ---
 
-## Range Clause `RANGE`
+## `RANGE`
 
 Get a range of elements from a traversal. 
 The range is inclusive of the start, but exclusive of the end. 
@@ -83,7 +85,7 @@ Both the start and end are required, and must be a positive integer.
 ::RANGE(start, end)
 ```
 
-**Example:**
+### Example
 
 ```rust
 QUERY GetRange(start: U32, end: U32) =>

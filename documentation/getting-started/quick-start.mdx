@@ -1,5 +1,102 @@
 ---
 title: 'Quick Start'
-description: 'A guide to get you started with HelixDB.'
+description: 'In this short example, you will create a HelixDB instance, write a schema and queries, and run basic queries using the Python SDK.'
 icon: 'bolt'
 ---
+
+<Steps titleSize="h2">
+  <Step title="Install HelixCLI">
+    Install the HelixCLI using the following command
+    ```bash
+    curl -sSL https://install.helix-db.com | bash
+    ```
+
+    #### Add HelixCLI to your PATH
+    <CodeGroup>
+    ```bash Unix (macOS, Linux)
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
+    source ~/.zshrc
+    ```
+    
+    ```bash Bash
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+    source ~/.bashrc
+    ```
+    </CodeGroup>
+
+    ### Verify Installation
+
+    To verify that HelixCLI is installed correctly
+
+    ```bash
+    helix --version
+    ```
+  </Step>
+  <Step title="Install Helix">
+    Install the Helix container using the following command
+    ```bash
+    helix install
+    ```
+  </Step>
+  <Step title="Setup">
+    ### Setup a new project
+    Setup a new project using the following command
+    ```bash
+    helix init --path <path-to-project>
+    ```
+
+    ### Setup Python SDK
+    Using the following command
+    ```bash
+    pip install helix-py
+    ```
+
+    <Tip>
+    Click [here](../sdks/helix-py) for more information about the Python SDK.
+    </Tip>
+  </Step>
+  <Step title="Create Schema">
+    Write your schema in the newly created `Schema.hx` file in the `<project-path>` directory.
+    ```rust [expandable]
+    N::User
+    ```
+
+    <Tip>
+    Click [here](../infra/schema/schema-definition) for more information about schema definition.
+    </Tip>
+  </Step>
+  <Step title="Create Queries">
+    Write your queries in the newly created `Query.hx` file in the `<project-path>` directory.
+    ```rust [expandable]
+    QUERY createUser() =>
+    ```
+
+    <Tip>
+    Click [here](../hql/hql) for more information about queries.
+    </Tip>
+  </Step>
+  <Step title="Check Your Schema and Queries">
+    Using the following command
+    ```bash
+    helix check
+    ```
+  </Step>
+  <Step title="Deploy Instance">
+    Using the following command
+    ```bash
+    helix deploy
+    ```
+  </Step>
+  <Step title="Run Queries with the Python SDK">
+    Create a new Python file and add the following code
+    ```python [expandable]
+    from helix import Client
+    
+    client = Client(local=True)
+    ```
+
+    <Tip>
+    Click [here](../sdks/helix-py) for more information about the Python SDK.
+    </Tip>
+  </Step>
+</Steps>

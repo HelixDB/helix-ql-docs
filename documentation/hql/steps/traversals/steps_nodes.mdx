@@ -1,5 +1,5 @@
 ---
-title: "Traversals from Nodes"
+title: "Traversals From Nodes"
 ---
 
 ## The Idea
@@ -17,7 +17,7 @@ Get the nodes connected by outgoing edges of specific type.
 ::Out<EdgeType>
 ```
 
-**Example:**
+### Example
 
 ```rust 
 QUERY GetUserFollowing(userID: ID) {
@@ -36,7 +36,7 @@ Get the nodes connected by incoming edges of specific type.
 ::In<EdgeType>
 ```
 
-**Example:**
+### Example
 
 ```rust 
 QUERY GetUserFollowers(userID: ID) {
@@ -55,7 +55,7 @@ Get the edges connected by outgoing edges of specific type.
 ::OutE<EdgeType>
 ```
 
-**Example:**
+### Example
 
 ```rust 
 QUERY GetFollowingDetails(userID: ID) {
@@ -74,7 +74,7 @@ Get the edges connected by incoming edges of specific type.
 ::InE<EdgeType>
 ```
 
-**Example:**
+### Example
 
 ```rust 
 QUERY GetFollowersDetails(userID: ID) {

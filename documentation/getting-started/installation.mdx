@@ -1,58 +1,71 @@
 ---
 title: 'Installation'
-description: 'Get started with HelixDB installation on different platforms'
+description: 'HelixDB can be used locally by installing the HelixCLI.'
 icon: 'download'
 ---
 
-# Installing HelixDB
+# Workflow
+<Steps titleSize="h2">
+  <Step title="Install HelixCLI">
+    Install the HelixCLI using the following command
+    ```bash
+    curl -sSL https://install.helix-db.com | bash
+    ```
 
-HelixDB can be used locally by installing the HelixCLI.
+    ### Add Helix to your PATH
+    <CodeGroup>
+    ```bash Unix (macOS, Linux)
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
+    source ~/.zshrc
+    ```
+    
+    ```bash Bash
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+    source ~/.bashrc
+    ```
+    </CodeGroup>
 
-## HelixCLI installation
+    ### Verify Installation
 
-```bash
-curl -sSL https://install.helix-db.com | bash
-```
+    To verify that HelixCLI is installed correctly
 
-## Verifying Installation
+    ```bash
+    helix --version
+    ```
+  </Step>
+  <Step title="Install Helix">
+    Install the Helix container using the following command
+    ```bash
+    helix install
+    ```
+  </Step>
+  <Step title="Setup">
+    Setup a new project using the following command
+    ```bash
+    helix init --path <path-to-project>
+    ```
+  </Step>
+  <Step title="Write Schema and Queries">
+    Write your schema and queries in the newly created `.hx` files.   
+    <Tip>
+    Click [here](../infra/overview) for more information about schema and queries.
+    </Tip>
+  </Step>
+  <Step title="Check Queries (optional)">
+    Check your queries using the following command
+    ```bash
+    helix check
+    ```
+  </Step>
+  <Step title="Deploy Instance">
+    Deploy your instance using the following command
+    ```bash
+    helix deploy
+    ```
+  </Step>
+</Steps>
 
-To verify that HelixCLI is installed correctly:
-
-```bash
-helix --version
-```
-
-## Install Helix
-
-```bash
-helix install
-```
-
-## Setup
-
-```bash
-helix init --path <path-to-create-files-at>
-```
-
-## Write queries
-
-Write your schema and queries in the newly created .hx files. [Click here](hql/schema-definition) for more information about writing queries
-
-## Check your queries (optional)
-
-```bash
-cd <path-to-your-project>
-helix check
-```
-
-## Deploy your queries
-
-```bash
-cd <path-to-your-project>
-helix deploy
-```
-
-## Other commands
+## Other Useful Commands
 
 - `helix instances` to see your local instances.
 - `helix stop <instance-id>` to stop your local instances.

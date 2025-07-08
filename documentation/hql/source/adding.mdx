@@ -4,7 +4,7 @@ description: "These operations allow you to add new elements to your graph."
 icon: "plus-large"
 ---
 
-### Add Node `AddN`
+## `AddN` &nbsp;Node
 
 Create new nodes in your graph.
 
@@ -13,7 +13,7 @@ AddN<Type>
 AddN<Type>({properties})
 ```
 
-#### Example:
+### Example
 ```rust [expandable]
 QUERY CreateUsers () =>
     // Create an empty user node
@@ -33,7 +33,7 @@ QUERY CreateUsers () =>
 
 ---
 
-### Add Edge `AddE`
+## `AddE` &nbsp;Edge
 
 Create connections between nodes in your graph.
 
@@ -42,7 +42,7 @@ AddE<Type>::From(v1)::To(v2)
 AddE<Type>({properties})::From(v1)::To(v2)
 ```
 
-#### Example:
+### Example
 ```rust [expandable]
 QUERY CreateRelationships(user1ID: ID, user2ID: ID) =>
     // Get the users by their IDs
@@ -62,7 +62,7 @@ QUERY CreateRelationships(user1ID: ID, user2ID: ID) =>
     RETURN follows, friendship
 ```
 
-#### Example: Adding Edges in a Traversal
+### Traversal Example
 
 You can also use the `AddE` operation in the middle of a traversal to add edges between a list of nodes or vectors.
 ```rust [expandable]
@@ -78,7 +78,7 @@ QUERY CreateFriendships(user1ID: ID, user2ID: ID) =>
 
 ---
 
-### Add Vector `AddV`
+## `AddV` &nbsp;Vector
 
 Create new vector embeddings in your graph.
 
@@ -87,7 +87,7 @@ AddV<Type>
 AddV<Type>(vector, {properties})
 ```
 
-#### Example:
+### Example
 
 ```rust
 QUERY InsertVector (vector: [F64], content: String, created_at: I64) =>

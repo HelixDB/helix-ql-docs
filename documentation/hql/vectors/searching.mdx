@@ -4,7 +4,7 @@ description: "These operations allow you to search for vectors in Helix. Searchi
 icon: "magnifying-glass"
 ---
 
-### Search Vector `SearchV`
+## `SearchV`
 
 Search for vectors in your graph.
 
@@ -12,7 +12,7 @@ Search for vectors in your graph.
 SearchV<Type>(vector, {properties})
 ```
 
-**Example:**
+### Example
 
 In schema.hx:
 
@@ -40,7 +40,7 @@ more in the very near future. Please reach out to us if you need a different vec
 
 ---
 
-### Postfiltering
+## Postfiltering
 
 You can postfilter the results of a search by adding a `WHERE` clause to the query.
 The condition in the `WHERE` step must evaluate to a boolean value.
@@ -49,7 +49,7 @@ The condition in the `WHERE` step must evaluate to a boolean value.
 SearchV<Type>(vector)::WHERE(<boolean_expression>)
 ```
 
-**Example:**
+### Example
 
 ```rust
 QUERY SearchVector (vector: [F64], now: I64) =>
