@@ -7,6 +7,9 @@
     "light": "#ff66ff",
     "dark": "#0D9373"
   },
+  "background": {
+    "decoration": "gradient"
+  },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
@@ -163,7 +166,7 @@
             "group": "Blogs",
             "pages": [
               "blogs/overview",
-              "blogs/sample"
+              "blogs/kg"
             ]
           }
         ]
@@ -191,6 +194,11 @@
         "href": "https://github.com/HelixDB/helix-db"
       },
       {
+        "label": "Discord",
+        "icon": "discord",
+        "href": "https://discord.com/invite/2stgMPr5BD"
+      },
+      {
         "label": "Support",
         "icon": "envelope",
         "href": "mailto:founders@helix-db.com"
@@ -199,8 +207,11 @@
   },
   "footer": {
     "socials": {
+      "website": "https://www.helix-db.com",
       "github": "https://github.com/HelixDB/helix-db",
-      "website": "https://www.helix-db.com"
+      "discord": "https://discord.com/invite/2stgMPr5BD",
+      "x": "https://x.com/hlx_db",
+      "linkedin": "https://www.linkedin.com/company/helixdb"
     }
   }
 }
