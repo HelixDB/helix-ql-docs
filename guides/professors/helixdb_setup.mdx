@@ -1,0 +1,228 @@
+---
+title: 'HelixDB Setup'
+icon: 'database'
+description: "An end-to-end example to building a chatbot to recommend professors."
+---
+
+## Step 1: HelixDB Setup
+
+1. Create a folder for the project
+2. Initialise HelixDB
+
+```bash
+mkdir professor_example
+cd professor_example
+helix init
+```
+
+## Step 2: Building our Graph Schema
+
+As a reminder heres the graph we are going to build:
+
+**Nodes:**
+
+- Professor Node with properties `name`, `title`, `page`, `bio`
+- Research Area Node with properties `area` and `description`
+- Department Node with the property `name`
+- University Node with the property `name`
+- Academic Node with properties `degree`, `field`, `institution`, `year`
+- Lab Node with properties `name`, `research_focus`, `links`
+
+**Vector Nodes for Embeddings:**
+
+For this app we will do an embedding of the professors's combined string on their research areas and research description.
+
+- Professor Research Area + Description Node with the property `areas_and_descriptions`
+
+**Edges:**
+
+- Professor to Research Area Edge
+- Professor to Department Edge
+- Professor to University Edge
+- Professor to Academic Edge
+- Professor to Lab Edge
+- Professor to Professor Research Area Embedding
+
+**schema.hx:**
+
+```rust
+// NODES //
+
+N::Professor {
+    name: String,
+    title: String,
+    page: String,
+    bio: String,
+}
+
+N::ResearchArea {
+    research_area: String,
+    description: String,
+}
+
+N::Department {
+    name: String,
+}   
+
+N::University {
+    name: String,
+}
+
+N::Lab {
+    name: String,
+    research_focus: String,
+}
+
+
+// Connect Professor to Lab
+E::HasLab {
+    From: Professor,
+    To: Lab,
+}
+
+// Connect Professor to Research Area
+E::HasResearchArea {
+    From: Professor,
+    To: ResearchArea,
+}
+
+// EDGES //
+
+// Connect Professor to University
+E::HasUniversity {
+    From: Professor,
+    To: University,
+    Properties: {
+        since: Date DEFAULT NOW,
+    }
+}
+
+// Connect Professor to Department
+E::HasDepartment {
+    From: Professor,
+    To: Department,
+    Properties: {
+        since: Date DEFAULT NOW,
+    }
+}
+
+// VECTORS //
+
+// Connect Professor to Research Area + Description
+V::ResearchAreaAndDescriptionEmbedding {
+    areas_and_descriptions: String,
+}
+
+E::HasResearchAreaAndDescriptionEmbedding {
+    From: Professor,
+    To: ResearchAreaAndDescriptionEmbedding,
+    Properties: {
+        areas_and_descriptions: String,
+    }
+}
+```
+
+Great! We've made the schema for our graph. Now lets think about the types of queries for ingesting our professors data.
+
+## Step 3: Building our Queries
+
+Lets build the queries to put our professor data based on the JSON and schema we have. There is many ways to do this, but for this
+example I am keeping in mind that in my Python FastAPI backend, I will store the professor ID and make queries based on that ID.
+
+**query.hx:**
+```rust
+// Create Professor Node
+QUERY create_professor(name: String, title: String, page: String, bio: String ) =>
+    professor <- AddN<Professor>({ name: name, title: title, page: page, bio: bio })
+    RETURN professor
+
+// Create Department Node
+QUERY create_department(name: String) =>
+    department <- AddN<Department>({ name: name })
+    RETURN department
+
+// Create University Node
+QUERY create_university(name: String) =>
+    university <- AddN<University>({ name: name })
+    RETURN university
+
+// Create Lab Node
+QUERY create_lab(name: String, research_focus: String) =>
+    lab <- AddN<Lab>({ name: name, research_focus: research_focus })
+    RETURN lab
+
+// Create Research Area Node
+QUERY create_research_area(name: String) =>
+    research_area <- AddN<ResearchArea>({ research_area: name })
+    RETURN research_area
+```
+
+Now we need to link professors to other nodes:
+
+
+```rust
+// Link Professor to Department
+QUERY link_professor_to_department(professor_id: ID, department_id: ID) =>
+    professor <- N<Professor>(professor_id)
+    department <- N<Department>(department_id)
+    edge <- AddE<HasDepartment>::From(professor)::To(department)
+    RETURN edge
+
+
+// Link Professor to University
+QUERY link_professor_to_university(professor_id: ID, university_id: ID) =>
+    professor <- N<Professor>(professor_id)
+    university <- N<University>(university_id)
+    edge <- AddE<HasUniversity>::From(professor)::To(university)
+    RETURN edge
+
+
+// Link Professor to Lab
+QUERY link_professor_to_lab(professor_id: ID, lab_id: ID) =>
+    professor <- N<Professor>(professor_id)
+    lab <- N<Lab>(lab_id)
+    edge <- AddE<HasLab>::From(professor)::To(lab)
+    RETURN edge
+
+// Link Professor to Research Area
+QUERY link_professor_to_research_area(professor_id: ID, research_area_id: ID) =>
+    professor <- N<Professor>(professor_id)
+    research_area <- N<ResearchArea>(research_area_id)
+    edge <- AddE<HasResearchArea>::From(professor)::To(research_area)
+    RETURN edge
+```
+
+Now let's create our embedding nodes, in this guide, we only will embed a combined string of all the professor's research area and description.
+
+```rust
+// Create Research Area Embedding Node
+QUERY create_research_area_embedding(professor_id: ID, areas_and_descriptions: String, vector: [F64]) =>
+    professor <- N<Professor>(professor_id)
+    research_area <- AddV<ResearchAreaAndDescriptionEmbedding>(vector, { areas_and_descriptions: areas_and_descriptions })
+    edge <- AddE<HasResearchAreaAndDescriptionEmbedding>::From(professor)::To(research_area)
+    RETURN research_area
+```
+
+We need to be able to search for professors based on their embeddings. So we can use the `SearchV` operation to search for similar embeddings.
+
+```rust
+// Search Similar Professors based on Research Area + Description Embedding
+QUERY search_similar_professors_by_research_area_and_description(query_vector: [F64], k: I64) =>
+    vecs <- SearchV<ResearchAreaAndDescriptionEmbedding>(query_vector, k)
+    professors <- vecs::In<HasResearchAreaAndDescriptionEmbedding>
+    RETURN professors
+```
+
+Finally, we can get the actual string data of a professor's research area given professor ID. This will be
+used after we search for similar professors based on their embeddings, then get the top k professors including
+their ID and use that ID to get the actual string data of their research area.
+
+```rust
+// Get the actual string data of a professor's research area given professor ID
+QUERY get_professor_research_areas_with_descriptions(professor_id: ID) =>
+    research_areas <- N<Professor>(professor_id)::Out<HasResearchArea>
+    RETURN research_areas
+
+```
+
+Awesome! We've built our graph schema and queries. Now how do we make a backend to connect to HelixDB?

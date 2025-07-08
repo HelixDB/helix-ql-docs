@@ -1,0 +1,43 @@
+---
+title: 'Deploying HelixDB'
+icon: 'server'
+description: "Deploying HelixDB to backend provider via Docker container"
+---
+
+Lets say you have FastAPI backend, you could deploy it to backend provider via Docker container. 
+This locally runs the HelixDB instance and runs the FastAPI backend.
+
+## Create a Dockerfile
+
+```dockerfile
+FROM python:3.9
+
+WORKDIR /code
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY backend/requirements.txt /code/requirements.txt
+
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+RUN curl -sSL "https://install.helix-db.com" | bash
+ENV PATH="/root/.local/bin:${PATH}"
+RUN helix install
+
+COPY backend /code/
+
+RUN helix deploy
+
+CMD ["sh", "-c", "helix deploy && fastapi run main.py --port 8000"]
+```
+
+

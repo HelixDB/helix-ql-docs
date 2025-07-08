@@ -139,9 +139,12 @@
               {
                 "group": "Professors",
                 "pages": [
-                  "guides/professors/prof"
+                  "guides/professors/prof",
+                  "guides/professors/helixdb_setup",
+                  "guides/professors/backend_setup"
                 ]
-              }
+              },
+              "guides/deploying"
             ]
           }
         ]
