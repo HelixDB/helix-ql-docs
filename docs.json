@@ -1,224 +1,224 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "HelixDB Docs",
-  "colors": {
-    "primary": "#F26419",
-    "light": "#FF8548",
-    "dark": "#F26419"
-  },
-  "background": {
-    "decoration": "gradient"
-  },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Documentation",
-        "icon": "book-open",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "documentation/getting-started/intro",
-              "documentation/getting-started/installation",
-              "documentation/getting-started/quick-start",
-              "documentation/getting-started/helixdb",
-              "documentation/getting-started/graph-database"
-            ]
-          },
-          {
-            "group": "SDKs",
-            "pages": [
-              "documentation/sdks/helix-py"
-            ]
-          },
-          {
-            "group": "Ecosystem",
-            "pages": [
-              "documentation/infra/overview",
-              "documentation/infra/types",
-              {
-                "group": "Schema Definitions",
-                "icon": "table",
-                "pages": [
-                  "documentation/infra/schema/schema-definition",
-                  "documentation/infra/schema/indexing",
-                  "documentation/infra/schema/default"
+    "$schema": "https://mintlify.com/docs.json",
+    "theme": "mint",
+    "name": "HelixDB Docs",
+    "colors": {
+        "primary": "#F26419",
+        "light": "#FF8548",
+        "dark": "#F26419"
+    },
+    "background": {
+        "decoration": "gradient"
+    },
+    "favicon": "/favicon.svg",
+    "navigation": {
+        "tabs": [
+            {
+                "tab": "Documentation",
+                "icon": "book-open",
+                "groups": [
+                    {
+                        "group": "Getting Started",
+                        "pages": [
+                            "documentation/getting-started/intro",
+                            "documentation/getting-started/installation",
+                            "documentation/getting-started/quick-start",
+                            "documentation/getting-started/helixdb",
+                            "documentation/getting-started/graph-database"
+                        ]
+                    },
+                    {
+                        "group": "SDKs",
+                        "pages": [
+                            "documentation/sdks/helix-py"
+                        ]
+                    },
+                    {
+                        "group": "Ecosystem",
+                        "pages": [
+                            "documentation/infra/overview",
+                            "documentation/infra/types",
+                            {
+                                "group": "Schema Definitions",
+                                "icon": "table",
+                                "pages": [
+                                    "documentation/infra/schema/schema-definition",
+                                    "documentation/infra/schema/indexing",
+                                    "documentation/infra/schema/default"
+                                ]
+                            },
+                            "documentation/infra/query-structure",
+                            "documentation/infra/config"
+                        ]
+                    },
+                    {
+                        "group": "HelixQL",
+                        "pages": [
+                            "documentation/hql/hql",
+                            "documentation/hql/source/adding",
+                            "documentation/hql/source/source",
+                            "documentation/hql/vectors/searching",
+                            {
+                                "group": "Traversals",
+                                "pages": [
+                                    "documentation/hql/steps/traversals/steps_nodes",
+                                    "documentation/hql/steps/traversals/steps_edges",
+                                    "documentation/hql/steps/conditions",
+                                    "documentation/hql/steps/mult-conditions",
+                                    "documentation/hql/steps/anonymous"
+                                ],
+                                "icon": "right-left-large"
+                            },
+                            "documentation/hql/steps/updating",
+                            "documentation/hql/steps/deleting",
+                            {
+                                "group": "Properties",
+                                "pages": [
+                                    "documentation/hql/steps/properties/property-access",
+                                    "documentation/hql/steps/properties/property-additions",
+                                    "documentation/hql/steps/properties/property-exclusion",
+                                    "documentation/hql/steps/properties/property-remappings"
+                                ],
+                                "icon": "tags"
+                            },
+                            "documentation/hql/steps/aggregation",
+                            "documentation/hql/shortest_path"
+                        ]
+                    }
                 ]
-              },
-              "documentation/infra/query-structure",
-              "documentation/infra/config"
-            ]
-          },
-          {
-            "group": "HelixQL",
-            "pages": [
-              "documentation/hql/hql",
-              "documentation/hql/source/adding",
-              "documentation/hql/source/source",
-              "documentation/hql/vectors/searching",
-              {
-                "group": "Traversals",
+            },
+            {
+                "tab": "Features",
                 "pages": [
-                  "documentation/hql/steps/traversals/steps_nodes",
-                  "documentation/hql/steps/traversals/steps_edges",
-                  "documentation/hql/steps/conditions",
-                  "documentation/hql/steps/mult-conditions",
-                  "documentation/hql/steps/anonymous"
-                ],
-                "icon": "right-left-large"
-              },
-              "documentation/hql/steps/updating",
-              "documentation/hql/steps/deleting",
-              {
-                "group": "Properties",
+                    {
+                        "group": "Features",
+                        "pages": [
+                            "features/overview",
+                            {
+                                "group": "MCP",
+                                "pages": [
+                                    "features/mcp/helix-mcp"
+                                ]
+                            },
+                            {
+                                "group": "Migration",
+                                "pages": [
+                                    "features/migration/sql-ingestion"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "tab": "Guides",
+                "icon": "user-chef",
+                "groups": [
+                    {
+                        "group": "Guides",
+                        "pages": [
+                            "guides/overview",
+                            {
+                                "group": "The Basics",
+                                "pages": [
+                                    "guides/the-basics/sample"
+                                ]
+                            },
+                            {
+                                "group": "Social Network",
+                                "pages": [
+                                    "guides/socialnetwork/social"
+                                ]
+                            },
+                            {
+                                "group": "MCP",
+                                "pages": [
+                                    "guides/mcp/mcp-guide"
+                                ]
+                            },
+                            {
+                                "group": "Professors",
+                                "pages": [
+                                    "guides/professors/prof",
+                                    "guides/professors/helixdb_setup",
+                                    "guides/professors/backend_setup"
+                                ]
+                            },
+                            "guides/deploying"
+                        ]
+                    }
+                ]
+            },
+            {
+                "tab": "Cloud Service",
+                "icon": "cloud-arrow-up",
+                "groups": [
+                    {
+                        "group": "Helix Cloud",
+                        "pages": [
+                            "helix-cloud/overview"
+                        ]
+                    }
+                ]
+            },
+            {
+                "tab": "Blogs",
+                "icon": "pen",
+                "groups": [
+                    {
+                        "group": "Blogs",
+                        "pages": [
+                            "blogs/overview",
+                            "blogs/kg"
+                        ]
+                    }
+                ]
+            },
+            {
+                "tab": "Releases",
+                "icon": "pen",
                 "pages": [
-                  "documentation/hql/steps/properties/property-access",
-                  "documentation/hql/steps/properties/property-additions",
-                  "documentation/hql/steps/properties/property-exclusion",
-                  "documentation/hql/steps/properties/property-remappings"
-                ],
-                "icon": "tags"
-              },
-              "documentation/hql/steps/aggregation",
-              "documentation/hql/shortest_path"
-            ]
-          }
+                    "change-log/helixdb",
+                    "change-log/helix-py",
+                    "change-log/helix-cloud"
+                ]
+            }
         ]
-      },
-      {
-        "tab": "Features",
-        "pages": [
-          {
-            "group": "Features",
-            "pages": [
-              "features/overview",
-              {
-                "group": "MCP",
-                "pages": [
-                  "features/mcp/helix-mcp"
-                ]
-              },
-              {
-                "group": "Migration",
-                "pages": [
-                  "features/migration/sql-ingestion"
-                ]
-              }
-            ]
-          }
+    },
+    "logo": {
+        "light": "/logo/light.svg",
+        "dark": "/logo/dark.svg",
+        "href": "https://www.helix-db.com"
+    },
+    "search": {
+        "prompt": "Search HelixDB Docs"
+    },
+    "navbar": {
+        "links": [
+            {
+                "label": "GitHub",
+                "icon": "github",
+                "href": "https://github.com/HelixDB/helix-db"
+            },
+            {
+                "label": "Discord",
+                "icon": "discord",
+                "href": "https://discord.com/invite/2stgMPr5BD"
+            },
+            {
+                "label": "Support",
+                "icon": "envelope",
+                "href": "mailto:founders@helix-db.com"
+            }
         ]
-      },
-      {
-        "tab": "Guides",
-        "icon": "user-chef",
-        "groups": [
-          {
-            "group": "Guides",
-            "pages": [
-              "guides/overview",
-              {
-                "group": "The Basics",
-                "pages": [
-                  "guides/the-basics/sample"
-                ]
-              },
-              {
-                "group": "Social Network",
-                "pages": [
-                  "guides/socialnetwork/social"
-                ]
-              },
-              {
-                "group": "MCP",
-                "pages": [
-                  "guides/mcp/mcp-guide"
-                ]
-              },
-              {
-                "group": "Professors",
-                "pages": [
-                  "guides/professors/prof",
-                  "guides/professors/helixdb_setup",
-                  "guides/professors/backend_setup"
-                ]
-              },
-              "guides/deploying"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Cloud Service",
-        "icon": "cloud-arrow-up",
-        "groups": [
-          {
-            "group": "Helix Cloud",
-            "pages": [
-              "helix-cloud/overview"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Blogs",
-        "icon": "pen",
-        "groups": [
-          {
-            "group": "Blogs",
-            "pages": [
-              "blogs/overview",
-              "blogs/kg"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Releases",
-        "icon": "pen",
-        "pages": [
-          "change-log/helixdb",
-          "change-log/helix-py",
-          "change-log/helix-cloud"
-        ]
-      }
-    ]
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg",
-    "href": "https://www.helix-db.com"
-  },
-  "search": {
-    "prompt": "Search HelixDB Docs"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "GitHub",
-        "icon": "github",
-        "href": "https://github.com/HelixDB/helix-db"
-      },
-      {
-        "label": "Discord",
-        "icon": "discord",
-        "href": "https://discord.com/invite/2stgMPr5BD"
-      },
-      {
-        "label": "Support",
-        "icon": "envelope",
-        "href": "mailto:founders@helix-db.com"
-      }
-    ]
-  },
-  "footer": {
-    "socials": {
-      "website": "https://www.helix-db.com",
-      "github": "https://github.com/HelixDB/helix-db",
-      "discord": "https://discord.com/invite/2stgMPr5BD",
-      "x": "https://x.com/hlx_db",
-      "linkedin": "https://www.linkedin.com/company/helixdb"
+    },
+    "footer": {
+        "socials": {
+            "website": "https://www.helix-db.com",
+            "github": "https://github.com/HelixDB/helix-db",
+            "discord": "https://discord.com/invite/2stgMPr5BD",
+            "x": "https://x.com/hlx_db",
+            "linkedin": "https://www.linkedin.com/company/helixdb"
+        }
     }
-  }
 }
