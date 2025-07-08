@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "HelixDB Docs",
   "colors": {
-    "primary": "#ff66ff",
-    "light": "#ff66ff",
-    "dark": "#0D9373"
+    "primary": "#F26419",
+    "light": "#FF8548",
+    "dark": "#F26419"
   },
   "background": {
     "decoration": "gradient"
@@ -127,7 +127,7 @@
               {
                 "group": "Social Network",
                 "pages": [
-                  "guides/socialnetwork/basic"
+                  "guides/socialnetwork/social"
                 ]
               },
               {
@@ -179,7 +179,8 @@
         "icon": "pen",
         "pages": [
           "change-log/helixdb",
-          "change-log/helix-py"
+          "change-log/helix-py",
+          "change-log/helix-cloud"
         ]
       }
     ]
@@ -188,6 +189,9 @@
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg",
     "href": "https://www.helix-db.com"
+  },
+  "search": {
+    "prompt": "Search HelixDB Docs"
   },
   "navbar": {
     "links": [
