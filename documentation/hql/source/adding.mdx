@@ -1,6 +1,7 @@
 ---
 title: "Create Operations"
 description: "These operations allow you to add new elements to your graph."
+icon: "plus-large"
 ---
 
 ### Add Node `AddN`
@@ -43,7 +44,7 @@ AddE<Type>({properties})::From(v1)::To(v2)
 
 #### Example:
 ```rust [expandable]
-QUERY CreateRelationships(user1ID: String, user2ID: String) =>
+QUERY CreateRelationships(user1ID: ID, user2ID: ID) =>
     // Get the users by their IDs
     user1 <- N<User>(user1ID)
     user2 <- N<User>(user2ID)
@@ -65,14 +66,14 @@ QUERY CreateRelationships(user1ID: String, user2ID: String) =>
 
 You can also use the `AddE` operation in the middle of a traversal to add edges between a list of nodes or vectors.
 ```rust [expandable]
-QUERY CreateFriendships(user1ID: String, user2ID: String) =>
-// This makes every user in the database follow the user with ID user1ID
-user1 <- N<User>::AddE<Follows>::To(N(user1ID))
+QUERY CreateFriendships(user1ID: ID, user2ID: ID) =>
+    // This makes every user in the database follow the user with ID user1ID
+    user1 <- N<User>::AddE<Follows>::To(N(user1ID))
 
-// This makes user with userID2 follow every user in the database
-user1 <- N<User>::AddE<Follows>::From(N(user1ID))
+    // This makes user with userID2 follow every user in the database
+    user1 <- N<User>::AddE<Follows>::From(N(user2ID))
 
-RETURN friendship
+    RETURN friendship
 ```
 
 ---

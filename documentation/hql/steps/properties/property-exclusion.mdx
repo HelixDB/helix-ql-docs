@@ -9,9 +9,9 @@ If you want to access all properties except for a few, you can use the exclude o
 ::!{<SchemaFieldNames>}
 ```
 
-### Example:
+**Example:**
 
-**In Schema.hx:**
+In Schema.hx:
 
 ```rust [expandable]
 N::User{
@@ -25,7 +25,7 @@ N::User{
 }
 ```
 
-**In Query.hx:**
+In Query.hx:
 
 ```rust
 QUERY findUsers() =>
@@ -35,7 +35,7 @@ QUERY findUsers() =>
 Removes the `name`, `email`, and `location` properties from the returned object.
 
 
-**JSON Output:**
+JSON Output:
 
 ```json
 "users": [

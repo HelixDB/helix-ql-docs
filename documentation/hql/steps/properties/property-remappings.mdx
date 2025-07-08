@@ -15,9 +15,9 @@ You can use the name directly, or if you want to be more explicit,
 or in cases where there may be name clashes, you can use the `_::` operator.
 
 
-**Example: Direct Access**
+### Direct Access
 
-```rust [expandable]
+```rust
 QUERY findUsers() =>
     users <- N<User>::RANGE(0, 10)
     RETURN users::{
@@ -25,9 +25,9 @@ QUERY findUsers() =>
     }
 ```
 
-**Example: Explicit Access**
+### Explicit Access
 
-```rust [expandable]
+```rust
 QUERY findUsers() =>
     users <- N<User>::RANGE(0, 10)
     RETURN users::{
@@ -61,7 +61,7 @@ The following is an overview of the syntax:
 The important thing to note here, is that if we were to access the `ID` like we have shown previously:
 `nested_field: ID`. This ID would would be the ID of the `other` item, not the `item_name` item due to the tighter scope.
 
-**Example:**
+### Example
 
 ```rust
 QUERY findFriends(userID: String) =>

@@ -1,6 +1,5 @@
 ---
-title: "Multiple Filter Conditions"
-description: Select elements in your graph based on multiple conditions.
+title: "Multiple Conditional Steps"
 ---
 
 In the case where you want to filter by multiple conditions,
@@ -10,21 +9,21 @@ to chain the conditions together.
 Both `AND` and `OR` take a list of expressions that evaluate to a boolean value.
 `AND` and `OR` will return a boolean value themselves.
 
-**`AND`**
+## `AND` Clause
 
 ```rust
 ::WHERE(AND(<condition1>, <condition2>))
 ```
 
-**`OR`**
+## `OR` Clause
 
 ```rust
 ::WHERE(OR(<condition1>, <condition2>))
 ```
 
-<AccordionGroup>
+## Examples
 
-<Accordion title="AND Example" default>
+### `AND`
 
 ```rust
 QUERY GetUsers(name: String) =>
@@ -37,9 +36,7 @@ QUERY GetUsers(name: String) =>
     RETURN users
 ```
 
-</Accordion>
-
-<Accordion title="OR Example">
+### `OR`
 
 ```rust
 QUERY GetUsers(name: String) =>
@@ -52,9 +49,7 @@ QUERY GetUsers(name: String) =>
     RETURN users
 ```
 
-</Accordion>
-
-<Accordion title="Using AND and OR Together">
+### `AND` and `OR`
 
 ```rust
 QUERY GetUsers(name: String) =>
@@ -69,7 +64,3 @@ QUERY GetUsers(name: String) =>
             )
     RETURN users
 ```
-
-</Accordion>
-
-</AccordionGroup>

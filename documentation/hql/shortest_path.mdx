@@ -1,6 +1,7 @@
 ---
 title: "Shortest Path"
 description: "Find the shortest path between two nodes using Breadth-First Search."
+icon: "route"
 ---
 
 ## `ShortestPath`
@@ -12,7 +13,7 @@ Find the shortest path between two nodes.
 ::ShortestPath<EdgeType>::From(from_id: ID)
 ```
 
-**Example:**
+### Example
 
 ```rust
 QUERY GetShortestPath(from_id: ID, to_id: ID) {
@@ -24,7 +25,7 @@ QUERY GetShortestPath(from_id: ID, to_id: ID) {
 
 ---
 
-**Return Type of `ShortestPath`:**
+### Return Type of `ShortestPath`
 
 ```
 [([Nodes], [Edges])]

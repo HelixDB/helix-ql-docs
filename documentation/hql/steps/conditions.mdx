@@ -1,10 +1,9 @@
 ---
 title: "Conditional Steps"
+description: "These operations allow you to filter and select specific elements from your graph based on conditions."
 ---
 
-These operations allow you to filter and select specific elements from your graph based on conditions.
-
-## Where Clause `WHERE`
+## `WHERE` Clause
 
 Filter elements based on specific conditions.
 
@@ -26,7 +25,7 @@ QUERY GetAdultUsers {
 ```
 
 <Tip>
-For multiple conditions, see [Multiple Filter Conditions](./mult-conditions).
+For multiple conditions, see [Multiple Conditional Steps](./mult-conditions).
 </Tip>
 
 ---
@@ -69,3 +68,27 @@ QUERY GetUsersWithFollowers() {
     RETURN users
 }
 ```
+
+---
+
+## Range Clause `RANGE`
+
+Get a range of elements from a traversal. 
+The range is inclusive of the start, but exclusive of the end. 
+e.g. `RANGE(0, 10)` will return 10 elements 0 through 9.
+
+Both the start and end are required, and must be a positive integer.
+
+```rust
+::RANGE(start, end)
+```
+
+**Example:**
+
+```rust
+QUERY GetRange(start: U32, end: U32) =>
+    range <- N<User>::RANGE(start, end)
+    RETURN range
+```
+
+---

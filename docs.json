@@ -61,9 +61,25 @@
                   "documentation/hql/steps/traversals/steps_nodes",
                   "documentation/hql/steps/traversals/steps_edges",
                   "documentation/hql/steps/conditions",
+                  "documentation/hql/steps/mult-conditions",
                   "documentation/hql/steps/anonymous"
-                ]
-              }
+                ],
+                "icon": "right-left-large"
+              },
+              {
+                "group": "Properties",
+                "pages": [
+                  "documentation/hql/steps/properties/property-access",
+                  "documentation/hql/steps/properties/property-additions",
+                  "documentation/hql/steps/properties/property-exclusion",
+                  "documentation/hql/steps/properties/property-remappings"
+                ],
+                "icon": "tags"
+              },
+              "documentation/hql/steps/updating",
+              "documentation/hql/steps/deleting",
+              "documentation/hql/steps/aggregation",
+              "documentation/hql/shortest_path"
             ]
           }
         ]

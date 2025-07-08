@@ -1,8 +1,9 @@
 ---
 title: "Updating Items"
+icon: "arrows-rotate"
 ---
 
-### `UPDATE`
+## `UPDATE`
 
 Update the properties of existing elements.
 
@@ -10,7 +11,7 @@ Update the properties of existing elements.
 ::UPDATE({<properties_list>})
 ```
 
-### Example:
+### Example
 
 In schema.hx:
 
@@ -29,13 +30,20 @@ QUERY UpdateUser(userID: ID) =>
     RETURN updatedUsers
 ```
 ---
-**Notes:**
 
-The following examples would not work as the types don't match:
+<Danger>
+**The following examples would not work as the types don't match**
+</Danger>
 
-```rust [expandable]
+```rust
 QUERY UpdateUser(userID: ID) =>
+    // No email field in Person node
     updatedUsers <- N<Person>(userID)::UPDATE({ email: "john@example.com" })
+
+    // Age as string instead of U32
     updatedUsers <- N<Person>(userID)::UPDATE({ age: "Hello" })
+
     RETURN updatedUsers
 ```
+
+
