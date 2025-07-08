@@ -148,7 +148,7 @@
         "icon": "cloud-arrow-up",
         "groups": [
           {
-            "group": "Overview",
+            "group": "Helix Cloud",
             "pages": [
               "helix-cloud/overview"
             ]
@@ -158,12 +158,18 @@
       {
         "tab": "Blogs",
         "icon": "pen",
-        "pages": [
-          "blogs/sample"
+        "groups": [
+          {
+            "group": "Blogs",
+            "pages": [
+              "blogs/overview",
+              "blogs/sample"
+            ]
+          }
         ]
       },
       {
-        "tab": "Change Log",
+        "tab": "Releases",
         "icon": "pen",
         "pages": [
           "change-log/helixdb",
