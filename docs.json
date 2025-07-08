@@ -94,18 +94,8 @@
                         "group": "Features",
                         "pages": [
                             "features/overview",
-                            {
-                                "group": "MCP",
-                                "pages": [
-                                    "features/mcp/helix-mcp"
-                                ]
-                            },
-                            {
-                                "group": "Migration",
-                                "pages": [
-                                    "features/migration/sql-ingestion"
-                                ]
-                            }
+                            "features/mcp/helix-mcp",
+                            "features/migration/sql-ingestion"
                         ]
                     }
                 ]
@@ -117,23 +107,24 @@
                     {
                         "group": "Guides",
                         "pages": [
+                            "guides/overview",
                             "guides/deploying",
                             "guides/mcp-guide"
                         ]
                     },
                     {
-                        "group": "Tutorials",
+                        "group": "Use Cases",
                         "pages": [
-                          "guides/socialnetwork/social",
-                          {
-                              "group": "Professors",
-                              "pages": [
-                                  "guides/professors/prof",
-                                  "guides/professors/helixdb_setup",
+                            "guides/social-network",
+                            {
+                                "group": "Professors",
+                                "pages": [
+                                    "guides/professors/prof",
+                                    "guides/professors/helixdb_setup",
                                   "guides/professors/backend_setup"
-                              ]
-                          },
-                          "guides/code-index"
+                                ],
+                                "icon": "user-graduate"
+                          }
                         ]
                     }
                 ]
