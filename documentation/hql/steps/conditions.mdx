@@ -1,12 +1,10 @@
 ---
 title: "Conditional Steps"
-description: "Filter and conditionally select elements in your graph.
-These operations allow you to filter and select specific elements from your graph based on conditions."
 ---
 
----
+These operations allow you to filter and select specific elements from your graph based on conditions.
 
-### `WHERE`
+## Where Clause `WHERE`
 
 Filter elements based on specific conditions.
 
@@ -26,6 +24,10 @@ QUERY GetAdultUsers {
     RETURN adult_users
 }
 ```
+
+<Tip>
+For multiple conditions, see [Multiple Filter Conditions](./mult-conditions).
+</Tip>
 
 ---
 
@@ -51,7 +53,7 @@ The following operations can be used to compare values.
 
 ---
 
-## `EXISTS`
+## Exists Clause `EXISTS`
 
 Returns true if a traversal has any results. Otherwise, it returns false.
 
@@ -67,78 +69,3 @@ QUERY GetUsersWithFollowers() {
     RETURN users
 }
 ```
-
----
-
-# Multiple filter conditions
-
-In the case where you want to filter by multiple conditions,
-instead of writing multiple `WHERE` steps, you can use the `AND` and `OR` operations
-to chain the conditions together.
-
-Both `AND` and `OR` take a list of expressions that evaluate to a boolean value.
-`AND` and `OR` will return a boolean value themselves.
-
-**`AND`**
-
-```rust
-::WHERE(AND(<condition1>, <condition2>))
-```
-
-**`OR`**
-
-```rust
-::WHERE(OR(<condition1>, <condition2>))
-```
-
-<AccordionGroup>
-
-<Accordion title="AND Example" default>
-
-```rust
-QUERY GetUsers(name: String) =>
-    users <- N<User>::WHERE(
-                AND(
-                    _::{age}::GT(18),
-                    _::{age}::LT(30)
-                )
-            )
-    RETURN users
-```
-
-</Accordion>
-
-<Accordion title="OR Example">
-
-```rust
-QUERY GetUsers(name: String) =>
-    users <- N<User>::WHERE(
-                OR(
-                    _::{age}::GT(18),
-                    _::{age}::LT(30)
-                )
-            )
-    RETURN users
-```
-
-</Accordion>
-
-<Accordion title="Using AND and OR Together">
-
-```rust
-QUERY GetUsers(name: String) =>
-    users <- N<User>::WHERE(
-                AND(
-                    _::{age}::GT(18),
-                    OR(
-                        _::{name}::EQ("John"),
-                        _::{name}::EQ("Jane")
-                    )
-                )
-            )
-    RETURN users
-```
-
-</Accordion>
-
-</AccordionGroup>

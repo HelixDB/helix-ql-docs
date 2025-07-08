@@ -1,10 +1,9 @@
 ---
-title: "Searching Vectors"
+title: "Vector Search"
+description: "These operations allow you to search for vectors in Helix. Searching is done using cosine similarity."
 ---
 
-These operations allow you to search for vectors in Helix. Searching is done using cosine similarity.
-
-### `SearchV`
+### Search Vector `SearchV`
 
 Search for vectors in your graph.
 
@@ -32,12 +31,11 @@ QUERY SearchVector (vector: [F64], k: I64) =>
     RETURN documents
 ```
 
----
-
-**Note:**
-Currently, we only support using an array of `F64` values to represent the vector.
+<Note>
+Currently, Helix only supports using an array of `F64` values to represent the vector.
 We will be adding support for different types such as `F32`, binary vectors and
 more in the very near future. Please reach out to us if you need a different vector type.
+</Note>
 
 ---
 

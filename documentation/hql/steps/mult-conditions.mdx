@@ -1,0 +1,75 @@
+---
+title: "Multiple Filter Conditions"
+description: Select elements in your graph based on multiple conditions.
+---
+
+In the case where you want to filter by multiple conditions,
+instead of writing multiple `WHERE` steps, you can use the `AND` and `OR` operations
+to chain the conditions together.
+
+Both `AND` and `OR` take a list of expressions that evaluate to a boolean value.
+`AND` and `OR` will return a boolean value themselves.
+
+**`AND`**
+
+```rust
+::WHERE(AND(<condition1>, <condition2>))
+```
+
+**`OR`**
+
+```rust
+::WHERE(OR(<condition1>, <condition2>))
+```
+
+<AccordionGroup>
+
+<Accordion title="AND Example" default>
+
+```rust
+QUERY GetUsers(name: String) =>
+    users <- N<User>::WHERE(
+                AND(
+                    _::{age}::GT(18),
+                    _::{age}::LT(30)
+                )
+            )
+    RETURN users
+```
+
+</Accordion>
+
+<Accordion title="OR Example">
+
+```rust
+QUERY GetUsers(name: String) =>
+    users <- N<User>::WHERE(
+                OR(
+                    _::{age}::GT(18),
+                    _::{age}::LT(30)
+                )
+            )
+    RETURN users
+```
+
+</Accordion>
+
+<Accordion title="Using AND and OR Together">
+
+```rust
+QUERY GetUsers(name: String) =>
+    users <- N<User>::WHERE(
+                AND(
+                    _::{age}::GT(18),
+                    OR(
+                        _::{name}::EQ("John"),
+                        _::{name}::EQ("Jane")
+                    )
+                )
+            )
+    RETURN users
+```
+
+</Accordion>
+
+</AccordionGroup>

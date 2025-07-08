@@ -51,13 +51,19 @@
           {
             "group": "HelixQL",
             "pages": [
-              "documentation/hql/hql"
-            ]
-          },
-          {
-            "group": "Migration",
-            "pages": [
-              "documentation/migration/sql-ingestion"
+              "documentation/hql/hql",
+              "documentation/hql/source/adding",
+              "documentation/hql/source/source",
+              "documentation/hql/vectors/searching",
+              {
+                "group": "Traversals",
+                "pages": [
+                  "documentation/hql/steps/traversals/steps_nodes",
+                  "documentation/hql/steps/traversals/steps_edges",
+                  "documentation/hql/steps/conditions",
+                  "documentation/hql/steps/anonymous"
+                ]
+              }
             ]
           }
         ]
@@ -65,7 +71,24 @@
       {
         "tab": "Features",
         "pages": [
-          "features/mcp/helix-mcp"
+          {
+            "group": "Features",
+            "pages": [
+              "features/overview",
+              {
+                "group": "MCP",
+                "pages": [
+                  "features/mcp/helix-mcp"
+                ]
+              },
+              {
+                "group": "Migration",
+                "pages": [
+                  "features/migration/sql-ingestion"
+                ]
+              }
+            ]
+          }
         ]
       },
       {
@@ -135,12 +158,19 @@
   },
   "logo": {
     "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "dark": "/logo/dark.svg",
+    "href": "https://www.helix-db.com"
   },
   "navbar": {
     "links": [
       {
+        "label": "GitHub",
+        "icon": "github",
+        "href": "https://github.com/HelixDB/helix-db"
+      },
+      {
         "label": "Support",
+        "icon": "envelope",
         "href": "mailto:founders@helix-db.com"
       }
     ]

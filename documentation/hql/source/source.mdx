@@ -1,12 +1,9 @@
 ---
-title: "Source Steps"
+title: "Select Operations"
+description: "These operations serve as starting points for your graph traversals."
 ---
 
-## Selection Operations
-
-These operations serve as starting points for your graph traversals.
-
-### `N`
+### Node `N`
 
 Select nodes from your graph to begin traversal.
 
@@ -34,7 +31,7 @@ QUERY GetUsers(userID: String) {
 }
 ```
 
-### `E`
+### Edge `E`
 
 Select edges from your graph to begin traversal.
 
@@ -61,3 +58,10 @@ QUERY GetFollowers(edgeID: String) {
     RETURN edges, specific_edges, follow_edge, other_edges
 }
 ```
+
+### Vector `V`
+<Note>
+There is currently no way to select vectors from your graph.
+You might be looking for the `SearchV` operation instead. 
+Check out the [Vector Search](../vectors/searching) page for more information.
+</Note>
