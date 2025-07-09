@@ -94,8 +94,7 @@
                         "group": "Features",
                         "pages": [
                             "features/overview",
-                            "features/mcp/helix-mcp",
-                            "features/migration/sql-ingestion"
+                            "features/mcp/helix-mcp"
                         ]
                     }
                 ]
