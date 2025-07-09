@@ -48,11 +48,16 @@ icon: 'bolt'
     helix init --path helixdb-cfg
     ```
 
-    ### Setup Python SDK
-    Using the following command
-    ```bash
+    ### Setup Your SDK
+    <CodeGroup>
+    ```bash Python
     pip install helix-py
     ```
+    
+    ```bash TypeScript
+    npm install helix-ts
+    ```
+    </CodeGroup>
 
     <Tip>
     Click [here](../sdks/helix-py) for more information about the Python SDK.
@@ -227,25 +232,28 @@ icon: 'bolt'
     </Check>
   </Step>
 
-  <Step title="Import the Python SDK">
-    Create a new Python file and add the following code
-    ```python Python icon="python" [expandable]
+  <Step title="Import the SDK">
+    <CodeGroup>
+    ```python Python
     from helix.client import Client
-    from helix.instance import Instance
-    import time
 
-    instance = Instance(port=6969)
-    time.sleep(1)
-    
     client = Client(local=True, port=6969)
     ```
+
+    ```typescript TypeScript
+    import HelixDB from "helix-ts";
+
+    const client = new HelixDB("http://localhost:6969");
+    ```
+    </CodeGroup>
 
     <Tip>
     Click [here](../sdks/helix-py) for more information about the Python SDK.
     </Tip>
 
-    ### Copy this data into your Python file
-    ```python Python icon="python" [expandable]
+    ### Data for continents, countries, and cities (copy this into your file)
+    <CodeGroup>
+    ```python Python [expandable]
     continent_data = [
         {"name": "Asia"},
         {"name": "North America"},
@@ -346,19 +354,133 @@ icon: 'bolt'
         {"name": "San Miguel de Tucumán", "description": "Historic city known for Argentine independence"}
     ]
     ```
+
+    ```typescript TypeScript [expandable]
+    const continent_data = [
+        {"name": "Asia"},
+        {"name": "North America"},
+        {"name": "Europe"},
+        {"name": "South America"}
+    ]
+
+    const europe = [
+        {'name':'UK', 'currency':'Pounds'},
+        {'name':'Germany', 'currency':'Euro'},
+        {'name':'Italy', 'currency':'Euro'},
+    ]
+    
+    const asia = [
+        {'name':'China', 'currency':'Yuan'},
+        {'name':'Japan', 'currency':'Yen'},
+    ]
+    
+    const north_america = [
+        {'name':'USA', 'currency':'Dollar'},
+        {'name':'Mexico', 'currency':'Peso'}
+    ]
+    
+    const south_america = [
+        {'name':'Brazil', 'currency':'Real'},
+        {'name':'Argentina', 'currency':'Peso'}
+    ]
+
+    const uk = [
+        {"name": "London", "description": "Capital city known for its finance, culture, and history"},
+        {"name": "Manchester", "description": "Northern hub for music, sports, and industry"},
+        {"name": "Birmingham", "description": "Second-largest city, known for manufacturing and diversity"},
+        {"name": "Liverpool", "description": "Port city famous for The Beatles and football"},
+        {"name": "Bristol", "description": "Historic maritime city with a creative edge"}
+    ]
+    
+    const germany = [
+        {"name": "Berlin", "description": "Capital city known for history, culture, and politics"},
+        {"name": "Munich", "description": "Bavarian capital known for Oktoberfest and tech innovation"},
+        {"name": "Frankfurt", "description": "Major financial center and home to the ECB"},
+        {"name": "Hamburg", "description": "Large port city with maritime economy and media hubs"},
+        {"name": "Cologne", "description": "Cultural city known for its Gothic cathedral and trade fairs"}
+    ]
+    
+    const italy = [
+        {"name": "Rome", "description": "Capital city known for ancient history and architecture"},
+        {"name": "Milan", "description": "Fashion and financial capital of northern Italy"},
+        {"name": "Naples", "description": "Historic southern city and birthplace of pizza"},
+        {"name": "Florence", "description": "Renaissance city known for art and museums"},
+        {"name": "Venice", "description": "Famous canal city built on water with unique charm"}
+    ]
+    
+    const china = [
+        {"name": "Beijing", "description": "Capital city with political, cultural, and historical importance"},
+        {"name": "Shanghai", "description": "Global financial hub and largest city by population"},
+        {"name": "Shenzhen", "description": "Tech powerhouse and innovation center near Hong Kong"},
+        {"name": "Guangzhou", "description": "Major trade and manufacturing city in southern China"},
+        {"name": "Chengdu", "description": "Economic center of western China and home of pandas"}
+    ]
+    
+    const japan = [
+        {"name": "Tokyo", "description": "Capital city and global center for finance, tech, and culture"},
+        {"name": "Osaka", "description": "Major economic hub known for food and commerce"},
+        {"name": "Kyoto", "description": "Historic city famous for temples, shrines, and tradition"},
+        {"name": "Yokohama", "description": "Port city just south of Tokyo with modern skyline"},
+        {"name": "Nagoya", "description": "Industrial center and home to automotive manufacturing"}
+    ]
+    
+    const usa = [
+        {"name": "Washington, D.C.", "description": "Capital of the United States and seat of government"},
+        {"name": "New York City", "description": "Largest city, a global hub for finance and culture"},
+        {"name": "Los Angeles", "description": "Entertainment capital and second-largest city"},
+        {"name": "Chicago", "description": "Major Midwest city known for architecture and industry"},
+        {"name": "San Francisco", "description": "Tech-driven city and gateway to Silicon Valley"}
+    ]
+    
+    const mexico = [
+        {"name": "Mexico City", "description": "Capital and largest city, political and cultural center"},
+        {"name": "Guadalajara", "description": "Major tech and cultural hub in western Mexico"},
+        {"name": "Monterrey", "description": "Industrial and business center in the north"},
+        {"name": "Puebla", "description": "Historic city known for colonial architecture and cuisine"},
+        {"name": "Tijuana", "description": "Border city with strong ties to the U.S. and growing economy"}
+    ]
+    
+    const brazil = [
+        {"name": "Brasília", "description": "Modern capital and center of government"},
+        {"name": "São Paulo", "description": "Largest city and financial powerhouse of Brazil"},
+        {"name": "Rio de Janeiro", "description": "Famous for beaches, Carnival, and Christ the Redeemer"},
+        {"name": "Belo Horizonte", "description": "Major city in mining and industry"},
+        {"name": "Porto Alegre", "description": "Cultural and economic hub in southern Brazil"}
+    ]
+    
+    const argentina = [
+        {"name": "Buenos Aires", "description": "Capital city and cultural, political, and economic center"},
+        {"name": "Córdoba", "description": "University city and industrial hub in central Argentina"},
+        {"name": "Rosario", "description": "Major river port and birthplace of Che Guevara"},
+        {"name": "Mendoza", "description": "Wine capital located at the foothills of the Andes"},
+        {"name": "San Miguel de Tucumán", "description": "Historic city known for Argentine independence"}
+    ]
+    ```
+    </CodeGroup>
   </Step>
 
   <Step title="Calling Creation Queries">
     Call the creation queries using the following code
 
     ### Create Continents
-    ```python Python icon="python"
+    <CodeGroup>
+    ```python Python
     continents = client.query("createContinent", continent_data)
     continent_ids = {continent['continent'][0]['name']:continent['continent'][0]['id'] for continent in continents}
     ```
 
+    ```typescript TypeScript
+    const continent_ids: {[key: string]: string} = {}
+    for (let i = 0; i < continent_data.length; i++) {
+        const continent = await client.query("createContinent", continent_data[i]);
+        continent_ids[continent_data[i].name] = continent.continent[0].id;
+    }
+    ```
+    </CodeGroup>
+
     ### Create Countries
-    ```python Python icon="python" [expandable]
+    <CodeGroup>
+    ```python Python [expandable]
     for country in europe:
     country['continent_id'] = continent_ids['Europe']
     europe_ids = {country['country'][0]['name']:country['country'][0]['id'] for country in client.query('createCountry', europe)}
@@ -376,8 +498,40 @@ icon: 'bolt'
     south_america_ids = {country['country'][0]['name']:country['country'][0]['id'] for country in client.query('createCountry', south_america)}
     ```
 
+    ```typescript TypeScript [expandable]
+    const europe_ids: {[key: string]: string} = {}
+    for (let i = 0; i < europe.length; i++) {
+        let payload = {...europe[i], "continent_id": continent_ids["Europe"]}
+        const country = await client.query("createCountry", payload);
+        europe_ids[europe[i].name] = country.country[0].id;
+    }
+
+    const asia_ids: {[key: string]: string} = {}
+    for (let i = 0; i < asia.length; i++) {
+        let payload = {...asia[i], "continent_id": continent_ids["Asia"]}
+        const country = await client.query("createCountry", payload);
+        asia_ids[asia[i].name] = country.country[0].id;
+    }
+
+    const north_america_ids: {[key: string]: string} = {}
+    for (let i = 0; i < north_america.length; i++) {
+        let payload = {...north_america[i], "continent_id": continent_ids["North America"]}
+        const country = await client.query("createCountry", payload);
+        north_america_ids[north_america[i].name] = country.country[0].id;
+    }
+
+    const south_america_ids: {[key: string]: string} = {}
+    for (let i = 0; i < south_america.length; i++) {
+        let payload = {...south_america[i], "continent_id": continent_ids["South America"]}
+        const country = await client.query("createCountry", payload);
+        south_america_ids[south_america[i].name] = country.country[0].id;
+    }
+    ```
+    </CodeGroup>
+
     ### Create Cities and Set Capitals
-    ```python Python icon="python" [expandable]
+    <CodeGroup>
+    ```python Python [expandable]
     for city in uk:
     city['country_id'] = europe_ids['UK']
     uk_ids = {city['city'][0]['name']:city['city'][0]['id'] for city in client.query('createCity', uk)}
@@ -423,21 +577,123 @@ icon: 'bolt'
     argentina_ids = {city['city'][0]['name']:city['city'][0]['id'] for city in client.query('createCity', argentina)}
     client.query('setCapital', {'country_id': south_america_ids['Argentina'], 'city_id': argentina_ids['Buenos Aires']})
     ```
+
+    ```typescript TypeScript [expandable]
+    const uk_ids: {[key: string]: string} = {}
+    for (let i = 0; i < uk.length; i++) {
+        let payload = {...uk[i], "country_id": europe_ids["UK"]}
+        const city = await client.query("createCity", payload);
+        uk_ids[uk[i].name] = city.city[0].id;
+    }
+    await client.query("setCapital", {"country_id": europe_ids["UK"], "city_id": uk_ids["London"]});
+
+    const germany_ids: {[key: string]: string} = {}
+    for (let i = 0; i < germany.length; i++) {
+        let payload = {...germany[i], "country_id": europe_ids["Germany"]}
+        const city = await client.query("createCity", payload);
+        germany_ids[germany[i].name] = city.city[0].id;
+    }
+    await client.query("setCapital", {"country_id": europe_ids["Germany"], "city_id": germany_ids["Berlin"]})
+
+    const italy_ids: {[key: string]: string} = {}
+    for (let i = 0; i < italy.length; i++) {
+        let payload = {...italy[i], "country_id": europe_ids["Italy"]}
+        const city = await client.query("createCity", payload);
+        italy_ids[italy[i].name] = city.city[0].id;
+    }
+    await client.query("setCapital", {"country_id": europe_ids["Italy"], "city_id": italy_ids["Rome"]});
+
+    const china_ids: {[key: string]: string} = {}
+    for (let i = 0; i < china.length; i++) {
+        let payload = {...china[i], "country_id": asia_ids["China"]}
+        const city = await client.query("createCity", payload);
+        china_ids[china[i].name] = city.city[0].id;
+    }
+    await client.query("setCapital", {"country_id": asia_ids["China"], "city_id": china_ids["Beijing"]});
+
+    const japan_ids: {[key: string]: string} = {}
+    for (let i = 0; i < japan.length; i++) {
+        let payload = {...japan[i], "country_id": asia_ids["Japan"]}
+        const city = await client.query("createCity", payload);
+        japan_ids[japan[i].name] = city.city[0].id;
+    }
+    await client.query("setCapital", {"country_id": asia_ids["Japan"], "city_id": japan_ids["Tokyo"]});
+
+    const usa_ids: {[key: string]: string} = {}
+    for (let i = 0; i < usa.length; i++) {
+        let payload = {...usa[i], "country_id": north_america_ids["USA"]}
+        const city = await client.query("createCity", payload);
+        usa_ids[usa[i].name] = city.city[0].id;
+    }
+    await client.query("setCapital", {"country_id": north_america_ids["USA"], "city_id": usa_ids["Washington, D.C."]});
+
+    const mexico_ids: {[key: string]: string} = {}
+    for (let i = 0; i < mexico.length; i++) {
+        let payload = {...mexico[i], "country_id": north_america_ids["Mexico"]}
+        const city = await client.query("createCity", payload);
+        mexico_ids[mexico[i].name] = city.city[0].id;
+    }
+    await client.query("setCapital", {"country_id": north_america_ids["Mexico"], "city_id": mexico_ids["Mexico City"]});
+
+    const brazil_ids: {[key: string]: string} = {}
+    for (let i = 0; i < brazil.length; i++) {
+        let payload = {...brazil[i], "country_id": south_america_ids["Brazil"]}
+        const city = await client.query("createCity", payload);
+        brazil_ids[brazil[i].name] = city.city[0].id;
+    }
+    await client.query("setCapital", {"country_id": south_america_ids["Brazil"], "city_id": brazil_ids["Brasília"]});
+
+    const argentina_ids: {[key: string]: string} = {}
+    for (let i = 0; i < argentina.length; i++) {
+        let payload = {...argentina[i], "country_id": south_america_ids["Argentina"]}
+        const city = await client.query("createCity", payload);
+        argentina_ids[argentina[i].name] = city.city[0].id;
+    }
+    await client.query("setCapital", {"country_id": south_america_ids["Argentina"], "city_id": argentina_ids["Buenos Aires"]});
+    ```
+    </CodeGroup>
   </Step>
 
   <Step title="Calling Read Queries">
     ### Get All Continents
-    ```python Python icon="python"
+    <CodeGroup>
+    ```python Python
     print("Continents: ", [continent['name'] for continent in client.query('getAllContinents', {})[0]['continents']], "\n")
     ```
 
+    ```typescript TypeScript
+    const continents = await client.query("getAllContinents", {});
+    console.log("Continents:", continents.continents, "\n");
+    ```
+    </CodeGroup>
+
     ### Get All Coutries in Europe
-    ```python Python icon="python"
+    <CodeGroup>
+    ```python Python
     print("Countries in Europe: ", [country['name'] for country in client.query('getAllCountries', {'continent_id': continent_ids['Europe']})[0]['countries']], "\n")
     ```
 
+    ```typescript TypeScript
+    const countries = await client.query("getAllCountries", {"continent_id": continent_ids["Europe"]});
+    console.log("Countries in Europe:", countries.countries, "\n");
+    ```
+    </CodeGroup>
+
+    ### Get All Cities in Japan
+    <CodeGroup>
+    ```python Python
+    print("Cities in Japan: ", [city['name'] for city in client.query('getAllCities', {'country_id': asia_ids['Japan']})[0]['cities']], "\n")
+    ```
+
+    ```typescript TypeScript
+    const cities = await client.query("getAllCities", {"country_id": asia_ids["Japan"]});
+    console.log("Cities in Japan:", cities.cities, "\n");
+    ```
+    </CodeGroup>
+
     ### Get Capital Cities
-    ```python Python icon="python"
+    <CodeGroup>
+    ```python Python
     # Get capital of Japan
     print("Capital of Japan: ", client.query('getCapital', {'country_id': asia_ids['Japan']})[0]['capital'][0]['name'], "\n")
 
@@ -447,6 +703,21 @@ icon: 'bolt'
     # Get capital of Argentina
     print("Capital of Argentina: ", client.query('getCapital', {'country_id': south_america_ids['Argentina']})[0]['capital'][0]['name'], "\n")
     ```
+
+    ```typescript TypeScript
+    // Get capital of Japan
+    const capital = await client.query("getCapital", {"country_id": asia_ids["Japan"]});
+    console.log("Capital of Japan:", capital.capital[0].name);
+
+    // Get capital of USA
+    const capital_usa = await client.query("getCapital", {"country_id": north_america_ids["USA"]});
+    console.log("Capital of USA:", capital_usa.capital[0].name);
+
+    // Get capital of Argentina
+    const capital_argentina = await client.query("getCapital", {"country_id": south_america_ids["Argentina"]});
+    console.log("Capital of Argentina:", capital_argentina.capital[0].name);
+    ```
+    </CodeGroup>
   </Step>
 
   <Step title="Deleting the Instance">
@@ -460,8 +731,7 @@ icon: 'bolt'
   </Step>
 
   <Step title="Next Steps">
-    #### Ready to Build with HelixDB.
-    You've learned how to create, deploy, and delete your own instance, as well as how to write and run queries using the Python SDK.
+    You've learned how to create, deploy, and delete your own instance, as well as how to write and run queries using our SDKs.
     
     #### Skip the Infrastructure Hassle
     Going from local testing to production? [Helix Cloud](../../helix-cloud/overview) makes it effortless. We handle servers, scaling, and maintenance so you can focus on building your application.
