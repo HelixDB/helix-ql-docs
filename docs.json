@@ -121,10 +121,11 @@
                                 "pages": [
                                     "guides/professors/prof",
                                     "guides/professors/helixdb_setup",
-                                  "guides/professors/backend_setup"
+                                    "guides/professors/backend_setup",
+                                    "guides/professors/LLM_setup"
                                 ],
                                 "icon": "user-graduate"
-                          }
+                            }
                         ]
                     }
                 ]
