@@ -155,6 +155,81 @@ print(prof_research_areas_and_descriptions)
 ```
 </Accordion>
 
-## Step 7: Filtering example
+## Step 7: Lets answer some of the questions we asked in the beginning
 
+1. "What professors does X research area?"
 
+<CodeGroup>
+
+```python Python
+professors_by_research_area_name = db.query("get_professor_by_research_area_name", {"research_area_name": "X"})
+print(professors_by_research_area_name)
+```
+
+```rust query.hx
+QUERY get_professor_by_research_area_name(research_area_name: String) =>
+    professors <- N<Professor>::Out<HasResearchArea>::WHERE(_::{research_area}::EQ(research_area_name))
+    RETURN professors
+```
+
+</CodeGroup>
+
+2. "What professors are working in X University?"
+
+<CodeGroup>
+
+```python Python
+professors_by_university_name = db.query("get_professors_by_university_name", {"university_name": "X"})
+print(professors_by_university_name)
+```
+
+```rust query.hx
+QUERY get_professors_by_university_name(university_name: String) =>
+    professors <- N<Professor>::Out<HasUniversity>::WHERE(_::{name}::EQ(university_name))
+    RETURN professors
+```
+</CodeGroup>
+
+3. "What professors are working in X Department?"
+
+<CodeGroup>
+
+```python Python
+professors_by_department_name = db.query("get_professors_by_department_name", {"department_name": "X"})
+print(professors_by_department_name)
+```
+
+```rust query.hx
+QUERY get_professors_by_department_name(department_name: String) =>
+    professors <- N<Professor>::Out<HasDepartment>::WHERE(_::{name}::EQ(department_name))
+    RETURN professors
+```
+</CodeGroup>
+
+4. "What professors are working in the X University and are working in X department?"
+
+<CodeGroup>
+
+```python Python
+professors_by_university_and_department_name = db.query("get_professors_by_university_and_department_name", {"university_name": "X", "department_name": "X"})
+print(professors_by_university_and_department_name)
+```
+
+```rust query.hx
+// to do
+```
+</CodeGroup>
+
+5. "I like doing researh in Large Language Models, can you recommend me some professors doing this in X University?"
+
+<CodeGroup>
+
+```python Python
+professors_by_research_area_and_university_name = db.query("get_professors_by_research_area_and_university_name", {"research_area_name": "Large Language Models", "university_name": "X"})
+print(professors_by_research_area_and_university_name)
+```
+
+```rust query.hx
+// to do
+```
+</CodeGroup>
