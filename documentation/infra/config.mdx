@@ -21,7 +21,7 @@ This file will be created when you run `helix init --path helixdb-cfg`.
 
 | Parameter         | Effect                                 | Higher Value                                                        | Lower Value                                                       |
 | ----------------- | ---------------------------------------| ------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `m`               | Controls graph connectivity            | Richly connected graph with better pathfinding                      | Sparse graph with faster construction but worse pathfinding       |
+| `m`               | Controls graph connectivity            | Richly connected graph with better pathfinding but more memory      | Sparse graph with faster construction but worse pathfinding       |
 | `ef_construction` | Size of candidate list during indexing | High-quality, accurate index but more indexing time and memory      | Faster indexing but can miss some connections & degrade recall    |
 | `ef_search`       | Candidate pool size during query       | Wider search scope, improving recall and accuracy but slower search | Narrower search scope, faster search but more approximate results |
 
