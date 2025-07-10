@@ -5,8 +5,8 @@ icon: 'python'
 ---
 
 [**helix-py**](https://github.com/HelixDB/helix-py) is a Python library for interacting with [helix-db](https://github.com/HelixDB/helix-db),
-a powerful graph-vector database written in Rust. It provides both a simple query interface and a PyTorch-like 
-front-end for defining and executing custom graph queries and vector-based operations. This makes it 
+a powerful graph-vector database written in Rust. It provides both a simple query interface and a PyTorch-like
+front-end for defining and executing custom graph queries and vector-based operations. This makes it
 well-suited for use cases such as similarity search, knowledge graph construction, and machine learning pipelines.
 
 > helix-py is evolving into a full-fledged knowledge graph framework. Expect major updates in version v0.3.0.
@@ -27,8 +27,8 @@ pip install helix-py
 
 ## Queries
 [**helix-py**](https://github.com/HelixDB/helix-py) allows users to define a a PyTorch-like manner, similar to how
-you would define a neural network's forward pass. You can use built-in queries in `helix/client.py` 
-to get started with inserting and search vectors, or you can define your own queries for more complex workflows. 
+you would define a neural network's forward pass. You can use built-in queries in `helix/client.py`
+to get started with inserting and search vectors, or you can define your own queries for more complex workflows.
 
 **Pytorch-like Query**
 
@@ -65,7 +65,7 @@ import helix
 from helix.client import hnswinsert, hnswsearch
 
 # Connect to a local helix instance
-db = helix.Client(local=True)
+db = helix.Client(local=True, verbose=True)
 
 # Load and insert data
 data = helix.Loader("path/to/data", cols=["vecs"])
