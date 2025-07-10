@@ -92,10 +92,30 @@ to the lifetime of the script:
 ```python Python
 from helix.instance import Instance
 helix_instance = Instance("helixdb-cfg", 6969, verbose=True)
+
+# Deploy instance
+helix_instance.deploy()
+
+# Redeploy instance
+helix_instance.redeploy()
+
+# Start instance
+helix_instance.start()
+
+# Stop instance
+helix_instance.stop()
+
+# Delete instance
+helix_instance.delete()
+
+# Instance status
+print(helix_instance.status())
 ```
 > `helixdb-cfg` is the directory where the configuration files are stored.
 
-and from there you can interact with the instance using the `Client`
+and from there you can interact with the instance using `Client`.
+
+The instance will be automatically stopped when the script exits.
 
 ## Providers
 We also provide an Ollama and OpenAI interface. This will be expanded to include many other providers in the future.
