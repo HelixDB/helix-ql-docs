@@ -26,7 +26,7 @@ pip install helix-py
 </CodeGroup>
 
 ## Queries
-[**helix-py**](https://github.com/HelixDB/helix-py) allows users to define a a PyTorch-like manner, similar to how
+[**helix-py**](https://github.com/HelixDB/helix-py) allows users to define a PyTorch-like manner, similar to how
 you would define a neural network's forward pass. You can use built-in queries in `helix/client.py`
 to get started with inserting and search vectors, or you can define your own queries for more complex workflows.
 
@@ -86,7 +86,7 @@ The default port is `6969`, but you can change it by passing in the `port` param
 For cloud instances, you can pass in the `api_endpoint` parameter.
 
 ## Instance
-To setup a simple `Instance` that managges and automatically starts and stops a helix instance with respect
+To setup a simple `Instance` that manages and automatically starts and stops a helix instance with respect
 to the lifetime of the script:
 
 ```python Python
@@ -98,7 +98,7 @@ helix_instance = Instance("helixdb-cfg", 6969, verbose=True)
 and from there you can interact with the instance using the `Client`
 
 ## Providers
-We also provide an ollama interface. This will be expanded to include many other providers in the future.
+We also provide an Ollama and OpenAI interface. This will be expanded to include many other providers in the future.
 ```python Python
 from helix.providers import OllamaClient, OpenAIClient
 ollama_client = OllamaClient(use_history=True, model="mistral:latest")
