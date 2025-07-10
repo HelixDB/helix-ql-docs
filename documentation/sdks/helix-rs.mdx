@@ -6,21 +6,22 @@ icon: 'rust'
 
 [helix-rs](https://github.com/HelixDB/helix-rs) is a Rust library for interacting with [helix-db](https://github.com/HelixDB/helix-db) a powerful graph-vector database written in rust. It enables intuitive and type-safe access to graph-based and vector-based queries, making it ideal for building knowledge graphs, search systems, and LLM pipelines.
 
-## Features
-
-- Type-safe query interface using Serde serialization/deserialization
-- Async/await support
-- Configurable port settings
-- Custom client implementation support via `HelixDBClient` trait
-
 ## Installation
 
 Add this to your `Cargo.toml`:
 
-```toml
-[dependencies]
-helix-db= "0.1.0"
+
+<CodeGroup>
+```bash Cargo CLI
+cargo add helix-db
 ```
+
+```toml Cargo.toml
+[dependencies]
+helix-db = "0.1.3"
+```
+</CodeGroup>
+
 
 ## Quick Start
 
