@@ -1,0 +1,105 @@
+---
+title: "Create Operations"
+description: "These operations allow you to add new elements to your graph."
+icon: "plus-large"
+---
+
+## `AddN` &nbsp;Node
+
+Create new nodes in your graph.
+
+```rust
+AddN<Type>
+AddN<Type>({properties})
+```
+
+### Example
+```rust [expandable]
+QUERY CreateUsers () =>
+    // Create an empty user node
+    basic_user <- AddN<User>
+    // You could also write it like this
+    AddN<User>
+
+    // Add a user with properties
+    detailed_user <- AddN<User>({
+        name: "Alice Johnson",
+        age: 30,
+        email: "alice@example.com"
+    })
+
+    RETURN basic_user, detailed_user
+```
+
+---
+
+## `AddE` &nbsp;Edge
+
+Create connections between nodes in your graph.
+
+```rust
+AddE<Type>::From(v1)::To(v2)
+AddE<Type>({properties})::From(v1)::To(v2)
+```
+
+### Example
+```rust [expandable]
+QUERY CreateRelationships(user1ID: ID, user2ID: ID) =>
+    // Get the users by their IDs
+    user1 <- N<User>(user1ID)
+    user2 <- N<User>(user2ID)
+
+    // Create a simple follows relationship
+    follows <- AddE<Follows>::From(user1)::To(user2)
+
+    // Create a detailed friendship with properties
+    friendship <- AddE<Friends>({
+        since: "2024-01-15",
+        strength: 0.85,
+        tags: ["college", "roommates"]
+    })::From(user1)::To(user2)
+
+    RETURN follows, friendship
+```
+
+### Traversal Example
+
+You can also use the `AddE` operation in the middle of a traversal to add edges between a list of nodes or vectors.
+```rust [expandable]
+QUERY CreateFriendships(user1ID: ID, user2ID: ID) =>
+    // This makes every user in the database follow the user with ID user1ID
+    user1 <- N<User>::AddE<Follows>::To(N(user1ID))
+
+    // This makes user with userID2 follow every user in the database
+    user1 <- N<User>::AddE<Follows>::From(N(user2ID))
+
+    RETURN friendship
+```
+
+---
+
+## `AddV` &nbsp;Vector
+
+Create new vector embeddings in your graph.
+
+```rust
+AddV<Type>
+AddV<Type>(vector, {properties})
+```
+
+### Example
+
+```rust
+QUERY InsertVector (vector: [F64], content: String, created_at: I64) =>
+    // Create an empty user node
+    basic_user <- AddV<Document>(vector)
+    // You could also write it like this with properties
+    AddV<Document>(vector, { content: content, created_at: created_at })
+    RETURN basic_user
+```
+
+<Note>
+Currently, Helix only supports using an array of `F64` values to represent the vector.
+We will be adding support for different types such as `F32`, binary vectors and 
+more in the very near future. Please reach out to us if you need a different vector type.
+</Note>

@@ -1,0 +1,123 @@
+---
+title: 'Python SDK'
+description: 'Getting started with HelixDBs Python SDK.'
+icon: 'python'
+---
+
+[**helix-py**](https://github.com/HelixDB/helix-py) is a Python library for interacting with [helix-db](https://github.com/HelixDB/helix-db),
+a powerful graph-vector database written in Rust. It provides both a simple query interface and a PyTorch-like
+front-end for defining and executing custom graph queries and vector-based operations. This makes it
+well-suited for use cases such as similarity search, knowledge graph construction, and machine learning pipelines.
+
+> helix-py is evolving into a full-fledged knowledge graph framework. Expect major updates in version v0.3.0.
+
+## Installation
+
+<CodeGroup>
+
+```bash uv
+uv add helix-py
+```
+
+```bash pip
+pip install helix-py
+```
+
+</CodeGroup>
+
+## Queries
+[**helix-py**](https://github.com/HelixDB/helix-py) allows users to define a PyTorch-like manner, similar to how
+you would define a neural network's forward pass. You can use built-in queries in `helix/client.py`
+to get started with inserting and search vectors, or you can define your own queries for more complex workflows.
+
+**Pytorch-like Query**
+
+Given a HelixQL query like this:
+```rust query.hx
+QUERY add_user(name: String, age: I64) =>
+  usr <- AddV<User>({name: name, age: age})
+  RETURN usr
+```
+
+You can define a matching Python class:
+```python Python
+from helix.client import Query
+from helix.types import Payload
+
+class add_user(Query):
+    def __init__(self, name: str, age: int):
+        super().__init__()
+        self.name = name
+        self.age = age
+
+    def query(self) -> Payload:
+        return [{ "name": self.name, "age": self.age }]
+
+    def response(self, response):
+        return response
+```
+
+## Client
+To setup a simple `Client` to interface with a running helix instance:
+
+```python Python
+import helix
+from helix.client import hnswinsert, hnswsearch
+
+# Connect to a local helix instance
+db = helix.Client(local=True, verbose=True)
+
+# Load and insert data
+data = helix.Loader("path/to/data", cols=["vecs"])
+[db.query(hnswinsert(d)) for d in data]
+
+# Query for nearest neighbors
+my_query = [0.32, ..., -1.321]
+nearest = db.query(hnswsearch(my_query))
+
+# Calling your own query
+# Standard
+db.query('add_user', {"name": "John", "age": 20})
+
+# Pytorch-like
+db.query(add_user("John", 20))
+```
+The default port is `6969`, but you can change it by passing in the `port` parameter.
+For cloud instances, you can pass in the `api_endpoint` parameter.
+
+## Instance
+To setup a simple `Instance` that manages and automatically starts and stops a helix instance with respect
+to the lifetime of the script:
+
+```python Python
+from helix.instance import Instance
+helix_instance = Instance("helixdb-cfg", 6969, verbose=True)
+```
+> `helixdb-cfg` is the directory where the configuration files are stored.
+
+and from there you can interact with the instance using the `Client`
+
+## Providers
+We also provide an Ollama and OpenAI interface. This will be expanded to include many other providers in the future.
+```python Python
+from helix.providers import OllamaClient, OpenAIClient
+ollama_client = OllamaClient(use_history=True, model="mistral:latest")
+openai_client = OpenAIClient(use_history=True, model="gpt-4o")
+
+while True:
+    prompt = input(">>> ")
+    res = ollama_client.request(prompt, stream=True)
+```
+
+<Note>
+    To use the OpenAi client, you must either pass in your OpenAI API key as `api_key` or set the `OPENAI_API_KEY` environment variable.
+</Note>
+
+## Loader
+The loader (`helix/loader.py`) currently supports `.parquet`, `.fvecs`, and `.csv` data. Simply pass in the path to your
+file or files and the columns you want to process and the loader does the rest for you and is easy to integrate with
+your queries
+
+## More Information
+For more information, check out our [examples](https://github.com/HelixDB/helix-py/tree/main/examples)!
+

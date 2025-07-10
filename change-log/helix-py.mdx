@@ -1,0 +1,135 @@
+---
+title: 'Python SDK'
+description: 'Python SDK Release Notes'
+icon: 'python'
+rss: true
+---
+
+# July 2025
+
+<Update 
+  label="July 7, 2025" 
+  description="v0.2.19" 
+  rss={{ 
+    title: "Version 0.2.19 Python SDK", 
+    description: "Version 0.2.19 released on July 7, 2025" 
+  }}
+>
+
+## Client Verbosity
+- Fixed verbose request progress bar in Client.
+
+</Update>
+
+<Update 
+  label="July 6, 2025" 
+  description="v0.2.18" 
+  rss={{ 
+    title: "Version 0.2.18 Python SDK", 
+    description: "Version 0.2.18 released on July 6, 2025" 
+  }}
+>
+
+## Simplified Query Client
+- Added a simple method for executing queries while retaining support for customizable queries.
+- Improved bulk request logic.
+- Updated and added demos for both query methods.
+- Updated error messages for failed queries to only print if verbose is set.
+
+## Knowledge Graph
+- Added OpenAI-driven knowledge graph extraction with deduplication and improved insertion logic. (`apps/kg1.py`)
+- Added spaCy-driven knowledge graph extraction for entity/relationship extraction. (`apps/kg2.py`)
+
+</Update>
+
+<Update 
+  label="July 2, 2025" 
+  description="v0.2.17" 
+  rss={{ 
+    title: "Version 0.2.17 Python SDK", 
+    description: "Version 0.2.17 released on July 2, 2025" 
+  }}
+>
+
+## Client Verbosity
+- Progress bars in query execution can now be toggled via the verbose flag (default True).
+
+## Providers
+- Added support for OpenAI models (gpt-4o) for knowledge graph extraction.
+
+## Knowledge Graph
+- Used OpenAI for entity/edge extraction and improved deduplication and insertion logic.
+- Added FastAPI-based HTTP service for embedding text using HuggingFace transformers in `apps/texttovec.py`.
+- Added a new example for vector insert operations in `examples/vec.py`.
+
+</Update>
+
+# June 2025
+
+<Update 
+  label="June 26, 2025" 
+  description="v0.2.16" 
+  rss={{ 
+    title: "Version 0.2.16 Python SDK", 
+    description: "Version 0.2.16 released on June 26, 2025" 
+  }}
+>
+## Providers
+- Added Ollama provider to interface with Ollama for language model tasks.
+
+## Knowledge Graph
+- Added a script to use the new Ollama provider to extract entities and relationships from text.
+
+</Update>
+
+<Update 
+  label="June 23, 2025" 
+  description="v0.2.15" 
+  rss={{ 
+    title: "Version 0.2.15 Python SDK", 
+    description: "Version 0.2.15 released on June 23, 2025" 
+  }}
+>
+
+## Instance Management
+- Fixed port not updated after deploy. 
+- Added auto stop instance on script exit.
+- Removed auto-start instance on client creation.
+
+## UV Installation
+- Added support for UV installation.
+
+## Knowledge Graph
+- Added a script to take a PDF file as input, extract text from it, and then use a local model to generate embeddings for text chunks.
+
+</Update>
+
+<Update
+  label="June 21, 2025" 
+  description="v0.2.11" 
+  rss={{ 
+    title: "Version 0.2.11 Python SDK", 
+    description: "Version 0.2.11 released on June 21, 2025" 
+  }}
+>
+
+### Instance Management
+- Added instance management via Python script.
+
+</Update>
+
+# May 2025
+
+<Update
+  label="May 8, 2025" 
+  description="v0.2.1" 
+  rss={{ 
+    title: "Version 0.2.1 Python SDK", 
+    description: "Version 0.2.1 released on May 8, 2025" 
+  }}
+>
+## Initial Release With Official Rag Support
+- This release includes initial support for creating ai rag agents. 
+- Supplied are 2 new default queries `ragloaddocs` and `ragsearchdocs` with which you can load your chunks of documents and vectors and then vector search for them all in helix-db.
+- Release also contains some bug fixes and more examples + rag demos that can be found in the examples/ directory.
+</Update>

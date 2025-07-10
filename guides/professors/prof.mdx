@@ -1,0 +1,117 @@
+---
+title: 'Task Overview'
+description: "This guide will walk you through the process of building a Graph-Vector RAG in Python to recommend professors based on their research areas."
+icon: 'thumbtack'
+---
+
+## Introduction
+
+We want to create a Python script that uses HelixDB to help students find professors based on their research areas and bio. For example a user could ask 
+- "What professors does High-Energy Physics research?"
+- "What professors are working in the X University?"
+- "What professors are working in the Computer Science department?"
+- "What professors are working in the X University and are working in the Computer Science department?"
+- "I like doing research in Large Language Models, can you recommend me some professors doing this in X University?"
+
+
+---
+
+## The dataset
+
+In this example, we have a dataset on Professors with fields like:
+- Name
+- Title
+- Department(s)
+- University
+- Their page URL
+- Short biography
+- Key Research Areas and their descriptions
+- Lab(s), the name, lab's research focus
+
+We will be ingesting this data from a JSON file, an example is shown below:
+
+```json
+{
+    "name": "James",
+    "title": "Assistant Professor",
+    "page": "https://james.com",
+    "department": ["Computer Science"],
+    "university": ["Uni X"],
+    "bio": "James is an Assistant Professor whose work sits at the intersection
+     of basketball analytics, computer vision, and large-scale machine learning. 
+     His research focuses on turning raw player-tracking video, wearable-sensor streams,
+     and play-by-play logs into actionable insights for teams, coaches, and broadcasters. 
+     Signature projects include ShotNet— a deep learning model that predicts shot success
+     probability in real time— and DunkGPT, a language model fine-tuned on millions of play descriptions
+     to generate advanced scouting reports.",
+    "key_research_areas": [
+        {
+            "area": "Computer Vision for Basketball",
+            "description": "Designing CNN and Transformer architectures that track
+             player pose, ball trajectory, and court zones to quantify defensive pressure and shooting mechanics."
+        },
+        {
+            "area": "Predictive Modelling & Simulation",
+            "description": "Building Monte-Carlo and sequence models that forecast 
+            possession outcomes and season performance using play-by-play and spatial data." 
+        },
+        {
+            "area": "Sports Analytics with Large Language Models",
+            "description": "Leveraging LLMs to explain model outputs, auto-generate commentary,
+             and mine historical game archives for strategic patterns." 
+        },
+        {
+            "area": "Wearable Sensor Data Mining",
+            "description": "Applying time-series and graph learning techniques to
+             inertial-measurement signals for fatigue monitoring and injury prevention." 
+        },
+        {
+            "area": "Fairness & Ethics in Sports AI",
+            "description": "Studying algorithmic bias and ensuring equitable analytics across different leagues,
+             genders, and play styles." 
+        }
+    ],
+    "labs": [
+        {
+            "name": "Basketball Data Science Lab",
+            "research_focus": "An interdisciplinary group combining data science, biomechanics, 
+            and sport psychology to create next-generation analytics tools for basketball.",
+        }
+    ]
+}
+```
+
+## Building a Graph
+
+Based on this data, we can create a Vector Graph RAG with the following nodes and edges:
+
+**Nodes:**
+
+- Professor Node with properties `name`, `title`, `page`, `bio`
+- Research Area Node with properties `area` and `description`
+- Department Node with the property `name`
+- University Node with the property `name`
+- Lab Node with properties `name`, `research_focus`
+
+**Vector Nodes for Embeddings:**
+
+We will have an embedding of the professors's combined string on their research areas and research description.
+
+- Professor Combined Research Area and Description Node with the property `areas_and_descriptions`
+
+**Edges:**
+
+- Professor to Research Area Edge
+- Professor to Department Edge
+- Professor to University Edge
+- Professor to Lab Edge
+- Professor to Professor Combined Research Area and Description Embedding
+
+
+## Why do we need a Vector Graph RAG?
+
+Let's imagine it on a larger scale where we have a lot of data on professors, 
+research areas, departments, academic achievements, and labs across 1000+ universities. We can utilize a **graph** to 
+connect these nodes and edges to each other so that we can traverse the graph faster to find all professors that are 
+working in a specific university, department, research area, or lab e.g  we can filter the graph to find all professors that are working in the University X using `FILTER` in HelixQL. And we can utilize the **vector embeddings** to find professors that are most similar to a given query e.g *"Which professors have worked in a startup before?"*.
+

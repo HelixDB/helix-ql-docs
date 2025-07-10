@@ -1,0 +1,49 @@
+---
+title: "Schema Definition"
+description: "Text, title, and styling in standard markdown"
+---
+
+## Schema Definition
+
+HelixQL uses a schema definition to define the structure of the graph.
+Note that every node, edge and vector has an implicit `ID` field. that is not in the schema definition.
+
+### Node Schema
+
+Defines node types and their properties in the graph.
+
+```rust
+N::NodeType {
+  field1: String,
+  field2: U32
+}
+```
+
+---
+
+### Edge Schema
+
+Defines relationships between nodes and their properties.
+
+```rust
+E::EdgeType {
+  To: String,
+  From: String,
+  Properties: {
+    field1: String,
+    field2: U32
+  }
+}
+```
+
+---
+
+### Vector Schema
+
+Defines the vector type.
+
+```rust
+V::VectorType {
+  field1: [F64]
+}
+```

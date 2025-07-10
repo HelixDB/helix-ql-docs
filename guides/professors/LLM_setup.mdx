@@ -1,0 +1,44 @@
+---
+title: 'Custom Tools for LLMs'
+icon: 'wrench'
+description: "Creating custom tools for LLMs to call HelixDB"
+---
+
+In this example, we create a very basic tool that can call our HelixDB queries using Gemini. You can
+read more at [https://ai.google.dev/gemini-api/docs/function-calling](https://ai.google.dev/gemini-api/docs/function-calling)
+
+```python
+
+from google import genai
+from google.genai import types
+import dotenv
+import os
+
+dotenv.load_dotenv()
+
+def search_similar_professors_by_research_area_and_description(query: str) -> dict:
+    """Takes the user's query and embeds it then uses the embedded query to search for similar professors
+    
+    Args:
+        query (str): The user's query
+    
+    Returns:
+        A list of professors who are similar to the user's query
+    """
+    embedded_query_vector = model.encode(query).astype(float).tolist()
+    results = db.query("search_similar_professors_by_research_area_and_description", {"query_vector": embedded_query_vector, "k": 5})
+    return results
+
+client = genai.Client()
+config = types.GenerateContentConfig(
+    tools=[search_similar_professors_by_research_area_and_description]
+)
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Find me a professor who does computer vision for basketball",
+    config=config,
+)   
+
+print(response.text)
+```

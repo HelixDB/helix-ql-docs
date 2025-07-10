@@ -1,0 +1,44 @@
+---
+title: 'TypeScript SDK'
+description: 'Getting started with HelixDBs TypeScript SDK.'
+icon: 'square-js'
+---
+
+[helix-ts](https://github.com/HelixDB/helix-ts) is a TypeScript library for interacting with [helix-db](https://github.com/HelixDB/helix-db) a powerful graph-vector database written in rust. It enables intuitive and type-safe access to graph-based and vector-based queries, making it ideal for building knowledge graphs, search systems, and LLM pipelines.
+
+## Installation
+
+```bash
+npm install helix-ts
+```
+
+## Setup
+To setup a simple `Client` to interface with a running helix instance:
+```typescript
+import HelixDB from "helix-ts";
+
+// Create a new HelixDB client 
+const client = new HelixDB("https://localhost:6969");
+```
+The default URL is `http://localhost:6969`. For cloud deployments, simply pass in the appropriate URL to the constructor.
+
+## Queries
+**helix-ts** has a simple interface for creating queries. First, you can create a new client with the endpoint of your helix instance.
+Then you can start running queries by passing the query name and an argument object matching the query’s expected inputs.
+
+```typescript
+// Query the database
+await client.query("addUser", {
+    name: "John",
+    age: 20
+});
+
+// Get the user
+const user = await client.query("getUser", {
+    name: "John"
+});
+
+console.log(user);
+```
+> Make sure the argument keys match the expected parameter names in your helix query.
+

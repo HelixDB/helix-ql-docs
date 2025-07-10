@@ -1,0 +1,35 @@
+---
+title: 'Database Configurations'
+sidebarTitle: "Configurations"
+description: 'Learn about the configuration options for HelixDB'
+icon: 'gears'
+mode: 'wide'
+---
+
+## Access Your Configs
+
+The configuration for HelixDB is a json file named `config.hx.json`
+This file will be created when you run `helix init --path helixdb-cfg`.
+
+## Config Options
+
+### Vector Configs
+
+- `m`: Maximum number of connections each node can have at each layer of the graph (default 16)
+- `ef_construction`: Size of dynamic list of candidates considered during vector insertion (default 128)
+- `ef_search`: Size of the dynamic list of candidates maintained during the search process (default 768)
+
+| Parameter         | Effect                                 | Higher Value                                                        | Lower Value                                                       |
+| ----------------- | ---------------------------------------| ------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `m`               | Controls graph connectivity            | Richly connected graph with better pathfinding but more memory      | Sparse graph with faster construction but worse pathfinding       |
+| `ef_construction` | Size of candidate list during indexing | High-quality, accurate index but more indexing time and memory      | Faster indexing but can miss some connections & degrade recall    |
+| `ef_search`       | Candidate pool size during query       | Wider search scope, improving recall and accuracy but slower search | Narrower search scope, faster search but more approximate results |
+
+### Graph Configs
+
+- `secondary_indices`: List of secondary indices for graph operations (default empty)
+
+### Database Configs
+
+- `db_max_size_gb`: The maximum size of the database in GB (default 10)
+- `mcp`: Enable MCP support (default true)

@@ -1,0 +1,408 @@
+---
+title: "Social Network"
+description: "A social network example of how to use HelixDB"
+icon: "users"
+---
+
+We're going to create a simple social network where users can follow each other and create posts.
+
+<Expandable title="Full Code">
+### Schema
+
+```rust schema.hx [expandable]
+ N::User {
+    name: String,
+    age: U32,
+    email: String,
+    created_at: Date DEFAULT NOW,
+    updated_at: Date DEFAULT NOW,
+}
+
+N::Post {
+    content: String,
+    created_at: Date DEFAULT NOW,
+    updated_at: Date DEFAULT NOW,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+    Properties: {
+        since: Date DEFAULT NOW,
+    }
+}
+
+E::Created {
+    From: User,
+    To: Post,
+    Properties: {
+        created_at: Date DEFAULT NOW,
+    }
+}
+
+```
+
+### Queries
+<CodeGroup>
+```rust query.hx [expandable]
+QUERY createUser(name: String, age: U32, email: String) =>
+    user <- AddN<User>({name: name, age: age, email: email})
+    RETURN user
+
+
+QUERY createFollow(follower_id: ID, followed_id: ID) =>
+    follower <- N<User>(follower_id)
+    followed <- N<User>(followed_id)
+    AddE<Follows>::From(follower)::To(followed) // don't need to specify the `since` property because it has a default value
+    RETURN "success"
+
+
+QUERY createPost(user_id: ID, content: String) =>
+    user <- N<User>(user_id)
+    post <- AddN<Post>({content: content})
+    AddE<Created>::From(user)::To(post) // don't need to specify the `created_at` property because it has a default value
+    RETURN post
+
+
+QUERY getUsers() =>
+    users <- N<User>
+    RETURN users
+
+QUERY getPosts() =>
+    posts <- N<Post>
+    RETURN posts
+
+QUERY getPostsByUser(user_id: ID) =>
+    posts <- N<User>(user_id)::Out<Created>
+    RETURN posts
+
+
+QUERY getFollowedUsers(user_id: ID) =>
+    followed <- N<User>(user_id)::Out<Follows>
+    RETURN followed
+
+QUERY getFollowedUsersPosts(user_id: ID) =>
+    followers <- N<User>(user_id)::Out<Follows>
+    posts <- followers::Out<Created>::RANGE(0, 40)
+    RETURN posts::{
+        post: _::{content},
+        creatorID: _::In<Created>::ID,
+    }
+```
+
+```python Python
+from helix.client import Client
+client = Client(local=True)
+
+client.query("createUser", {"name": "John", "age": 30, "email": "john@example.com"})
+
+client.query("createFollow", {"follower_id": "<follower_id>", "followed_id": "<followed_id>"})
+
+client.query("createPost", {"user_id": "<user_id>", "content": "<content>"})
+
+client.query("getUsers")
+
+client.query("getPosts")
+
+client.query("getPostsByUser", {"user_id": "<user_id>"})
+
+client.query("getFollowedUsers", {"user_id": "<user_id>"})
+
+client.query("getFollowedUsersPosts", {"user_id": "<user_id>"})
+```
+
+```typescript TypeScript
+import HelixDB from "helix-ts";
+const client = new HelixDB("http://localhost:6969");
+
+client.query("createUser", {"name": "John", "age": 30, "email": "john@example.com"});
+
+client.query("createFollow", {"follower_id": "<follower_id>", "followed_id": "<followed_id>"});
+
+client.query("createPost", {"user_id": "<user_id>", "content": "<content>"});
+
+client.query("getUsers");
+
+client.query("getPosts");
+
+client.query("getPostsByUser", {"user_id": "<user_id>"});
+
+client.query("getFollowedUsers", {"user_id": "<user_id>"});
+
+client.query("getFollowedUsersPosts", {"user_id": "<user_id>"});
+```
+</CodeGroup>
+</Expandable>
+
+### Prerequisites
+
+Install the HelixDB CLI
+
+```bash
+curl -sSL https://helix.sh/install.sh | bash
+```
+
+Install the Helix container
+
+```bash
+helix install
+```
+
+Initialize a new project
+
+```bash
+helix init
+```
+
+Install the SDK of your choice (optional)
+<CodeGroup>
+```bash Python
+pip install helix-py
+```
+
+```bash TypeScript
+npm install helix-ts
+```
+</CodeGroup>
+
+Setup the SDK of your choice (optional)
+<CodeGroup>
+```python Python
+from helix.client import Client
+client = Client(local=True)
+```
+
+```typescript TypeScript
+import HelixDB from "helix-ts";
+const client = new HelixDB("http://localhost:6969");
+```
+</CodeGroup>
+
+---
+
+### Step 1: Define the schema in schema.hx
+
+We're going to define the schema for our social network in `schema.hx`.
+We're going to have `User` nodes where users can `Follow` other users.
+We're also going to have `Post` nodes where users can `Create` posts.
+
+```rust schema.hx
+N::User {
+    name: String,
+    age: U32,
+    email: String,
+    created_at: Date DEFAULT NOW,
+    updated_at: Date DEFAULT NOW,
+}
+
+N::Post {
+    content: String,
+    created_at: Date DEFAULT NOW,
+    updated_at: Date DEFAULT NOW,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+    Properties: {
+        since: Date DEFAULT NOW,
+    }
+}
+
+E::Created {
+    From: User,
+    To: Post,
+    Properties: {
+        created_at: Date DEFAULT NOW,
+    }
+}
+```
+
+---
+
+### Step 2: Inserting data
+
+Creating a user is done by inserting a new node into the graph.
+
+<CodeGroup>
+```rust query.hx
+QUERY createUser(name: String, age: U32, email: String) =>
+    user <- AddN<User>({name: name, age: age, email: email})
+    RETURN user
+```
+
+```typescript Python
+client.query("createUser", {"name": "John", "age": 30, "email": "john@example.com"})
+```
+
+```typescript TypeScript
+client.query("createUser", {"name": "John", "age": 30, "email": "john@example.com"});
+```
+</CodeGroup>
+
+To let users follow another user, we need to create an edge between them.
+
+<CodeGroup>
+```rust query.hx
+QUERY createFollow(follower_id: ID, followed_id: ID) =>
+    follower <- N<User>(follower_id)
+    followed <- N<User>(followed_id)
+    AddE<Follows>::From(follower)::To(followed) // don't need to specify the `since` property because it has a default value
+    RETURN "success"
+```
+
+```typescript Python
+client.query("createFollow", {"follower_id": "<follower_id>", "followed_id": "<followed_id>"})
+```
+
+```typescript TypeScript
+client.query("createFollow", {"follower_id": "<follower_id>", "followed_id": "<followed_id>"});
+```
+</CodeGroup>
+
+To create a post, we need to create a post node and an edge between the user and the post.
+
+<CodeGroup>
+```rust query.hx
+QUERY createPost(user_id: ID, content: String) =>
+    user <- N<User>(user_id)
+    post <- AddN<Post>({content: content})
+    AddE<Created>::From(user)::To(post) // don't need to specify the `created_at` property because it has a default value
+    RETURN post
+```
+
+```typescript Python
+client.query("createPost", {"user_id": "<user_id>", "content": "<content>"})
+```
+
+```typescript TypeScript
+client.query("createPost", {"user_id": "<user_id>", "content": "<content>"});
+```
+</CodeGroup>
+
+### Step 3: Query the data
+
+To get all users, we can use the following query:
+
+<CodeGroup>
+```rust query.hx
+QUERY getUsers() =>
+    users <- N<User>
+    RETURN users
+```
+
+```typescript Python
+client.query("getUsers")
+```
+
+```typescript TypeScript
+client.query("getUsers");
+```
+</CodeGroup>
+
+To get all posts, we can use the following query:
+
+<CodeGroup>
+```rust query.hx
+QUERY getPosts() =>
+    posts <- N<Post>
+    RETURN posts
+```
+
+```typescript Python
+client.query("getPosts")
+```
+
+```typescript TypeScript
+client.query("getPosts");
+```
+</CodeGroup>
+
+To get all posts by a user, we can use the following query:
+
+<CodeGroup>
+```rust query.hx
+QUERY getPostsByUser(user_id: ID) =>
+    posts <- N<User>(user_id)::Out<Created>
+    RETURN posts
+```
+
+```typescript Python
+client.query("getPostsByUser", {"user_id": "<user_id>"})
+```
+
+```typescript TypeScript
+client.query("getPostsByUser", {"user_id": "<user_id>"});
+```
+</CodeGroup>
+
+To get all users that a user follows, we can use the following query:
+
+<CodeGroup>
+```rust query.hx
+QUERY getFollowedUsers(user_id: ID) =>
+    followed <- N<User>(user_id)::Out<Follows>
+    RETURN followed
+```
+
+```typescript Python
+client.query("getFollowedUsers", {"user_id": "<user_id>"})
+```
+
+```typescript TypeScript
+client.query("getFollowedUsers", {"user_id": "<user_id>"});
+```
+</CodeGroup>
+
+As a more complex example,
+we could have a query that loads an page containing the posts of users that a user follows.
+To do this we are going to remap the posts to have a field containing information about the user that created the post.
+
+<CodeGroup>
+```rust query.hx
+QUERY getFollowedUsersPosts(user_id: ID) =>
+    followers <- N<User>(user_id)::Out<Follows>
+    posts <- followers::Out<Created>::RANGE(0, 40)
+    RETURN posts::{
+        post: _::{content},
+        creatorID: _::In<Created>::ID,
+    }
+```
+
+```typescript Python
+client.query("getFollowedUsersPosts", {"user_id": "<user_id>"})
+```
+
+```typescript TypeScript
+client.query("getFollowedUsersPosts", {"user_id": "<user_id>"});
+```
+
+</CodeGroup>
+
+<Accordion title="JSON output">
+```json
+"posts": [
+    {
+        "post": "Hello, world!",
+        "creatorID": "123"
+    },
+    {
+        "post": "Hello, world!",
+        "creatorID": "123"
+    },
+    ... // up to 40 posts
+]
+```
+</Accordion>
+
+---
+
+### Step 4: Run the queries
+
+To run the queries, we can use the following command
+
+```bash
+helix deploy
+```
+
+---

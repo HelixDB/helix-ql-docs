@@ -1,0 +1,49 @@
+---
+title: "Updating Items"
+icon: "arrows-rotate"
+---
+
+## `UPDATE`
+
+Update the properties of existing elements.
+
+```rust
+::UPDATE({<properties_list>})
+```
+
+### Example
+
+In schema.hx:
+
+```rust
+N::Person {
+    name: String,
+    age: U32
+}
+```
+
+In query.hx:
+
+```rust
+QUERY UpdateUser(userID: ID) =>
+    updatedUsers <- N<Person>(userID)::UPDATE({name: "John", age: 25})
+    RETURN updatedUsers
+```
+---
+
+<Danger>
+**The following examples would not work as the types don't match**
+</Danger>
+
+```rust
+QUERY UpdateUser(userID: ID) =>
+    // No email field in Person node
+    updatedUsers <- N<Person>(userID)::UPDATE({ email: "john@example.com" })
+
+    // Age as string instead of U32
+    updatedUsers <- N<Person>(userID)::UPDATE({ age: "Hello" })
+
+    RETURN updatedUsers
+```
+
+

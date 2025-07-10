@@ -1,0 +1,32 @@
+---
+title: "Aggregation Steps"
+icon: "chart-bar"
+---
+
+Aggregate your graph data with powerful operations
+
+## `COUNT`
+
+Count the number of elements in a traversal.
+
+```rust
+::COUNT
+```
+
+### Example
+
+```rust
+QUERY UserStatistics() =>
+    user_count <- N<User>::COUNT
+    RETURN user_count
+```
+
+---
+
+## Coming Soon
+
+- `DEDUP`
+- `ORDER_BY`
+- `GROUP_BY`
+- Pattern matching
+

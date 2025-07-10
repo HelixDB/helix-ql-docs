@@ -1,0 +1,235 @@
+---
+title: 'Python Setup'
+icon: 'code'
+description: "Python setup for the professors example using Qwen Embedding Model"
+---
+
+If you want to see an example of a FastAPI backend code that uses Gemini as a chatbot and calls HelixDB for queries, you can find it [here](https://github.com/helix-db/professor_example).
+This guide only covers the Python code to connect to HelixDB and create nodes and edges, create embeddings for the professors, search by embeddings, and filtering.
+
+## Step 1: Setting up the environment
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install helix-py sentence-transformers
+```
+
+## Step 2: Imports and Setup for HelixDB
+
+```python
+import helix
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("Qwen/Qwen3-Embedding-0.6B")
+db = helix.Client(local=True, port=6969, verbose=True)
+```
+
+## Step 3: Creating the nodes that we will link professors to
+
+This assumes that you have a list of research areas, departments, universities, academic achievements, and labs.
+
+We store the research area ids in a dictionary so we can link professors to them later
+
+The reason we store only the research area in ResearchArea Node is because professors can have the same research area, but they will have different descriptions.
+We'll store the string of the combined area and description in the ResearchAreaAndDescriptionEmbedding node which connects to the professor. 
+
+
+**NOTE:** You can also make a query in helixdb to get the ID of the research area if you have the name, but we will store it in Python for simplicity
+
+We will be using `db.query("query_name", {"param": value})` to create the nodes and edges
+
+```Python
+research_areas = {
+    "Computer Vision for Basketball": "Designing CNN and Transformer architectures that track player pose, ball trajectory, and court zones to quantify defensive pressure and shooting mechanics.",
+    "Predictive Modelling & Simulation": "Building Monte-Carlo and sequence models that forecast possession outcomes and season performance using play-by-play and spatial data.",
+    "Sports Analytics with Large Language Models": "Leveraging LLMs to explain model outputs, auto-generate commentary, and mine historical game archives for strategic patterns.",
+    "Wearable Sensor Data Mining": "Applying time-series and graph learning techniques to inertial-measurement signals for fatigue monitoring and injury prevention.",
+    "Fairness & Ethics in Sports AI": "Studying algorithmic bias and ensuring equitable analytics across different leagues, genders, and play styles."
+}
+
+research_area_ids = {}
+for research_area in research_areas:
+    research_area_node = db.query("create_research_area", {"area": research_area})
+    research_area_ids[research_area] = research_area_node[0]['research_area'][0]['id']
+
+departments = ["Computer Science", "Mathematics", "Physics", "Chemistry", "Biology"]
+department_ids = {}
+for department in departments:
+    department_node = db.query("create_department", {"name": department})
+    department_ids[department] = department_node[0]['department'][0]['id']
+
+universities = ["Uni X", "Uni Y", "Uni Z"]
+university_ids = {}
+for university in universities:
+    university_node = db.query("create_university", {"name": university})
+    university_ids[university] = university_node[0]['university'][0]['id']
+
+labs = {"Basketball Data Science Lab": "An interdisciplinary group combining data science, biomechanics, and sport psychology to create next-generation analytics tools for basketball."}
+lab_ids = {}
+for lab in labs:
+    lab_node = db.query("create_lab", {"name": lab, "research_focus": labs[lab]})
+    lab_ids[lab] = lab_node[0]['lab'][0]['id']
+```
+
+## Step 4: Linking professors to the nodes
+
+We will use Qwen3 Embedding 0.6B as an example to create embeddings for the professors.
+
+```Python
+for professor in professors:
+    # Create Professor Node
+    professor_node =db.query("create_professor", {"name": professor["name"], "title": professor["title"], "page": professor["page"], "bio": professor["bio"]})
+
+    professor_id = professor_node[0]['professor'][0]['id']
+
+    # Link Professor to Research Area
+    for research_area in professor["key_research_areas"]:
+        if research_area['area'] in research_areas:
+            research_area_id = research_area_ids[research_area['area']]
+            db.query("link_professor_to_research_area", {"professor_id": professor_id, "research_area_id": research_area_id})
+
+    # Link Professor to Department
+    for department in professor["department"]:
+        if department in department_ids:
+            department_id = department_ids[department]
+            db.query("link_professor_to_department", {"professor_id": professor_id, "department_id": department_id})
+
+    # Link Professor to University
+    for university in professor["university"]:
+        if university in university_ids:
+            university_id = university_ids[university]
+            db.query("link_professor_to_university", {"professor_id": professor_id, "university_id": university_id})
+
+    # Link Professor to Lab
+    for lab in professor["labs"]:
+        if lab['name'] in lab_ids:
+            lab_id = lab_ids[lab['name']]
+            db.query("link_professor_to_lab", {"professor_id": professor_id, "lab_id": lab_id})
+
+    # Create Research Area Embedding
+    research_area_and_description = "\n".join([research_area['area'] + ": " + research_area['description'] for research_area in professor['key_research_areas']])
+    research_area_and_description_embedding = model.encode(research_area_and_description).astype(float).tolist()
+    db.query("create_research_area_embedding", {"professor_id": professor_id, "areas_and_descriptions": research_area_and_description, "vector": research_area_and_description_embedding})
+```
+
+We've now added all the nodes and edges to the graph, and created the embeddings for the professors. We can now search for similar professors based on their research area and description embeddings.
+
+## Step 5: Searching for similar professors
+
+```python
+query = "Find me a professor who does computer vision for basketball"
+embedded_query_vector = model.encode(query).astype(float).tolist()
+    
+results = db.query("search_similar_professors_by_research_area_and_description", 
+{"query_vector": embedded_query_vector, "k": 5})
+
+print(results)
+```
+
+<Accordion title="Python Print Result">
+```python
+[{'professors': [{'page': 'https://www.example.com',
+ 'label': 'Professor', 'bio': 'James is an Assistant Professor whose work sits at the intersection of basketball analytics, computer vision, and large-scale machine learning.  His research focuses on turning raw player-tracking video, wearable-sensor streams, and play-by-play logs into actionable insights for teams, coaches, and broadcasters. Signature projects include ShotNet— a deep learning model that predicts shot success probability in real time— and DunkGPT, a language model fine-tuned on millions of play descriptions to generate advanced scouting reports.',
+ 'name': 'James', 
+ 'id': '...', 
+ 'title': 'Assistant Professor'}]}]
+```
+</Accordion>
+
+## Step 6: Example of getting the combined research area and description
+
+```python
+prof_research_areas_and_descriptions = db.query("get_professor_research_areas_with_descriptions", {"professor_id": results[0]['professors'][0]['id']})
+print(prof_research_areas_and_descriptions)
+```
+
+<Accordion title="Python Print Result">
+```text
+[{'research_areas': [{'areas_and_descriptions': 'Computer Vision for Basketball: Designing CNN and Transformer architectures that track player pose,
+ ball trajectory, and court zones to quantify defensive pressure and shooting mechanics.
+ Predictive Modelling & Simulation: Building Monte-Carlo and sequence models that forecast possession outcomes and season performance using play-by-play and spatial data.
+ Sports Analytics with Large Language Models: Leveraging LLMs to explain model outputs, auto-generate commentary, and mine historical game archives for strategic patterns.
+ Wearable Sensor Data Mining: Applying time-series and graph learning techniques to inertial-measurement signals for fatigue monitoring and injury prevention.
+ Fairness & Ethics in Sports AI: Studying algorithmic bias and ensuring equitable analytics across different leagues, genders, and play styles.'}]}]
+```
+</Accordion>
+
+## Step 7: Lets answer some of the questions we asked in the beginning
+
+1. "What professors does X research area?"
+
+<CodeGroup>
+
+```python Python
+professors_by_research_area_name = db.query("get_professor_by_research_area_name", {"research_area_name": "X"})
+print(professors_by_research_area_name)
+```
+
+```rust query.hx
+QUERY get_professor_by_research_area_name(research_area_name: String) =>
+    professors <- N<Professor>::Out<HasResearchArea>::WHERE(_::{research_area}::EQ(research_area_name))
+    RETURN professors
+```
+
+</CodeGroup>
+
+2. "What professors are working in X University?"
+
+<CodeGroup>
+
+```python Python
+professors_by_university_name = db.query("get_professors_by_university_name", {"university_name": "X"})
+print(professors_by_university_name)
+```
+
+```rust query.hx
+QUERY get_professors_by_university_name(university_name: String) =>
+    professors <- N<Professor>::Out<HasUniversity>::WHERE(_::{name}::EQ(university_name))
+    RETURN professors
+```
+</CodeGroup>
+
+3. "What professors are working in X Department?"
+
+<CodeGroup>
+
+```python Python
+professors_by_department_name = db.query("get_professors_by_department_name", {"department_name": "X"})
+print(professors_by_department_name)
+```
+
+```rust query.hx
+QUERY get_professors_by_department_name(department_name: String) =>
+    professors <- N<Professor>::Out<HasDepartment>::WHERE(_::{name}::EQ(department_name))
+    RETURN professors
+```
+</CodeGroup>
+
+4. "What professors are working in the X University and are working in X department?"
+
+<CodeGroup>
+
+```python Python
+professors_by_university_and_department_name = db.query("get_professors_by_university_and_department_name", {"university_name": "X", "department_name": "X"})
+print(professors_by_university_and_department_name)
+```
+
+```rust query.hx
+// to do
+```
+</CodeGroup>
+
+5. "I like doing research in Large Language Models, can you recommend me some professors doing this in X University?"
+
+<CodeGroup>
+
+```python Python
+professors_by_research_area_and_university_name = db.query("get_professors_by_research_area_and_university_name", {"research_area_name": "Large Language Models", "university_name": "X"})
+print(professors_by_research_area_and_university_name)
+```
+
+```rust query.hx
+// to do
+```
+</CodeGroup>

@@ -1,0 +1,44 @@
+---
+title: 'What is HelixDB?'
+description: 'Learn about HelixDB architecture, features, and capabilities'
+icon: 'database'
+---
+
+## Key Features
+
+- **High Performance**: Purpose-built storage engine optimized for both graph and vector operations
+- **Type Safety**: Explicit type definitions to ensure data integrity
+- **Developer-Friendly**: Simple setup and migration
+- **Secure**: Options for encryption at rest
+
+## Data Model
+
+HelixDB follows the property graph model, which consists of:
+
+- **Nodes**: Represent entities with unique identifiers and properties
+  ```js
+  N::NodeType {
+    field1: String,
+    field2: U32
+  }
+  ```
+- **Vectors**: Represent entities with unique identifiers and vector embeddings
+  ```js
+  V::VectorType {
+    field1: String,
+    field2: U32
+  }
+  ```
+- **Edges**: Represent relationships between nodes and/or vectors, with directionality and properties
+  ```js
+  E::EdgeType {
+    To: String,
+    From: String,
+    Properties: {
+      field1: String,
+      field2: U32
+    }
+  }
+  ```
+
+This model allows for rich representation of complex domains while maintaining query performance.
