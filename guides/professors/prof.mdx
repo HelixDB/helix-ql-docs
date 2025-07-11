@@ -105,7 +105,7 @@ We will have an embedding of the professors's combined string on their research 
 - Professor to Department Edge
 - Professor to University Edge
 - Professor to Lab Edge
-- Professor to Professor Combined Research Area and Description Embedding
+- Professor to Combined Research Area and Description Embedding
 
 
 ## Why do we need a Vector Graph RAG?
@@ -113,5 +113,5 @@ We will have an embedding of the professors's combined string on their research 
 Let's imagine it on a larger scale where we have a lot of data on professors, 
 research areas, departments, academic achievements, and labs across 1000+ universities. We can utilize a **graph** to 
 connect these nodes and edges to each other so that we can traverse the graph faster to find all professors that are 
-working in a specific university, department, research area, or lab e.g  we can filter the graph to find all professors that are working in the University X using `FILTER` in HelixQL. And we can utilize the **vector embeddings** to find professors that are most similar to a given query e.g *"Which professors have worked in a startup before?"*.
+working in a specific university, department, research area, or lab e.g  we can filter the graph to find all professors that are working in the University X using `WHERE` in HelixQL. And we can utilize the **vector embeddings** to find professors that are most similar to a given query e.g *"Which professors have worked in a startup before?"*.
 

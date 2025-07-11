@@ -58,6 +58,10 @@ icon: 'bolt'
     npm install helix-ts
     ```
 
+    ```bash Go
+    go get github.com/HelixDB/helix-go
+    ```
+
     ```bash Rust
     cargo add helix-db
     ```
@@ -67,6 +71,8 @@ icon: 'bolt'
     Click [here](../sdks/helix-py) for more information about the Python SDK.       
 
     Click [here](../sdks/helix-ts) for more information about the TypeScript SDK.
+
+    Click [here](../sdks/helix-go) for more information about the Go SDK.
 
     Click [here](../sdks/helix-rs) for more information about the Rust SDK.
     </Tip>
@@ -253,13 +259,139 @@ icon: 'bolt'
 
     const client = new HelixDB("http://localhost:6969");
     ```
+
+    ```go Go
+    import (
+        "fmt"
+        "log"
+        "github.com/HelixDB/helix-go"
+    )
+
+    var HelixClient *helix.Client
+
+    func main() {
+        client := helix.NewClient("http://localhost:6969")
+    }
+    ```
     </CodeGroup>
 
     <Tip>
     Click [here](../sdks/helix-py) for more information about the Python SDK.    
 
     Click [here](../sdks/helix-ts) for more information about the TypeScript SDK.
+
+    Click [here](../sdks/helix-go) for more information about the Go SDK.
     </Tip>
+
+    ### Struct for your data and queries (for Go SDK)
+    <CodeGroup>
+    ```go Go [expandable]
+    // Continent struct
+    type Continent struct {
+        Name string
+    }
+
+    // Country struct
+    type Country struct {
+        Name string
+        Currency string
+    }
+
+    // City struct
+    type City struct {
+        Name string
+        Description string
+    }
+
+    // "createContinent" query struct
+    type CreateContinentRequest struct {
+        Name string `json:"name"`
+    }
+    type CreateContinentResponse struct {
+        Continent []struct {
+            Name string `json:"name"`
+            ID   string `json:"id"`
+        } `json:"continent"`
+    }
+
+    // "createCountry" query struct
+    type CreateCountryRequest struct {
+        Continent_id string `json:"continent_id"`
+        Name string `json:"name"`
+        Currency string `json:"currency"`
+    }
+    type CreateCountryResponse struct {
+        Country []struct {
+            Name string `json:"name"`
+            Currency string `json:"currency"`
+            ID string `json:"id"`
+        } `json:"country"`
+    }
+
+    // "createCity" query struct
+    type CreateCityRequest struct {
+        Country_id string `json:"country_id"`
+        Name string `json:"name"`
+        Description string `json:"description"`
+    }
+    type CreateCityResponse struct {
+        City []struct {
+            Name string `json:"name"`
+            Description string `json:"description"`
+            ID string `json:"id"`
+        } `json:"city"`
+    }
+
+    // "setCapital" query struct
+    type SetCapitalRequest struct {
+        Country_id string `json:"country_id"`
+        City_id string `json:"city_id"`
+    }
+    type SetCapitalResponse struct {
+        City []struct {
+            Name string `json:"name"`
+            Description string `json:"description"`
+            ID string `json:"id"`
+        } `json:"country_capital"`
+    }
+
+    // "getAllContinents" query struct
+    type GetAllContinentsResponse struct {
+        Continents []struct {
+            Name string `json:"name"`
+            ID string `json:"id"`
+        } `json:"continents"`
+    }
+
+    // "getAllCountries" query struct
+    type GetAllCountriesResponse struct {
+        Countries []struct {
+            Name string `json:"name"`
+            Currency string `json:"currency"`
+            ID string `json:"id"`
+        } `json:"countries"`
+    }
+
+    // "getAllCities" query struct
+    type GetAllCitiesResponse struct {
+        Cities []struct {
+            Name string `json:"name"`
+            Description string `json:"description"`
+            ID string `json:"id"`
+        } `json:"cities"`
+    }
+
+    // "getCapital" query struct
+    type GetCapitalResponse struct {
+        City []struct {
+            Name string `json:"name"`
+            Description string `json:"description"`
+            ID string `json:"id"`
+        } `json:"capital"`
+    }
+    ```
+    </CodeGroup>
+    
 
     ### Data for continents, countries, and cities (copy this into your file)
     <CodeGroup>
@@ -466,6 +598,94 @@ icon: 'bolt'
         {"name": "San Miguel de Tucumán", "description": "Historic city known for Argentine independence"}
     ]
     ```
+
+    ```go Go [expandable]
+	var continent_data []Continent
+	continent_data = append(continent_data, Continent{Name: "Asia"})
+	continent_data = append(continent_data, Continent{Name: "North America"})
+	continent_data = append(continent_data, Continent{Name: "Europe"})
+	continent_data = append(continent_data, Continent{Name: "South America"})
+
+	var europe []Country
+	europe = append(europe, Country{Name: "UK", Currency: "Pounds"})
+	europe = append(europe, Country{Name: "Germany", Currency: "Euro"})
+	europe = append(europe, Country{Name: "Italy", Currency: "Euro"})
+
+	var asia []Country
+	asia = append(asia, Country{Name: "China", Currency: "Yuan"})
+	asia = append(asia, Country{Name: "Japan", Currency: "Yen"})
+
+	var north_america []Country
+	north_america = append(north_america, Country{Name: "USA", Currency: "Dollar"})
+	north_america = append(north_america, Country{Name: "Mexico", Currency: "Peso"})
+
+	var south_america []Country
+	south_america = append(south_america, Country{Name: "Brazil", Currency: "Real"})
+	south_america = append(south_america, Country{Name: "Argentina", Currency: "Peso"})
+
+	var uk []City
+	uk = append(uk, City{Name: "London", Description: "Capital city known for its finance, culture, and history"})
+	uk = append(uk, City{Name: "Manchester", Description: "Northern hub for music, sports, and industry"})
+	uk = append(uk, City{Name: "Birmingham", Description: "Second-largest city, known for manufacturing and diversity"})
+	uk = append(uk, City{Name: "Liverpool", Description: "Port city famous for The Beatles and football"})
+	uk = append(uk, City{Name: "Bristol", Description: "Historic maritime city with a creative edge"})
+
+	var germany []City
+	germany = append(germany, City{Name: "Berlin", Description: "Capital city known for history, culture, and politics"})
+	germany = append(germany, City{Name: "Munich", Description: "Bavarian capital known for Oktoberfest and tech innovation"})
+	germany = append(germany, City{Name: "Frankfurt", Description: "Major financial center and home to the ECB"})
+	germany = append(germany, City{Name: "Hamburg", Description: "Large port city with maritime economy and media hubs"})
+	germany = append(germany, City{Name: "Cologne", Description: "Cultural city known for its Gothic cathedral and trade fairs"})
+
+	var italy []City
+	italy = append(italy, City{Name: "Rome", Description: "Capital city known for ancient history and architecture"})
+	italy = append(italy, City{Name: "Milan", Description: "Fashion and financial capital of northern Italy"})
+	italy = append(italy, City{Name: "Naples", Description: "Historic southern city and birthplace of pizza"})
+	italy = append(italy, City{Name: "Florence", Description: "Renaissance city known for art and museums"})
+	italy = append(italy, City{Name: "Venice", Description: "Famous canal city built on water with unique charm"})
+
+	var china []City
+	china = append(china, City{Name: "Beijing", Description: "Capital city with political, cultural, and historical importance"})
+	china = append(china, City{Name: "Shanghai", Description: "Global financial hub and largest city by population"})
+	china = append(china, City{Name: "Shenzhen", Description: "Tech powerhouse and innovation center near Hong Kong"})
+	china = append(china, City{Name: "Guangzhou", Description: "Major trade and manufacturing city in southern China"})
+	china = append(china, City{Name: "Chengdu", Description: "Economic center of western China and home of pandas"})
+
+	var japan []City
+	japan = append(japan, City{Name: "Tokyo", Description: "Capital city and global center for finance, tech, and culture"})
+	japan = append(japan, City{Name: "Osaka", Description: "Major economic hub known for food and commerce"})
+	japan = append(japan, City{Name: "Kyoto", Description: "Historic city famous for temples, shrines, and tradition"})
+	japan = append(japan, City{Name: "Yokohama", Description: "Port city just south of Tokyo with modern skyline"})
+	japan = append(japan, City{Name: "Nagoya", Description: "Industrial center and home to automotive manufacturing"})
+
+	var usa []City
+	usa = append(usa, City{Name: "Washington, D.C.", Description: "Capital of the United States and seat of government"})
+	usa = append(usa, City{Name: "New York City", Description: "Largest city, a global hub for finance and culture"})
+	usa = append(usa, City{Name: "Los Angeles", Description: "Entertainment capital and second-largest city"})
+	usa = append(usa, City{Name: "Chicago", Description: "Major Midwest city known for architecture and industry"})
+	usa = append(usa, City{Name: "San Francisco", Description: "Tech-driven city and gateway to Silicon Valley"})
+
+	var mexico []City
+	mexico = append(mexico, City{Name: "Mexico City", Description: "Capital and largest city, political and cultural center"})
+	mexico = append(mexico, City{Name: "Guadalajara", Description: "Major tech and cultural hub in western Mexico"})
+	mexico = append(mexico, City{Name: "Monterrey", Description: "Industrial and business center in the north"})
+	mexico = append(mexico, City{Name: "Puebla", Description: "Historic city known for colonial architecture and cuisine"})
+	mexico = append(mexico, City{Name: "Tijuana", Description: "Border city with strong ties to the U.S. and growing economy"})
+
+	var brazil []City
+	brazil = append(brazil, City{Name: "Brasília", Description: "Modern capital and center of government"})
+	brazil = append(brazil, City{Name: "São Paulo", Description: "Financial and commercial capital of Brazil"})
+	brazil = append(brazil, City{Name: "Rio de Janeiro", Description: "Historic city known for Christ the Redeemer and carnival"})
+	brazil = append(brazil, City{Name: "Fortaleza", Description: "Major city in northeastern Brazil with strong economy"})
+	brazil = append(brazil, City{Name: "Salvador", Description: "Cultural and historical city in northeastern Brazil"})
+
+	var argentina []City
+	argentina = append(argentina, City{Name: "Buenos Aires", Description: "Capital city known for tango, museums, and history"})
+	argentina = append(argentina, City{Name: "Córdoba", Description: "Historic city known for colonial architecture and museums"})
+	argentina = append(argentina, City{Name: "Mendoza", Description: "Major wine-producing region and city"})
+	argentina = append(argentina, City{Name: "San Juan", Description: "Historic city known for its colonial architecture and museums"})
+	argentina = append(argentina, City{Name: "Rosario", Description: "Major city in central Argentina with strong economy"})
+    ```
     </CodeGroup>
   </Step>
 
@@ -485,6 +705,22 @@ icon: 'bolt'
         const continent = await client.query("createContinent", continent_data[i]);
         continent_ids[continent_data[i].name] = continent.continent[0].id;
     }
+    ```
+
+    ```go Go
+    continent_ids := make(map[string]string)
+	for _, continent := range continent_data {
+		var createContinentResp CreateContinentResponse
+		err := HelixClient.Query(
+			"createContinent",
+			helix.WithData(CreateContinentRequest{Name: continent.Name}),
+		).Scan(&createContinentResp)
+		if err != nil {
+			log.Fatalf("Error while creating continent: %s", err)
+		}
+
+		continent_ids[continent.Name] = createContinentResp.Continent[0].ID
+	}
     ```
     </CodeGroup>
 
@@ -536,6 +772,68 @@ icon: 'bolt'
         const country = await client.query("createCountry", payload);
         south_america_ids[south_america[i].name] = country.country[0].id;
     }
+    ```
+
+    ```go Go [expandable]
+    europe_ids := make(map[string]string)
+	var europe_id = continent_ids["Europe"]
+	for _, country := range europe {
+		var createCountryResp CreateCountryResponse
+		err := HelixClient.Query(
+			"createCountry",
+			helix.WithData(CreateCountryRequest{Continent_id: europe_id, Name: country.Name, Currency: country.Currency}),
+		).Scan(&createCountryResp)
+		if err != nil {
+			log.Fatalf("Error while creating country: %s", err)
+		}
+
+		europe_ids[country.Name] = createCountryResp.Country[0].ID
+	}
+
+	asia_ids := make(map[string]string)
+	var asia_id = continent_ids["Asia"]
+	for _, country := range asia {
+		var createCountryResp CreateCountryResponse
+		err := HelixClient.Query(
+			"createCountry",
+			helix.WithData(CreateCountryRequest{Continent_id: asia_id, Name: country.Name, Currency: country.Currency}),
+		).Scan(&createCountryResp)
+		if err != nil {
+			log.Fatalf("Error while creating country: %s", err)
+		}
+
+		asia_ids[country.Name] = createCountryResp.Country[0].ID
+	}
+
+	north_america_ids := make(map[string]string)
+	var north_america_id = continent_ids["North America"]
+	for _, country := range north_america {
+		var createCountryResp CreateCountryResponse
+		err := HelixClient.Query(
+			"createCountry",
+			helix.WithData(CreateCountryRequest{Continent_id: north_america_id, Name: country.Name, Currency: country.Currency}),
+		).Scan(&createCountryResp)
+		if err != nil {
+			log.Fatalf("Error while creating country: %s", err)
+		}
+
+		north_america_ids[country.Name] = createCountryResp.Country[0].ID
+	}
+
+	south_america_ids := make(map[string]string)
+	var south_america_id = continent_ids["South America"]
+	for _, country := range south_america {
+		var createCountryResp CreateCountryResponse
+		err := HelixClient.Query(
+			"createCountry",
+			helix.WithData(CreateCountryRequest{Continent_id: south_america_id, Name: country.Name, Currency: country.Currency}),
+		).Scan(&createCountryResp)
+		if err != nil {
+			log.Fatalf("Error while creating country: %s", err)
+		}
+
+		south_america_ids[country.Name] = createCountryResp.Country[0].ID
+	}
     ```
     </CodeGroup>
 
@@ -661,6 +959,215 @@ icon: 'bolt'
     }
     await client.query("setCapital", {"country_id": south_america_ids["Argentina"], "city_id": argentina_ids["Buenos Aires"]});
     ```
+
+    ```go Go [expandable]
+    uk_ids := make(map[string]string)
+	var uk_id = europe_ids["UK"]
+	for _, city := range uk {
+		var createCityResp CreateCityResponse
+		err := HelixClient.Query(
+			"createCity",
+			helix.WithData(CreateCityRequest{Country_id: uk_id, Name: city.Name, Description: city.Description}),
+		).Scan(&createCityResp)
+		if err != nil {
+			log.Fatalf("Error while creating city: %s", err)
+		}
+
+		uk_ids[city.Name] = createCityResp.City[0].ID
+	}
+	var ukCapital SetCapitalResponse
+	err := HelixClient.Query(
+		"setCapital",
+		helix.WithData(SetCapitalRequest{Country_id: uk_id, City_id: uk_ids["London"]}),
+	).Scan(&ukCapital)
+	if err != nil {
+		log.Fatalf("Error while setting capital: %s", err)
+	}
+
+	germany_ids := make(map[string]string)
+	var germany_id = europe_ids["Germany"]
+	for _, city := range germany {
+		var createCityResp CreateCityResponse
+		err := HelixClient.Query(
+			"createCity",
+			helix.WithData(CreateCityRequest{Country_id: germany_id, Name: city.Name, Description: city.Description}),
+		).Scan(&createCityResp)
+		if err != nil {
+			log.Fatalf("Error while creating city: %s", err)
+		}
+
+		germany_ids[city.Name] = createCityResp.City[0].ID
+	}
+	var germanyCapital SetCapitalResponse
+	err = HelixClient.Query(
+		"setCapital",
+		helix.WithData(SetCapitalRequest{Country_id: germany_id, City_id: germany_ids["Berlin"]}),
+	).Scan(&germanyCapital)
+	if err != nil {
+		log.Fatalf("Error while setting capital: %s", err)
+	}
+
+	italy_ids := make(map[string]string)
+	var italy_id = europe_ids["Italy"]
+	for _, city := range italy {
+		var createCityResp CreateCityResponse
+		err := HelixClient.Query(
+			"createCity",
+			helix.WithData(CreateCityRequest{Country_id: italy_id, Name: city.Name, Description: city.Description}),
+		).Scan(&createCityResp)
+		if err != nil {
+			log.Fatalf("Error while creating city: %s", err)
+		}
+
+		italy_ids[city.Name] = createCityResp.City[0].ID
+	}
+	var italyCapital SetCapitalResponse
+	err = HelixClient.Query(
+		"setCapital",
+		helix.WithData(SetCapitalRequest{Country_id: italy_id, City_id: italy_ids["Rome"]}),
+	).Scan(&italyCapital)
+	if err != nil {
+		log.Fatalf("Error while setting capital: %s", err)
+	}
+
+	china_ids := make(map[string]string)
+	var china_id = asia_ids["China"]
+	for _, city := range china {
+		var createCityResp CreateCityResponse
+		err := HelixClient.Query(
+			"createCity",
+			helix.WithData(CreateCityRequest{Country_id: china_id, Name: city.Name, Description: city.Description}),
+		).Scan(&createCityResp)
+		if err != nil {
+			log.Fatalf("Error while creating city: %s", err)
+		}
+
+		china_ids[city.Name] = createCityResp.City[0].ID
+	}
+	var chinaCapital SetCapitalResponse
+	err = HelixClient.Query(
+		"setCapital",
+		helix.WithData(SetCapitalRequest{Country_id: china_id, City_id: china_ids["Beijing"]}),
+	).Scan(&chinaCapital)
+	if err != nil {
+		log.Fatalf("Error while setting capital: %s", err)
+	}
+
+	japan_ids := make(map[string]string)
+	var japan_id = asia_ids["Japan"]
+	for _, city := range japan {
+		var createCityResp CreateCityResponse
+		err := HelixClient.Query(
+			"createCity",
+			helix.WithData(CreateCityRequest{Country_id: japan_id, Name: city.Name, Description: city.Description}),
+		).Scan(&createCityResp)
+		if err != nil {
+			log.Fatalf("Error while creating city: %s", err)
+		}
+
+		japan_ids[city.Name] = createCityResp.City[0].ID
+	}
+	var japanCapital SetCapitalResponse
+	err = HelixClient.Query(
+		"setCapital",
+		helix.WithData(SetCapitalRequest{Country_id: japan_id, City_id: japan_ids["Tokyo"]}),
+	).Scan(&japanCapital)
+	if err != nil {
+		log.Fatalf("Error while setting capital: %s", err)
+	}
+
+	usa_ids := make(map[string]string)
+	var usa_id = north_america_ids["USA"]
+	for _, city := range usa {
+		var createCityResp CreateCityResponse
+		err := HelixClient.Query(
+			"createCity",
+			helix.WithData(CreateCityRequest{Country_id: usa_id, Name: city.Name, Description: city.Description}),
+		).Scan(&createCityResp)
+		if err != nil {
+			log.Fatalf("Error while creating city: %s", err)
+		}
+
+		usa_ids[city.Name] = createCityResp.City[0].ID
+	}
+	var usaCapital SetCapitalResponse
+	err = HelixClient.Query(
+		"setCapital",
+		helix.WithData(SetCapitalRequest{Country_id: usa_id, City_id: usa_ids["Washington, D.C."]}),
+	).Scan(&usaCapital)
+	if err != nil {
+		log.Fatalf("Error while setting capital: %s", err)
+	}
+
+	mexico_ids := make(map[string]string)
+	var mexico_id = north_america_ids["Mexico"]
+	for _, city := range mexico {
+		var createCityResp CreateCityResponse
+		err := HelixClient.Query(
+			"createCity",
+			helix.WithData(CreateCityRequest{Country_id: mexico_id, Name: city.Name, Description: city.Description}),
+		).Scan(&createCityResp)
+		if err != nil {
+			log.Fatalf("Error while creating city: %s", err)
+		}
+
+		mexico_ids[city.Name] = createCityResp.City[0].ID
+	}
+	var mexicoCapital SetCapitalResponse
+	err = HelixClient.Query(
+		"setCapital",
+		helix.WithData(SetCapitalRequest{Country_id: mexico_id, City_id: mexico_ids["Mexico City"]}),
+	).Scan(&mexicoCapital)
+	if err != nil {
+		log.Fatalf("Error while setting capital: %s", err)
+	}
+
+	brazil_ids := make(map[string]string)
+	var brazil_id = south_america_ids["Brazil"]
+	for _, city := range brazil {
+		var createCityResp CreateCityResponse
+		err := HelixClient.Query(
+			"createCity",
+			helix.WithData(CreateCityRequest{Country_id: brazil_id, Name: city.Name, Description: city.Description}),
+		).Scan(&createCityResp)
+		if err != nil {
+			log.Fatalf("Error while creating city: %s", err)
+		}
+
+		brazil_ids[city.Name] = createCityResp.City[0].ID
+	}
+	var brazilCapital SetCapitalResponse
+	err = HelixClient.Query(
+		"setCapital",
+		helix.WithData(SetCapitalRequest{Country_id: brazil_id, City_id: brazil_ids["Brasília"]}),
+	).Scan(&brazilCapital)
+	if err != nil {
+		log.Fatalf("Error while setting capital: %s", err)
+	}
+
+	argentina_ids := make(map[string]string)
+	var argentina_id = south_america_ids["Argentina"]
+	for _, city := range argentina {
+		var createCityResp CreateCityResponse
+		err := HelixClient.Query(
+			"createCity",
+			helix.WithData(CreateCityRequest{Country_id: argentina_id, Name: city.Name, Description: city.Description}),
+		).Scan(&createCityResp)
+		if err != nil {
+			log.Fatalf("Error while creating city: %s", err)
+		}
+
+		argentina_ids[city.Name] = createCityResp.City[0].ID
+	}
+	var argentinaCapital SetCapitalResponse
+	err = HelixClient.Query(
+		"setCapital",
+		helix.WithData(SetCapitalRequest{Country_id: argentina_id, City_id: argentina_ids["Buenos Aires"]}),
+	).Scan(&argentinaCapital)
+	if err != nil {
+		log.Fatalf("Error while setting capital: %s", err)
+	}
+    ```
     </CodeGroup>
   </Step>
 
@@ -675,6 +1182,19 @@ icon: 'bolt'
     const continents = await client.query("getAllContinents", {});
     console.log("Continents:", continents.continents, "\n");
     ```
+
+    ```go Go
+    var allContinents GetAllContinentsResponse
+	err = HelixClient.Query("getAllContinents").Scan(&allContinents)
+	if err != nil {
+		log.Fatalf("Error while getting continents: %s", err)
+	}
+
+	fmt.Println("Continents:")
+	for _, continent := range allContinents.Continents {
+		fmt.Println(continent.Name)
+	}
+    ```
     </CodeGroup>
 
     ### Get All Coutries in Europe
@@ -686,6 +1206,19 @@ icon: 'bolt'
     ```typescript TypeScript
     const countries = await client.query("getAllCountries", {"continent_id": continent_ids["Europe"]});
     console.log("Countries in Europe:", countries.countries, "\n");
+    ```
+
+    ```go Go
+    var allCountries GetAllCountriesResponse
+	err = HelixClient.Query("getAllCountries", helix.WithData(map[string]any{"continent_id": continent_ids["Europe"]})).Scan(&allCountries)
+	if err != nil {
+		log.Fatalf("Error while getting countries: %s", err)
+	}
+
+	fmt.Println("\nCountries in Europe:")
+	for _, country := range allCountries.Countries {
+		fmt.Println(country.Name)
+	}
     ```
     </CodeGroup>
 
@@ -699,11 +1232,24 @@ icon: 'bolt'
     const cities = await client.query("getAllCities", {"country_id": asia_ids["Japan"]});
     console.log("Cities in Japan:", cities.cities, "\n");
     ```
+
+    ```go Go
+    var allCities GetAllCitiesResponse
+	err = HelixClient.Query("getAllCities", helix.WithData(map[string]any{"country_id": asia_ids["Japan"]})).Scan(&allCities)
+	if err != nil {
+		log.Fatalf("Error while getting cities: %s", err)
+	}
+
+	fmt.Println("\nCities in Japan:")
+	for _, city := range allCities.Cities {
+		fmt.Println(city.Name)
+	}
+    ```
     </CodeGroup>
 
     ### Get Capital Cities
     <CodeGroup>
-    ```python Python
+    ```python Python [expandable]
     # Get capital of Japan
     print("Capital of Japan: ", client.query('getCapital', {'country_id': asia_ids['Japan']})[0]['capital'][0]['name'], "\n")
 
@@ -714,7 +1260,7 @@ icon: 'bolt'
     print("Capital of Argentina: ", client.query('getCapital', {'country_id': south_america_ids['Argentina']})[0]['capital'][0]['name'], "\n")
     ```
 
-    ```typescript TypeScript
+    ```typescript TypeScript [expandable]
     // Get capital of Japan
     const capital = await client.query("getCapital", {"country_id": asia_ids["Japan"]});
     console.log("Capital of Japan:", capital.capital[0].name);
@@ -726,6 +1272,38 @@ icon: 'bolt'
     // Get capital of Argentina
     const capital_argentina = await client.query("getCapital", {"country_id": south_america_ids["Argentina"]});
     console.log("Capital of Argentina:", capital_argentina.capital[0].name);
+    ```
+
+    ```go Go [expandable]
+    // Get capital of Japan
+	var capitalJapan GetCapitalResponse
+	err = HelixClient.Query("getCapital", helix.WithData(map[string]any{"country_id": asia_ids["Japan"]})).Scan(&capitalJapan)
+	if err != nil {
+		log.Fatalf("Error while getting capital: %s", err)
+	}
+
+	fmt.Println("\nCapital of Japan:")
+	fmt.Println(capitalJapan.City[0].Name)
+
+	// Get capital of USA
+	var capitalUSA GetCapitalResponse
+	err = HelixClient.Query("getCapital", helix.WithData(map[string]any{"country_id": north_america_ids["USA"]})).Scan(&capitalUSA)
+	if err != nil {
+		log.Fatalf("Error while getting capital: %s", err)
+	}
+
+	fmt.Println("\nCapital of USA:")
+	fmt.Println(capitalUSA.City[0].Name)
+
+	// Get capital of Argentina
+	var capitalArgentina GetCapitalResponse
+	err = HelixClient.Query("getCapital", helix.WithData(map[string]any{"country_id": south_america_ids["Argentina"]})).Scan(&capitalArgentina)
+	if err != nil {
+		log.Fatalf("Error while getting capital: %s", err)
+	}
+
+	fmt.Println("\nCapital of Argentina:")
+	fmt.Println(capitalArgentina.City[0].Name)
     ```
     </CodeGroup>
   </Step>
@@ -753,7 +1331,7 @@ icon: 'bolt'
     Get to know [HelixQL](../hql/hql), our fast, efficient query language built for traversing and manipulating graph and vector data.
     
     #### Work with the SDK
-    Build, query, and embed entirely in your language of choice using our [Python SDK](../sdks/helix-py) or [TypeScript SDK](../sdks/helix-ts).
+    Build, query, and embed entirely in your language of choice using our [Python SDK](../sdks/helix-py), [TypeScript SDK](../sdks/helix-ts), or [Go SDK](../sdks/helix-go).
     
     #### Unlock More Features
     Discover everything HelixDB has to offer with our cutting-edge [features](../../features/overview).

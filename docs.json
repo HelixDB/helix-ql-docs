@@ -32,7 +32,8 @@
                         "pages": [
                             "documentation/sdks/helix-py",
                             "documentation/sdks/helix-rs",
-                            "documentation/sdks/helix-ts"
+                            "documentation/sdks/helix-ts",
+                            "documentation/sdks/helix-go"
                         ]
                     },
                     {

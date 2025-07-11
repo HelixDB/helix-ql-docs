@@ -1,15 +1,12 @@
 ---
 title: "Rust SDK"
 description: "Getting started with HelixDBs Rust SDK."
-icon: 'rust'
+icon: "rust"
 ---
 
 [helix-rs](https://github.com/HelixDB/helix-rs) is a Rust library for interacting with [helix-db](https://github.com/HelixDB/helix-db) a powerful graph-vector database written in rust. It enables intuitive and type-safe access to graph-based and vector-based queries, making it ideal for building knowledge graphs, search systems, and LLM pipelines.
 
 ## Installation
-
-Add this to your `Cargo.toml`:
-
 
 <CodeGroup>
 ```bash Cargo CLI
@@ -20,24 +17,25 @@ cargo add helix-db
 [dependencies]
 helix-db = "0.1.3"
 ```
-</CodeGroup>
 
+</CodeGroup>
 
 ## Quick Start
 
-```rust
-use helix_rs::HelixDB;
+<CodeGroup>
+```rust main.rs
+use helix_db::HelixDB;
 use serde::{Serialize, Deserialize};
 
-// Define your data structures
+// Define your data structures based on the schema
 #[derive(Serialize)]
-struct UserInput {
+struct AddUserInput {
     name: String,
     age: i32,
 }
 
 #[derive(Deserialize)]
-struct UserOutput {
+struct AddUserOutput {
     id: String,
     name: String,
     age: i32,
@@ -46,58 +44,54 @@ struct UserOutput {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // Initialize the client
-    let client = HelixDB::new(None); // Uses default port 6969
+    let client = HelixDB::new(None, None); // Uses default endpoint and port http://localhost:6969
 
     // Create a user
-    let input = UserInput {
+    let input = AddUserInput {
         name: "John".to_string(),
         age: 20,
     };
 
-    let result: UserOutput = client.query("addUser", &input).await?;
-    println!("Created user with ID: {}", result.id);
+    // Define the output structure
+    #[derive(Deserialize)]
+    struct Result {
+        user: AddUserOutput,
+    }
+
+    // Run the query
+    let result: Result = client.query::<AddUserInput, Result>("addUser", &input).await?;
+
+    println!("Created user with ID: {}", result.user.id);
+
     Ok(())
 }
 ```
 
+```js queries.hx
+QUERY addUser(name: String, age: i32) =>
+    user AddN<User>({
+        name: name,
+        age: age
+    })
+    RETURN user
+
+```
+
+```js schema.hx
+N::User {
+    name: String,
+    age: i32
+}
+```
+
+</CodeGroup>
+
 ## Configuration
 
-### Custom Port
+### Custom Endpoint and Port
 
-You can specify a custom port when initializing the client:
-
-```rust
-let client = HelixDB::new(Some(8080)); // Uses port 8080
-```
-
-### Custom Client
-
-You can implement your own client by implementing the `HelixDBClient` trait:
+You can specify a custom endpoint and port when initializing the client:
 
 ```rust
-use helix_rs::HelixDBClient;
-
-struct MyCustomClient {
-    // Your implementation details
-}
-
-impl HelixDBClient for MyCustomClient {
-    fn new(port: Option<u16>) -> Self {
-        // Your initialization logic
-    }
-
-    async fn query<T, R>(&self, endpoint: &str, data: &T) -> anyhow::Result<R>
-    where
-        T: Serialize,
-        R: for<'de> Deserialize<'de>
-    {
-        // Your query implementation
-    }
-}
+let client = HelixDB::new(Some("https://my-endpoint.com"), Some(8080)); // Uses port 8080
 ```
-
-## Requirements
-
-- Rust 1.56 or higher
-- Running HelixDB instance
-- Tokio runtime for async operations

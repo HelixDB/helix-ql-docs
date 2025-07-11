@@ -4,19 +4,24 @@ icon: 'code'
 description: "Python setup for the professors example using Qwen Embedding Model"
 ---
 
-If you want to see an example of a FastAPI backend code that uses Gemini as a chatbot and calls HelixDB for queries, you can find it [here](https://github.com/helix-db/professor_example).
-This guide only covers the Python code to connect to HelixDB and create nodes and edges, create embeddings for the professors, search by embeddings, and filtering.
+This section will cover the Python code to connect to HelixDB and create nodes and edges, create embeddings for the professors, search by embeddings, and filtering.
 
 ## Step 1: Setting up the environment
 
-```bash
+<CodeGroup>
+
+```bash pip
 python -m venv venv
 source venv/bin/activate
 pip install helix-py sentence-transformers
 ```
+```bash uv
+uv venv
+uv add helix-py sentence-transformers
+```
+</CodeGroup>
 
 ## Step 2: Imports and Setup for HelixDB
-
 ```python
 import helix
 from sentence_transformers import SentenceTransformer
@@ -27,15 +32,9 @@ db = helix.Client(local=True, port=6969, verbose=True)
 
 ## Step 3: Creating the nodes that we will link professors to
 
-This assumes that you have a list of research areas, departments, universities, academic achievements, and labs.
+Here we start creating all the nodes that we will link a professors to.
 
-We store the research area ids in a dictionary so we can link professors to them later
-
-The reason we store only the research area in ResearchArea Node is because professors can have the same research area, but they will have different descriptions.
-We'll store the string of the combined area and description in the ResearchAreaAndDescriptionEmbedding node which connects to the professor. 
-
-
-**NOTE:** You can also make a query in helixdb to get the ID of the research area if you have the name, but we will store it in Python for simplicity
+**NOTE:** You can also make a query in helixdb to get the ID of the research area if you have the name, but we will store it in Python for simplicity.
 
 We will be using `db.query("query_name", {"param": value})` to create the nodes and edges
 
@@ -51,25 +50,25 @@ research_areas = {
 research_area_ids = {}
 for research_area in research_areas:
     research_area_node = db.query("create_research_area", {"area": research_area})
-    research_area_ids[research_area] = research_area_node[0]['research_area'][0]['id']
+    research_area_ids[research_area] = research_area_node[0]['research_area']['id']
 
 departments = ["Computer Science", "Mathematics", "Physics", "Chemistry", "Biology"]
 department_ids = {}
 for department in departments:
     department_node = db.query("create_department", {"name": department})
-    department_ids[department] = department_node[0]['department'][0]['id']
+    department_ids[department] = department_node[0]['department']['id']
 
 universities = ["Uni X", "Uni Y", "Uni Z"]
 university_ids = {}
 for university in universities:
     university_node = db.query("create_university", {"name": university})
-    university_ids[university] = university_node[0]['university'][0]['id']
+    university_ids[university] = university_node[0]['university']['id']
 
 labs = {"Basketball Data Science Lab": "An interdisciplinary group combining data science, biomechanics, and sport psychology to create next-generation analytics tools for basketball."}
 lab_ids = {}
 for lab in labs:
     lab_node = db.query("create_lab", {"name": lab, "research_focus": labs[lab]})
-    lab_ids[lab] = lab_node[0]['lab'][0]['id']
+    lab_ids[lab] = lab_node[0]['lab']['id']
 ```
 
 ## Step 4: Linking professors to the nodes
@@ -81,7 +80,7 @@ for professor in professors:
     # Create Professor Node
     professor_node =db.query("create_professor", {"name": professor["name"], "title": professor["title"], "page": professor["page"], "bio": professor["bio"]})
 
-    professor_id = professor_node[0]['professor'][0]['id']
+    professor_id = professor_node[0]['professor']['id']
 
     # Link Professor to Research Area
     for research_area in professor["key_research_areas"]:
@@ -216,7 +215,12 @@ print(professors_by_university_and_department_name)
 ```
 
 ```rust query.hx
-// to do
+QUERY get_professors_by_university_and_department_name(university_name: String, department_name: String) =>
+    professors <- N<Professor>::WHERE(AND(
+        EXISTS(_::Out<HasUniversity>::WHERE(_::{name}::EQ(university_name))),
+        EXISTS(_::Out<HasDepartment>::WHERE(_::{name}::EQ(department_name)))
+    ))
+    RETURN professors
 ```
 </CodeGroup>
 

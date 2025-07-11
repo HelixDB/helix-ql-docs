@@ -22,11 +22,10 @@ As a reminder heres the graph we are going to build:
 **Nodes:**
 
 - Professor Node with properties `name`, `title`, `page`, `bio`
-- Research Area Node with properties `area` and `description`
+- Research Area Node with properties `research_area`
 - Department Node with the property `name`
 - University Node with the property `name`
-- Academic Node with properties `degree`, `field`, `institution`, `year`
-- Lab Node with properties `name`, `research_focus`, `links`
+- Lab Node with properties `name`, `research_focus`
 
 **Vector Nodes for Embeddings:**
 
@@ -220,9 +219,8 @@ their ID and use that ID to get the actual string data of their research area.
 ```rust
 // Get the actual string data of a professor's research area given professor ID
 QUERY get_professor_research_areas_with_descriptions(professor_id: ID) =>
-    research_areas <- N<Professor>(professor_id)::Out<HasResearchArea>
-    RETURN research_areas
-
+    research_areas <- N<Professor>(professor_id)::Out<HasResearchAreaAndDescriptionEmbedding>
+    RETURN research_areas::{areas_and_descriptions}
 ```
 
-Awesome! We've built our graph schema and queries. Now how do we make a backend to connect to HelixDB?
+Awesome! We've built our graph schema and queries. Now how do query this in Python?
