@@ -61,6 +61,7 @@
                             "documentation/hql/source/adding",
                             "documentation/hql/source/source",
                             "documentation/hql/vectors/searching",
+                            "documentation/hql/vectors/embedding",
                             {
                                 "group": "Traversals",
                                 "pages": [

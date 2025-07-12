@@ -1,0 +1,41 @@
+---
+title: "Embedding Vectors"
+icon: "plus"
+---
+
+This operation allows you to pass in text directly for inserting and searching vectors.
+The text is automatically embedded with an embedding model of your choice (can be defined
+in your `config.hx.json` file). The default embedding model is `text-embedding-ada-002` from
+OpenAI.
+
+### `Embed`
+
+Embeds the input text and returns a vector
+
+```rust
+Embed(text)
+AddV<Type>(Embed(text))
+```
+
+**Example:**
+
+In schema.hx:
+
+```rust
+V::Document {
+    content: String
+    created_at: I64
+}
+```
+
+In query.hx:
+
+```rust
+QUERY InsertText(content: String, created_at: I64) =>
+    // Create an empty user node
+    basic_user <- AddV<Document>(Embed(content))
+    // You could also write it like this with properties
+    AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    RETURN basic_user
+```
+
