@@ -39,3 +39,11 @@ QUERY InsertText(content: String, created_at: I64) =>
     RETURN basic_user
 ```
 
+You can also use the `Embed` function in a search query:
+
+```rust
+QUERY SearchText(query: String) =>
+    // Search for documents that are similar to the query
+    results <- SearchV<Document>(Embed(query))
+    RETURN results
+```
