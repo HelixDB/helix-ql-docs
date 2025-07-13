@@ -23,6 +23,7 @@
                             "documentation/getting-started/intro",
                             "documentation/getting-started/installation",
                             "documentation/getting-started/quick-start",
+                            "documentation/getting-started/helixcli",
                             "documentation/getting-started/helixdb",
                             "documentation/getting-started/graph-database"
                         ]

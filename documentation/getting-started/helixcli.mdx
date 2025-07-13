@@ -1,0 +1,46 @@
+---
+title: "HelixCLI"
+description: "HelixCLI is a command-line interface for interacting with HelixDB."
+icon: "square-terminal"
+---
+
+## Installation & Setup
+
+| Command | Description |
+|--------|-------------|
+| `helix install` | Install the HelixDB runtime on your machine. |
+| `helix update` | Update HelixDB to the latest version. |
+| `helix init` | Initialize a new HelixDB project in the current directory. |
+| `helix version` | Show the current version of the CLI and HelixDB. |
+
+---
+
+## Development Commands
+
+| Command | Description |
+|--------|-------------|
+| `helix compile` | Compile your HelixDB project. |
+| `helix check` | Validate your project’s correctness before deployment. |
+
+---
+
+## Deployment & Instance Management
+
+| Command | Description |
+|--------|-------------|
+| `helix deploy` | Deploy the compiled project as a new instance. |
+| `helix instances` | List all your local HelixDB instances. |
+| `helix start <instance-id>` | Start a specific local instance. |
+| `helix stop <instance-id>` | Stop a running local instance. |
+| `helix redeploy <instance-id>` | Redeploy an instance while preserving data. |
+| `helix label <instance-id> <label>` | Assign a custom label to your instance. |
+| `helix save <instance-id>` | Save the current `data.mdb` file of an instance. |
+
+---
+
+## Cloud Authentication
+
+| Command | Description |
+|--------|-------------|
+| `helix login` | Log in using GitHub or check current credentials. |
+| `helix logout` | Log out and clear your saved credentials. |
