@@ -10,12 +10,12 @@ icon: "rust"
 
 <CodeGroup>
 ```bash Cargo CLI
-cargo add helix-db
+cargo add helix-rs
 ```
 
 ```toml Cargo.toml
 [dependencies]
-helix-db = "0.1.3"
+helix-rs = "0.1.1"
 ```
 
 </CodeGroup>
@@ -24,7 +24,7 @@ helix-db = "0.1.3"
 
 <CodeGroup>
 ```rust main.rs
-use helix_db::HelixDB;
+use helix_rs::HelixDB;
 use serde::{Serialize, Deserialize};
 
 // Define your data structures based on the schema
@@ -44,7 +44,7 @@ struct AddUserOutput {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // Initialize the client
-    let client = HelixDB::new(None, None); // Uses default endpoint and port http://localhost:6969
+    let client = HelixDB::new(Some("http://localhost"), Some(6969)); // Uses default endpoint and port http://localhost:6969
 
     // Create a user
     let input = AddUserInput {

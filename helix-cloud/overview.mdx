@@ -1,7 +1,54 @@
 ---
-title: 'Helix Cloud'
-description: 'Helix Cloud is a managed service for running HelixDB.'
-icon: 'cloud-arrow-up'
-iconType: 'solid'
+title: "Helix Cloud"
+description: "Helix Cloud is a managed service for running HelixDB."
+icon: "cloud-arrow-up"
+iconType: "solid"
 ---
-## Coming Soon!
+
+## Overview
+
+Each Helix Cloud cluster is a collection of **fully managed, secure** HelixDB instances.
+Currently, users can only create a **single cluster** and there is only **one instance** in the cluster.
+
+Each cluster is **logically isolated** from other clusters meaning your data is yours.
+Each cluster is also **private** by default meaning it cannot be accessed from the internet apart from via the query endpoints you define.
+
+All requests to the cluster are authenticated and authorized via an API key which is you are responsible for sending and managing securely (we handle the verification don't worry).
+
+**Please reach out if you want to use Helix Cloud or have any questions.**
+
+---
+
+## Getting Started
+
+<Steps titleSize="h2">
+  <Step title="Login with GitHub">
+    <Tip>
+        Click [here](../documentation/getting-started/installation) for more information about the Helix CLI.       
+    </Tip>
+
+    After installing the Helix CLI, you can create a new account by logging in with your GitHub account. 
+    This will create a new Helix account and a new API key for you to use. 
+
+    ```bash
+    helix login
+    ```
+
+    Running this command will automatically write your api key and user id to a credentials file
+
+  </Step>
+
+  <Step title="Create a new cluster">
+    Contact us to create a new cluster.
+  </Step>
+
+  <Step title="Deploy your project">
+    To deploy your queries to the cluster, you can use the following command:
+
+    ```bash
+    helix redeploy -p <path_to_helixdb_cfg> --remote --cluster <cluster_id>
+    ```
+
+    This will deploy your queries to the cluster.
+  </Step>
+</Steps>
