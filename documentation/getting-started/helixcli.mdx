@@ -4,44 +4,83 @@ description: "HelixCLI is a command-line interface for interacting with HelixDB.
 icon: "square-terminal"
 ---
 
-## Installation & Setup
-
+## Installation & Update
 | Command | Description |
-|--------|-------------|
-| `helix install` | Install the HelixDB runtime on your machine. |
-| `helix update` | Update HelixDB to the latest version. |
-| `helix init` | Initialize a new HelixDB project in the current directory. |
+| --- | --- |
+| `helix install` | Install the HelixDB on your machine. |
+| `helix update` | Update the HelixDB to the latest version. |
 | `helix version` | Show the current version of the CLI and HelixDB. |
 
----
 
-## Development Commands
+## Project Lifecycle
+### `helix init [options]`
+Initialize a new Helix project.
 
+| Arguments | Description |
+| --- | --- |
+| `--path <PATH>` | The path of the project. |
+
+### `helix compile [options]`
+Lint and compile a Helix project.
+
+| Arguments | Description |
+| --- | --- |
+| `--path <PATH>` | The path to the project. |
+| `--output <OUTPUT>` | The output path. |
+| `--gen <GEN>` | The target language (possible values: `rust`, `typescript`). |
+
+### `helix check [options]`
+Check a Helix project's schema and queries.
+
+| Arguments | Description |
+| --- | --- |
+| `--path <PATH>` | The path to the project. |
+
+
+## Instance Management
+### `helix deploy [options]`
+Deploy a Helix instance.
+
+| Arguments | Description |
+| --- | --- |
+| `--remote` | Redeploy a remote instance of HelixDB. |
+| `--path <PATH>` | The path to the project. |
+| `--cluster <CLUSTER>` | Cluster ID if restarting a running instance. |
+| `--port <PORT>` | Port to run the instance on. |
+
+### `helix status`
+Show the status of a Helix instance.
+
+### `helix stop [options] <CLUSTER>`
+Stop a Helix instance.
+
+| Arguments | Description |
+| --- | --- |
+| `<CLUSTER>` | Cluster ID to stop. |
+| `--all` | Stop all running instances. |
+
+### `helix save [options] <CLUSTER>`
+Save a Helix instance.
+
+| Arguments | Description |
+| --- | --- |
+| `<CLUSTER>` | Cluster ID to save. |
+| `--output <OUTPUT>` | Where to save the file to. |
+
+### `helix delete <CLUSTER>`
+Delete a Helix instance.
+
+| Arguments | Description |
+| --- | --- |
+| `<CLUSTER>` | Cluster ID to delete. |
+
+## Authentication
 | Command | Description |
-|--------|-------------|
-| `helix compile` | Compile your HelixDB project. |
-| `helix check` | Validate your project’s correctness before deployment. |
+| --- | --- |
+| `helix login` | Login to a Helix instance. |
+| `helix logout` | Logout of a Helix instance. |
 
----
-
-## Deployment & Instance Management
-
+## Visualization
 | Command | Description |
-|--------|-------------|
-| `helix deploy` | Deploy the compiled project as a new instance. |
-| `helix instances` | List all your local HelixDB instances. |
-| `helix start <instance-id>` | Start a specific local instance. |
-| `helix stop <instance-id>` | Stop a running local instance. |
-| `helix redeploy <instance-id>` | Redeploy an instance while preserving data. |
-| `helix label <instance-id> <label>` | Assign a custom label to your instance. |
-| `helix save <instance-id>` | Save the current `data.mdb` file of an instance. |
-| `helix visualize <instance-id>` | Visualize an instances internal graph. |
-
----
-
-## Cloud Authentication
-
-| Command | Description |
-|--------|-------------|
-| `helix login` | Log in using GitHub or check current credentials. |
-| `helix logout` | Log out and clear your saved credentials. |
+| --- | --- |
+| `helix visualize <CLUSTER>` | Open graph visualizer in default browser. |
