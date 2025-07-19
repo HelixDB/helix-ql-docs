@@ -1,0 +1,33 @@
+---
+title: 'E103'
+---
+
+# Unknown Vector Type
+
+## Erroneous Code Example
+
+This error occurs when you try to reference a vector type that is not defined in your schema.
+
+<CodeGroup>
+```rust queries.hx
+QUERY search(query: String) =>
+    results <- SearchV<Document>(Embed(query), 10)
+    RETURN results
+```
+
+```rust schema.hx
+// no types defined
+```
+</CodeGroup>
+
+## Solution
+
+Define the vector type `Document` in your schema.
+
+<CodeGroup>
+```rust schema.hx
+V::Document {
+    // fields
+}
+```
+</CodeGroup>

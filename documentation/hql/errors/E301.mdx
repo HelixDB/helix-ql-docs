@@ -1,0 +1,22 @@
+---
+title: 'E301'
+---
+
+# Variable Not in Scope
+
+This error occurs when you try to reference a variable that is not currently in scope or has not been declared.
+
+## Example
+
+```hql
+// Trying to use an undeclared variable
+n() -> User -> .name as user_name;
+other_query() -> .id == undeclared_var  // Error: undeclared_var not in scope
+```
+
+## Solution
+
+- Ensure variables are declared before use
+- Check variable naming for typos
+- Verify variable scope and accessibility
+- Make sure variables are declared in the correct context 

@@ -1,0 +1,21 @@
+---
+title: 'E643'
+---
+
+# Field Previously Excluded
+
+This error occurs when you try to access or include a field that has been previously excluded in the traversal.
+
+## Example
+
+```hql
+// Trying to access excluded field
+n() -> User -> exclude(.email) -> .email  // email was excluded
+```
+
+## Solution
+
+- Don't access fields that have been excluded
+- Remove exclusion if you need to access the field later
+- Restructure query to access fields before excluding them
+- Review field exclusion logic in your traversal 

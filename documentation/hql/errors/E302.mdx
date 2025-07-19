@@ -1,0 +1,22 @@
+---
+title: 'E302'
+---
+
+# Variable Previously Declared
+
+This error occurs when you try to declare a variable that has already been declared in the current scope.
+
+## Example
+
+```hql
+// Declaring the same variable twice
+n() -> User -> .name as user_name;
+n() -> Product -> .title as user_name  // Error: user_name already declared
+```
+
+## Solution
+
+- Use unique variable names within the same scope
+- Choose different variable names for different values
+- Check for duplicate variable declarations
+- Consider using more descriptive variable names to avoid conflicts 

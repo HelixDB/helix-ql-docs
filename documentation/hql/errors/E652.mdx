@@ -1,0 +1,21 @@
+---
+title: 'E652'
+---
+
+# Invalid Field Access
+
+This error occurs when you try to access a field that doesn't exist on the inner type of an iterable variable.
+
+## Example
+
+```hql
+// Accessing non-existent field in iteration
+for user in users { user.nonexistent_field }  // Field doesn't exist on user type
+```
+
+## Solution
+
+- Verify field names exist on the inner type
+- Check schema for available fields on the iterated type
+- Ensure correct field spelling and case
+- Review type definitions for proper field access 

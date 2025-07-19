@@ -1,0 +1,21 @@
+---
+title: 'E622'
+---
+
+# Type Mismatch in Comparison
+
+This error occurs when you compare a property with a value of a different type.
+
+## Example
+
+```hql
+// Comparing integer property with string value
+n() -> User[.age == "twenty-five"]  // age is integer, comparing with string
+```
+
+## Solution
+
+- Ensure compared values match the property type
+- Check schema for correct property data types
+- Convert values to matching types before comparison
+- Use appropriate comparison operators for the data types involved 

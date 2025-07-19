@@ -1,0 +1,21 @@
+---
+title: 'E651'
+---
+
+# Non-Iterable Variable
+
+This error occurs when you try to use a non-iterable variable in an iteration context.
+
+## Example
+
+```hql
+// Using non-iterable variable in iteration
+for item in single_user { ... }  // single_user is not a collection
+```
+
+## Solution
+
+- Ensure variables used in iterations are collections or arrays
+- Check that the variable contains iterable data
+- Use appropriate collection types for iteration
+- Verify the variable's data structure supports iteration 

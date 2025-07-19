@@ -1,0 +1,21 @@
+---
+title: 'E653'
+---
+
+# Non-Object Inner Type
+
+This error occurs when the inner type of an iterable variable is not an object type, preventing field access.
+
+## Example
+
+```hql
+// Trying to access fields on primitive inner type
+for number in numbers { number.field }  // numbers contains primitives, not objects
+```
+
+## Solution
+
+- Ensure iterable contains object types for field access
+- Check the inner type of your collection
+- Use appropriate operations for primitive types
+- Verify collection structure matches your access patterns 

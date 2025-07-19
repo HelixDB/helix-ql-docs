@@ -1,0 +1,37 @@
+---
+title: 'E202'
+---
+
+# Field Not in Schema
+
+## Erroneous Code Example
+
+This error occurs when you reference a field that is not defined in your schema for a given item type.
+
+For example, the field `username` is not defined in the schema for the `User` item type.
+<CodeGroup>
+```rust queries.hx
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+    RETURN user::{username}
+```
+
+```rust schema.hx
+N::User {
+    age: U32,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Define the field `username` in the schema for the `User` item type.
+
+<CodeGroup>
+```rust schema.hx
+N::User {
+    username: String,
+    age: U32,
+}
+```
+</CodeGroup>

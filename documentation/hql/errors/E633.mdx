@@ -1,0 +1,21 @@
+---
+title: 'E633'
+---
+
+# Non-Integer Range Index
+
+This error occurs when you use a non-integer value as an index in a range operation.
+
+## Example
+
+```hql
+// Using non-integer range indices
+n() -> User[.rating in [1.5..4.9]]  // Using floats as range indices
+```
+
+## Solution
+
+- Use integer values for range indices
+- Convert decimal values to integers if appropriate
+- Ensure range indices are whole numbers
+- Check data types used in range operations 

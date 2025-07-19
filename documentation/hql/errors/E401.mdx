@@ -1,0 +1,21 @@
+---
+title: 'E401'
+---
+
+# MCP Single Value Requirement
+
+This error occurs when an MCP (Model Context Protocol) query returns multiple values when only a single value is expected.
+
+## Example
+
+```hql
+// MCP query returning multiple values when single value expected
+n() -> User  // Returns multiple users, but MCP expects single value
+```
+
+## Solution
+
+- Ensure MCP queries return exactly one value
+- Use filters or limits to restrict results to a single item
+- Add conditions to narrow down the result set
+- Use aggregation functions if appropriate to return a single value 

@@ -1,0 +1,22 @@
+---
+title: 'E501'
+---
+
+# Invalid Date
+
+This error occurs when you provide a date value that cannot be parsed or is in an invalid format.
+
+## Example
+
+```hql
+// Invalid date formats
+add Event { date: "not-a-date" }
+add Event { date: "2023-13-45" }  // Invalid month/day
+```
+
+## Solution
+
+- Use proper date format (ISO 8601 recommended: YYYY-MM-DD)
+- Ensure date values are valid (correct month, day, year)
+- Check date parsing requirements for your schema
+- Verify date field type definitions in your schema 

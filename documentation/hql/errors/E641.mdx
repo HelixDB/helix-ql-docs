@@ -1,0 +1,21 @@
+---
+title: 'E641'
+---
+
+# Closure Position Restriction
+
+This error occurs when you place a closure operation in a position other than the last step of a traversal.
+
+## Example
+
+```hql
+// Closure not at the end of traversal
+n() -> User -> { .name, .age } -> .email  // Closure should be last
+```
+
+## Solution
+
+- Place closure operations only at the end of traversals
+- Restructure your query to have closures as final steps
+- Use other operations before applying closures
+- Review HelixQL traversal structure requirements 

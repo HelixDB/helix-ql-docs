@@ -1,0 +1,21 @@
+---
+title: 'E304'
+---
+
+# Missing Item Type
+
+This error occurs when an item type is required but not provided in your query.
+
+## Example
+
+```hql
+// Missing item type specification
+add { name: "John", age: 30 }  // Should specify: add User { ... }
+```
+
+## Solution
+
+- Specify the required item type in your query
+- Check query syntax for proper type declarations
+- Ensure all operations that require types have them specified
+- Review HelixQL syntax for correct type usage 

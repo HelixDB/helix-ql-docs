@@ -1,0 +1,21 @@
+---
+title: 'E644'
+---
+
+# Exclude Position Restriction
+
+This error occurs when you place an exclude operation in an invalid position within a traversal.
+
+## Example
+
+```hql
+// Exclude in invalid position
+n() -> User -> exclude(.password) -> .name -> .email  // Exclude not at end or before remapping/closure
+```
+
+## Solution
+
+- Place exclude operations at the end of traversals
+- Use exclude only before object remapping or closure operations
+- Restructure query to have exclude in the correct position
+- Review HelixQL exclude operation placement rules 

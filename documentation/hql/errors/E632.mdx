@@ -1,0 +1,21 @@
+---
+title: 'E632'
+---
+
+# Invalid Range Order
+
+This error occurs when the start value of a range is greater than or equal to the end value.
+
+## Example
+
+```hql
+// Invalid range where start > end
+n() -> User[.age in [65..18]]  // 65 > 18, invalid range
+```
+
+## Solution
+
+- Ensure range start value is less than end value
+- Check range logic and value ordering
+- Verify range values make sense for your use case
+- Use proper ascending order for range definitions 

@@ -1,0 +1,31 @@
+---
+title: 'E204'
+---
+
+# Reserved Field Name
+
+## Erroneous Code Example
+
+This error occurs when you try to use a reserved field name in your schema or query.
+
+For example, the field `id` is a reserved field name for any item type.
+
+<CodeGroup>
+```rust schema.hx
+N::User {
+    id: String,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Rename the field to a valid identifier.
+
+<CodeGroup>
+```rust schema.hx
+N::User {
+    github_id: String,
+}
+```
+</CodeGroup>

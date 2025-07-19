@@ -1,0 +1,22 @@
+---
+title: 'E303'
+---
+
+# Invalid Primitive Value
+
+This error occurs when you provide a primitive value that is not valid or properly formatted.
+
+## Example
+
+```hql
+// Invalid primitive values
+n() -> User[.age == "not_a_number"]  // Invalid integer
+n() -> User[.active == "yes"]        // Invalid boolean (should be true/false)
+```
+
+## Solution
+
+- Ensure primitive values are properly formatted
+- Use correct data types (string, integer, float, boolean)
+- Check value syntax and formatting
+- Verify values match expected primitive types 

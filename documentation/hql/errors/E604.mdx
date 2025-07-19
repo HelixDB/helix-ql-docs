@@ -1,0 +1,21 @@
+---
+title: 'E604'
+---
+
+# Update Restriction
+
+This error occurs when you try to perform an update operation on something other than nodes or edges.
+
+## Example
+
+```hql
+// Trying to update a non-node/edge entity
+n() -> .property -> update { new_value: "test" }  // Properties can't be updated directly
+```
+
+## Solution
+
+- Ensure update operations target nodes or edges only
+- Use proper update syntax for node/edge modifications
+- Access nodes or edges before applying update operations
+- Review HelixQL update documentation for correct usage 

@@ -1,0 +1,34 @@
+---
+title: "E101"
+---
+
+# Unknown Node Type
+
+
+## Erroneous Code Example
+
+This error occurs when you try to reference a node type that is not defined in your schema.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+    RETURN user
+```
+
+```rust schema.hx
+// no types defined
+```
+</CodeGroup>
+
+## Solution
+
+Define the node type `User` in your schema.
+
+<CodeGroup>
+```rust schema.hx
+N::User {
+    // fields
+}
+```
+</CodeGroup>

@@ -1,0 +1,21 @@
+---
+title: 'E621'
+---
+
+# Invalid Boolean Comparison
+
+This error occurs when you try to apply a boolean comparison operation to a type that doesn't support it.
+
+## Example
+
+```hql
+// Invalid boolean comparison on incompatible type
+n() -> User[.profile && .name]  // Can't use && on non-boolean types
+```
+
+## Solution
+
+- Ensure boolean operations are used with boolean values
+- Check data types before applying boolean comparisons
+- Use appropriate comparison operators for different data types
+- Convert values to boolean if necessary and supported 

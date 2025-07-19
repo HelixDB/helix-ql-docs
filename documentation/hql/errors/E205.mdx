@@ -1,0 +1,67 @@
+---
+title: "E205"
+---
+
+# Type Mismatch
+
+## Erroneous Code Example
+
+This error occurs when the type of a value you're providing doesn't match the expected field type defined in your schema.
+
+For example, the field `age` is defined as an integer in the schema but you're providing a string.
+
+<CodeGroup>
+```rust queries.hx
+QUERY addUser(someField: U32) =>
+    user <- AddN<User>({someField: someField})
+    RETURN user
+```
+
+```rust schema.hx
+N::User {
+    someField: String,
+}
+```
+
+</CodeGroup>
+
+## Solution
+
+
+
+<Tabs>
+  <Tab title="Solution 1">
+    Either change the type of the field in the schema to `U32`.
+    <CodeGroup>
+    ```rust queries.hx
+        QUERY addUser(someField: U32) =>
+            user <- AddN<User>({someField: someField})
+            RETURN user
+        ```
+
+        ```rust schema.hx
+        N::User {
+            someField: U32,
+        }
+        ```
+        </CodeGroup>
+
+  </Tab>
+  <Tab title="Solution 2">
+    Or change the value you're providing to a string.
+    <CodeGroup>
+    ```rust queries.hx
+        QUERY addUser(someField: String) =>
+            user <- AddN<User>({someField: someField})
+            RETURN user
+        ```
+
+        ```rust schema.hx
+        N::User {
+            someField: String,
+        }
+        ```
+        </CodeGroup>
+
+  </Tab>
+</Tabs>

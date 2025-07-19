@@ -1,0 +1,21 @@
+---
+title: 'E642'
+---
+
+# Object Remapping Position
+
+This error occurs when you place an object remapping operation in a position other than the last step of a traversal.
+
+## Example
+
+```hql
+// Object remapping not at the end
+n() -> User -> { name: .full_name } -> .email  // Remapping should be last
+```
+
+## Solution
+
+- Place object remapping operations only at the end of traversals
+- Ensure remapping is the final transformation step
+- Restructure queries to have remapping as the last operation
+- Use other transformations before applying remapping 

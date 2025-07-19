@@ -1,0 +1,21 @@
+---
+title: 'E612'
+---
+
+# Missing From ID
+
+This error occurs when creating an edge without specifying the source node ID.
+
+## Example
+
+```hql
+// Missing 'from' node ID in edge creation
+add_edge FOLLOWS { to: "user456" }  // Missing 'from' parameter
+```
+
+## Solution
+
+- Provide both 'from' and 'to' node IDs when creating edges
+- Ensure the source node ID exists in the database
+- Use proper edge creation syntax with complete parameters
+- Verify node IDs are valid and accessible 
