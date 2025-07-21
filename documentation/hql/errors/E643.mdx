@@ -17,6 +17,7 @@ Query getUser(userId: ID) =>
     user <- N<User>(userId)::!{email}
     RETURN user::{email}
 ```
+</CodeGroup>
 
 ## Solution
 
