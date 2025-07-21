@@ -4,18 +4,26 @@ title: 'E611'
 
 # Missing To ID
 
-This error occurs when creating an edge without specifying the target node ID.
+## Erroneous Code Example
 
-## Example
+This error occurs when you try to create an edge without specifying the target node ID.
 
-```hql
-// Missing 'to' node ID in edge creation
-add_edge FOLLOWS { from: "user123" }  // Missing 'to' parameter
+In this example, the `AddE` step is used without specifying the `To` parameter.
+
+<CodeGroup>
+```rust queries.hx
+Query addEdge(from: ID, to: ID) =>
+    AddE<Follows>::From(from)
 ```
+</CodeGroup>
 
 ## Solution
 
-- Provide both 'from' and 'to' node IDs when creating edges
-- Ensure the target node ID exists in the database
-- Use proper edge creation syntax with complete parameters
-- Verify node IDs are valid and accessible 
+Provide both 'from' and 'to' node IDs when creating edges.
+
+<CodeGroup>
+```rust queries.hx
+Query addEdge(from: ID, to: ID) =>
+    AddE<Follows>::From(from)::To(to)
+```
+</CodeGroup>

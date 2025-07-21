@@ -4,18 +4,21 @@ title: 'E604'
 
 # Update Restriction
 
+## Erroneous Code Example
+
 This error occurs when you try to perform an update operation on something other than nodes or edges.
 
-## Example
+In this example, the `update` step is used on a vector type which is not allowed **yet**.
 
-```hql
-// Trying to update a non-node/edge entity
-n() -> .property -> update { new_value: "test" }  // Properties can't be updated directly
+<CodeGroup>
+```rust queries.hx
+Query updateVector(vectorId: ID) =>
+    vector <- V<Vector>(vectorId)::UPDATE({field1: "updated value"})
 ```
 
-## Solution
-
-- Ensure update operations target nodes or edges only
-- Use proper update syntax for node/edge modifications
-- Access nodes or edges before applying update operations
-- Review HelixQL update documentation for correct usage 
+```rust schema.hx
+V::Vector {
+    field1: String,
+}
+```
+</CodeGroup>

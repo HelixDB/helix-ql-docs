@@ -4,18 +4,32 @@ title: 'E651'
 
 # Non-Iterable Variable
 
+## Erroneous Code Example
+
 This error occurs when you try to use a non-iterable variable in an iteration context.
 
-## Example
+In this example, the parameter `name` is not a collection, so it cannot be used in an iteration context.
 
-```hql
-// Using non-iterable variable in iteration
-for item in single_user { ... }  // single_user is not a collection
+<CodeGroup>
+
+```rust queries.hx
+Query addUser(name: String) =>
+    FOR n IN name {
+        AddN<User>({name: n})
+    }
+    RETURN "User added"
 ```
 
 ## Solution
 
-- Ensure variables used in iterations are collections or arrays
-- Check that the variable contains iterable data
-- Use appropriate collection types for iteration
-- Verify the variable's data structure supports iteration 
+Ensure variables used in iterations are collections or arrays.
+
+<CodeGroup>
+```rust queries.hx
+Query addUser(names: [String]) =>
+    FOR n IN names {
+        AddN<User>({name: n})
+    }
+    RETURN "Users added"
+```
+</CodeGroup>

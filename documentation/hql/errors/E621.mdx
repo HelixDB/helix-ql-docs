@@ -4,18 +4,38 @@ title: 'E621'
 
 # Invalid Boolean Comparison
 
+## Erroneous Code Example
+
 This error occurs when you try to apply a boolean comparison operation to a type that doesn't support it.
 
-## Example
+In this example, the `&&` operator is used on a non-boolean type.
 
-```hql
-// Invalid boolean comparison on incompatible type
-n() -> User[.profile && .name]  // Can't use && on non-boolean types
+<CodeGroup>
+```rust queries.hx
+Query getUser(user1: ID, user2: ID) =>
+    user1 <- N<User>(user1)
+    user2 <- N<User>(user2)
+    is_eq <- user1::EQ(user2)
+    RETURN is_eq
 ```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+```
+</CodeGroup>
 
 ## Solution
 
-- Ensure boolean operations are used with boolean values
-- Check data types before applying boolean comparisons
-- Use appropriate comparison operators for different data types
-- Convert values to boolean if necessary and supported 
+Ensure boolean operations are used on values that result in primitive types like booleans, numbers, or strings.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser(user1: ID, user2: ID) =>
+    user1_name <- N<User>(user1)::{name}
+    user2_name <- N<User>(user2)::{name}
+    is_eq <- user1_name::EQ(user2_name)
+    RETURN is_eq
+```
+</CodeGroup>

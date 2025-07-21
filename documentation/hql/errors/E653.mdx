@@ -4,18 +4,40 @@ title: 'E653'
 
 # Non-Object Inner Type
 
-This error occurs when the inner type of an iterable variable is not an object type, preventing field access.
+This error occurs when the inner type of an iterable variable is not an object type, preventing field access or object destructuring.
 
-## Example
+## Erroneous Code Example
 
-```hql
-// Trying to access fields on primitive inner type
-for number in numbers { number.field }  // numbers contains primitives, not objects
+In this example, the `numbers` variable contains primitives, not objects, so field access is not allowed.
+
+<CodeGroup>
+
+```rust queries.hx
+Query addUsers(names: [String]) =>
+    FOR {name} In names {
+        AddN<User>({name: name})
+    }
+    RETURN "Users added"
 ```
 
 ## Solution
 
-- Ensure iterable contains object types for field access
-- Check the inner type of your collection
-- Use appropriate operations for primitive types
-- Verify collection structure matches your access patterns 
+Ensure iterable contains object types for field access.
+
+<CodeGroup>
+```rust queries_solution1.hx
+Query addUsers(names: [String]) =>
+    FOR name IN names {
+        AddN<User>({name: name})
+    }
+    RETURN "Users added"
+```
+
+```rust queries_solution2.hx
+Query addUsers(names: [{name: String}]) =>
+    FOR {name} IN names {
+        AddN<User>({name: name})
+    }
+    RETURN "Users added"
+```
+</CodeGroup>

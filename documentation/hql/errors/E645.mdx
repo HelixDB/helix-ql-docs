@@ -8,14 +8,20 @@ This error occurs when you define an object remapping with no fields.
 
 ## Example
 
-```hql
-// Empty object remapping
-n() -> User -> { }  // No fields specified in remapping
-```
+<CodeGroup>
 
+```rust queries.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::{}
+```
+</CodeGroup>
 ## Solution
 
-- Include at least one field in object remapping operations
-- Define the fields you want to include or transform
-- Remove remapping if no transformation is needed
-- Check remapping syntax and field specifications 
+<CodeGroup>
+```rust queries.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::{name}
+```
+</CodeGroup>

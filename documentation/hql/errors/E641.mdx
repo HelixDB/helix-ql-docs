@@ -4,18 +4,34 @@ title: 'E641'
 
 # Closure Position Restriction
 
+## Erroneous Code Example
+
 This error occurs when you place a closure operation in a position other than the last step of a traversal.
 
-## Example
+In this example, the closure is not at the end of the traversal.
 
-```hql
-// Closure not at the end of traversal
-n() -> User -> { .name, .age } -> .email  // Closure should be last
+<CodeGroup>
+
+```rust queries.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::|u|{
+                userID: u::ID
+            }::Out<Knows>
 ```
+</CodeGroup>
 
-## Solution
+# Solution
 
-- Place closure operations only at the end of traversals
-- Restructure your query to have closures as final steps
-- Use other operations before applying closures
-- Review HelixQL traversal structure requirements 
+Place closure operations only at the end of traversals.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    out_users <- user::Out<Knows>
+    RETURN out_users, user::|u|{
+                            userID: u::ID
+                        }::Out<Knows>
+```
+</CodeGroup>

@@ -4,18 +4,40 @@ title: 'E304'
 
 # Missing Item Type
 
+## Erroneous Code Example
+
 This error occurs when an item type is required but not provided in your query.
 
-## Example
+In this example, the `User` item type is required but not provided.
 
-```hql
-// Missing item type specification
-add { name: "John", age: 30 }  // Should specify: add User { ... }
+<CodeGroup>
+```rust example1.hx
+Query getUser(userId: ID) =>
+    user <- N(userId)
+    RETURN user
 ```
+
+```rust example2.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)::Out
+    RETURN user
+```
+</CodeGroup>
 
 ## Solution
 
-- Specify the required item type in your query
-- Check query syntax for proper type declarations
-- Ensure all operations that require types have them specified
-- Review HelixQL syntax for correct type usage 
+Specify the required item type within the `<` and `>` brackets after the traversal step in your query.
+
+<CodeGroup>
+```rust example1.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user
+```
+
+```rust example2.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)::Out<Knows>
+    RETURN user
+```
+</CodeGroup>

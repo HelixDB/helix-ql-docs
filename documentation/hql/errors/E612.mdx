@@ -4,18 +4,26 @@ title: 'E612'
 
 # Missing From ID
 
-This error occurs when creating an edge without specifying the source node ID.
+## Erroneous Code Example
 
-## Example
+This error occurs when you try to create an edge without specifying the source node ID.
 
-```hql
-// Missing 'from' node ID in edge creation
-add_edge FOLLOWS { to: "user456" }  // Missing 'from' parameter
+In this example, the `AddE` step is used without specifying the `From` parameter.
+
+<CodeGroup>
+```rust queries.hx
+Query addEdge(to: ID) =>
+    AddE<Follows>::To(to)
 ```
+</CodeGroup>
 
 ## Solution
 
-- Provide both 'from' and 'to' node IDs when creating edges
-- Ensure the source node ID exists in the database
-- Use proper edge creation syntax with complete parameters
-- Verify node IDs are valid and accessible 
+Provide both 'from' and 'to' node IDs when creating edges.
+
+<CodeGroup>
+```rust queries.hx
+Query addEdge(from: ID, to: ID) =>
+    AddE<Follows>::From(from)::To(to)
+```
+</CodeGroup>

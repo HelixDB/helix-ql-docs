@@ -4,18 +4,28 @@ title: 'E602'
 
 # Invalid Step
 
-This error occurs when you use an invalid step in your traversal.
+## Erroneous Code Example
 
-## Example
+This error occurs when you try to use a step that is not valid in the current context.
 
-```hql
-// Invalid step in traversal
-n() -> InvalidStepType
+In this example, the `OutE<Knows>` step results in edges, but the `Out` step can only be used on nodes.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser() =>
+    user <- N<User>::OutE<Knows>::Out<Knows>
+    RETURN user
 ```
+</CodeGroup>
 
 ## Solution
 
-- Use valid step types in your traversals
-- Check step syntax and structure
-- Ensure steps are compatible with the current context
-- Review available step types in HelixQL documentation 
+Use valid step types in your traversals.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser() =>
+    user <- N<User>::Out<Knows>::Out<Knows>
+    RETURN user
+```
+</CodeGroup>

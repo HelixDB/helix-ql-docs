@@ -4,18 +4,33 @@ title: 'E401'
 
 # MCP Single Value Requirement
 
+## Erroneous Code Example
+
 This error occurs when an MCP (Model Context Protocol) query returns multiple values when only a single value is expected.
 
-## Example
+In this example, the MCP query returns multiple users, but MCP expects a single value. 
+This is so the agent using the MCP tool can traverse from the return value of the query.
 
-```hql
-// MCP query returning multiple values when single value expected
-n() -> User  // Returns multiple users, but MCP expects single value
+<CodeGroup>
+```rust queries.hx
+#[mcp]
+Query getUsers(userId: ID, postId: ID) =>
+    user <- N<User>(userId)
+    post <- N<Post>(postId)
+    RETURN user, post
 ```
+</CodeGroup>
 
 ## Solution
 
-- Ensure MCP queries return exactly one value
-- Use filters or limits to restrict results to a single item
-- Add conditions to narrow down the result set
-- Use aggregation functions if appropriate to return a single value 
+Ensure MCP queries return exactly one value.
+
+<CodeGroup>
+```rust queries.hx
+#[mcp]
+Query getUsers(userId: ID, postId: ID) =>
+    user <- N<User>(userId)
+    post <- N<Post>(postId)
+    RETURN user
+```
+</CodeGroup>

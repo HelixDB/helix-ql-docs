@@ -4,18 +4,41 @@ title: 'E633'
 
 # Non-Integer Range Index
 
+## Erroneous Code Example
+
 This error occurs when you use a non-integer value as an index in a range operation.
 
-## Example
+In this example, the range index is a float value.
 
-```hql
-// Using non-integer range indices
-n() -> User[.rating in [1.5..4.9]]  // Using floats as range indices
+<CodeGroup>
+
+```rust example1.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(1.5, 4.9)
+    RETURN subset_of_users
 ```
+
+```rust example2.hx
+Query getUser(end: F32) =>
+    subset_of_users <- N<User>::RANGE(0, end)
+    RETURN subset_of_users
+```
+</CodeGroup>
 
 ## Solution
 
-- Use integer values for range indices
-- Convert decimal values to integers if appropriate
-- Ensure range indices are whole numbers
-- Check data types used in range operations 
+Use integer values for range indices or set variable types to integer types.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(1, 5)
+    RETURN subset_of_users
+```
+
+```rust example2.hx
+Query getUser(end: I64) =>
+    subset_of_users <- N<User>::RANGE(0, end)
+    RETURN subset_of_users
+```
+</CodeGroup>

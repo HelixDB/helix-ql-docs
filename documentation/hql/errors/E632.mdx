@@ -4,18 +4,31 @@ title: 'E632'
 
 # Invalid Range Order
 
+## Erroneous Code Example
+
 This error occurs when the start value of a range is greater than or equal to the end value.
+This error is only emitted by the compiler when both start and end values are provided as literals. 
+A runtime error will be emitted if the range is not valid at runtime.
 
-## Example
+In this example, the start value is greater than the end value.
 
-```hql
-// Invalid range where start > end
-n() -> User[.age in [65..18]]  // 65 > 18, invalid range
+<CodeGroup>
+
+```rust queries.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(100, 10)
+    RETURN subset_of_users
 ```
+</CodeGroup>
 
 ## Solution
 
-- Ensure range start value is less than end value
-- Check range logic and value ordering
-- Verify range values make sense for your use case
-- Use proper ascending order for range definitions 
+Ensure range start value is less than end value.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(10, 100)
+    RETURN subset_of_users
+```
+</CodeGroup>

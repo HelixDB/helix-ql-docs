@@ -4,19 +4,28 @@ title: 'E631'
 
 # Incomplete Range
 
+## Erroneous Code Example
+
 This error occurs when you define a range without both start and end values.
 
-## Example
+In this example, the range is incomplete because it is missing the end value.
 
-```hql
-// Incomplete range specification
-n() -> User[.age in [18..]]  // Missing end value
-n() -> User[.age in [..65]]  // Missing start value
+<CodeGroup>
+```rust queries.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(0)
+    RETURN subset_of_users
 ```
+</CodeGroup>
 
 ## Solution
 
-- Provide both start and end values for ranges
-- Use proper range syntax: [start..end]
-- Ensure range values are valid and logical
-- Check range syntax in HelixQL documentation 
+Provide both start and end values for ranges.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(0, 100)
+    RETURN subset_of_users
+```
+</CodeGroup>

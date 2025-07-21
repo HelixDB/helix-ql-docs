@@ -4,19 +4,27 @@ title: 'E302'
 
 # Variable Previously Declared
 
+## Erroneous Code Example
+
 This error occurs when you try to declare a variable that has already been declared in the current scope.
+In this example, the variable `user_name` is declared twice.
 
-## Example
-
-```hql
-// Declaring the same variable twice
-n() -> User -> .name as user_name;
-n() -> Product -> .title as user_name  // Error: user_name already declared
+<CodeGroup>
+```rust queries.hx
+Query getUser(userId: ID) =>
+    userId <- N<User>(userId)::ID
+    RETURN userId
 ```
+</CodeGroup>
 
 ## Solution
 
-- Use unique variable names within the same scope
-- Choose different variable names for different values
-- Check for duplicate variable declarations
-- Consider using more descriptive variable names to avoid conflicts 
+Use a different variable name.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser(userId: ID) =>
+    user_id <- N<User>(userId)::ID
+    RETURN user_id
+```
+</CodeGroup>

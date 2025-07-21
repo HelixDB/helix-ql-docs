@@ -4,18 +4,26 @@ title: 'E601'
 
 # Invalid Traversal
 
-This error occurs when you attempt a traversal that is not valid or properly structured.
+**Note:** This error is not currently emitted by the compiler.
 
-## Example
+## Erroneous Code Example
 
-```hql
-// Invalid traversal syntax or structure
-n() -> -> User  // Missing step between arrows
+This error occurs when you attempt a malformed traversal.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser() =>
+    user <- N() 
 ```
 
 ## Solution
 
-- Check traversal syntax for proper structure
-- Ensure each step in the traversal is valid
-- Verify proper use of arrows and steps
-- Review HelixQL traversal documentation for correct patterns 
+Ensure each step in the traversal is valid.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser() =>
+    user <- N<User>
+    RETURN user
+```
+</CodeGroup>

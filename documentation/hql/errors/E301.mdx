@@ -4,19 +4,28 @@ title: 'E301'
 
 # Variable Not in Scope
 
+## Erroneous Code Example
+
 This error occurs when you try to reference a variable that is not currently in scope or has not been declared.
 
-## Example
+In this example, the variable `userId` is not declared.
 
-```hql
-// Trying to use an undeclared variable
-n() -> User -> .name as user_name;
-other_query() -> .id == undeclared_var  // Error: undeclared_var not in scope
+<CodeGroup>
+```rust queries.hx
+Query getUser() =>
+    user <- N<User>(userId)
+    RETURN user
 ```
+</CodeGroup>
 
 ## Solution
 
-- Ensure variables are declared before use
-- Check variable naming for typos
-- Verify variable scope and accessibility
-- Make sure variables are declared in the correct context 
+Declare the variable as a parameter before using it.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user
+```
+</CodeGroup>

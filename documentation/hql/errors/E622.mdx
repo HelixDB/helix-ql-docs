@@ -4,18 +4,37 @@ title: 'E622'
 
 # Type Mismatch in Comparison
 
+## Erroneous Code Example
+
 This error occurs when you compare a property with a value of a different type.
 
-## Example
+In this example, the `age` property is an integer, but the comparison is done with a string value.
 
-```hql
-// Comparing integer property with string value
-n() -> User[.age == "twenty-five"]  // age is integer, comparing with string
+<CodeGroup>
+```rust queries.hx
+Query getUser(user: ID) =>
+    user <- N<User>(user)
+    is_eq <- user::{name}::EQ(25)
+    RETURN is_eq
 ```
+
+```rust schema.hx
+N::User {
+    name: String,
+    age: I64,
+}
+```
+</CodeGroup>
 
 ## Solution
 
-- Ensure compared values match the property type
-- Check schema for correct property data types
-- Convert values to matching types before comparison
-- Use appropriate comparison operators for the data types involved 
+Ensure compared values match the property type.
+
+<CodeGroup>
+```rust queries.hx
+Query getUser(user: ID) =>
+    user <- N<User>(user)
+    is_eq <- user::{age}::EQ(25)
+    RETURN is_eq
+```
+</CodeGroup>
