@@ -53,8 +53,8 @@ SearchV<Type>(vector)::WHERE(<boolean_expression>)
 
 ```rust
 QUERY SearchVector (vector: [F64], now: I64) =>
-    documents <- SearchV<Document>(vector)
-    documents <- documents::WHERE(_::{created_at}::LTE(now))
+    doc_vecs <- SearchV<Document>(vector)
+    documents <- doc_vecs::In<DocEmbedding>::WHERE(_::{created_at}::LTE(now))
     RETURN documents
 ```
 
