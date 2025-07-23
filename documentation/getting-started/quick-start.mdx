@@ -83,8 +83,56 @@ mode: 'wide'
     We will be using HelixDB to model the relationships between continents, countries, and cities.
     
     Below is an example of the schema we will be using.
-    [![](https://mermaid.ink/img/pako:eNqNklFvgjAUhf9Kcx-NGkRB4WHJ1KnJZmKW7WVjDx1U7SYtuZRsTv3vKyoSEBP6QOm5-c65vekOfBkwcGG5kT_-mqIiL2NPEL3u3097uhqNkRSKCyZUo5HLgoaMuOQhQRmxk_xx2oYlOBEKtxXo62Mu-QkiE_5WywsNBHHBcVR05KrK7kmKQIpcDljsI48Ul0JXRzTiim6IXF5yz-aTmu1OGYZUbCt7TqdQMJ3W6XjIcMPrdFyIPifM6yTMqfDXLFYMb6XM6ZdE4muccFEezXOdjBkNPxNc3QpYSP2uMv_yRc6vjbRad_sZjcl5-nsyvFmZZNQwr2n3PRldyacBVlWOwDxzmpQK0ys5c5pWA8_QhBXyAFyFCWtCmF4zPcIuBTxQaxYyD1z9G1D89sATB81EVLxJGWYYymS1BndJN7E-JVFAFRtzukIaXlT94gKGx2mA23dM8-gC7g5-wTX7vfbAGZiOYViO_th2E7Za7nTanW7X6JsasLqW2Ts04e8YbLSdrmHZmulblm13DPPwD2rKKDI?type=png)](https://mermaid.live/edit#pako:eNqNklFvgjAUhf9Kcx-NGkRB4WHJ1KnJZmKW7WVjDx1U7SYtuZRsTv3vKyoSEBP6QOm5-c65vekOfBkwcGG5kT_-mqIiL2NPEL3u3097uhqNkRSKCyZUo5HLgoaMuOQhQRmxk_xx2oYlOBEKtxXo62Mu-QkiE_5WywsNBHHBcVR05KrK7kmKQIpcDljsI48Ul0JXRzTiim6IXF5yz-aTmu1OGYZUbCt7TqdQMJ3W6XjIcMPrdFyIPifM6yTMqfDXLFYMb6XM6ZdE4muccFEezXOdjBkNPxNc3QpYSP2uMv_yRc6vjbRad_sZjcl5-nsyvFmZZNQwr2n3PRldyacBVlWOwDxzmpQK0ys5c5pWA8_QhBXyAFyFCWtCmF4zPcIuBTxQaxYyD1z9G1D89sATB81EVLxJGWYYymS1BndJN7E-JVFAFRtzukIaXlT94gKGx2mA23dM8-gC7g5-wTX7vfbAGZiOYViO_th2E7Za7nTanW7X6JsasLqW2Ts04e8YbLSdrmHZmulblm13DPPwD2rKKDI)
     
+    ```mermaid
+    flowchart TD
+    A[
+        **Continent**
+        name : Europe
+    ]
+    B[
+        **Country**
+        name : UK
+        currency : Pounds
+    ]
+    C[
+        **City**
+        name : London
+        description : Capital of UK
+    ]
+    F[
+        **Country**
+        name : Germany
+        currency : Euro
+    ]
+    G[
+        **City**
+        name : Berlin
+        description : Capital of Germany
+    ]
+    M[
+        **City**
+        name : Manchester
+        description : Major city in UK
+    ]
+    R[
+        **City**
+        name : Hamburg
+        description : Port city in Germany
+    ]
+
+    A -->|Has Country| B
+    A -->|Has Country| F
+
+    B -->|Has City| C
+    B -->|Has Capital| C
+    B -->|Has City| M
+
+    F -->|Has City| G
+    F -->|Has Capital| G
+    F -->|Has City| R
+    ```
+
     ### Writing your schema
     Write your schema in the newly created `schema.hx` file in the `helixdb-cfg` directory.
 
