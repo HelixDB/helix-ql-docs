@@ -156,7 +156,8 @@
                             "guides/overview",
                             "guides/deploying",
                             "guides/mcp-guide",
-                            "guides/helixir"
+                            "guides/helixir",
+                            "guides/dashboard"
                         ]
                     },
                     {
