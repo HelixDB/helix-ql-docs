@@ -1,0 +1,113 @@
+---
+title: "MongoDB to HelixDB Schema Converter"
+sidebarTitle: "MongoDB Loader"
+description: "The MongoDB Loader is a tool that allows you to convert MongoDB collections into a HelixDB schema."
+icon: "database"
+---
+
+## Prerequisites
+
+- Python 3.13
+- MongoDB database
+
+## Setup
+
+1. **Clone the Repository**
+
+```bash
+git clone https://github.com/HelixDB/helix-mongodb.git
+cd helix-mongodb
+```
+
+2. **Install Dependencies**
+
+```bash
+pip install -r requirements.txt
+```
+
+3. **Environment Configuration**
+
+Create a `.env` file in your project root with your MongoDB connection string:
+
+```env
+MONGODB_URI=...
+```
+
+## Basic Usage
+
+### Initialize the Loader
+
+```python
+from mongoLoader import MongoLoader
+
+# Initialize with database and collection
+loader = MongoLoader('your_database', 'your_collection')
+```
+
+### Explore Collections
+
+```python
+# List all available collections
+collections = loader.list_collections()
+print(f"Available collections: {collections}")
+
+# Get current collection
+current_collection = loader.get_collection()
+print(f"Current collection: {current_collection.name}")
+
+# Switch to a different collection
+loader.clear_helix_schema()
+loader.set_collection('another_collection')
+```
+
+### Generate HelixDB Schema
+
+```python
+# Generate basic schema
+helix_schema = loader.get_helix_schema()
+print(helix_schema)
+
+# Save schema to file
+loader.save_helix_schema()
+```
+
+## Extra Features
+
+### Vector Field Configuration
+
+If you want to specify that a field is a vector, you can do so with the `vector_keys` parameter.
+
+```python
+# Configure vector fields with specific types
+vector_config = {
+    "bio": "[F64]",
+}
+
+helix_schema = loader.get_helix_schema(vector_keys=vector_config)
+```
+
+### Specific Type Mapping
+
+```python
+# Specify exact types for fields with mixed data types
+specific_types = {
+    "runtime": "I64",
+    "rating": "F32",
+}
+
+helix_schema = loader.get_helix_schema(
+    specific_types=specific_types
+)
+```
+
+### Saving to Schema File
+
+You can save the schema to a HelixDB file using the `save_helix_schema` method.
+
+```python
+loader.save_helix_schema()
+```
+
+## Example
+
+You can find an example of how to use the MongoDB Loader in [example.ipynb](https://github.com/Gahnxd/helix-mongodb/blob/main/example.ipynb)
