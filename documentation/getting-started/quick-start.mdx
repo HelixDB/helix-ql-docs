@@ -191,8 +191,8 @@ mode: 'wide'
     In this case, we will be creating continents, countries, and cities. 
     We will also need a query to specify which city is the capital of a country.
 
-    Write your creation queries in the `query.hx` file in the `helixdb-cfg` directory.
-    ```rust query.hx icon="dna" [expandable]
+    Write your creation queries in the `queries.hx` file in the `helixdb-cfg` directory.
+    ```rust queries.hx icon="dna" [expandable]
     QUERY createContinent (name: String) =>
         // Add a new continent node with name
         continent <- AddN<Continent>({name: name})
@@ -237,8 +237,8 @@ mode: 'wide'
     In this case, we will be retrieving all continents, countries, and cities.
     We will also need a query to retrieve the capital of a country.
 
-    Write your read queries in the `query.hx` file in the `helixdb-cfg` directory.
-    ```rust query.hx icon="dna" [expandable]
+    Write your read queries in the `queries.hx` file in the `helixdb-cfg` directory.
+    ```rust queries.hx icon="dna" [expandable]
     QUERY getAllContinents () =>
         // Select all continent nodes
         continents <- N<Continent>
