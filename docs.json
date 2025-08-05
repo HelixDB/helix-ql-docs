@@ -127,7 +127,6 @@
                                     "documentation/hql/errors/E651",
                                     "documentation/hql/errors/E652",
                                     "documentation/hql/errors/E653"
-
                                 ],
                                 "icon": "triangle-exclamation"
                             }
@@ -157,7 +156,8 @@
                             "guides/deploying",
                             "guides/mcp-guide",
                             "guides/helixir",
-                            "guides/dashboard"
+                            "guides/dashboard",
+                            "guides/code-index"
                         ]
                     },
                     {
