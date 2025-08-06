@@ -1,0 +1,36 @@
+---
+title: "Keyword Search"
+description: "This operation allows you to search based on keywords stored within the properties of nodes."
+icon: "magnifying-glass"
+---
+
+## `SearchBM25`
+
+Search for keyword on nodes in your graph.
+
+```rust
+SearchBM25<Type>("text", num_search_results)
+```
+
+### Example
+
+In schema.hx:
+
+```rust
+N::Document {
+    text: String
+    created_at: I64
+}
+```
+
+In query.hx:
+
+```rust
+QUERY SearchKeyword(keywords: String, k: I64) =>
+    // Search for the node in the graph (returns k results)
+    documents <- SearchV<Document>(keywords, k)
+    RETURN documents
+```
+
+---
+
