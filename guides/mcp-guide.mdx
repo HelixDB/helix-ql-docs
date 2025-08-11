@@ -1,7 +1,342 @@
 ---
 title: 'MCP Guide'
-description: 'A guide to get you started with HelixDB MCP.'
+description: 'A guide to get you started with HelixDB MCP Endpoints'
 icon: 'rocket-launch'
 ---
 
-## Coming Soon!
+---
+
+# Introduction
+...
+
+Every time you want to create a traversal query that has a combination of MCP calls, you will need to pass in a connection ID.
+If you are doing asynchonous calls, then it may be best to create a new connection ID for each traversal query.
+
+---
+
+# MCP Tools
+These tools are used to manage the MCP connection and interact with the MCP endpoints.
+
+<h2>Initialization `init`</h2>
+<h4> Endpoint `"mcp/init"` </h4>
+Creates a new MCP connection, which is a blank traversal.
+
+Request Format
+```rust
+{"connection_id": "<connection-id>"}
+```
+
+Response Format
+```rust
+"<connection-id>"
+```
+
+<h2>Iterate Results `next`</h2>
+<h4> Endpoint `"mcp/next"` </h4>
+Returns the next item in the MCP traversal results.
+
+Response Format
+```rust
+{<node-edge-data>}
+```
+
+<h2>Collect Results `collect`</h2>
+<h4> Endpoint `"mcp/collect"` </h4>
+Collects all the results from the MCP traversal.
+
+Request Format
+```rust
+{"connection_id": "<connection-id>"}
+```
+
+Optional Parameters
+- `"range": {"start": <start-index>, "end": <end-index>}` range of results to collect (default: `{"start": 0, "end": -1}`)
+- `"drop" : <true-false>` resets the traversal after collecting results (default: `true`)
+
+Response Format
+```rust
+[
+    {<node-edge-data>},
+    ...
+]
+```
+
+<h2>Reset Connection `reset`</h2>
+<h4> Endpoint `"mcp/reset"` </h4>
+Resets the MCP connection with the given connection ID to a blank traversal.
+
+Request Format
+```rust
+{"connection_id": "<connection-id>"}
+```
+
+Response Format
+```rust
+"<connection-id>"
+```
+
+<h2>Schema Context `schema_resource`</h2>
+<h4> Endpoint `"mcp/schema_resource"` </h4>
+Returns the schema and query information of the database for LLM context.
+
+Request Format
+```rust
+{"connection_id": "<connection-id>"}
+```
+
+Response Format
+```rust expandable
+{
+    "schema": {
+        "nodes": [
+            {
+                "name": "<node-name>",
+                "properties": {
+                    "<property-name>": "<property-type>",
+                    ...
+                }
+            },
+            ...
+        ],
+        "vectors": [
+            {
+                "name": "<vector-name>",
+                "properties": {
+                    "<property-name>": "<property-type>",
+                    ...
+                }
+            },
+            ...
+        ],
+        "edges": [
+            {
+                "name": "<edge-name>",
+                "properties": {
+                    "<property-name>": "<property-type>",
+                    ...
+                }
+            },
+            ...
+        ]
+    },
+    "queries": [
+        {
+            "name": "<query-name>",
+            "parameters": {
+                "<parameter-name>": "<parameter-type>",
+                ...
+            },
+            "returns": [
+                "<return-variable-name>",
+                ...
+            ]
+        }
+    ]
+}
+```
+
+---
+
+# MCP Traversals
+These tools are used to dynamically traverse the graph and retrieve nodes and edges.
+However, they do not return the results of the traversal.
+
+<h2>Retrieve Nodes `n_from_type`</h2>
+<h4> Endpoint `"mcp/n_from_type"` </h4>
+Retrieves all nodes of a given type.
+
+Request Format
+```rust
+{"connection_id": "<connection-id>", "data": {"node_type": "<node-type>"}}
+```
+
+Parameters
+- `node_type` : the type of node to retrieve
+
+<h2>Retrieve Edges `e_from_type`</h2>
+<h4> Endpoint `"mcp/e_from_type"` </h4>
+Retrieves all edges of a given type.
+
+Request Format
+```rust
+{"connection_id": "<connection-id>", "data": {"edge_type": "<edge-type>"}}
+```
+
+Parameters
+- `edge_type` : the type of edge to retrieve
+
+<h2>Out `out_step`</h2>
+<h4> Endpoint `"mcp/out_step"` </h4>
+Traverses out from current nodes or vectors in the traversal with the given edge type to nodes or vectors.
+Assumes that the current state of the traversal is a collection of nodes or vectors that is the source of the given edge type and label.
+
+Request Format
+```rust
+{"connection_id": "<connection-id>", "data": {"edge_type": "<edge-type>", "edge_label": "<edge-label>"}}
+```
+
+Parameters
+- `edge_type` : the type of edge to traverse out
+- `edge_label` : the target entity (`node` or `vec`)
+
+<h2>OutE `out_e_step`</h2>
+<h4> Endpoint `"mcp/out_e_step"` </h4>
+Traverses out from current edges to their target nodes or vectors.
+Assumes that the current state of the traversal is a collection of edges with the target of the given edge label.
+
+Request Format
+```rust
+{"connection_id": "<connection-id>", "data": {"edge_label": "<edge-label>"}}
+```
+
+Parameters
+- `edge_label` : the target entity (`node` or `vec`)
+
+<h2>In `in_step`</h2>
+<h4> Endpoint `"mcp/in_step"` </h4>
+Traverses into the current nodes or vectors in the traversal with the given edge type to nodes or vectors.
+Assumes that the current state of the traversal is a collection of nodes or vectors that is the target of the given edge type and label.
+
+Request Format
+```rust
+{"connection_id": "<connection-id>", "data": {"edge_type": "<edge-type>", "edge_label": "<edge-label>"}}
+```
+
+Parameters
+- `edge_type` : the type of edge to traverse into
+- `edge_label` : the source entity (`node` or `vec`)
+
+<h2>InE `in_e_step`</h2>
+<h4> Endpoint `"mcp/in_e_step"` </h4>
+Traverses into the current edges to their source nodes or vectors.
+Assumes that the current state of the traversal is a collection of edges with the source of the given edge label.
+
+Request Format
+```rust
+{"connection_id": "<connection-id>", "data": {"edge_label": "<edge-label>"}}
+```
+
+Parameters
+- `edge_label` : the source entity (`node` or `vec`)
+
+---
+
+# MCP Filter Tool
+
+<h2>Filter `filter_items`</h2>
+<h4> Endpoint `"mcp/filter_items"` </h4>
+Filters the current state of the traversal.
+
+Request Format
+```rust
+{
+    "connection_id": "<connection-id>", 
+    "data": {"filter": <filters>}
+}
+```
+
+Where `filters` is a list of filters to apply to the current state of the traversal.
+The format of the filters is as follows:
+
+```rust
+// Filter layer
+{
+    "properties" : [
+        <property-filters>,
+        ...
+    ],
+    "filter_traversals" : [
+        <traversal-filters>,
+        ...
+    ]
+}
+```
+
+### Property Filter
+The property filter is used to filter the current state of the traversal by the properties of the entity.
+The outer list is the `OR` operation and the inner list is the `AND` operation.    
+```rust
+// OR layer
+"properties" : [
+    // AND layer
+    [
+        // Filters
+        {"key": "<property-name>", "operator": "<operator>", "value": "<property-value>"},
+        ...
+    ],
+    ...
+]
+```
+
+Parameters
+- `key` : the name of the property to filter on
+- `operator` : the operator to use for the filter
+- `value` : the value to filter on
+
+Operators:
+
+| Operator | Description | Operator | Description |
+|----------|-------------|----------|-------------|
+| `==` | equals | `!=` | not equals |
+| `>` | greater than | `>=` | greater than or equal to |
+| `<` | less than | `<=` | less than or equal to |
+
+<Note>
+List to value and value to list comparisons will use the OR operator for each element in the list.      
+List to list comparisons will also use the OR operator for each element in each list.  
+
+This allows for using `contains` and `not_contains` operators by using the `==` and `!=` operator with a list of values.
+</Note>
+
+### Traversal Filter
+The traversal filter is used to filter the current state of the traversal by the results of a traversal.
+It doesn't actually change the state of the current traversal, but just checks and filters by the results of the traversal filter.
+You can have nested filters in the inner filter layer, which can include property and traversal filters with the same syntax.
+The traversal filter only has an `AND` operation.
+
+```rust
+// AND layer
+"filter_traversals" : [
+    {
+        // Traversal tool name
+        "tool_name" : "<tool-name>",
+        // Traversal tool args
+        "args" : {
+            "<parameter-name>" : "<parameter-value>",
+            ...,
+            // Inner filter layer
+            "filter" : {
+                "properties" : [
+                    <property-filters>,
+                    ...
+                ],
+                "filter_traversals" : [
+                    <traversal-filters>,
+                    ...
+                ]
+            }
+        }
+    },
+    ...
+]
+```
+
+---
+
+# MCP Search Tools
+
+<h2>SearchV `search_vector`</h2>
+<h4> Endpoint `"mcp/search_vector"` </h4>
+Searches for nodes or vectors by their vector representation.
+
+<h2>SearchV Text `search_vector_text`</h2>
+<h4> Endpoint `"mcp/search_vector_text"` </h4>
+Searches for nodes or vectors by their text representation.
+
+<h2>Search BM25 `search_keyword`</h2>
+<h4> Endpoint `"mcp/search_keyword"` </h4>
+Searches for nodes or vectors by their keyword representation.
+
+---
+
+# Examples
