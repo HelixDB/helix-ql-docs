@@ -176,7 +176,10 @@ Assumes that the current state of the traversal is a collection of nodes or vect
 
 Request Format
 ```rust
-{"connection_id": "<connection-id>", "data": {"edge_type": "<edge-type>", "edge_label": "<edge-label>"}}
+{
+    "connection_id": "<connection-id>",
+    "data": {"edge_type": "<edge-type>", "edge_label": "<edge-label>"}
+}
 ```
 
 Parameters
@@ -203,7 +206,10 @@ Assumes that the current state of the traversal is a collection of nodes or vect
 
 Request Format
 ```rust
-{"connection_id": "<connection-id>", "data": {"edge_type": "<edge-type>", "edge_label": "<edge-label>"}}
+{
+    "connection_id": "<connection-id>", 
+    "data": {"edge_type": "<edge-type>", "edge_label": "<edge-label>"}
+}
 ```
 
 Parameters
@@ -294,8 +300,8 @@ This allows for using `contains` and `not_contains` operators by using the `==` 
 
 ### Traversal Filter
 The traversal filter is used to filter the current state of the traversal by the results of a traversal.
-It doesn't actually change the state of the current traversal, but just checks and filters by the results of the traversal filter.
-You can have nested filters in the inner filter layer, which can include property and traversal filters with the same syntax.
+It doesn't actually change the state of the current traversal, it just temporarily traverses and checks the results of the traversal.
+You can have nested filters in the inner filter layer, which can include property and traversal filters with the same structure.
 The traversal filter only has an `AND` operation.
 
 ```rust
@@ -421,4 +427,314 @@ The traversal will be reset after the search.
 </Warning>
 ---
 
-# Examples
+# Knowledge Graph Examples
+In this example, we will be using the Python SDK to interact with the MCP endpoints on a local instance of HelixDB.
+
+We will use a knowledge graph with the schema below, which has 
+a triplet node to represent a fact and an entity node to represent the subject and object of the triplet.
+We will also have an embedding of the triplet's summary defined as a vector node.
+
+Schema.hx
+```rust expandable
+N::Triplet {
+    INDEX uuid: String,
+    summary: String,
+    predicate: String,
+    value: String,
+    created_at: Date DEFAULT NOW
+}
+
+E::Triplet_to_Embedding {
+    From: Triplet,
+    To: Triplet_Embedding,
+    Properties: {
+    }
+}
+
+V::Triplet_Embedding {
+    embedding: [F64]
+}
+
+E::Triplet_to_Subject {
+    From: Triplet,
+    To: Entity,
+    Properties: {
+    }
+}
+
+E::Triplet_to_Object {
+    From: Triplet,
+    To: Entity,
+    Properties: {
+    }
+}
+
+N::Entity {
+    INDEX uuid: String,
+    name: String,
+    entity_type: String,
+    description: String,
+    created_at: Date DEFAULT NOW
+}
+```
+
+Python SDK
+```py
+from helix import Client
+client = Client(local=True, port=6969)
+```
+
+<Tip>
+Click [here](../documentation/sdks/helix-py) for more information about the Python SDK.       
+</Tip>
+
+### 1. Filter properties by a list of values.
+We will filter the entities with the names "John" or "Jane".
+
+```py expandable
+# Initialize the connection
+connection_id = client.query('mcp/init', {})[0]
+
+# Get all entities
+client.query('mcp/n_from_type', {'connection_id': connection_id, 'data': {'node_type': 'Entity'}})
+
+# Filter entities by the name "John" or "Jane"
+client.query('mcp/filter_items', {
+    'connection_id': connection_id, 
+    'data': {'filter': {
+        'properties': [
+            [
+                {'key': 'name', 'operator': '==', 'value': ['John', 'Jane']}
+            ]
+        ]
+    }}
+})
+
+# Collect the entities
+entities = client.query('mcp/collect', {'connection_id': connection_id})[0]
+```
+
+### 2. Filter multiple properties by a list of values.
+We will filter the entities with the names "John" or "Jane" and the created_at property between 2025-01-01 and 2025-01-31.
+
+```py expandable
+# Initialize the connection
+connection_id = client.query('mcp/init', {})[0]
+
+# Get all entities
+client.query('mcp/n_from_type', {'connection_id': connection_id, 'data': {'node_type': 'Entity'}})
+
+# Filter entities by the name "John" or "Jane" and the created_at property between 2025-01-01 and 2025-01-31
+client.query('mcp/filter_items', {
+    'connection_id': connection_id, 
+    'data': {'filter': {
+        'properties': [
+            [
+                # AND layer
+                {'key': 'name', 'operator': '==', 'value': ['John', 'Jane']},
+                {'key': 'created_at', 'operator': '>=', 'value': "2025-01-01T00:00:00+00:00"},
+                {'key': 'created_at', 'operator': '<=', 'value': "2025-01-31T23:59:59+00:00"}
+            ]
+        ]
+    }}
+})
+```
+
+### 3. Filter properties by multiple lists of values.
+We will filter by date range of the `created_at` property from January to March or June to September.
+
+```py expandable
+# Initialize the connection
+connection_id = client.query('mcp/init', {})[0]
+
+# Get all entities
+client.query('mcp/n_from_type', {'connection_id': connection_id, 'data': {'node_type': 'Entity'}})
+
+# Filter entities by the created_at property between January and March or June and September
+client.query('mcp/filter_items', {
+    'connection_id': connection_id, 
+    'data': {'filter': {
+        'properties': [
+            # OR layer
+            [
+                # AND layer
+                {'key': 'created_at', 'operator': '>=', 'value': "2025-01-01T00:00:00+00:00"},
+                {'key': 'created_at', 'operator': '<=', 'value': "2025-03-31T23:59:59+00:00"}
+            ],
+            [
+                # AND layer
+                {'key': 'created_at', 'operator': '>=', 'value': "2025-06-01T00:00:00+00:00"},
+                {'key': 'created_at', 'operator': '<=', 'value': "2025-09-30T23:59:59+00:00"}
+            ]
+        ]
+    }}
+})
+
+# Collect the entities
+entities = client.query('mcp/collect', {'connection_id': connection_id})[0]
+```
+
+### 3. Filter by traversal result properties.
+We will filter the triplets connected to the subject name "John".   
+This example has 2 answers:
+
+```py expandable
+# Initialize the connection
+connection_id = client.query('mcp/init', {})[0]
+
+# Get all entities
+client.query('mcp/n_from_type', {'connection_id': connection_id, 'data': {'node_type': 'Entity'}})
+
+# Filter entities by the name "John"
+client.query('mcp/filter_items', {
+    'connection_id': connection_id, 
+    'data': {'filter': {
+        'properties': [
+            [
+                {'key': 'name', 'operator': '==', 'value': 'John'}
+            ]
+        ]
+    }}
+})
+
+# Get all triplets connected to the entities
+# (traverses the In of the edge to triplet nodes connected to the entities)
+client.query('mcp/in_step', {"connection_id": connection_id, "data": {"edge_type": "Triplet_to_Subject", "edge_label": "node"}})
+
+# Collect the triplets
+triplets = client.query('mcp/collect', {'connection_id': connection_id})[0]
+```
+
+OR
+
+```py expandable
+# Initialize the connection
+connection_id = client.query('mcp/init', {})[0]
+
+# Get all triplets
+client.query('mcp/n_from_type', {'connection_id': connection_id, 'data': {'node_type': 'Triplet'}})
+
+# Filter triplets with the subject name "John"
+client.query('mcp/filter_items', {
+    'connection_id': connection_id, 
+    'data': {'filter': {
+        'filter_traversals': [
+            # Traverse out from the triplet nodes to the subject nodes
+            {
+                'tool_name': 'out_step',
+                'args': {
+                    'edge_type': 'Triplet_to_Subject',
+                    'edge_label': 'node'
+                },
+                # Filter the subject nodes by the name "John"
+                'filters': {
+                    'properties': [
+                        [
+                            {'key': 'name', 'operator': '==', 'value': 'John'}
+                        ]
+                    ]
+                }
+            }
+        ]
+    }}
+})
+
+# Collect the triplets
+triplets = client.query('mcp/collect', {'connection_id': connection_id})[0]
+```
+
+### 4. Filter by multiple traversal results.
+We will filter the triplets connected to the subject name "John" and the object name "Jane".
+
+```py expandable
+# Initialize the connection
+connection_id = client.query('mcp/init', {})[0]
+
+# Get all triplets
+client.query('mcp/n_from_type', {'connection_id': connection_id, 'data': {'node_type': 'Triplet'}})
+
+# Filter the triplets by the subject name "John" and the object name "Jane"
+client.query('mcp/filter_items', {'connection_id': connection_id, 'data': {'filter': {
+    'filter_traversals': [
+        # AND layer
+        # Traverse out from the triplet nodes to the subject nodes
+        {
+            'tool_name': 'out_step',
+            'args': {
+                'edge_type': 'Triplet_to_Subject',
+                'edge_label': 'node'
+            },
+            # Filter the subject nodes by the name "John"
+            'filters': {
+                'properties': [
+                    [
+                        {'key': 'name', 'operator': '==', 'value': 'John'}
+                    ]
+                ]
+            }
+        },
+        # Traverse out from the triplet nodes to the object nodes
+        {
+            'tool_name': 'out_step',
+            'args': {
+                'edge_type': 'Triplet_to_Object',
+                'edge_label': 'node'
+            },
+            # Filter the object nodes by the name "Jane"
+            'filters': {
+                'properties': [
+                    [
+                        {'key': 'name', 'operator': '==', 'value': 'Jane'}
+                    ]
+                ]
+            }
+        }
+    ]
+}}})
+
+# Collect the triplets
+triplets = client.query('mcp/collect', {'connection_id': connection_id})[0]
+```
+
+### 5. Collecting intermediate results.
+We will get all triplets and their embeddings in one MCP connection.
+
+```py expandable
+# Initialize the connection
+connection_id = client.query('mcp/init', {})[0]
+
+# Get all triplets
+client.query('mcp/n_from_type', {'connection_id': connection_id, 'data': {'node_type': 'Triplet'}})
+
+# Collect without resetting
+triplets = client.query('mcp/collect', {'connection_id': connection_id, "drop": False})[0]
+
+# Traverse out from the triplets to the embeddings
+client.query('mcp/out_step', {'connection_id': connection_id, 'data': {'edge_type': 'Triplet_to_Embedding', 'edge_label': 'vec'}})
+
+# Collect the embeddings
+embeddings = client.query('mcp/collect', {'connection_id': connection_id})[0]
+```
+
+### 6. Search by vector.
+We will search for the top 10 triplets that are most similar to an example embedding of `[0.1, 0.2, 0.3, 0.4, 0.5]` with a minimum score of 0.7.
+
+```py expandable
+# Initialize the connection
+connection_id = client.query('mcp/init', {})[0]
+
+# Get all triplets
+client.query('mcp/n_from_type', {'connection_id': connection_id, 'data': {'node_type': 'Triplet'}})
+
+# Traverse to embeddings
+client.query('mcp/out_step', {'connection_id': connection_id, 'data': {'edge_type': 'Triplet_to_Embedding', 'edge_label': 'vec'}})
+
+# Search for the triplets that are most similar to an example embedding of [0.1, 0.2, 0.3, 0.4, 0.5]
+client.query('mcp/search_vector', {'connection_id': connection_id, 'data': {'vector': [0.1, 0.2, 0.3, 0.4, 0.5], 'limit': 10, 'min_score': 0.7}})
+
+# Traverse to the triplets
+client.query('mcp/in_step', {'connection_id': connection_id, 'data': {'edge_type': 'Triplet_to_Embedding', 'edge_label': 'node'}})
+
+# Collect the triplets
+triplets = client.query('mcp/collect', {'connection_id': connection_id})[0]
+```
