@@ -46,12 +46,16 @@ Collects all the results from the MCP traversal.
 
 Request Format
 ```rust
-{"connection_id": "<connection-id>"}
+{
+    "connection_id": "<connection-id>", 
+    "range": {"start": <start-index>, "end": <end-index>}, 
+    "drop" : <true-false>
+}
 ```
 
 Optional Parameters
-- `"range": {"start": <start-index>, "end": <end-index>}` range of results to collect (default: `{"start": 0, "end": -1}`)
-- `"drop" : <true-false>` resets the traversal after collecting results (default: `true`)
+- `range` (optional) : range of results to collect (default: `{"start": 0, "end": -1}`)
+- `drop` (optional) : resets the traversal after collecting results (default: `true`)
 
 Response Format
 ```rust
@@ -327,16 +331,94 @@ The traversal filter only has an `AND` operation.
 
 <h2>SearchV `search_vector`</h2>
 <h4> Endpoint `"mcp/search_vector"` </h4>
-Searches for nodes or vectors by their vector representation.
+Searches for vectors by their vector representation with the given vector. 
+It returns the top `k` results with a minimum score of `min_score`.
+Additionally, you can continue the traversal from the search results by using the traversal tools.
+
+Request Format
+```rust
+{
+    "connection_id": "<connection-id>", 
+    "data": {
+        "vector": <array-of-floats>, "k": <limit>, "min_score": <min-score>
+    }
+}
+```
+
+Parameters
+- `vector` : the vector to search for
+- `k` : the number of results to return
+- `min_score` (optional) : the minimum score to return (default: `0.0`)
+
+Response Format
+```rust
+[
+    {<vector-data>},
+    ...
+]
+```
 
 <h2>SearchV Text `search_vector_text`</h2>
 <h4> Endpoint `"mcp/search_vector_text"` </h4>
-Searches for nodes or vectors by their text representation.
+Searches for vectors by their vector representation with given text.
+It uses the embedding inside the database to embed the text and then does HNSW search for the vector.
+It returns the top 5 results of the vectors with the `label`.
+
+Request Format
+```rust
+{
+    "connection_id": "<connection-id>", 
+    "data": {
+        "query": "<text>", "label": "<vector-label>"
+    }
+}
+```
+
+Parameters
+- `query` : the text to search for
+- `label` : the label of the vectors to search for
+
+Response Format
+```rust
+[
+    {<vector-data>},
+    ...
+]
+```
+<Warning>
+The traversal will be reset after the search.
+</Warning>
 
 <h2>Search BM25 `search_keyword`</h2>
 <h4> Endpoint `"mcp/search_keyword"` </h4>
-Searches for nodes or vectors by their keyword representation.
+Searches for nodes, edges, or vectors of the given label by their keyword representation using BM25.
 
+Request Format
+```rust
+{
+    "connection_id": "<connection-id>", 
+    "data": {
+        "query": "<text>", "label": "<label>", "limit": <limit>
+    }
+}
+```
+
+Parameters
+- `query` : the text to search for
+- `label` : the label of the nodes, edges, or vectors to search for
+- `limit` : the number of results to return
+
+Response Format
+```rust
+[
+    {<node-edge-data>},
+    ...
+]
+```
+
+<Warning>
+The traversal will be reset after the search.
+</Warning>
 ---
 
 # Examples
