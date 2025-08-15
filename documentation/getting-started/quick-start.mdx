@@ -451,17 +451,17 @@ mode: "wide"
 
     ```rust Rust [expandable]
 
-    use helix_rs::macros::node;
+    use helix_rs::helix_node;
 
     // Continent struct
-    #[node]
+    #[helix_node]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     struct Continent {
         name: String
     }
 
     // Country struct
-    #[node]
+    #[helix_node]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     struct Country {
         name: String
@@ -469,7 +469,7 @@ mode: "wide"
     }
 
     // City struct
-    #[node]
+    #[helix_node]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     struct City {
         name: String
@@ -491,7 +491,7 @@ mode: "wide"
     struct CreateCountryRequest {
         continent_id: String,
         name: String,
-        currency: String
+        
     }
     #[derive(Debug, Clone, Serialize, Deserialize)]
     struct CreateCountryResponse {
@@ -1128,7 +1128,7 @@ mode: "wide"
     ```
 
     ```rust Rust [expandable]
-    use helix_rs::{HelixDB, macros::node};
+    use helix_rs::{HelixDB, helix_node};
 
     fn main() {
         let client = HelixDB::new(None, None, None);
