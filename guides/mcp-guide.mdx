@@ -155,7 +155,7 @@ Request Format
 ```
 
 Parameters
-- `node_type` : the type of node to retrieve
+- `node_type` : the label of node to retrieve
 
 <h2>Retrieve Edges `e_from_type`</h2>
 <h4> Endpoint `"mcp/e_from_type"` </h4>
@@ -167,7 +167,7 @@ Request Format
 ```
 
 Parameters
-- `edge_type` : the type of edge to retrieve
+- `edge_type` : the label of edge to retrieve
 
 <h2>Out `out_step`</h2>
 <h4> Endpoint `"mcp/out_step"` </h4>
@@ -183,8 +183,8 @@ Request Format
 ```
 
 Parameters
-- `edge_type` : the type of edge to traverse out
-- `edge_label` : the target entity (`node` or `vec`)
+- `edge_type` : the target entity (`node` or `vec`)
+- `edge_label` : the label of edge to traverse out
 
 <h2>OutE `out_e_step`</h2>
 <h4> Endpoint `"mcp/out_e_step"` </h4>
@@ -197,7 +197,7 @@ Request Format
 ```
 
 Parameters
-- `edge_label` : the target entity (`node` or `vec`)
+- `edge_label` : the label of edge to traverse out
 
 <h2>In `in_step`</h2>
 <h4> Endpoint `"mcp/in_step"` </h4>
@@ -213,8 +213,8 @@ Request Format
 ```
 
 Parameters
-- `edge_type` : the type of edge to traverse into
-- `edge_label` : the source entity (`node` or `vec`)
+- `edge_type` : the source entity (`node` or `vec`)
+- `edge_label` : the label of edge to traverse into
 
 <h2>InE `in_e_step`</h2>
 <h4> Endpoint `"mcp/in_e_step"` </h4>
@@ -227,7 +227,7 @@ Request Format
 ```
 
 Parameters
-- `edge_label` : the source entity (`node` or `vec`)
+- `edge_label` : the label of edge to traverse into
 
 ---
 
