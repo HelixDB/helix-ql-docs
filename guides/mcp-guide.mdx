@@ -730,7 +730,7 @@ client.query('mcp/n_from_type', {'connection_id': connection_id, 'data': {'node_
 client.query('mcp/out_step', {'connection_id': connection_id, 'data': {'edge_type': 'Triplet_to_Embedding', 'edge_label': 'vec'}})
 
 # Search for the triplets that are most similar to an example embedding of [0.1, 0.2, 0.3, 0.4, 0.5]
-client.query('mcp/search_vector', {'connection_id': connection_id, 'data': {'vector': [0.1, 0.2, 0.3, 0.4, 0.5], 'limit': 10, 'min_score': 0.7}})
+client.query('mcp/search_vector', {'connection_id': connection_id, 'data': {'vector': [0.1, 0.2, 0.3, 0.4, 0.5], 'k': 10, 'min_score': 0.7}})
 
 # Traverse to the triplets
 client.query('mcp/in_step', {'connection_id': connection_id, 'data': {'edge_type': 'Triplet_to_Embedding', 'edge_label': 'node'}})
