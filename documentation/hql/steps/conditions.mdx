@@ -101,21 +101,21 @@ QUERY GetRange(start: U32, end: U32) =>
 Order the results of a traversal by a property either ascending (`Asc`) or descending (`Desc`).
 
 ```rust
-::ORDER<Asc|Desc>
+::ORDER<Asc|Desc>(<property>)
 ```
 
 ### Example
 
 ```rust
 QUERY UserStatistics() =>
-    most_followed_users <- N<User>::ORDER<Desc>
-    RETURN most_followed_users
+    oldest_users <- N<User>::ORDER<Desc>(_::{age})
+    RETURN oldest_users
 ```
 
 ```rust
 QUERY UserStatistics() =>
-    least_followed_users <- N<User>::ORDER<Asc>
-    RETURN least_followed_users
+    youngest_users <- N<User>::ORDER<Asc>(_::{age})
+    RETURN youngest_users
 ```
 
 ---
