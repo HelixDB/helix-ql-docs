@@ -68,8 +68,8 @@ async fn main() -> anyhow::Result<()> {
 ```
 
 ```js queries.hx
-QUERY addUser(name: String, age: i32) =>
-    user AddN<User>({
+QUERY addUser(name: String, age: I32) =>
+    user <- AddN<User>({
         name: name,
         age: age
     })
@@ -80,7 +80,7 @@ QUERY addUser(name: String, age: i32) =>
 ```js schema.hx
 N::User {
     name: String,
-    age: i32
+    age: I32
 }
 ```
 
