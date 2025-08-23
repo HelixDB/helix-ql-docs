@@ -95,21 +95,16 @@
                                     "documentation/hql/errors/E102",
                                     "documentation/hql/errors/E103",
                                     "documentation/hql/errors/E105",
-
                                     "documentation/hql/errors/E202",
                                     "documentation/hql/errors/E204",
                                     "documentation/hql/errors/E205",
                                     "documentation/hql/errors/E207",
-
                                     "documentation/hql/errors/E301",
                                     "documentation/hql/errors/E302",
                                     "documentation/hql/errors/E304",
                                     "documentation/hql/errors/E305",
-
                                     "documentation/hql/errors/E401",
-
                                     "documentation/hql/errors/E501",
-
                                     "documentation/hql/errors/E601",
                                     "documentation/hql/errors/E602",
                                     "documentation/hql/errors/E604",
@@ -142,7 +137,8 @@
                         "group": "Features",
                         "pages": [
                             "features/overview",
-                            "features/mcp/helix-mcp"
+                            "features/mcp/helix-mcp",
+                            "features/chunking/helix-chunking"
                         ]
                     }
                 ]

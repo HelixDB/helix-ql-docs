@@ -1,0 +1,207 @@
+---
+title: 'HelixDB Chunking'
+description: 'Getting start with chunking your text data'
+icon: 'file'
+---
+
+# Getting Started With HelixDB Chunking
+
+HelixDB uses [Chonkie](https://chonkie.ai/) for chunking text data into manageable pieces. The `Chunk` class provides various methods to split text based on different strategies.
+
+## Basic Usage
+
+```python
+from helix import Chunk
+
+# Simple token-based chunking
+text = "Your long document text here..."
+chunks = Chunk.token_chunk(text)
+
+# Process multiple texts at once (batch processing)
+texts = ["Document 1...", "Document 2...", "Document 3..."]
+batch_chunks = Chunk.sentence_chunk(texts)
+```
+
+## Default Values and Customization
+
+All chunking methods come with Chonkie's default values, so you can use them with minimal configuration as shown in the examples above. However, if you need to change the chunking behavior, each method accepts various parameters that you can modify according to your specific needs.
+
+The following sections detail all available chunking methods and their customizable parameters.
+
+## Available Chunking Methods
+
+### Token Chunking
+
+Splits text by tokens with specified chunk size and overlap.
+
+```python
+Chunk.token_chunk(
+    text,                      # Single string or list of strings
+    chunk_size=2048,           # Maximum tokens per chunk
+    chunk_overlap=12,          # Overlapping tokens between chunks
+    tokenizer=None             # Optional custom tokenizer
+)
+```
+
+### Sentence Chunking
+
+Chunks text by sentences while respecting token limits.
+
+```python
+Chunk.sentence_chunk(
+    text,                      # Single string or list of strings
+    tokenizer="character",     # Tokenizer type
+    chunk_size=2048,           # Maximum tokens per chunk
+    chunk_overlap=12,          # Overlapping tokens between chunks
+    min_sentences_per_chunk=1  # Minimum sentences in each chunk
+)
+```
+
+### Recursive Chunking
+
+Chunks text using recursive rules that split on headings, paragraphs, and other structures.
+
+```python
+Chunk.recursive_chunk(
+    text,                       # Single string or list of strings
+    tokenizer="character",      # Tokenizer type
+    chunk_size=2048,            # Maximum tokens per chunk
+    rules=None,                 # Custom recursive splitting rules
+    min_characters_per_chunk=24,# Minimum characters per chunk
+    recipe=None,                # Predefined chunking recipe
+    lang="en"                   # Language code for rules
+)
+```
+
+### Code Chunking
+
+Chunks source code with language-specific syntax awareness.
+
+```python
+Chunk.code_chunk(
+    text,                      # Code text (single string or list)
+    language,                  # Programming language (required)
+    tokenizer="character",     # Tokenizer type
+    chunk_size=2048,           # Maximum tokens per chunk
+    include_nodes=False        # Whether to include AST nodes
+)
+```
+
+### Semantic Chunking
+
+Chunks text based on semantic similarity between sentences.
+
+```python
+Chunk.semantic_chunk(
+    text,                           # Single string or list of strings
+    embedding_model="minishlab/potion-base-8M",  # Embedding model
+    threshold="auto",               # Similarity threshold
+    chunk_size=2048,                # Maximum tokens per chunk
+    mode="window",                  # Chunking mode ("window" or "cluster")
+    min_sentences=1,                # Minimum sentences per chunk
+    similarity_window=1,            # Window size for similarity calculation
+    min_chunk_size=2,               # Minimum sentences per chunk
+    min_characters_per_sentence=12, # Minimum characters per sentence
+    threshold_step=0.01,            # Step size for threshold adjustment
+    delim=['.', '!', '?', '\n'],    # Sentence delimiters
+    include_delim="prev"            # How to include delimiters
+)
+```
+
+### SDPM Chunking (Skip-Distance Proximity Method)
+
+Enhanced semantic chunking with skip-distance proximity.
+
+```python
+Chunk.sdp_chunk(
+    text,                           # Single string or list of strings
+    embedding_model="minishlab/potion-base-8M",  # Embedding model
+    threshold="auto",               # Similarity threshold
+    chunk_size=2048,                # Maximum tokens per chunk
+    mode="window",                  # Chunking mode
+    min_sentences=1,                # Minimum sentences per chunk
+    similarity_window=1,            # Window size for similarity
+    min_chunk_size=2,               # Minimum sentences per chunk
+    min_characters_per_sentence=12, # Minimum characters per sentence
+    threshold_step=0.01,            # Step size for threshold adjustment
+    delim=['.', '!', '?', '\n'],    # Sentence delimiters
+    include_delim="prev",           # How to include delimiters
+    skip_window=1                   # Sentences to skip in similarity calculation
+)
+```
+
+### Late Chunking
+
+Combines recursive chunking with embeddings.
+
+```python
+Chunk.late_chunk(
+    text,                       # Single string or list of strings
+    embedding_model="all-MiniLM-L6-v2",  # Embedding model
+    chunk_size=2048,            # Maximum tokens per chunk
+    rules=None,                 # Custom recursive splitting rules
+    min_characters_per_chunk=24,# Minimum characters per chunk
+    recipe=None,                # Predefined chunking recipe
+    lang="en"                   # Language code for rules
+)
+```
+
+### Neural Chunking
+
+Uses a neural network model trained specifically for text chunking.
+
+```python
+Chunk.neural_chunk(
+    text,                       # Single string or list of strings
+    model="mirth/chonky_modernbert_base_1",  # Neural chunking model
+    device_map="cpu",           # Device to run the model on
+    min_characters_per_chunk=10 # Minimum characters per chunk
+)
+```
+
+### Slumber Chunking (LLM-guided)
+
+Uses LLM guidance for optimal semantic boundaries.
+
+```python
+Chunk.slumber_chunk(
+    text,                       # Single string or list of strings
+    genie=None,                 # LLM interface (defaults to Gemini)
+    tokenizer="character",      # Tokenizer type
+    chunk_size=1024,            # Maximum tokens per chunk
+    rules=None,                 # Custom recursive splitting rules
+    candidate_size=128,         # Size of candidate chunks to evaluate
+    min_characters_per_chunk=24,# Minimum characters per chunk
+    verbose=True                # Whether to print progress information
+)
+```
+
+## Example Output
+
+When you run a chunking method, you'll get a list of text chunks. Here's an example of what the output might look like when using `token_chunk`:
+
+```python
+from helix import Chunk
+
+text = """
+This is a massive text blob that we want to chunk into smaller pieces for processing. It contains multiple sentences and paragraphs that need to be divided appropriately to maintain context while fitting within token limits. When working with large documents, it is important to ensure that each chunk maintains enough context for downstream tasks, such as retrieval or summarization. Chunking strategies can vary depending on the use case, but the goal is always to balance context preservation with processing efficiency.
+
+The chunker should handle overlaps properly to ensure no important information is lost at chunk boundaries. For example, if a sentence is split between two chunks, the overlap ensures that both chunks retain the full meaning of the text. This is especially important in applications like document question answering, where missing a single sentence could lead to incorrect answers. Additionally, chunkers may need to account for different languages, code blocks, or special formatting, which can add complexity to the chunking process.
+
+This example demonstrates how the token chunker works with a realistic text sample that would be common in document processing and RAG (Retrieval-Augmented Generation) applications. The chunks will be created with specified token limits and overlap settings to optimize for both comprehension and processing efficiency. Each chunk will contain metadata about its position in the original text and token count for further processing. By using a robust chunking strategy, we can ensure that downstream models receive high-quality, context-rich input, improving the overall performance of NLP pipelines and applications.
+"""
+
+chunks = Chunk.token_chunk(text, chunk_size=100, chunk_overlap=20)
+print(chunks)
+```
+
+Output is a list of strings.
+
+```
+['\nThis is a massive text blob that we want to chunk into smaller pieces for processing. It contains m',
+ 't contains multiple sentences and paragraphs that need to be divided appropriately to maintain conte',
+ 'intain context while fitting within token limits. When working with large documents, it is important',
+ 'is important to ensure that each chunk maintains enough context for downstream tasks, such as retrie',
+ 'ch as retrieval or summarization. Chunking strategies can vary depending on the use case, but the go',
+ ', but the goal is always to balance context preservation with processing efficiency.']
+```
