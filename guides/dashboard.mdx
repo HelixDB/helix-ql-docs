@@ -32,3 +32,24 @@ The dashboard works best when your queries follow this naming convention:
     - **Updating** nodes and edges should start with "update" (e.g., "updatePatient" or "updateDoctor")
     - **Deleting** nodes and edges should start with "delete" (e.g., "deletePatient" or "deleteDoctor")
 
+## Using The Visualizer
+
+### Important Notes
+- **Browser Compatibility**: Some browsers like **Brave** have limitations that prevent clicking on more than 2-3 nodes. We recommend using alternative browsers for the best experience
+- **Performance**: For optimal performance, avoid visualizing more than **3000 nodes** as it may cause your browser to crash
+
+### Setup Instructions
+
+#### For macOS Users
+1. Open Finder, then press `Command + Shift + G` then type `~/.helix/repo`
+2. Right click the folder `helix-db` then Services and choose a terminal to open the folder with
+3. Switch to the `dev` branch: `git checkout dev`
+4. Then `cd helix-cli` then `sh build.sh dev`
+5. Now you can deploy your existing instance using: `helix deploy -c <cluster_id> --dev` (dev flag allows the visualizer endpoints)
+6. Start both the frontend and backend services
+
+**Important**: Your HelixDB is now running on the dev branch. When updating to newer versions, either pull the latest changes in the dev branch and rebuild, or switch back to the main branch.
+
+#### For Windows Users
+1. Follow the same steps as macOS, though the location of the `.helix` folder may differ on Windows systems
+
