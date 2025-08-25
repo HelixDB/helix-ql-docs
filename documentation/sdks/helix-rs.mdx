@@ -11,11 +11,15 @@ icon: "rust"
 <CodeGroup>
 ```bash Cargo CLI
 cargo add helix-rs
+cargo add serde
+cargo add tokio
 ```
 
 ```toml Cargo.toml
 [dependencies]
-helix-rs = "0.1.5"
+helix-rs = "0.1.7"
+tokio = { version = "1.47.1", features = ["full"] }
+serde = { version = "1.0.219", features = ["derive"] }
 ```
 
 </CodeGroup>
@@ -27,45 +31,44 @@ helix-rs = "0.1.5"
 use helix_rs::HelixDB;
 use serde::{Serialize, Deserialize};
 
-// Define your data structures based on the schema
-#[derive(Serialize)]
-struct AddUserInput {
+// Define your data structures #[derive(Serialize)]
+struct UserInput {
     name: String,
     age: i32,
 }
 
 #[derive(Deserialize)]
-struct AddUserOutput {
+struct UserOutput {
     id: String,
     name: String,
     age: i32,
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<(), HelixError> {
     // Initialize the client
-    let client = HelixDB::new(Some("http://localhost"), Some(6969)); // Uses default endpoint and port http://localhost:6969
+    let client = HelixDB::new(None, None, None); // Uses default port 6969
 
-    // Create a user
+    // Create a user input
     let input = AddUserInput {
         name: "John".to_string(),
         age: 20,
     };
 
-    // Define the output structure
+    // Define the output structure for the query
     #[derive(Deserialize)]
     struct Result {
         user: AddUserOutput,
     }
 
     // Run the query
-    let result: Result = client.query::<AddUserInput, Result>("addUser", &input).await?;
-
+    let result: Result = client.query::<AddUserInput, Result>("add_user", &input).await?;
     println!("Created user with ID: {}", result.user.id);
-
     Ok(())
+
 }
-```
+
+````
 
 ```js queries.hx
 QUERY addUser(name: String, age: I32) =>
@@ -75,7 +78,7 @@ QUERY addUser(name: String, age: I32) =>
     })
     RETURN user
 
-```
+````
 
 ```js schema.hx
 N::User {
@@ -93,5 +96,5 @@ N::User {
 You can specify a custom endpoint and port when initializing the client:
 
 ```rust
-let client = HelixDB::new(Some("https://my-endpoint.com"), Some(8080)); // Uses port 8080
+let client = HelixDB::new(Some("https://my-endpoint.com"), Some(8080), Some("my-api-key")); // Uses port 8080
 ```
