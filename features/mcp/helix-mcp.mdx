@@ -7,29 +7,97 @@ icon: 'rocket-launch'
 # Getting Started With Helix-MCP
 HelixDB conveniently has custom MCP endpoints built into it making it easy for AI agents to interface
 with it. We also provide an MCP server that you can hook right up to any LLM provider you're using!
-We'll walk through how to do this with Claude Desktop. For more information on installing Claude
-Desktop, click [here](https://support.anthropic.com/en/articles/10065433-installing-claude-for-desktop).
 
-First start off by fetching the mcp server:
+This guide shows how to run the server, enable tools, and connect from LLM providers and Claude Desktop.
+
+## Prerequisites
+- A running HelixDB instance (local or remote)
+- API keys as needed: `OPENAI_API_KEY`, `GEMINI_API_KEY`, `VOYAGEAI_API_KEY`, `ANTHROPIC_API_KEY`
+
+### Setting up HelixDB
+Before running the server in Claude Desktop, you also want to make sure that you have an actual running
+Helix instance. See our [installation guide](../../documentation/getting-started/installation) for that.
+
+## Run the MCP Server
+```python
+from helix.client import Client
+from helix.mcp import MCPServer
+
+client = Client(local=True)
+mcp = MCPServer("helix-mcp", client)
+mcp.run() # runs on http://localhost:8000/mcp/
+```
+
+`ToolConfig` is used to enable/disable tools.
+```python
+from helix.mcp import ToolConfig
+
+# Disable search_keyword tool
+tool_config = ToolConfig(search_keyword=False)
+mcp = MCPServer("helix-mcp", client, tool_config=tool_config)
+```
+
+`Embedder` is used to embed text into a vector.
+```python
+from helix.embedding.openai_client import OpenAIEmbedder
+embedder = OpenAIEmbedder()
+mcp = MCPServer("helix-mcp", client, embedder=embedder)
+```
+
+## MCP Tools
+- **Session**: `init`, `next`, `collect`, `reset`
+- **Traversal**: `n_from_type`, `e_from_type`, `out_step`, `out_e_step`, `in_step`, `in_e_step`
+- **Filter**: `filter_items`
+- **Search**: `search_vector` (needs embedder), `search_vector_text` (in-house embedding), `search_keyword` (BM25)
+
+For more information about the MCP tools, see our [MCP Guide](../../guides/mcp-guide).
+
+## Enable MCP in Your LLM Provider
+**OpenAI**:
+```python
+from helix.providers.openai_client import OpenAIProvider
+llm = OpenAIProvider(name="openai-llm", instructions="You are helpful...", model="gpt-5-nano", history=True)
+llm.enable_mcps("helix-mcp") # defaults to http://localhost:8000/mcp/
+```
+
+**Gemini**:
+```python
+from helix.providers.gemini_client import GeminiProvider
+llm = GeminiProvider(model="gemini-2.5-flash", history=True)
+llm.enable_mcps("helix-mcp") # defaults to http://localhost:8000/mcp/
+```
+
+**Anthropic**:
+```python
+from helix.providers.anthropic_client import AnthropicProvider
+llm = AnthropicProvider(model="claude-3-5-haiku-20241022", history=True)
+llm.enable_mcps("helix-mcp", url="https://your-remote-mcp.example.com/mcp/")
+```
+<Warning>Anthropic does not support local MCP servers with streamable-http. You must use a URL-based MCP server.</Warning>
+
+## Use With Claude Desktop
+1) Get the server script:
 ```bash
 curl -O https://raw.githubusercontent.com/HelixDB/helix-py/refs/heads/main/apps/mcp_server.py
 ```
 
-Then you'll want to setup a `uv` project so that you can install the dependencies. You'll want to run:
+2) Create a `uv` project and install:
 ```bash
 uv init project
 cp mcp_server.py project
 cd project
-```
-
-Then setup a virtual environment and install the servers dependencies:
-```bash
 uv venv && source .venv/bin/activate
-uv add helix-py "mcp[cli]"
+uv add helix-py
 ```
 
-Finally, copy this configuration into `~/Library/Application Support/Claude/claude_desktop_config.json`
-assuming you're on Mac OS. If not, copy this snippet to wherever your claude desktop config is located.
+3) Add your embedder to the server script:
+```python
+from helix.embedding.openai_client import OpenAIEmbedder
+embedder = OpenAIEmbedder()
+mcp_server = MCPServer("helix-mcp", client, embedder=embedder)
+```
+
+4) Configure Claude Desktop (macOS path shown):
 ```json
 {
   "mcpServers": {
@@ -37,7 +105,7 @@ assuming you're on Mac OS. If not, copy this snippet to wherever your claude des
       "command": "uv",
       "args": [
         "--directory",
-        "/Users/user/Downloads/project",
+        "/absolute/path/to/project",
         "run",
         "mcp_server.py"
       ]
@@ -45,9 +113,5 @@ assuming you're on Mac OS. If not, copy this snippet to wherever your claude des
   }
 }
 ```
+
 Don't forget to adjust the path to your `mcp_server.py` in the snippet!
-
-### Setting up HelixDB
-Before running the server in Claude Desktop, you also want to make sure that you have an actual running
-Helix instance. See our [installation guide](../../documentation/getting-started/installation) for that.
-
