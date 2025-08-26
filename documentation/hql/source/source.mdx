@@ -15,21 +15,14 @@ N<Type>(node_id)
 **Example:**
 
 ```rust [expandable]
-QUERY GetUsers(userID: String) {
-    // Select all nodes
-    nodes <- N
-    
+QUERY GetUsers(userID: ID) =>
     // Select all User nodes
-    users <- N<Users>
-    
+    users <- N<User>
+
     // Select a specific User by ID
     user <- N<User>(userID)
-    
-    // Select multiple Users by IDs
-    other_users <- N<Users>(userID, "other_uuid")
-    
-    RETURN nodes, users, user, other_users
-}
+
+    RETURN users, user
 ```
 
 ## `E` &nbsp; Edge
@@ -43,26 +36,30 @@ E<Type>(edge_id)
 **Example:**
 
 ```rust [expandable]
-QUERY GetFollowers(edgeID: String) {
-    // Select all edges
-    edges <- E
-    
+QUERY GetFollowers(edgeID: ID) =>
+
     // Select all Follows edges
     specific_edges <- E<Follows>
-    
+
     // Select a specific Follows edge by ID
     follow_edge <- E<Follows>(edgeID)
-    
-    // Select multiple Follows edges by IDs
-    other_edges <- E<Follows>(edgeID, "other_edge_id")
-    
-    RETURN edges, specific_edges, follow_edge, other_edges
-}
+
+    RETURN specific_edges, follow_edge
 ```
 
 ## `V` &nbsp; Vector
-<Note>
-There is currently no way to select vectors from your graph.
-You might be looking for the `SearchV` operation instead. 
-Check out the [Vector Search](../vectors/searching) page for more information.
-</Note>
+
+Select vectors from your graph to begin traversal.
+
+```rust
+V<Type>(vector_id)
+```
+
+**Example:**
+
+```rust [expandable]
+QUERY GetVector(vectorID: ID) =>
+    // Select a specific Chunk vector by ID
+    vector <- V<Chunk>(vectorID)
+    RETURN vector
+```
