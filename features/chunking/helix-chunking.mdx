@@ -95,40 +95,21 @@ Chunks text based on semantic similarity between sentences.
 Chunk.semantic_chunk(
     text,                           # Single string or list of strings
     embedding_model="minishlab/potion-base-8M",  # Embedding model
-    threshold="auto",               # Similarity threshold
+    threshold=0.8,                  # Similarity threshold (0-1)
     chunk_size=2048,                # Maximum tokens per chunk
-    mode="window",                  # Chunking mode ("window" or "cluster")
-    min_sentences=1,                # Minimum sentences per chunk
-    similarity_window=1,            # Window size for similarity calculation
-    min_chunk_size=2,               # Minimum sentences per chunk
-    min_characters_per_sentence=12, # Minimum characters per sentence
-    threshold_step=0.01,            # Step size for threshold adjustment
+    similarity_window=3,            # Window size for similarity calculation
+    min_sentences_per_chunk=1,      # Minimum sentences per chunk
+    min_characters_per_sentence=24, # Minimum characters per sentence
+    skip_window=0,                  # Number of groups to skip when merging
+    filter_window=5,                # Window length for Savitzky-Golay filter
+    filter_polyorder=3,             # Polynomial order for filter
+    filter_tolerance=0.2,           # Tolerance for filter boundary detection
     delim=['.', '!', '?', '\n'],    # Sentence delimiters
-    include_delim="prev"            # How to include delimiters
+    include_delim="prev",           # How to include delimiters ("prev", "next", None)
+    **embedding_kwargs              # Additional embedding model arguments
 )
 ```
 
-### SDPM Chunking (Skip-Distance Proximity Method)
-
-Enhanced semantic chunking with skip-distance proximity.
-
-```python
-Chunk.sdp_chunk(
-    text,                           # Single string or list of strings
-    embedding_model="minishlab/potion-base-8M",  # Embedding model
-    threshold="auto",               # Similarity threshold
-    chunk_size=2048,                # Maximum tokens per chunk
-    mode="window",                  # Chunking mode
-    min_sentences=1,                # Minimum sentences per chunk
-    similarity_window=1,            # Window size for similarity
-    min_chunk_size=2,               # Minimum sentences per chunk
-    min_characters_per_sentence=12, # Minimum characters per sentence
-    threshold_step=0.01,            # Step size for threshold adjustment
-    delim=['.', '!', '?', '\n'],    # Sentence delimiters
-    include_delim="prev",           # How to include delimiters
-    skip_window=1                   # Sentences to skip in similarity calculation
-)
-```
 
 ### Late Chunking
 
