@@ -15,13 +15,15 @@ This guide will give you a step‑by‑step walkthrough of the overall process o
 chunking them, extracting temporal facts and entities, resolving entity conflicts, invalidating contradictions, 
 and retrieving grounded answers with OpenAI knowledge graph agents and Gemini agents with HelixDB’s MCP tools.
 
-> ## TLDR
-> #### Knowledge Graph
-> 
-> 
-> #### HelixDB Agentic Retrieval
-> 
-> 
+### TL;DR
+> **General Knowledge Graph** - _Use HelixDB as graph and vector storage for a Hacker News posts and comments temporal knowledge graph. 
+> A GPT-driven pipeline extracts events, entities, facts, and embeddings, resolves duplicates, and invalidates contradictions. 
+> Queries are answered via two agents: (1) an OpenAI tool-based KGAgent for scoped factual Q&A and 
+> (2) a Gemini-powered MCP agent that performs fast, flexible in-database graph traversals. 
+> The MCP approach is faster and more adaptable, and the OpenAI agent provides stricter guardrails for more focused queries. 
+> Use the MCP approach for open-ended questions, multi-hop reasoning, and investigative workflows._
+
+> **HelixDB MCP Agent Retrieval** - _TBD_
 
 ---
 
@@ -101,7 +103,7 @@ The **InvalidationAgent** enforces temporal consistency by detecting contradicti
 
 ---
 
-## KG Agent Retrieval
+## OpenAI Agent Retrieval
 
 The **Knowledge Graph Agent** adapts the retrieval algorithms presented in OpenAI’s cookbook, but operates directly on HelixDB’s unified storage layer. Consequently, the agent interacts with a single backend instead of managing separate Postgres and vector store instances. We also added additional retrieval tools to the agent to improve the quality of the retrieved results, such as entity and predicate lookup tools and vector search tools.
 
@@ -137,7 +139,7 @@ final_output, tools_used = await kg_agent.run("What is Sam Altman's current job?
 
 ---
 
-## HelixDB Agent Retrieval
+## HelixDB MCP Agent Retrieval
 
 Because our data resides natively in **HelixDB**, we can use its built-in MCP endpoints to directly traverse the graph inside the database. 
 Leveraging these endpoints, we implemented a Gemini-powered retrieval agent that performs low-latency, dynamic graph exploration via these MCP tools.
@@ -164,7 +166,7 @@ See the [MCP guide](https://docs.helix-db.com/guides/mcp-guide) for further deta
 
 ## Conclusion
 
-> _**TLDR -**_
+> _**TL;DR -**_
 > _**OpenAI retrieval agent** relies on predefined traversal tools, which is better for narrowly scoped questions that benefit from strict guardrails._
 > _**HelixDB MCP Agent** traverse the graph database directly, which is better for open-ended questions, multi-hop reasoning, and investigative workflows._
 
@@ -184,9 +186,9 @@ Next, we apply this agentic pattern to a domain‑specific Hacker News graph and
 
 ---
 
-# HelixDB Agentic Retrieval
+# Agentic Retrieval with HelixDB
 
-This section demonstrates how HelixDB can power a *domain-specific* graph focused on Hacker News discussions. 
+This section demonstrates how **HelixDB** can power a *domain-specific* graph focused on Hacker News discussions. 
 Instead of storing knowledge as general entities and triplets, it is stored in domain specific objects, 
 which in this case are **stories**, **comments**, and **users**, with some objects having Gemini embeddings for semantic search.  
 
