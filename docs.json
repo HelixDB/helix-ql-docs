@@ -193,7 +193,7 @@
                         "group": "Blogs",
                         "pages": [
                             "blogs/overview",
-                            "blogs/kg"
+                            "blogs/hackernews"
                         ]
                     }
                 ]
