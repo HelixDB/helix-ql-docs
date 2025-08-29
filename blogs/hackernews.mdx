@@ -24,9 +24,11 @@ and retrieving grounded answers with OpenAI knowledge graph agents and Gemini ag
 
 
 
+---
+
 # Knowledge Graph
 
-This section is inspired by the [Temporal Agents with Knowledge Graphs](https://github.com/openai/openai-cookbook/blob/a90448358320081935df1a133adb8664bbf75047/examples/partners/temporal_agents_with_knowledge_graphs/temporal_agents_with_knowledge_graphs.ipynb) cookbook from OpenAI. The key difference is in the underlying graph schema and data storage. The original cookbook is built on a Postgres database and a vector database, while we use HelixDB's hybrid graph and vector storage. This allows for more efficient storage without needing to manage multiple databases.
+This section draws on the excellent [Temporal Agents with Knowledge Graphs](https://github.com/openai/openai-cookbook/blob/a90448358320081935df1a133adb8664bbf75047/examples/partners/temporal_agents_with_knowledge_graphs/temporal_agents_with_knowledge_graphs.ipynb) notebook from OpenAI. However, our implementation differs substantially in both schema design and storage architecture. Whereas the original example relies on a Postgres instance paired with a separate vector store, we use **HelixDB**'s hybrid graph-and-vector model which eliminates the operational overhead of orchestrating multiple databases.
 
 ## Graph Architecture
 
@@ -36,7 +38,7 @@ This section is inspired by the [Temporal Agents with Knowledge Graphs](https://
 - **Chunk**: text segments from stories/comments used for extraction (uuid, story_uuid, text, metadata)
 - **Event**: a time-aware statement extracted from a chunk (statement, triplets, temporal_type, valid_at/expired_at, invalid_at, invalidated_by)
 
-The edges that connect these nodes are:
+The relationships between these nodes are captured by the following edge types:
 - `Story_to_Comment` and `Comment_to_Comment` build the discussion tree
 - `Story_to_Chunk` and `Chunk_to_Event` connect raw text to extracted statements
 
@@ -72,51 +74,54 @@ graph TD
     Event -->|Invalidated_By| Event
 ```
 
+---
+
 ## OpenAI Ingestion
 
 ### Hacker News Data Pipeline
-We load Hacker News story and comment data with Polars and filter for the last 31 days. For each story we load all of its comments and sub‑comments. Each story becomes a `Story` node and each comment becomes a `Comment` node, preserving the thread structure via `Story_to_Comment` and `Comment_to_Comment` edges.
+We ingest Hacker News submissions and comments with Polars, restricting the dataset to the most recent 31 days. Each submission is stored as a `Story` node, while every reply—regardless of nesting depth—is represented as a `Comment` node, while preserving the hierarchical structure through `Story_to_Comment` and `Comment_to_Comment` edges.
 
 ### Temporal Knowledge Extraction
-Stories and their comment threads are processed through a `Chunker` that uses [Chonkie](https://github.com/chonkie-inc/chonkie)'s `RecursiveChunker` with custom rules to chunk by major sections such as stories, comments, and subcomments, while preserving the hierarchical structure. These chunks flow into the `TemporalAgent`, an asynchronous OpenAI-powered extractor (default model: `gpt-5-nano`) that:
-1. Extracts candidate events from each chunk and classifies them as `ATEMPORAL`, `STATIC`, or `DYNAMIC`.
-2. Embeds events using OpenAI's `text-embedding-3-small` model for vector search.
-3. Assigns temporal validity ranges (`valid_at`/`expired_at`/`invalid_at`) when the text expresses change over time.
-4. Extracts entities and triplets (subject‑predicate‑object facts) from the events and uses new predicates or ones from `predicates.csv` where we define existing predicates and their meanings.
+The combined story–comment threads are processed through a custom `Chunker` built on [Chonkie](https://github.com/chonkie-inc/chonkie)'s `RecursiveChunker`. Our rules partition text along major structural boundaries (stories, comments, sub-comments). Resulting chunks are passed to the **TemporalAgent** (default model: `gpt-5-nano`), which:
+1. Detects candidate events and classifies each as **ATEMPORAL**, **STATIC**, or **DYNAMIC**.
+2. Generates vector embeddings of the events via OpenAI's `text-embedding-3-small` model.
+3. Assigns temporal validity ranges (`valid_at`, `expired_at`, `invalid_at`) when the text indicates change over time.
+4. Extracts entities and subject‑predicate‑object triplets, selecting predicates from `predicates.csv` or creating new ones when necessary.
 
 ### Entity Resolution
-The `EntityResolution` class handles deduplication of entities that refer to the same real-world concept under different names. 
-It groups entities by type, then uses RapidFuzz's `partial_ratio` with an 90% similarity threshold to cluster similar entities. 
-Within each cluster, it selects the medoid (entity with highest total similarity to others) as the canonical representative. 
-Special acronym detection merges multi-word entities with their acronyms (e.g., "Hacker News" ↔ "HN") using a 98% threshold. 
-All duplicate entities are rewired to point at the canonical node via `Resolved` edges, and triplet references are updated accordingly. 
-Additionally, a cleanup pass merges acronym/canonical pairs when the acronym match is strong (≥90%) but below the strict 98% rule.
+The **EntityResolution** class handles deduplication of entities that refer to the same real-world concept under different names. 
+Entities are grouped by type, and **RapidFuzz**’s `partial_ratio` (≥ 90 % similarity) identifies candidate clusters. 
+Within each cluster we select the **medoid**,the entity whose aggregate similarity to peers is maximal, as the canonical representative. 
+Then the acronym detection merges multi-word entities with their abbreviations (e.g., "Hacker News" ↔ "HN") at a stricter 98 % threshold. 
+All duplicates are then rewired to the canonical node via `Resolved` edges andtheir references in triplets are updated accordingly. 
+Finally, a secondary pass reconciles high-confidence (≥ 90 %) acronym pairs that fell below the primary cutoff.
 
 ### Knowledge Invalidation
-The `InvalidationAgent` maintains temporal consistency by detecting contradictions between events. It processes events in batches, comparing new events against existing ones within the same predicate families using both temporal overlap analysis and embedding similarity. When contradictions are found (e.g., "X acquired Y" vs earlier "X plans to acquire Y"), the agent marks older events as expired or invalid with appropriate timestamps and invalidation relationships. This ensures queries return temporally correct information.
+The **InvalidationAgent** enforces temporal consistency by detecting contradictions between events. Incoming events are batched and compared against historical events sharing the same predicate family. We combine temporal-range intersection with embedding similarity to flag conflicts (e.g., "X acquired Y" vs. the earlier "X plans to acquire Y"). Superseded events are marked `expired` or `invalid`, and linked via `Invalidated_By` edges so that queries only return the chronologically accurate facts.
+
+---
 
 ## KG Agent Retrieval
 
-The Knowledge Graph Agent is our attempt to combine the power of the retrival agent made by OpenAI's knowledge graph cookbook with HelixDB's graph traversal capabilities. This agent has access to the same tools as the original agent, just using HelixDB's hybrid graph and vector storage instead of a Postgres database and a vector database.
+The **Knowledge Graph Agent** adapts the retrieval algorithms presented in OpenAI’s cookbook, but operates directly on HelixDB’s unified storage layer. Consequently, the agent interacts with a single backend instead of managing separate Postgres and vector store instances. We also added additional retrieval tools to the agent to improve the quality of the retrieved results, such as entity and predicate lookup tools and vector search tools.
 
-### Planner → Retriever → Answers
-The `Planner` agent (default model: `gpt-5-nano`) decomposes the user’s question into targeted steps. It identifies target entities, predicates, and date windows, then produces a structured plan describing which retrieval tool to call and with what arguments.
+### Planner → Retriever → Answer
+1. **Planner** (`gpt-5-nano`) decomposes the user’s question and identifies target entities, predicates, and temporal windows. It generates a structured plan specifying which retrieval tool to invoke and with which parameters.
+2. **Retriever** (`gpt-5-mini`) executes the plan using the methods below.
 
-The `Retriever` agent with GPT-5-mini provides the core retrieval functionality with several key methods:
+**Primary Retrieval Methods**
+- `factual_qa(entity_name, start_date, end_date, predicate)`: Performs focused fact-finding with fuzzy predicate matching (≥ 65 % similarity) and temporal filters. Returns grounded chunks, events, and triplets.
+- `deep_qa(question, entities, start_date, end_date, predicates)`: Aggregates results across multiple entities/predicates by invoking `factual_qa` iteratively, then synthesises a holistic answer.
+- `vector_search(query, k=10)`: Uses embeddings generated from the query text to retrieve semantically similar events.
 
-**Core Retrieval Tools:**
-- `factual_qa(entity_name, start_date, end_date, predicate)`: Performs targeted fact retrieval using fuzzy predicate matching (65% similarity threshold) and temporal filtering. Returns grounded chunks, events, and triplets with formatted citations.
-- `deep_qa(question, entities, start_date, end_date, predicates)`: Aggregates information across multiple entities and predicates by calling `factual_qa` multiple times, then synthesizes a comprehensive answer using GPT-5-mini.
-- `vector_search(query, k=10)`: Uses OpenAI embeddings to find semantically similar events, then formats results with supporting evidence.
+**Additional Tools**
+- `search_entities_by_name`, `search_predicates_by_name`: Fuzzy lookup tools to find entities and predicates by name.
+- `explore_entity_relationships`: Discovers multihop connections between entities.
+- `list_entities`, `list_predicates`: Enumeration tools to browse the graph.
 
-**Additional Tools:**
-- `search_entities_by_name()`, `search_predicates_by_name()`: Fuzzy search for entities and predicates
-- `explore_entity_relationships()`: Discovers connections between entities via triplets
-- `list_entities()`, `list_predicates()`: Browse available entities and predicates
+Internally, predicate matching leverages **RapidFuzz**, temporal filtering constrains results to valid intervals, and every answer is accompanied by machine-readable citations linking back to source chunks.
 
-The retriever uses fast predicate matching with RapidFuzz, temporal filtering based on event validity ranges, and formats all results with proper citations linking back to source chunks and events.
-
-Behind the scenes, `KGAgent` coordinates the `Planner` and `Retriever` agent with multi‑step plans, calls the right tools, and returns concise, cited answers. The emphasis is on determinism and auditability: every answer is backed by concrete Events and Triplets.
+`KGAgent` orchestrates the **Planner** and **Retriever**, executes the necessary tool calls, and returns concise, auditable answers.
 
 Below is a snippet of the `KGAgent` used to answer the question "What is Sam Altman's current job?".
 
@@ -130,10 +135,13 @@ kg_agent = KGAgent(helix=helix, client=AsyncOpenAI(), model="gpt-5-nano")
 final_output, tools_used = await kg_agent.run("What is Sam Altman's current job?")
 ```
 
+---
+
 ## HelixDB Agent Retrieval
 
-An advantage of storing data in HelixDB is that we can use its MCP tools to directly traverse the graph inside the database.
-This allowed us to build a Gemini‑powered retrieval agent that uses HelixDB’s MCP tools for fast, dynamic graph traversals.
+Because our data resides natively in **HelixDB**, we can use its built-in MCP endpoints to directly traverse the graph inside the database. 
+Leveraging these endpoints, we implemented a Gemini-powered retrieval agent that performs low-latency, dynamic graph exploration via these MCP tools.
+The reason behind using Gemini instead of OpenAI is because Gemini is faster and more cost-effective with tool calls.
 
 ### MCP Tools in Practice
 The core MCP toolset includes:
@@ -144,51 +152,92 @@ The core MCP toolset includes:
 - `mcp/search_keyword` / `mcp/search_vector`: Lexical and semantic search entry points
 - `mcp/collect`: Gather results with optional range limits
 
-In a typical flow, Gemini initializes with `mcp/init`, seeds with `mcp/n_from_type` for specific node types, 
-chains `mcp/out_step` calls to traverse relationships (e.g., Story → Chunk → Event), 
-applies `mcp/filter_items` for temporal or property constraints, and finally `mcp/collect`s the results. 
-Because HelixDB optimizes these graph operations are lightweight and the MCP traversal loop remains responsive for agents to iterate on. 
-See the [MCP guide](https://docs.helix-db.com/guides/mcp-guide) for more details.
+In a typical session Gemini:
+1. initializes a traversal session with `mcp/init`
+2. starts the traversal by getting nodes of a specific type with `mcp/n_from_type` (e.g., `Story`, `Event`)
+3. chains `mcp/out_step` / `mcp/in_step` calls to follow relationships (e.g., `Story → Chunk → Event → Triplet → Entity`)
+4. applies `mcp/filter_items` to filter by temporal or property constraints
+5. finalizes the query with `mcp/collect`, optionally limiting result counts
 
-## Insights
+HelixDB’s MCP tools ensure that the traversal loop remains stateful as the agent iterates on intermediate results.
+See the [MCP guide](https://docs.helix-db.com/guides/mcp-guide) for further details.
 
+## Conclusion
 
+TBD (something about predefined algorithms vs agentic retrieval)
+
+---
 
 # HelixDB Agentic Retrieval
 
-After experimenting with using the 
+This section demonstrates how HelixDB can power a *domain-specific* graph focused on Hacker News discussions. 
+Instead of storing knowledge as general entities and triplets, it is stored in domain specific objects, 
+which in this case are **stories**, **comments**, and **users**, with some objects having Gemini embeddings for semantic search.  
 
 ## Graph Architecture
 
+### Nodes
+- **Story**: the HN submission (uuid, username, title, text, created_at, url, score, klive)
+- **Comment**: user replies (uuid, username, text, created_at, parent_uuid, klive)
+- **User**: a user of the platform (username, created_at)
+- **StoryEmbedding**: vector representations for stories
+- **CommentEmbedding**: vector representations for comments
 
+The relationships between these nodes are captured by the following edge types:
+- `Story_to_Comment` and `Comment_to_Comment` build the discussion tree
+- `User_to_Story` and `User_to_Comments` connect users to their stories and comments
+- `Story_to_StoryEmbedding` and `Comment_to_CommentEmbedding` connect stories and comments to their vector representations
+
+```mermaid
+graph TD
+    User -->|User_to_Story| Story
+    User -->|User_to_Comments| Comment
+    Story -->|Story_to_Comment| Comment
+    Comment -->|Comment_to_Comment| Comment
+    Story -->|Story_to_StoryEmbedding| StoryEmbedding
+    Comment -->|Comment_to_CommentEmbedding| CommentEmbedding
+```
+
+## Ingestion Pipeline
+
+TBD
+
+---
 
 ## Agent Architecture
 
+In this section, we improved the retrival agent architecture by introducing a supervisor agent.
+Along with the supervisor agent, the sub agents can leverage HelixDB's MCP tools to traverse the graph efficiently.
+
 ### Supervisor Agent
 
-The supervisor decomposes a user question into steps, selects tools (OpenAI Retriever or MCP traversal), and manages the overall plan, including retry policies for timeouts and fallbacks between keyword and vector search.
+The supervisor agent interprets the user’s query and formulates a high-level execution plan that may require several traversal patterns. 
+It then instantiates specialized sub-agents, each equipped with the full MCP toolset, to carry out individual segments of the plan. 
+This design enables follow-up questions to build seamlessly on prior results. 
+The supervisor also oversees error handling and dynamically replans any incomplete tasks to ensure continuous progress.
 
 ### Sub Agent
 
-Specialized sub‑agents execute specific steps—e.g., keyword or vector search, edge traversal, or predicate‑focused factual retrieval—and return structured results that can be directly rendered or further filtered.
+Sub-agents execute the traversal steps defined in the supervisor’s plan. 
+We will be using Gemini to power the sub agent because it is faster and more cost-effective with tool calls.
+While they have access to all the MCP tools, we introduced an additional batch capability to speed up common traversal patterns and reduce costs. 
+The batch tool lets a sub-agent execute multiple MCP calls in a single operation, after which it can iteratively refine the results with targeted MCP queries.
 
-### Tool Batching
+## Conclusion
 
-Where possible, we batch traversal and insertion operations (as shown in the notebooks) to keep latency and cost low without sacrificing recall. The same principle applies to retrieval: fetch compact sets of candidate nodes, then expand where necessary.
+TBD
 
-## Insights
-
-Agentic retrieval is especially useful for “how did this change over time?” questions, where we need both temporal grounding and precise paths from raw text to extracted facts.
+---
 
 # Future Work
 
 ### Retrieval Agents
 
-
+TBD
 
 ### Evaluation Framework
 
-
+TBD
 
 ## Contributors
-
+- [name](link)
