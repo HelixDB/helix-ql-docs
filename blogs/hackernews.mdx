@@ -10,19 +10,18 @@ Building a high‑signal knowledge graph out of noisy, fast‑moving discussion 
 This guide will walk through how we built a temporal knowledge graph from Hacker News using HelixDB and modern LLM agents. 
 HelixDB is a powerful and fast graph database with native support for vectors and a powerful MCP tool layer that 
 lets agents traverse, filter, and collect graph results programmatically. 
-This guide will give you a step‑by‑step walkthrough of ingesting raw stories and comments, 
-chunking and extracting time‑aware facts, resolving entities, invalidating contradictions, 
+
+This guide will give you a step‑by‑step walkthrough of the overall process of ingesting posts and comments, 
+chunking them, extracting temporal facts and entities, resolving entity conflicts, invalidating contradictions, 
 and retrieving grounded answers with OpenAI knowledge graph agents and Gemini agents with HelixDB’s MCP tools.
 
-## TLDR
-
-### Knowledge Graph
-
-### HelixDB Agentic Retrieval
-
-## Insights
-
-
+> ## TLDR
+> #### Knowledge Graph
+> 
+> 
+> #### HelixDB Agentic Retrieval
+> 
+> 
 
 ---
 
@@ -79,7 +78,7 @@ graph TD
 ## OpenAI Ingestion
 
 ### Hacker News Data Pipeline
-We ingest Hacker News submissions and comments with Polars, restricting the dataset to the most recent 31 days. Each submission is stored as a `Story` node, while every reply—regardless of nesting depth—is represented as a `Comment` node, while preserving the hierarchical structure through `Story_to_Comment` and `Comment_to_Comment` edges.
+We ingest Hacker News posts and comments using Polars to load and manipulate the data, restricting the dataset to the most recent 31 days and take the latest 150 posts and its comments. Each post is stored as a `Story` node, while every comment, regardless of nesting depth, is represented as a `Comment` node. The hierarchical structure is represented through `Story_to_Comment` and `Comment_to_Comment` edges.
 
 ### Temporal Knowledge Extraction
 The combined story–comment threads are processed through a custom `Chunker` built on [Chonkie](https://github.com/chonkie-inc/chonkie)'s `RecursiveChunker`. Our rules partition text along major structural boundaries (stories, comments, sub-comments). Resulting chunks are passed to the **TemporalAgent** (default model: `gpt-5-nano`), which:
@@ -92,6 +91,7 @@ The combined story–comment threads are processed through a custom `Chunker` bu
 The **EntityResolution** class handles deduplication of entities that refer to the same real-world concept under different names. 
 Entities are grouped by type, and **RapidFuzz**’s `partial_ratio` (≥ 90 % similarity) identifies candidate clusters. 
 Within each cluster we select the **medoid**,the entity whose aggregate similarity to peers is maximal, as the canonical representative. 
+
 Then the acronym detection merges multi-word entities with their abbreviations (e.g., "Hacker News" ↔ "HN") at a stricter 98 % threshold. 
 All duplicates are then rewired to the canonical node via `Resolved` edges andtheir references in triplets are updated accordingly. 
 Finally, a secondary pass reconciles high-confidence (≥ 90 %) acronym pairs that fell below the primary cutoff.
@@ -153,18 +153,34 @@ The core MCP toolset includes:
 - `mcp/collect`: Gather results with optional range limits
 
 In a typical session Gemini:
-1. initializes a traversal session with `mcp/init`
-2. starts the traversal by getting nodes of a specific type with `mcp/n_from_type` (e.g., `Story`, `Event`)
-3. chains `mcp/out_step` / `mcp/in_step` calls to follow relationships (e.g., `Story → Chunk → Event → Triplet → Entity`)
-4. applies `mcp/filter_items` to filter by temporal or property constraints
-5. finalizes the query with `mcp/collect`, optionally limiting result counts
+1. Initializes a traversal session with `mcp/init`
+2. Starts the traversal by getting nodes of a specific type with `mcp/n_from_type` (e.g., `Story`, `Event`)
+3. Chains `mcp/out_step` / `mcp/in_step` calls to follow relationships (e.g., `Story → Chunk → Event → Triplet → Entity`)
+4. Applies `mcp/filter_items` to filter by temporal or property constraints
+5. Finalizes the query with `mcp/collect`, optionally limiting result counts
 
 HelixDB’s MCP tools ensure that the traversal loop remains stateful as the agent iterates on intermediate results.
 See the [MCP guide](https://docs.helix-db.com/guides/mcp-guide) for further details.
 
 ## Conclusion
 
-TBD (something about predefined algorithms vs agentic retrieval)
+> _**TLDR -**_
+> _**OpenAI retrieval agent** relies on predefined traversal tools, which is better for narrowly scoped questions that benefit from strict guardrails._
+> _**HelixDB MCP Agent** traverse the graph database directly, which is better for open-ended questions, multi-hop reasoning, and investigative workflows._
+
+Overall, both the OpenAI retrieval agent and the HelixDB MCP Agent deliver similar answer quality over the same graph, however they differ in retrieval autonomy. 
+OpenAI's retrieval agent relies on predefined traversal tools, whereas the HelixDB MCP Agent composes graph operations dynamically via the built-in MCP traversal tools, 
+allowing the agent directly traverse the graph and apply search and filter tools. 
+
+Predefined traversals, by design, constrain the search space to a fixed set of patterns and are therefore less flexible and less generalizable across diverse question types.
+The HelixDB MCP Agent, on the other hand, is typically faster and more accurate because it executes stateful graph operations inside the database, providing flexible, fine-grained control over the traversal. 
+This dynamic composition also enables iterative refinement where the agent can inspect intermediate results, tighten filters, follow related nodes, and replan without restarting the query. 
+
+Beyond performance, agentic retrieval improves faithfulness and auditability because each hop is an explicit graph step with machine‑readable citations back to chunks, events, triplets, and entities. 
+
+Operationally, consolidating graph and vector storage in HelixDB reduces the coordination burden of a separate Postgres plus vector store.
+
+Next, we apply this agentic pattern to a domain‑specific Hacker News graph and introduce a supervisor–sub‑agent architecture that further improves reliability and throughput.
 
 ---
 
@@ -235,9 +251,6 @@ TBD
 
 TBD
 
-### Evaluation Framework
+### Agent Evaluation Framework
 
 TBD
-
-## Contributors
-- [name](link)
