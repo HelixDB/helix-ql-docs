@@ -23,11 +23,15 @@ and retrieving grounded answers with OpenAI knowledge graph agents and Gemini ag
 > The MCP approach is faster and more adaptable, and the OpenAI agent provides stricter guardrails for more focused queries. 
 > Use the MCP approach for open-ended questions, multi-hop reasoning, and investigative workflows._
 
-> **HelixDB MCP Agent Retrieval** - _TBD_
+> **Agentic Retrieval with HelixDB** - _Use HelixDB’s native MCP tools plus a Gemini-powered supervisor–sub-agent hierarchy for 
+> agentic retrieval over a domain-specific Hacker News graph. Stories, comments, and users are stored directly with vector embeddings. 
+> A supervisor agent orchestrates the retrieval process, spawning Gemini-powered sub-agents to traverse, search, and filter the graph inside the database. 
+> Sub-agents have access to batch MCP call tools to perform common traversal operations in batches, with fallback to individual MCP call tools.
+> Improved reliability and performance over the original MCP approach mentioned above._
 
 ---
 
-# Knowledge Graph
+# General Knowledge Graph
 
 This section draws on the excellent [Temporal Agents with Knowledge Graphs](https://github.com/openai/openai-cookbook/blob/a90448358320081935df1a133adb8664bbf75047/examples/partners/temporal_agents_with_knowledge_graphs/temporal_agents_with_knowledge_graphs.ipynb) notebook from OpenAI. However, our implementation differs substantially in both schema design and storage architecture. Whereas the original example relies on a Postgres instance paired with a separate vector store, we use **HelixDB**'s hybrid graph-and-vector model which eliminates the operational overhead of orchestrating multiple databases.
 
@@ -218,32 +222,89 @@ graph TD
 
 ## Ingestion Pipeline
 
-TBD
+The ingestion pipeline processes 20 filtered Hacker News stories and their comments through a streamlined four-stage process that transforms the data into a queryable graph structure with semantic search capabilities.
+However, in our demo, we ingested around 1 million stories and 1.3 million comments (including sub-comments) with Gemini embeddings.
+
+### Data Loading and Filtering
+Using **Polars** for efficient data manipulation, we load the raw Hacker News dataset apply temporal and quality filters:
+- **Temporal Filter**: Select stories from the most recent 150 days to focus on current discussions
+- **Quality Filter**: Include only stories with scores > 100 to ensure high-engagement content
+- **Hierarchical Extraction**: Extract parent comments (directly replying to stories) and sub-comments (replies to comments) to preserve discussion structure
+
+### Data Cleaning and Normalization
+- **HTML Sanitization**: Remove HTML tags and decode entities
+- **Timestamp Standardization**: Convert time strings to ISO format with UTC timezone
+- **User Deduplication**: Extract unique usernames across stories, comments, and sub-comments
+
+### Vector Embedding Generation
+Text content is converted to high-dimensional vectors for semantic search using **Gemini's embedding model**:
+- **Content Preparation**: Combined titles and text for story nodes and use comment text directly for comment nodes
+- **Embedding Generation**: Generate vectors optimized for document retrieval with Gemini's embedding model
+
+### Graph Database Insertion
+Structured data and embeddings are inserted into **HelixDB** using predefined queries that automatically establish relationships:
+1. **User Nodes**: Insert unique users first to establish identity references
+2. **Story Insertion**: Create story nodes with metadata, link to users via `User_to_Story` edges, and connect to vector embeddings via `Story_to_StoryEmbedding` edges
+3. **Comment Hierarchy**: Insert parent and sub-comments with `parent_uuid` references, establishing `Story_to_Comment` and `Comment_to_Comment` relationships
+4. **Comment Embeddings**: Insert comment and sub-comment embeddings and connect to comment nodes via `Comment_to_CommentEmbedding` edges
 
 ---
 
 ## Agent Architecture
 
-In this section, we improved the retrival agent architecture by introducing a supervisor agent.
-Along with the supervisor agent, the sub agents can leverage HelixDB's MCP tools to traverse the graph efficiently.
+The retrieval system introduces a **supervisor-sub agent** architecture powered by **Gemini 2.5 Flash** models, 
+where a coordinator agent spawns specialized sub-agents to execute complex graph traversals using HelixDB's native MCP tools.
 
 ### Supervisor Agent
 
-The supervisor agent interprets the user’s query and formulates a high-level execution plan that may require several traversal patterns. 
-It then instantiates specialized sub-agents, each equipped with the full MCP toolset, to carry out individual segments of the plan. 
-This design enables follow-up questions to build seamlessly on prior results. 
-The supervisor also oversees error handling and dynamically replans any incomplete tasks to ensure continuous progress.
+The **SupervisorAgent** (`gemini-2.5-flash`) acts as a high-level coordinator that:
+- **Query Decomposition**: Analyzes user queries and determines whether to spawn single or multiple sub-agents based on complexity
+- **Parallel Execution**: Spawns multiple sub-agents for complex queries requiring different perspectives
+- **Result Synthesis**: Aggregates results from all sub-agents and provides comprehensive summaries
+- **Error Handling**: Manages sub-agent failures and coordinates retry logic
+
+The supervisor has two primary tools:
+- `spawn_sub_agent(instruction)`: Creates a single sub-agent for focused queries
+- `spawn_multiple_sub_agents(instructions)`: Spawns multiple sub-agents in parallel for multi-faceted queries
 
 ### Sub Agent
 
-Sub-agents execute the traversal steps defined in the supervisor’s plan. 
-We will be using Gemini to power the sub agent because it is faster and more cost-effective with tool calls.
-While they have access to all the MCP tools, we introduced an additional batch capability to speed up common traversal patterns and reduce costs. 
-The batch tool lets a sub-agent execute multiple MCP calls in a single operation, after which it can iteratively refine the results with targeted MCP queries.
+**SubAgents** (`gemini-2.5-flash-lite`) are specialized execution units that perform the actual graph traversals. Each sub-agent:
+
+**Core MCP Capabilities**:
+- `mcp_init`: Initialize stateful traversal sessions
+- `mcp_get_nodes`: Seed traversal from specific node types (Story, Comment, User)
+- `mcp_traverse_out/in`: Follow edges with type-aware traversal
+- `mcp_vector_search`: Semantic search using Gemini embeddings
+- `mcp_filter_properties`: Apply property-based filters with operators
+- `mcp_collect`: Gather results with optional range limits
+
+**Batch Optimization**:
+The key innovation is `mcp_run_batch_tools`, which executes multiple MCP operations in a single call:
+- **Connection Management**: Automatically handles `connection_id` propagation across batch operations
+- **Error Recovery**: Falls back to individual MCP calls if batch execution fails
+- **State Preservation**: Uses `drop=false` to maintain traversal state for iterative refinement
+
+**Intelligent Retry Logic**:
+Sub-agents implement aggressive retry behavior—if batch operations return empty results, they automatically retry using individual MCP calls, ensuring robust query execution even when complex batch operations fail.
+
+This architecture enables **dynamic query planning** where agents compose graph operations on-the-fly, providing both the performance benefits of batch operations and the reliability of individual tool fallbacks.
 
 ## Conclusion
 
-TBD
+> _**TL;DR -**_
+> _**Domain-specific graphs** with supervisor-sub agent architectures provide faster, more reliable retrieval than general knowledge graphs._
+> _**Batch MCP operations** with intelligent fallbacks deliver both performance optimization and robust error recovery._
+
+The agentic retrieval approach demonstrates significant advantages over traditional knowledge graph extraction pipelines. By storing domain-specific objects (stories, comments, users) rather than abstract entities and triplets, we eliminate the complexity of temporal knowledge extraction, entity resolution, and contradiction detection while maintaining rich semantic relationships.
+
+The supervisor-sub agent architecture scales retrieval operations through parallel execution and intelligent workload distribution. Sub-agents leverage HelixDB's native MCP tools to perform stateful graph traversals directly in the database, avoiding the overhead of external coordination between multiple storage systems.
+
+The key innovation is the batch MCP operations tool with automatic fallback to individual tools, which provides both performance optimization for common traversal patterns and robust error recovery for complex queries. This dual-mode execution ensures reliable results even when sophisticated batch operations encounter tool errors or data inconsistencies.
+
+Operationally, this approach reduces the engineering complexity of maintaining separate ingestion pipelines for chunking, embedding, entity extraction, and temporal validation. The streamlined four-stage pipeline (load → clean → embed → insert) processes millions of records efficiently while preserving discussion hierarchies and semantic relationships.
+
+The domain-specific design trades some generalizability for substantial improvements in query performance, system reliability, and operational simplicity—making it ideal for focused applications where speed and accuracy matter more than broad knowledge representation.
 
 ---
 
@@ -251,7 +312,26 @@ TBD
 
 ### Retrieval Agents
 
-TBD
+Despite its strong performance within the Hacker News domain, our current agentic retrieval and ingestion layer is intentionally specialised. Traversal prompts, batch operations, and schema assumptions are tightly coupled to a fixed set of node and edge types. In the future, we will make this layer more schema-aware so that retrieval plans automatically adapt to different knowledge domains.
+
+We are also designing an **agentic ingestion pipeline** that keeps the graph fresh in near-real-time.
+
+A dedicated ingestion-supervisor agent will:
+1. Maintain a holistic view of the data
+2. Discover new facts, entities, and relationships
+3. Propose node and edge definitions (including property names, data types, and vector-embedding policies)
+4. Deploy the schema to HelixDB
+
+Once the schema has been deployed, the supervisor will delegate the workload across ingestion sub-agents running in parallel. 
+
+Each sub-agent will:
+1. Traverse the live graph with MCP tools to locate the insertion points (e.g. using similarity search to find exising or related nodes/edges)
+2. Detect duplicates and contradictions and adjusting the insertion plan accordingly
+3. Insert new nodes, edges, and embeddings into the graph
+
+Because sub-agents operate inside the same MCP session, they benefit from real-time visibility into data inserted by other sub-agents. This immediate feedback loop eliminates the need for reconciliation algorithms and ensures that the graph remains consistent even under high ingestion throughput. Monitoring and anomaly detection tools will also be added to the supervisor to detect and handle errors in the ingestion pipeline.
+
+Looking further ahead, we envision deeper **multi-layer agent hierarchies**. Planner agents could decompose complex analytical questions into sub-tasks for domain-specific retrieval agents. Ranking agents could re-score intermediate results. Summarisation agents could process many pieces of evidence into concise answers. This modular architecture will allow us to scale to larger graphs and more sophisticated reasoning, all while preserving the real-time performance and operational simplicity that HelixDB’s in-database MCP tooling provides.
 
 ### Agent Evaluation Framework
 
