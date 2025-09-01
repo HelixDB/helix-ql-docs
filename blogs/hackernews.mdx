@@ -92,6 +92,7 @@ The combined story–comment threads are processed through a custom `Chunker` bu
 2. Generates vector embeddings of the events via OpenAI's `text-embedding-3-small` model.
 3. Assigns temporal validity ranges (`valid_at`, `expired_at`, `invalid_at`) when the text indicates change over time.
 4. Extracts entities and subject‑predicate‑object triplets, selecting predicates from `predicates.csv` or creating new ones when necessary.
+5. Deduplicate predicates using an LLM to identify duplicates and hierarchically merge them into semantically unique predicate.
 
 ### Entity Resolution
 The **EntityResolution** class handles deduplication of entities that refer to the same real-world concept under different names. 
@@ -101,6 +102,9 @@ Within each cluster we select the **medoid**,the entity whose aggregate similari
 Then the acronym detection merges multi-word entities with their abbreviations (e.g., "Hacker News" ↔ "HN") at a stricter 98 % threshold. 
 All duplicates are then rewired to the canonical node via `Resolved` edges andtheir references in triplets are updated accordingly. 
 Finally, a secondary pass reconciles high-confidence (≥ 90 %) acronym pairs that fell below the primary cutoff.
+
+However, in practice, we found that RapidFuzz was not always able to identify duplicates accurately,
+so we did not include it in our final implementation.
 
 ### Knowledge Invalidation
 The **InvalidationAgent** enforces temporal consistency by detecting contradictions between events. Incoming events are batched and compared against historical events sharing the same predicate family. We combine temporal-range intersection with embedding similarity to flag conflicts (e.g., "X acquired Y" vs. the earlier "X plans to acquire Y"). Superseded events are marked `expired` or `invalid`, and linked via `Invalidated_By` edges so that queries only return the chronologically accurate facts.
@@ -312,9 +316,9 @@ The domain-specific design trades some generalizability for substantial improvem
 
 ### Retrieval Agents
 
-Despite its strong performance within the Hacker News domain, our current agentic retrieval and ingestion layer is intentionally specialised. Traversal prompts, batch operations, and schema assumptions are tightly coupled to a fixed set of node and edge types. In the future, we will make this layer more schema-aware so that retrieval plans automatically adapt to different knowledge domains.
+Despite its strong performance within the Hacker News domain, our current agentic retrieval and ingestion layer is intentionally specialized. Traversal prompts, batch operations, and schema assumptions are tightly coupled to a fixed set of node and edge types. In the future, we will make this layer more dynamic so that agents can automatically adapt to different knowledge domains.
 
-We are also designing an **agentic ingestion pipeline** that keeps the graph fresh in near-real-time.
+Another interesting direction is to design an **agentic ingestion pipeline** that keeps the graph fresh in near-real-time.
 
 A dedicated ingestion-supervisor agent will:
 1. Maintain a holistic view of the data
