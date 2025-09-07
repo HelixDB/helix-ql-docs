@@ -23,7 +23,7 @@ In schema.hx:
 
 ```rust
 V::Document {
-    content: String
+    content: String,
     created_at: I64
 }
 ```
@@ -42,8 +42,8 @@ QUERY InsertText(content: String, created_at: I64) =>
 You can also use the `Embed` function in a search query:
 
 ```rust
-QUERY SearchText(query: String) =>
+QUERY SearchText(query: String, limit: I64) =>
     // Search for documents that are similar to the query
-    results <- SearchV<Document>(Embed(query))
+    results <- SearchV<Document>(Embed(query), limit)
     RETURN results
 ```

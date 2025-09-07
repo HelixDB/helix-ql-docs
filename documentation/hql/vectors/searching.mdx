@@ -9,7 +9,7 @@ icon: "magnifying-glass"
 Search for vectors in your graph.
 
 ```rust
-SearchV<Type>(vector, {properties})
+SearchV<Type>(vector, limit)
 ```
 
 ### Example
@@ -26,9 +26,9 @@ V::Document {
 In query.hx:
 
 ```rust
-QUERY SearchVector (vector: [F64], k: I64) =>
+QUERY SearchVector (vector: [F64], limit: I64) =>
     // Search for the vector in the graph (returns k results)
-    documents <- SearchV<Document>(vector, k)
+    documents <- SearchV<Document>(vector, limit)
     RETURN documents
 ```
 
@@ -52,8 +52,8 @@ SearchV<Type>(vector)::WHERE(<boolean_expression>)
 ### Example
 
 ```rust
-QUERY SearchVector (vector: [F64], now: I64) =>
-    doc_vecs <- SearchV<Document>(vector)
+QUERY SearchVector (vector: [F64], limit: I64, now: I64) =>
+    doc_vecs <- SearchV<Document>(vector, limit)
     documents <- doc_vecs::In<DocEmbedding>::WHERE(_::{created_at}::LTE(now))
     RETURN documents
 ```
