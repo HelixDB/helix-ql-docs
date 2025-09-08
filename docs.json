@@ -160,6 +160,7 @@
                     {
                         "group": "Use Cases",
                         "pages": [
+                            "guides/hackernews",
                             "guides/social-network",
                             {
                                 "group": "Professors",
@@ -182,18 +183,6 @@
                         "group": "Helix Cloud",
                         "pages": [
                             "helix-cloud/overview"
-                        ]
-                    }
-                ]
-            },
-            {
-                "tab": "Blogs",
-                "groups": [
-                    {
-                        "group": "Blogs",
-                        "pages": [
-                            "blogs/overview",
-                            "blogs/hackernews"
                         ]
                     }
                 ]
