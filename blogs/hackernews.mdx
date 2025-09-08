@@ -43,15 +43,7 @@ The relationships between these nodes are captured by the following edge types:
 - `User_to_Story` and `User_to_Comments` connect users to their stories and comments
 - `Story_to_StoryEmbedding` and `Comment_to_CommentEmbedding` connect stories and comments to their vector representations
 
-```mermaid
-graph TD
-    User -->|User_to_Story| Story
-    User -->|User_to_Comments| Comment
-    Story -->|Story_to_Comment| Comment
-    Comment -->|Comment_to_Comment| Comment
-    Story -->|Story_to_StoryEmbedding| StoryEmbedding
-    Comment -->|Comment_to_CommentEmbedding| CommentEmbedding
-```
+![graph](./hndiagram.png)
 
 ## Ingestion Pipeline
 
