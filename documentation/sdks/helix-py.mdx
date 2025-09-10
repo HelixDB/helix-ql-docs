@@ -93,11 +93,8 @@ to the lifetime of the script:
 from helix.instance import Instance
 helix_instance = Instance("helixdb-cfg", 6969, verbose=True)
 
-# Deploy instance
+# Deploy & redeploy instance
 helix_instance.deploy()
-
-# Redeploy instance
-helix_instance.redeploy()
 
 # Start instance
 helix_instance.start()
