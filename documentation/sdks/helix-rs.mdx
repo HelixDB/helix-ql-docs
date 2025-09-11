@@ -63,6 +63,7 @@ async fn main() -> Result<(), HelixError> {
     }
 
     // Run the query
+    //Note that the query name is case sensitive
     let result: Result = client.query::<AddUserInput, Result>("add_user", &input).await?;
     println!("Created user with ID: {}", result.user.id);
     Ok(())

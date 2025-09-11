@@ -28,6 +28,7 @@ Then you can start running queries by passing the query name and an argument obj
 
 ```typescript
 // Query the database
+// Note that the query name is case sensitive
 await client.query("addUser", {
     name: "John",
     age: 20

@@ -32,6 +32,7 @@ import helix
 # Connect to a local helix instance
 db = helix.Client(local=True, verbose=True)
 
+# Note that the query name is case sensitive
 db.query('add_user', {"name": "John", "age": 20})
 ```
 The default port is `6969`, but you can change it by passing in the `port` parameter.
@@ -67,7 +68,7 @@ class add_user(Query):
 
     def response(self, response):
         return response
-
+        
 db.query(add_user("John", 20))
 ```
 
