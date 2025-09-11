@@ -1,0 +1,136 @@
+---
+title: "Output Values"
+description: "What you can return from a query using RETURN."
+---
+
+HelixQL queries end with a `RETURN` clause. You can return bindings (variables),
+projected properties, aggregations, literals, or choose to return nothing at all.
+
+## Returning bindings
+
+Return any previously bound value from your traversal.
+
+```rust
+QUERY GetAllUsers() =>
+    users <- N<User>
+    RETURN users
+```
+
+Returning multiple values creates multiple top-level fields in the response, named
+after the variables.
+
+```rust
+QUERY GetUserAndPosts(user_id: ID) =>
+    user <- N<User>(user_id)
+    posts <- user::Out<User_to_Post>
+    RETURN user, posts
+```
+
+<Accordion title="JSON Output (shape)">
+```json
+{
+  "user": { /* ...user fields... */ },
+  "posts": [ /* ...post items... */ ]
+}
+```
+</Accordion>
+
+---
+
+## Returning projections and properties
+
+Use property projection to shape the returned data.
+
+```rust
+QUERY FindUsers() =>
+    users <- N<User>::RANGE(0, 10)
+    RETURN users::{ name, age }
+```
+
+Return just the `ID` of each element:
+
+```rust
+QUERY FindUserIDs() =>
+    users <- N<User>::RANGE(0, 10)
+    RETURN users::ID
+```
+
+Exclude specific properties:
+
+```rust
+QUERY FindUsersNoPII() =>
+    users <- N<User>::RANGE(0, 10)
+    RETURN users::!{ email, location }
+```
+
+You can also create nested or remapped shapes in `RETURN` using nested mappings:
+
+```rust
+QUERY FindFriends(user_id: ID) =>
+    user <- N<User>(user_id)
+    posts <- user::Out<User_to_Post>::RANGE(20)
+    RETURN user::|u|{
+        userID: u::ID,
+        posts: posts::{
+            postID: ID,
+            creatorID: u::ID,
+            ..
+        }
+    }
+```
+
+See property access, remappings, and exclusion for more details:
+- `steps/properties/property-access.mdx`
+- `steps/properties/property-remappings.mdx`
+- `steps/properties/property-exclusion.mdx`
+
+---
+
+## Returning scalars and literals
+
+Aggregations and scalar bindings can be returned directly:
+
+```rust
+QUERY CountUsers() =>
+    user_count <- N<User>::COUNT
+    RETURN user_count
+```
+
+You can also return literals (strings, numbers, booleans) when useful:
+
+```rust
+QUERY DeleteCity(city_id: ID) =>
+    DROP N<City>(city_id)
+    RETURN "success"
+```
+
+---
+
+## Returning nothing: `RETURN NONE`
+
+For mutations or maintenance operations where you do not want a response payload,
+use `RETURN NONE`.
+
+```rust
+QUERY DeleteCityQuietly(city_id: ID) =>
+    DROP N<City>(city_id)
+    RETURN NONE
+```
+
+`RETURN NONE` signals that the query intentionally produces no output values. This is
+handy to avoid sending placeholder strings like "success" when a silent acknowledgement
+is preferred.
+
+---
+
+## Quick reference
+
+- Return a binding: `RETURN users`
+- Return multiple: `RETURN user, posts`
+- Project fields: `RETURN users::{ name, age }`
+- Only IDs: `RETURN users::ID`
+- Exclude fields: `RETURN users::!{ email }`
+- Aggregation/scalar: `RETURN count`
+- Literal: `RETURN "ok"`
+- No payload: `RETURN NONE`
+

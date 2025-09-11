@@ -47,7 +47,8 @@ struct UserOutput {
 #[tokio::main]
 async fn main() -> Result<(), HelixError> {
     // Initialize the client
-    let client = HelixDB::new(None, None, None); // Uses default port 6969
+    // You can leave 'Some(6969)' as 'None' and it will use 6969 as default
+    let client = HelixDB::new(None, Some(6969), None); 
 
     // Create a user input
     let input = AddUserInput {
