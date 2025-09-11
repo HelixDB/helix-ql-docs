@@ -63,6 +63,7 @@
                             "documentation/hql/vectors/searching",
                             "documentation/hql/keyword_search",
                             "documentation/hql/vectors/embedding",
+                            "documentation/hql/output_values",
                             {
                                 "group": "Traversals",
                                 "pages": [
