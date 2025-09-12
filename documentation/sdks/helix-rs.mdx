@@ -31,7 +31,8 @@ serde = { version = "1.0.219", features = ["derive"] }
 use helix_rs::HelixDB;
 use serde::{Serialize, Deserialize};
 
-// Define your data structures #[derive(Serialize)]
+// Define your data structures 
+#[derive(Serialize)]
 struct UserInput {
     name: String,
     age: i32,
