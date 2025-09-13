@@ -151,7 +151,6 @@
                         "group": "Guides",
                         "pages": [
                             "guides/overview",
-                            "guides/deploying",
                             "guides/mcp-guide",
                             "guides/helixir",
                             "guides/dashboard",

@@ -43,6 +43,7 @@ from helix.embedding.openai_client import OpenAIEmbedder
 embedder = OpenAIEmbedder()
 mcp = MCPServer("helix-mcp", client, embedder=embedder)
 ```
+For more information about the embedder, see our [Helix Embedders](/documentation/sdks/helix-py#embedders) guide.
 
 ## MCP Tools
 - **Session**: `init`, `next`, `collect`, `reset`
@@ -75,29 +76,46 @@ llm.enable_mcps("helix-mcp", url="https://your-remote-mcp.example.com/mcp/")
 ```
 <Warning>Anthropic does not support local MCP servers with streamable-http. You must use a URL-based MCP server.</Warning>
 
-## Use With Claude Desktop
-1) Get the server script:
+For more information about LLM providers, see our [Helix LLM Providers](/documentation/sdks/helix-py#providers) guide.
+
+## Usage
+1) Get the server script in the directory you want to run the MCP server:
 ```bash
+cd /absolute/path/to/project
 curl -O https://raw.githubusercontent.com/HelixDB/helix-py/refs/heads/main/apps/mcp_server.py
 ```
 
-2) Create a `uv` project and install:
-```bash
-uv init project
-cp mcp_server.py project
-cd project
-uv venv && source .venv/bin/activate
-uv add helix-py
+2) Configure your MCP server in the server script:
+- Modify the `client` to where your HelixDB instance is running.
+- Modify the `embedder` to your preferred embedder or remove it if you don't want to use an embedder.
+- Modify the `tool_config` to your preferred set of tools.
+
+3) Configure MCP Server on your platform below.
+
+<Note>
+For stdio transport, don't forget to adjust the path to your `mcp_server.py` in the snippet.    
+For streamable-http transport, don't forget to run the MCP server first before using it.
+</Note>
+
+<Warning>
+For stdio transport, you may need to run `which uv` and update the command to the path of the uv binary in the MCP server configuration.
+</Warning>
+
+### Cursor
+Go to Cursor's settings, click on `MCP & Integrations` -> `New MCP Server`, then enter the following:
+
+For **streamable-http transport** (adjust the port accordingly):
+```json
+{
+  "mcpServers": {
+    "helix-mcp": {
+      "url": "http://localhost:8000/mcp/"
+    }
+  }
+}
 ```
 
-3) Add your embedder to the server script:
-```python
-from helix.embedding.openai_client import OpenAIEmbedder
-embedder = OpenAIEmbedder()
-mcp_server = MCPServer("helix-mcp", client, embedder=embedder)
-```
-
-4) Configure Claude Desktop (macOS path shown):
+For **stdio transport**:
 ```json
 {
   "mcpServers": {
@@ -107,6 +125,8 @@ mcp_server = MCPServer("helix-mcp", client, embedder=embedder)
         "--directory",
         "/absolute/path/to/project",
         "run",
+        "--python", "3.11",
+        "--with", "helix-py",
         "mcp_server.py"
       ]
     }
@@ -114,4 +134,73 @@ mcp_server = MCPServer("helix-mcp", client, embedder=embedder)
 }
 ```
 
-Don't forget to adjust the path to your `mcp_server.py` in the snippet!
+### Windsurf
+Go to Windsurf's Casecade settings, navigate to `MCP Servers`, click on `Manage MCPs` -> `View raw config`, then enter the following:
+
+For **streamable-http transport** (adjust the port accordingly):
+```json
+{
+  "mcpServers": {
+    "helix-mcp": {
+      "serverUrl": "http://localhost:8000/mcp/"
+    }
+  }
+}
+```
+
+For **stdio transport**:
+```json
+{
+  "mcpServers": {
+    "helix-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/absolute/path/to/project",
+        "run",
+        "--python", "3.11",
+        "--with", "helix-py",
+        "mcp_server.py"
+      ]
+    }
+  }
+}
+```
+
+### Claude Desktop
+Go to Claude Desktop's settings, click on `Developer` -> `Edit Config`, then enter the following into `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "helix-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/absolute/path/to/project",
+        "run",
+        "--python", "3.11",
+        "--with", "helix-py",
+        "mcp_server.py"
+      ]
+    }
+  }
+}
+```
+
+### Codex
+Go to your root directory and open the `.codex` folder (you may need to enable hidden files), then enter the following into the `config.toml` file:
+
+```toml
+[mcp_servers.helix-mcp]
+command = "uv"
+args = [
+    "--directory",
+    "/absolute/path/to/project",
+    "run",
+    "--python", "3.11",
+    "--with", "helix-py",
+    "mcp_server.py"
+]
+startup_timeout_ms = 20_000
+```
