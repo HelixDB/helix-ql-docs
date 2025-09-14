@@ -17,11 +17,10 @@ If the condition is not met, the element will be filtered out.
 ### Example
 
 ```rust
-QUERY GetAdultUsers {
+QUERY GetAdultUsers =>
     // Filter to only users over 18
     adult_users <- N<User>::WHERE(_::{age}::GT(18))
     RETURN adult_users
-}
 ```
 
 <Tip>
@@ -65,10 +64,9 @@ EXISTS(<traversal>)
 ### Example
 
 ```rust
-QUERY GetUsersWithFollowers() {
+QUERY GetUsersWithFollowers() =>
     users <- N<User>::WHERE(EXISTS(_::In<Follows>))
     RETURN users
-}
 ```
 
 ---

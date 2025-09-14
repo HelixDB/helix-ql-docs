@@ -16,10 +16,9 @@ This internally creates a table for the indexed field.
 To query a node by the indexed field, you can use object syntax:
 
 ```rust
-QUERY getByIndex(index_field: String) {
+QUERY getByIndex(index_field: String) =>
     node <- N<User>({field1: index_field})
     RETURN node
-}
 ```
 
 ---
