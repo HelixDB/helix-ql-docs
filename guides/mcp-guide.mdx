@@ -669,15 +669,15 @@ client.query('mcp/filter_items', {'connection_id': connection_id, 'data': {'filt
             'tool_name': 'out_step',
             'args': {
                 'edge_type': 'Triplet_to_Object',
-                'edge_label': 'node'
-            },
-            # Filter the object nodes by the name "Jane"
-            'filters': {
-                'properties': [
-                    [
-                        {'key': 'name', 'operator': '==', 'value': 'Jane'}
+                'edge_label': 'node',
+                # Filter the object nodes by the name "Jane"
+                'filters': {
+                    'properties': [
+                        [
+                            {'key': 'name', 'operator': '==', 'value': 'Jane'}
+                        ]
                     ]
-                ]
+                }
             }
         }
     ]
