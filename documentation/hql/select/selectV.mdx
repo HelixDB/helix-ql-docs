@@ -1,0 +1,22 @@
+---
+title: "Vectors"
+description: "Learn how to select vectors in your graph."
+icon: "chart-scatter-3d"
+---
+
+## `V` &nbsp; Vector
+
+Select vectors from your graph to begin traversal.
+
+```rust
+V<Type>(vector_id)
+```
+
+**Example:**
+
+```rust [expandable]
+QUERY GetVector(vectorID: ID) =>
+    // Select a specific Chunk vector by ID
+    vector <- V<Chunk>(vectorID)
+    RETURN vector
+```

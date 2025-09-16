@@ -1,0 +1,26 @@
+---
+title: "Nodes"
+description: "Learn how to select nodes in your graph."
+icon: "draw-circle"
+---
+
+## `N` &nbsp; Nodes
+
+Select nodes from your graph to begin traversal.
+
+```rust
+N<Type>(node_id)
+```
+
+**Example:**
+
+```rust [expandable]
+QUERY GetUsers(userID: ID) =>
+    // Select all User nodes
+    users <- N<User>
+
+    // Select a specific User by ID
+    user <- N<User>(userID)
+
+    RETURN users, user
+```

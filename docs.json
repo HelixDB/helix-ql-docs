@@ -67,7 +67,15 @@
                                 ],
                                 "icon": "right-left-large"
                             },
-                            "documentation/hql/source/source",
+                            {
+                                "group": "Select Operations",
+                                "pages": [
+                                    "documentation/hql/select/selectN",
+                                    "documentation/hql/select/selectE",
+                                    "documentation/hql/select/selectV"
+                                ],
+                                "icon": "list-check"
+                            },
                             "documentation/hql/vectors/searching",
                             "documentation/hql/keyword_search",
                             "documentation/hql/vectors/embedding",

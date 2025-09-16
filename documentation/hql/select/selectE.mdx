@@ -1,0 +1,27 @@
+---
+title: "Edges"
+description: "Learn how to select edges in your graph."
+icon: "circle-nodes"
+---
+
+## `E` &nbsp; Edge
+
+Select edges from your graph to begin traversal.
+
+```rust
+E<Type>(edge_id)
+```
+
+**Example:**
+
+```rust [expandable]
+QUERY GetFollowers(edgeID: ID) =>
+
+    // Select all Follows edges
+    specific_edges <- E<Follows>
+
+    // Select a specific Follows edge by ID
+    follow_edge <- E<Follows>(edgeID)
+
+    RETURN specific_edges, follow_edge
+```
