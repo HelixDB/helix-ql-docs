@@ -4,7 +4,7 @@ description: "These operations allow you to add nodes, edges, and vectors to you
 icon: "plus-large"
 ---
 
-## `AddN` &nbsp;Node
+## Create Nodes using `AddN` &nbsp;
 
 Create new nodes in your graph.
 
@@ -13,30 +13,33 @@ AddN<Type>
 AddN<Type>({properties})
 ```
 
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
 ### Example 1: Adding in an empty user node
 <CodeGroup>
-```rust queries.hx
+```rust Query
 QUERY CreateUsers () =>
-    // Create an empty user node
     empty_user <- AddN<User>
     RETURN empty_user
 ```
 
-```rust schema.hx
+```rust Schema
 N::User {
     name: String,
     age: U8,
     email: String,
 }
 ```
+
 </CodeGroup>
 
 
 ### Example 2: Adding in user with parameters
 <CodeGroup>
-```rust queries.hx
+```rust Query
 QUERY CreateUser (name: String, age: U8, email: String) =>
-    // Add a user with predefined properties
     user <- AddN<User>({
         name: name,
         age: age,
@@ -46,7 +49,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust schema.hx
+```rust Schema
 N::User {
     name: String,
     age: U8,
@@ -57,9 +60,8 @@ N::User {
 
 ### Example 3: Adding in a user with predefined properties
 <CodeGroup>
-```rust queries.hx
+```rust Query
 QUERY CreateUser () =>
-    // Add a user with predefined properties
     predefined_user <- AddN<User>({
         name: "Alice Johnson",
         age: 30,
@@ -69,7 +71,7 @@ QUERY CreateUser () =>
     RETURN predefined_user
 ```
 
-```rust schema.hx
+```rust Schema
 N::User {
     name: String,
     age: U8,
@@ -78,9 +80,14 @@ N::User {
 ```
 </CodeGroup>
 
+
+<Note>If you aren't using an SDK, you can also curl the endpoint instead. Heres an example: <br/>`curl -X POST http://localhost:6969/CreateUser -H "Content-Type: application/json" -d '{"name": "Alice Johnson", "age": 30, "email": "alice@example.com"}'`</Note>
+
+
+
 ---
 
-## `AddE` &nbsp;Edge
+## Create Edges using `AddE` &nbsp;
 
 Create connections between nodes in your graph.
 
@@ -89,43 +96,95 @@ AddE<Type>::From(v1)::To(v2)
 AddE<Type>({properties})::From(v1)::To(v2)
 ```
 
-### Example
-```rust [expandable]
-QUERY CreateRelationships(user1ID: ID, user2ID: ID) =>
-    // Get the users by their IDs
+### Example 1: Creating a simple follows relationship
+<CodeGroup>
+```rust Query
+QUERY CreateRelationships (user1ID: ID, user2ID: ID) =>
     user1 <- N<User>(user1ID)
     user2 <- N<User>(user2ID)
-
-    // Create a simple follows relationship
     follows <- AddE<Follows>::From(user1)::To(user2)
+    RETURN follows
+```
 
-    // Create a detailed friendship with properties
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+</CodeGroup>
+
+### Example 2: Creating a detailed friendship with properties
+<CodeGroup>
+```rust Query
+QUERY CreateFriendship (user1ID: ID, user2ID: ID) =>
+    user1 <- N<User>(user1ID)
+    user2 <- N<User>(user2ID)
     friendship <- AddE<Friends>({
         since: "2024-01-15",
         strength: 0.85,
         tags: ["college", "roommates"]
     })::From(user1)::To(user2)
-
-    RETURN follows, friendship
-```
-
-### Traversal Example
-
-You can also use the `AddE` operation in the middle of a traversal to add edges between a list of nodes or vectors.
-```rust [expandable]
-QUERY CreateFriendships(user1ID: ID, user2ID: ID) =>
-    // This makes every user in the database follow the user with ID user1ID
-    user1 <- N<User>::AddE<Follows>::To(N(user1ID))
-
-    // This makes user with userID2 follow every user in the database
-    user1 <- N<User>::AddE<Follows>::From(N(user2ID))
-
     RETURN friendship
 ```
 
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Friends {
+    From: User,
+    To: User,
+    Properties: {
+        since: Date,
+        strength: F64,
+        tags: [String]
+    }
+}
+```
+</CodeGroup>
+
+### Example 3: Traversal Example
+
+You can also use the `AddE` operation in the middle of a traversal to add edges between a list of nodes or vectors.
+<CodeGroup>
+```rust Query
+QUERY CreateFriendships (user1ID: ID, user2ID: ID) =>
+    // This makes every user in the database follow the user with ID user1ID
+    user1 <- N<User>::AddE<Follows>::To(N(user1ID))
+    // This makes user with userID2 follow every user in the database
+    user1 <- N<User>::AddE<Follows>::From(N(user2ID))
+    RETURN NONE
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+</CodeGroup>
+
+
 ---
 
-## `AddV` &nbsp;Vector
+## Create Vectors using `AddV` &nbsp;
 
 Create new vector embeddings in your graph.
 
@@ -134,16 +193,87 @@ AddV<Type>
 AddV<Type>(vector, {properties})
 ```
 
-### Example
+### Example 1: Creating a vector with no properties
+<CodeGroup>
 
-```rust
-QUERY InsertVector (vector: [F64], content: String, created_at: I64) =>
-    // Create an empty user node
-    basic_user <- AddV<Document>(vector)
-    // You could also write it like this with properties
-    AddV<Document>(vector, { content: content, created_at: created_at })
-    RETURN basic_user
+```rust Query
+QUERY InsertVector (vector: [F64]) =>
+    vector_node <- AddV<Document>(vector)
+    RETURN vector_node
 ```
+
+```rust Schema
+// You don't need to define the properties in the schema,
+//  it uses [F64] by default
+V::Document {}
+```
+</CodeGroup>
+
+### Example 2: Creating a vector with properties
+<CodeGroup>
+```rust Query
+QUERY InsertVector (vector: [F64], content: String, created_at: I64) =>
+    vector_node <- AddV<Document>(vector, { content: content, created_at: created_at })
+    RETURN vector_node
+```
+
+```rust Schema
+V::Document {
+    content: String,
+    created_at: I64
+}
+```
+</CodeGroup>
+
+### Example 3: Creating a vector and connecting it to a node
+<CodeGroup>
+```rust Query
+QUERY InsertVector (user_id: ID, vector: [F64], content: String, created_at: I64) =>
+    // Get the user node
+    user <- N<User>(user_id)
+    // Create the vector node
+    vector_node <- AddV<Document>(vector, { content: content, created_at: created_at })
+    // Connect the vector node to the user node
+    AddE<User_to_Document_Embedding>::From(user)::To(vector_node)
+    RETURN "Success"
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+V::Document {
+    content: String,
+    created_at: I64
+}
+
+E::User_to_Document_Embedding {
+    From: User,
+    To: Document,
+}
+```
+</CodeGroup>
+
+### Example 4: Using the built in `Embed` function
+
+You can also use the built in [Embed](../vectors/embedding) function to embed the text without sending in the array of floats. It uses the embedding model defined in your `config.hx.json` file.
+
+<CodeGroup>
+```rust Query
+QUERY InsertVector (content: String, created_at: I64) =>
+    vector_node <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    RETURN vector_node
+```
+```rust Schema
+V::Document {
+    content: String,
+    created_at: I64
+}
+```
+</CodeGroup>
 
 <Note>
 Currently, Helix only supports using an array of `F64` values to represent the vector.
