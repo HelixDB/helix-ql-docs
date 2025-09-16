@@ -65,7 +65,7 @@
                                     "documentation/hql/create/addE",
                                     "documentation/hql/create/addV"
                                 ],
-                                "icon": "right-left-large"
+                                "icon": "plus"
                             },
                             {
                                 "group": "Select Operations",
