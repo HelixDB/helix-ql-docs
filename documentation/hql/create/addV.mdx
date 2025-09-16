@@ -1,0 +1,536 @@
+---
+title: "Vectors"
+description: "These operations allow you to add nodes, edges, and vectors to your graph."
+icon: "chart-scatter-3d"
+---
+
+# Create Vectors using `AddV` &nbsp;
+
+Create new vector embeddings in your graph.
+
+```rust
+AddV<Type>
+AddV<Type>(vector, {properties})
+```
+
+<Note>
+Currently, Helix only supports using an array of `F64` values to represent the vector.
+We will be adding support for different types such as `F32`, binary vectors and
+more in the very near future. Please reach out to us if you need a different vector type.
+</Note>
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+
+### Example 1: Creating a vector with no properties
+<CodeGroup>
+
+```rust Query
+QUERY InsertVector (vector: [F64]) =>
+    vector_node <- AddV<Document>(vector)
+    RETURN vector_node
+```
+
+```rust Schema
+// You don't need to define the properties in the schema,
+//  it uses [F64] by default
+V::Document {}
+```
+</CodeGroup>
+
+Heres how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+print(client.query("InsertVector", {
+    "vector": [0.1, 0.2, 0.3, 0.4],
+}))
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let payload = json!({
+        "vector": [0.1, 0.2, 0.3, 0.4],
+    });
+
+    let result: serde_json::Value = client.query("InsertVector", &payload).await?;
+    println!("Created vector node: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    payload := map[string]any{
+        "vector": []float64{0.1, 0.2, 0.3, 0.4},
+    }
+
+    var result map[string]any
+    if err := client.Query("InsertVector", helix.WithData(payload)).Scan(&result); err != nil {
+        log.Fatalf("InsertVector failed: %s", err)
+    }
+
+    fmt.Printf("Created vector node: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("InsertVector", {
+        vector: [0.1, 0.2, 0.3, 0.4],
+    });
+
+    console.log("Created vector node:", result);
+}
+
+main().catch((err) => {
+    console.error("InsertVector query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/InsertVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.1,0.2,0.3,0.4]}'
+```
+</CodeGroup>
+
+
+
+### Example 2: Creating a vector with properties
+<CodeGroup>
+```rust Query
+QUERY InsertVector (vector: [F64], content: String, created_at: Date) =>
+    vector_node <- AddV<Document>(vector, { content: content, created_at: created_at })
+    RETURN vector_node
+```
+
+```rust Schema
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+</CodeGroup>
+
+Heres how to run the query using the SDKs or curl
+
+<CodeGroup>
+
+```python Python [expandable]
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+payload = {
+    "vector": [0.12, 0.34, 0.56, 0.78],
+    "content": "Quick brown fox",
+    "created_at": datetime.now(timezone.utc).isoformat(),
+}
+
+print(client.query("InsertVector", payload))
+```
+
+```rust Rust [expandable]
+use chrono::Utc;
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let payload = json!({
+        "vector": [0.12, 0.34, 0.56, 0.78],
+        "content": "Quick brown fox",
+        "created_at": Utc::now().to_rfc3339(),
+    });
+
+    let result: serde_json::Value = client.query("InsertVector", &payload).await?;
+    println!("Created vector node: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+    "time"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    payload := map[string]any{
+        "vector":     []float64{0.12, 0.34, 0.56, 0.78},
+        "content":    "Quick brown fox",
+        "created_at": time.Now().UTC().Format(time.RFC3339),
+    }
+
+    var result map[string]any
+    if err := client.Query("InsertVector", helix.WithData(payload)).Scan(&result); err != nil {
+        log.Fatalf("InsertVector failed: %s", err)
+    }
+
+    fmt.Printf("Created vector node: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("InsertVector", {
+        vector: [0.12, 0.34, 0.56, 0.78],
+        content: "Quick brown fox",
+        created_at: new Date().toISOString(),
+    });
+
+    console.log("Created vector node:", result);
+}
+
+main().catch((err) => {
+    console.error("InsertVector query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/InsertVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.12,0.34,0.56,0.78],"content":"Quick brown fox","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+</CodeGroup>
+
+### Example 3: Creating a vector and connecting it to a node
+<CodeGroup>
+```rust Query focus={1-5} [expandable]
+QUERY InsertVector (user_id: ID, vector: [F64], content: String, created_at: Date) =>
+    user <- N<User>(user_id)
+    vector_node <- AddV<Document>(vector, { content: content, created_at: created_at })
+    AddE<User_to_Document_Embedding>::From(user)::To(vector_node)
+    RETURN "Success"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+V::Document {
+    content: String,
+    created_at: Date
+}
+
+E::User_to_Document_Embedding {
+    From: User,
+    To: Document,
+}
+```
+</CodeGroup>
+
+Heres how to run the query using the SDKs or curl
+
+<CodeGroup>
+
+```python Python [expandable]
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+user = client.query("CreateUser", {
+    "name": "Alice",
+    "age": 25,
+    "email": "alice@example.com",
+})
+user_id = user[0]["user"]["id"]
+
+payload = {
+    "user_id": user_id,
+    "vector": [0.05, 0.25, 0.5, 0.75],
+    "content": "Favorite quotes",
+    "created_at": datetime.now(timezone.utc).isoformat(),
+}
+
+print(client.query("InsertVector", payload))
+```
+
+```rust Rust [expandable]
+use chrono::Utc;
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let alice: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Alice",
+        "age": 25,
+        "email": "alice@example.com",
+    })).await?;
+    let user_id = alice["user"]["id"].as_str().unwrap().to_string();
+
+    let payload = json!({
+        "user_id": user_id,
+        "vector": [0.05, 0.25, 0.5, 0.75],
+        "content": "Favorite quotes",
+        "created_at": Utc::now().to_rfc3339(),
+    });
+
+    let result: serde_json::Value = client.query("InsertVector", &payload).await?;
+    println!("InsertVector result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    userPayload := map[string]any{
+        "name":  "Alice",
+        "age":   uint8(25),
+        "email": "alice@example.com",
+    }
+
+    var user map[string]any
+    if err := client.Query("CreateUser", helix.WithData(userPayload)).Scan(&user); err != nil {
+        log.Fatalf("CreateUser failed: %s", err)
+    }
+
+    userID := user["user"].(map[string]any)["id"].(string)
+
+    payload := map[string]any{
+        "user_id":   userID,
+        "vector":    []float64{0.05, 0.25, 0.5, 0.75},
+        "content":   "Favorite quotes",
+        "created_at": time.Now().UTC().Format(time.RFC3339),
+    }
+
+    var result map[string]any
+    if err := client.Query("InsertVector", helix.WithData(payload)).Scan(&result); err != nil {
+        log.Fatalf("InsertVector failed: %s", err)
+    }
+
+    fmt.Printf("InsertVector result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const user = await client.query("CreateUser", {
+        name: "Alice",
+        age: 25,
+        email: "alice@example.com",
+    });
+    const userId: string = user.user.id;
+
+    const result = await client.query("InsertVector", {
+        user_id: userId,
+        vector: [0.05, 0.25, 0.5, 0.75],
+        content: "Favorite quotes",
+        created_at: new Date().toISOString(),
+    });
+
+    console.log("InsertVector result:", result);
+}
+
+main().catch((err) => {
+    console.error("InsertVector query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+# capture returned user ID as <user_id>
+
+curl -X POST \
+  http://localhost:6969/InsertVector \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","vector":[0.05,0.25,0.5,0.75],"content":"Favorite quotes","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+</CodeGroup>
+
+
+### Example 4: Using the built in `Embed` function
+
+You can also use the built in [Embed](../vectors/embedding) function to embed the text without sending in the array of floats. It uses the embedding model defined in your `config.hx.json` file.
+
+<CodeGroup>
+```rust Query
+QUERY InsertVector (content: String, created_at: Date) =>
+    vector_node <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    RETURN vector_node
+```
+```rust Schema
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+```.env Environment Variables (.env)
+OPENAI_API_KEY=your_api_key
+```
+</CodeGroup>
+
+Heres how to run the query using the SDKs or curl
+<CodeGroup>
+```python Python [expandable]
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+payload = {
+    "content": "Quick summary of a meeting",
+    "created_at": datetime.now(timezone.utc).isoformat(),
+}
+
+print(client.query("InsertVector", payload))
+```
+
+```rust Rust [expandable]
+use chrono::Utc;
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let payload = json!({
+        "content": "Quick summary of a meeting",
+        "created_at": Utc::now().to_rfc3339(),
+    });
+
+    let result: serde_json::Value = client.query("InsertVector", &payload).await?;
+    println!("InsertVector result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    payload := map[string]any{
+        "content":   "Quick summary of a meeting",
+        "created_at": time.Now().UTC().Format(time.RFC3339),
+    }
+
+    var result map[string]any
+    if err := client.Query("InsertVector", helix.WithData(payload)).Scan(&result); err != nil {
+        log.Fatalf("InsertVector failed: %s", err)
+    }
+
+    fmt.Printf("InsertVector result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("InsertVector", {
+        content: "Quick summary of a meeting",
+        created_at: new Date().toISOString(),
+    });
+
+    console.log("InsertVector result:", result);
+}
+
+main().catch((err) => {
+    console.error("InsertVector query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/InsertVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Quick summary of a meeting","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+</CodeGroup>

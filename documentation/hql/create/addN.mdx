@@ -1,0 +1,314 @@
+---
+title: "Nodes"
+description: "These operations allow you to add nodes, edges, and vectors to your graph."
+icon: "draw-circle"
+---
+
+## Create Nodes using `AddN` &nbsp;
+
+Create new nodes in your graph.
+
+```rust
+AddN<Type>
+AddN<Type>({properties})
+```
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+### Example 1: Adding in an empty user node
+<CodeGroup>
+```rust Query
+QUERY CreateUsers () =>
+    empty_user <- AddN<User>
+    RETURN empty_user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+</CodeGroup>
+Heres how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python
+from helix.client import Client
+client = Client(local=True, port=6969)
+print(client.query("CreateUsers"))
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let result: serde_json::Value = client.query("CreateUsers", &json!({})).await?;
+    println!("Created empty user: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    var result map[string]any
+    err := client.Query("CreateUsers").Scan(&result)
+    if err != nil {
+        log.Fatalf("CreateUsers query failed: %s", err)
+    }
+
+    fmt.Printf("Created empty user: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("CreateUsers", {});
+    console.log("Created empty user:", result);
+}
+
+main().catch((err) => {
+    console.error("CreateUsers query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/CreateUsers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+
+### Example 2: Adding in user with parameters
+<CodeGroup>
+```rust Query
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+</CodeGroup>
+
+Heres how to run the query using the SDKs or curl
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+client = Client(local=True, port=6969)
+
+params = {
+    "name": "Alice",
+    "age": 25,
+    "email": "alice@example.com",
+}
+
+print(client.query("CreateUser", params))
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let payload = json!({
+        "name": "Alice",
+        "age": 25,
+        "email": "alice@example.com",
+    });
+
+    let result: serde_json::Value = client.query("CreateUser", &payload).await?;
+    println!("Created user: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    payload := map[string]any{
+        "name":  "Alice",
+        "age":   uint8(25),
+        "email": "alice@example.com",
+    }
+
+    var result map[string]any
+    err := client.
+        Query("CreateUser", helix.WithData(payload)).
+        Scan(&result)
+    if err != nil {
+        log.Fatalf("CreateUser query failed: %s", err)
+    }
+
+    fmt.Printf("Created user: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("CreateUser", {
+        name: "Alice",
+        age: 25,
+        email: "alice@example.com",
+    });
+
+    console.log("Created user:", result);
+}
+
+main().catch((err) => {
+    console.error("CreateUser query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+```
+</CodeGroup>
+
+
+### Example 3: Adding in a user with predefined properties
+<CodeGroup>
+```rust Query
+QUERY CreateUser () =>
+    predefined_user <- AddN<User>({
+        name: "Alice Johnson",
+        age: 30,
+        email: "alice@example.com"
+    })
+
+    RETURN predefined_user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+</CodeGroup>
+
+
+Heres how to run the query using the SDKs or curl
+<CodeGroup>
+```python Python
+from helix.client import Client
+client = Client(local=True, port=6969)
+print(client.query("CreateUser"))
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let result: serde_json::Value = client.query("CreateUser", &()).await?;
+    println!("Created predefined user: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    var result map[string]any
+    err := client.Query("CreateUser").Scan(&result)
+    if err != nil {
+        log.Fatalf("CreateUser query failed: %s", err)
+    }
+
+    fmt.Printf("Created predefined user: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("CreateUser", {});
+    console.log("Created predefined user:", result);
+}
+
+main().catch((err) => {
+    console.error("CreateUser query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
