@@ -12,153 +12,64 @@ icon: 'golang'
 go get github.com/HelixDB/helix-go
 ```
 
-## Setup
-To setup a simple `Client` to interface with a running helix instance:
-```go
-import "github.com/HelixDB/helix-go"
+## Quick Start
 
-// Create a new HelixDB client
-var helixClient *helix.Client
-helixClient = helix.NewClient("http://localhost:6969")
-```
-The default URL is `http://localhost:6969`. For cloud deployments, simply pass in the appropriate URL to the constructor.
-
-## Creating structs
-You can create structs to represent the data returned from queries. This is useful for type safety and ease of use.
-
-```go
-
-type GetUsersResponse struct {
-	Users []struct {
-		Name      string      `json:"name"`
-		Age       int32       `json:"age"`
-		Email     string      `json:"email"`
-		CreatedAt interface{} `json:"created_at"`
-		UpdatedAt interface{} `json:"updated_at"`
-	} `json:"users"`
-}
-
-type CreateUserResponse struct {
-	User struct {
-		Name      string      `json:"name"`
-		Age       int32       `json:"age"`
-		Email     string      `json:"email"`
-		CreatedAt interface{} `json:"created_at"`
-		UpdatedAt interface{} `json:"updated_at"`
-	} `json:"user"`
-}
-```
-
-## Running queries
-You can run queries by passing the query name and data matching the query's expected inputs.
-
-```go
-// Create user data
-now := time.Now()
-timestamp := now.Unix()
-timestamp32 := int32(timestamp)
-
-newUser := map[string]any{
-    "name":  "John",
-    "age":   21,
-    "email": "johndoe@email.com",
-    "now":   timestamp32,
-}
-
-// Create user in Helix
-var createdUser CreateUserResponse
-	err := HelixClient.Query(
-		"create_user",
-		helix.WithData(newUser),
-	).Scan(&createdUser)
-	if err != nil {
-		log.Fatalf("Error while creating user: %s", err)
-	}
-
-	fmt.Println("Created user:", createdUser)
-
-// Get all users and put Helix's response in GetUsersResponse
-var getUsersResponse GetUsersResponse
-err = HelixClient.Query("get_users").Scan(&getUsersResponse)
-if err != nil {
-    log.Fatalf("Error while getting users: %s", err)
-}
-
-fmt.Println("Get users response:", getUsersResponse)
-```
-
-## Full Code Example
-
-<Expandable title="Full Code">
-```go
+<CodeGroup>
+```go main.go
 package main
 
 import (
-	"fmt"
-	"log"
-	"time"
+    "fmt"
+    "log"
 
-	"github.com/HelixDB/helix-go"
+    "github.com/HelixDB/helix-go"
 )
 
-var HelixClient *helix.Client
-
-type GetUsersResponse struct {
-	Users []struct {
-		Name      string      `json:"name"`
-		Age       int32       `json:"age"`
-		Email     string      `json:"email"`
-		CreatedAt interface{} `json:"created_at"`
-		UpdatedAt interface{} `json:"updated_at"`
-	} `json:"users"`
-}
-
-type CreateUserResponse struct {
-	User struct {
-		Name      string      `json:"name"`
-		Age       int32       `json:"age"`
-		Email     string      `json:"email"`
-		CreatedAt interface{} `json:"created_at"`
-		UpdatedAt interface{} `json:"updated_at"`
-	} `json:"user"`
-}
-
 func main() {
-	// Connect to client
-	HelixClient = helix.NewClient("http://localhost:6969")
+    client := helix.NewClient("http://localhost:6969")
 
-	// Create user data
-	now := time.Now()
-	timestamp := now.Unix()
-	timestamp32 := int32(timestamp)
+    payload := map[string]any{
+        "name": "Alice",
+        "age":  uint8(25),
+    }
 
-	newUser := map[string]any{
-		"name":  "John",
-		"age":   21,
-		"email": "johndoe@email.com",
-		"now":   timestamp32,
-	}
+    var result map[string]any
+    err := client.
+        Query("AddUser", helix.WithData(payload)).
+        Scan(&result)
+    if err != nil {
+        log.Fatalf("AddUser query failed: %s", err)
+    }
 
-	// Create user in Helix
-	var createdUser CreateUserResponse
-	err := HelixClient.Query(
-		"create_user",
-		helix.WithData(newUser),
-	).Scan(&createdUser)
-	if err != nil {
-		log.Fatalf("Error while creating user: %s", err)
-	}
+    fmt.Printf("Created user: %#v\n", result)
+}
 
-	fmt.Println("Created user:", createdUser)
+````
 
-	// Get all users and put Helix's response in GetUsersResponse
-	var getUsersResponse GetUsersResponse
-	err = HelixClient.Query("get_users").Scan(&getUsersResponse)
-	if err != nil {
-		log.Fatalf("Error while getting users: %s", err)
-	}
+```js queries.hx
+QUERY AddUser(name: String, age: U8) =>
+    user <- AddN<User>({
+        name: name,
+        age: age
+    })
+    RETURN user
 
-	fmt.Println("Get users response:", getUsersResponse)
+````
+
+```js schema.hx
+N::User {
+    name: String,
+    age: U8
 }
 ```
-</Expandable>
+
+</CodeGroup>
+
+## Configuration
+
+### Custom Endpoint
+
+```go
+client := helix.NewClient("https://my-endpoint.com:8080")
+```
+Pass your deployment URL to connect to a remote HelixDB instance.
