@@ -66,15 +66,31 @@ The quickstart demos showcase a social network application with the following fe
 </Step>
 
 <Step title="Running a Quick Demo">
-Inside the [Quickstart](https://github.com/HelixDB/quickstart) repo, there are `go`, `python`, `typescript`, and `rust` examples that show you how to use the SDKs to interact with HelixDB. These demos run scripts to automatically ingest sample data into HelixDB and demonstrate how to retrieve data from HelixDB.
+Inside the [Quickstart](https://github.com/HelixDB/quickstart) repo, there are `go`, `python`, `typescript`, `rust`, and a website demo that show you how to use the SDKs to interact with HelixDB. These demos run scripts to automatically ingest sample data into HelixDB and demonstrate how to retrieve data from HelixDB.
 
-### Running the Go Demo
+### Clone the Quickstart repo
+```bash
+git clone https://github.com/HelixDB/quickstart.git
+cd quickstart
+```
+
+### Deploy the HelixDB instance for the demo
+```bash
+cd helixdb-cfg
+helix deploy
+```
+
+**Now you can run the quickstart demo with the following SDKs or a Next.js website:**
+
+#### Running the Go Demo
+
 ```bash
 cd go
 go run main.go
 ```
 
-### Running the Python Demo
+#### Running the Python Demo
+using uv:
 ```bash
 cd python
 uv venv
@@ -90,20 +106,20 @@ pip install -r requirements.txt
 python getting_started.py
 ```
 
-### Running the TypeScript Demo
+#### Running the TypeScript Demo
 ```bash
 cd typescript
 npm install
 npm start
 ```
 
-### Running the Rust Demo
+#### Running the Rust Demo
 ```bash
 cd rust
 cargo run
 ```
 
-### Running the Next.js Demo
+#### Running the Next.js Demo
 
 The Nextjs demo is a website that queries HelixDB.
 
