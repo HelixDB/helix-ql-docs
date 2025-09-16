@@ -1,6 +1,6 @@
 ---
 title: "Create Operations"
-description: "These operations allow you to add new elements to your graph."
+description: "These operations allow you to add nodes, edges, and vectors to your graph."
 icon: "plus-large"
 ---
 
@@ -13,23 +13,70 @@ AddN<Type>
 AddN<Type>({properties})
 ```
 
-### Example
-```rust [expandable]
+### Example 1: Adding in an empty user node
+<CodeGroup>
+```rust queries.hx
 QUERY CreateUsers () =>
     // Create an empty user node
-    basic_user <- AddN<User>
-    // You could also write it like this
-    AddN<User>
+    empty_user <- AddN<User>
+    RETURN empty_user
+```
 
-    // Add a user with properties
-    detailed_user <- AddN<User>({
+```rust schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+</CodeGroup>
+
+
+### Example 2: Adding in user with parameters
+<CodeGroup>
+```rust queries.hx
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    // Add a user with predefined properties
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+
+    RETURN user
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+</CodeGroup>
+
+### Example 3: Adding in a user with predefined properties
+<CodeGroup>
+```rust queries.hx
+QUERY CreateUser () =>
+    // Add a user with predefined properties
+    predefined_user <- AddN<User>({
         name: "Alice Johnson",
         age: 30,
         email: "alice@example.com"
     })
 
-    RETURN basic_user, detailed_user
+    RETURN predefined_user
 ```
+
+```rust schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+</CodeGroup>
 
 ---
 
