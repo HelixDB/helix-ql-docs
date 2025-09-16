@@ -35,6 +35,74 @@ N::User {
 
 </CodeGroup>
 
+<CodeGroup>
+```python Python
+from helix.client import Client
+client = Client(local=True, port=6969)
+print(client.query("CreateUsers"))
+```
+
+```rust Rust
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let result: serde_json::Value = client.query("CreateUsers", &json!({})).await?;
+    println!("Created empty user: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    var result map[string]any
+    err := client.Query("CreateUsers").Scan(&result)
+    if err != nil {
+        log.Fatalf("CreateUsers query failed: %s", err)
+    }
+
+    fmt.Printf("Created empty user: %#v\n", result)
+}
+```
+
+```typescript TypeScript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("CreateUsers", {});
+    console.log("Created empty user:", result);
+}
+
+main().catch((err) => {
+    console.error("CreateUsers query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/CreateUsers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
 
 ### Example 2: Adding in user with parameters
 <CodeGroup>
@@ -57,6 +125,103 @@ N::User {
 }
 ```
 </CodeGroup>
+
+
+<CodeGroup>
+```python Python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+params = {
+    "name": "Alice",
+    "age": 25,
+    "email": "alice@example.com",
+}
+
+print(client.query("CreateUser", params))
+```
+
+```rust Rust
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let payload = json!({
+        "name": "Alice",
+        "age": 25,
+        "email": "alice@example.com",
+    });
+
+    let result: serde_json::Value = client.query("CreateUser", &payload).await?;
+    println!("Created user: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    payload := map[string]any{
+        "name":  "Alice",
+        "age":   uint8(25),
+        "email": "alice@example.com",
+    }
+
+    var result map[string]any
+    err := client.
+        Query("CreateUser", helix.WithData(payload)).
+        Scan(&result)
+    if err != nil {
+        log.Fatalf("CreateUser query failed: %s", err)
+    }
+
+    fmt.Printf("Created user: %#v\n", result)
+}
+```
+
+```typescript TypeScript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("CreateUser", {
+        name: "Alice",
+        age: 25,
+        email: "alice@example.com",
+    });
+
+    console.log("Created user:", result);
+}
+
+main().catch((err) => {
+    console.error("CreateUser query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+```
+</CodeGroup>
+
 
 ### Example 3: Adding in a user with predefined properties
 <CodeGroup>
@@ -81,8 +246,74 @@ N::User {
 </CodeGroup>
 
 
-<Note>If you aren't using an SDK, you can also curl the endpoint instead. Heres an example: <br/>`curl -X POST http://localhost:6969/CreateUser -H "Content-Type: application/json" -d '{"name": "Alice Johnson", "age": 30, "email": "alice@example.com"}'`</Note>
+<CodeGroup>
+```python Python
+from helix.client import Client
 
+client = Client(local=True, port=6969)
+
+print(client.query("CreateUser"))
+```
+
+```rust Rust
+use helix_rs::{HelixDB, HelixDBClient};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let result: serde_json::Value = client.query("CreateUser", &()).await?;
+    println!("Created predefined user: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    var result map[string]any
+    err := client.Query("CreateUser").Scan(&result)
+    if err != nil {
+        log.Fatalf("CreateUser query failed: %s", err)
+    }
+
+    fmt.Printf("Created predefined user: %#v\n", result)
+}
+```
+
+```typescript TypeScript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("CreateUser", {});
+    console.log("Created predefined user:", result);
+}
+
+main().catch((err) => {
+    console.error("CreateUser query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
 
 
 ---
@@ -99,9 +330,7 @@ AddE<Type>({properties})::From(v1)::To(v2)
 ### Example 1: Creating a simple follows relationship
 <CodeGroup>
 ```rust Query
-QUERY CreateRelationships (user1ID: ID, user2ID: ID) =>
-    user1 <- N<User>(user1ID)
-    user2 <- N<User>(user2ID)
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
     follows <- AddE<Follows>::From(user1)::To(user2)
     RETURN follows
 ```
@@ -118,20 +347,36 @@ E::Follows {
     To: User,
 }
 ```
-
 </CodeGroup>
+
+
+<CodeGroup>
+```python Python
+```
+
+```rust Rust
+```
+
+```go Go
+```
+
+```typescript TypeScript
+```
+
+```bash Curl
+```
+</CodeGroup>
+
 
 ### Example 2: Creating a detailed friendship with properties
 <CodeGroup>
 ```rust Query
-QUERY CreateFriendship (user1ID: ID, user2ID: ID) =>
-    user1 <- N<User>(user1ID)
-    user2 <- N<User>(user2ID)
+QUERY CreateFriendship (user1_id: ID, user2_id: ID) =>
     friendship <- AddE<Friends>({
         since: "2024-01-15",
         strength: 0.85,
         tags: ["college", "roommates"]
-    })::From(user1)::To(user2)
+    })::From(user1_id)::To(user2_id)
     RETURN friendship
 ```
 
@@ -154,17 +399,33 @@ E::Friends {
 ```
 </CodeGroup>
 
-### Example 3: Traversal Example
 
-You can also use the `AddE` operation in the middle of a traversal to add edges between a list of nodes or vectors.
+<CodeGroup>
+```python Python
+```
+
+```rust Rust
+```
+
+```go Go
+```
+
+```typescript TypeScript
+```
+
+```bash Curl
+```
+</CodeGroup>
+
+
+### Example 3: Traversal Example
 <CodeGroup>
 ```rust Query
-QUERY CreateFriendships (user1ID: ID, user2ID: ID) =>
-    // This makes every user in the database follow the user with ID user1ID
-    user1 <- N<User>::AddE<Follows>::To(N(user1ID))
-    // This makes user with userID2 follow every user in the database
-    user1 <- N<User>::AddE<Follows>::From(N(user2ID))
-    RETURN NONE
+QUERY CreateRelationships (user1_id: ID, user2_name: String) =>
+    // Getting user2 by name
+    user2 <- N<User>({name: user2_name})
+    follows <- AddE<Follows>::From(user1_id)::To(user2)
+    RETURN follows
 ```
 
 ```rust Schema
@@ -182,9 +443,27 @@ E::Follows {
 </CodeGroup>
 
 
+<CodeGroup>
+```python Python
+```
+
+```rust Rust
+```
+
+```go Go
+```
+
+```typescript TypeScript
+```
+
+```bash Curl
+```
+</CodeGroup>
+
+
 ---
 
-## Create Vectors using `AddV` &nbsp;
+# Create Vectors using `AddV` &nbsp;
 
 Create new vector embeddings in your graph.
 
@@ -192,6 +471,14 @@ Create new vector embeddings in your graph.
 AddV<Type>
 AddV<Type>(vector, {properties})
 ```
+
+
+<Warning>
+Currently, Helix only supports using an array of `F64` values to represent the vector.
+We will be adding support for different types such as `F32`, binary vectors and
+more in the very near future. Please reach out to us if you need a different vector type.
+</Warning>
+
 
 ### Example 1: Creating a vector with no properties
 <CodeGroup>
@@ -209,6 +496,25 @@ V::Document {}
 ```
 </CodeGroup>
 
+
+<CodeGroup>
+```python Python
+```
+
+```rust Rust
+```
+
+```go Go
+```
+
+```typescript TypeScript
+```
+
+```bash Curl
+```
+</CodeGroup>
+
+
 ### Example 2: Creating a vector with properties
 <CodeGroup>
 ```rust Query
@@ -224,6 +530,25 @@ V::Document {
 }
 ```
 </CodeGroup>
+
+
+<CodeGroup>
+```python Python
+```
+
+```rust Rust
+```
+
+```go Go
+```
+
+```typescript TypeScript
+```
+
+```bash Curl
+```
+</CodeGroup>
+
 
 ### Example 3: Creating a vector and connecting it to a node
 <CodeGroup>
@@ -257,6 +582,25 @@ E::User_to_Document_Embedding {
 ```
 </CodeGroup>
 
+
+<CodeGroup>
+```python Python
+```
+
+```rust Rust
+```
+
+```go Go
+```
+
+```typescript TypeScript
+```
+
+```bash Curl
+```
+</CodeGroup>
+
+
 ### Example 4: Using the built in `Embed` function
 
 You can also use the built in [Embed](../vectors/embedding) function to embed the text without sending in the array of floats. It uses the embedding model defined in your `config.hx.json` file.
@@ -275,8 +619,20 @@ V::Document {
 ```
 </CodeGroup>
 
-<Note>
-Currently, Helix only supports using an array of `F64` values to represent the vector.
-We will be adding support for different types such as `F32`, binary vectors and
-more in the very near future. Please reach out to us if you need a different vector type.
-</Note>
+
+<CodeGroup>
+```python Python
+```
+
+```rust Rust
+```
+
+```go Go
+```
+
+```typescript TypeScript
+```
+
+```bash Curl
+```
+</CodeGroup>
