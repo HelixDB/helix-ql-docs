@@ -162,12 +162,11 @@
                         "pages": [
                             "guides/social-network",
                             {
-                                "group": "Professors",
+                                "group": "Professor Search",
                                 "pages": [
                                     "guides/professors/prof",
                                     "guides/professors/helixdb_setup",
-                                    "guides/professors/backend_setup",
-                                    "guides/professors/LLM_setup"
+                                    "guides/professors/backend_setup"
                                 ],
                                 "icon": "user-graduate"
                             }
@@ -184,26 +183,6 @@
                             "helix-cloud/overview"
                         ]
                     }
-                ]
-            },
-            {
-                "tab": "Blogs",
-                "groups": [
-                    {
-                        "group": "Blogs",
-                        "pages": [
-                            "blogs/overview",
-                            "blogs/kg"
-                        ]
-                    }
-                ]
-            },
-            {
-                "tab": "Releases",
-                "pages": [
-                    "change-log/helixdb",
-                    "change-log/helix-py",
-                    "change-log/helix-cloud"
                 ]
             }
         ]
