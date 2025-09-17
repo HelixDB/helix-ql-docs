@@ -1,0 +1,67 @@
+---
+title: "Result Operations"
+icon: "integral"
+---
+
+## `COUNT`
+
+Count the number of elements in a traversal.
+
+```rust
+::COUNT
+```
+
+### Example
+
+```rust
+QUERY UserStatistics() =>
+    user_count <- N<User>::COUNT
+    RETURN user_count
+```
+
+
+---
+
+## `RANGE`
+
+Get a range of elements from a traversal. 
+The range is inclusive of the start, but exclusive of the end. 
+e.g. `RANGE(0, 10)` will return 10 elements 0 through 9.
+
+Both the start and end are required, and must be a positive integer.
+
+```rust
+::RANGE(start, end)
+```
+
+### Example
+
+```rust
+QUERY GetRange(start: U32, end: U32) =>
+    range <- N<User>::RANGE(start, end)
+    RETURN range
+```
+
+---
+
+## `ORDER`
+
+Order the results of a traversal by a property either ascending (`Asc`) or descending (`Desc`).
+
+```rust
+::ORDER<Asc|Desc>(<property>)
+```
+
+### Example
+
+```rust
+QUERY UserStatistics() =>
+    oldest_users <- N<User>::ORDER<Desc>(_::{age})
+    RETURN oldest_users
+```
+
+```rust
+QUERY UserStatistics() =>
+    youngest_users <- N<User>::ORDER<Asc>(_::{age})
+    RETURN youngest_users
+```

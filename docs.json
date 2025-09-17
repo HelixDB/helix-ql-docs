@@ -128,14 +128,8 @@
                                 ],
                                 "icon": "tags"
                             },
-                            {
-                                "group": "Aggregation",
-                                "expanded": false,
-                                "pages": [
-                                    "documentation/hql/aggregation/aggregation"
-                                ],
-                                "icon": "layer-group"
-                            },
+                            "documentation/hql/aggregation",
+                            "documentation/hql/result_ops",
                             "documentation/hql/output_values",
                             {
                                 "group": "Errors",

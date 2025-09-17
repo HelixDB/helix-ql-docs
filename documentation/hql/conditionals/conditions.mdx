@@ -1,48 +1,38 @@
 ---
 title: "Conditional Steps"
-description: "These operations allow you to filter and select specific elements from your graph based on conditions."
+description: "Filter and select specific elements from your graph based on conditions using WHERE clauses."
 ---
 
-## `WHERE`
+## Filtering with `WHERE` &nbsp;
 
 Filter elements based on specific conditions.
 
 ```rust
 ::WHERE(<condition>)
+::WHERE(_::{property}::COMPARISON(value))
 ```
 
-The condition in the `WHERE` step must evaluate to a boolean value.
-If the condition is not met, the element will be filtered out.
+<Note>
+The condition in the WHERE step must evaluate to a boolean value. If the condition is not met, the element will be filtered out from the results.
+</Note>
 
-### Example
-
-```rust
-QUERY GetAdultUsers =>
-    // Filter to only users over 18
-    adult_users <- N<User>::WHERE(_::{age}::GT(18))
-    RETURN adult_users
-```
-
-<Tip>
-For multiple conditions, see [Multiple Conditional Steps](./mult-conditions).
-</Tip>
-
----
-
-## Comparison Operations
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+### Comparison Operations
 
 The following operations can be used to compare values.
 `EQ` and `NEQ` can be used to compare strings, booleans, and numbers.
 `GT`, `GTE`, `LT`, and `LTE` can only be used to compare numbers.
 
-### String, Boolean, and Number Operations
+#### String, Boolean, and Number Operations
 
 | Operation | Description | Example |
 | -------------- | ----------- | ------------------------------------ |
 | `::EQ(value)` | Equals | `::WHERE(_::{status}::EQ("active"))` |
 | `::NEQ(value)` | Not equals | `::WHERE(_::{age}::NEQ(25))` |
 
-### Number Operations
+#### Number Operations
 
 | Operation | Description | Example |
 | -------------- | --------------------- | -------------------------------- |
@@ -51,9 +41,376 @@ The following operations can be used to compare values.
 | `::GTE(value)` | Greater than or equal | `::WHERE(_::{rating}::GTE(4.5))` |
 | `::LTE(value)` | Less than or equal | `::WHERE(_::{priority}::LTE(2))` |
 
+
+### Example 1: Basic filtering with WHERE
+<CodeGroup>
+
+```rust Query focus={1-3} [expandable]
+QUERY GetAdultUsers () =>
+    adult_users <- N<User>::WHERE(_::{age}::GT(18))
+    RETURN adult_users
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First create some users with different ages
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 16, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 30, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 17, "email": "diana@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+# Now get only adult users (age > 18)
+result = client.query("GetAdultUsers", {})
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First create some users with different ages
+    let users = vec![
+        ("Alice", 25, "alice@example.com"),
+        ("Bob", 16, "bob@example.com"),
+        ("Charlie", 30, "charlie@example.com"),
+        ("Diana", 17, "diana@example.com"),
+    ];
+
+    for (name, age, email) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+        })).await?;
+    }
+
+    // Now get only adult users (age > 18)
+    let result: serde_json::Value = client.query("GetAdultUsers", &json!({})).await?;
+    println!("Adult users: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First create some users with different ages
+    users := []map[string]any{
+        {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
+        {"name": "Bob", "age": uint8(16), "email": "bob@example.com"},
+        {"name": "Charlie", "age": uint8(30), "email": "charlie@example.com"},
+        {"name": "Diana", "age": uint8(17), "email": "diana@example.com"},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    // Now get only adult users (age > 18)
+    var result map[string]any
+    if err := client.Query("GetAdultUsers", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("GetAdultUsers failed: %s", err)
+    }
+
+    fmt.Printf("Adult users: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First create some users with different ages
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 16, email: "bob@example.com" },
+        { name: "Charlie", age: 30, email: "charlie@example.com" },
+        { name: "Diana", age: 17, email: "diana@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    // Now get only adult users (age > 18)
+    const result = await client.query("GetAdultUsers", {});
+    console.log("Adult users:", result);
+}
+
+main().catch((err) => {
+    console.error("GetAdultUsers query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# First create some users with different ages
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":16,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":30,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":17,"email":"diana@example.com"}'
+
+# Now get only adult users (age > 18)
+curl -X POST \
+  http://localhost:6969/GetAdultUsers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+<Tip>
+For multiple conditions, see [Multiple Conditional Steps](./mult-conditions).
+</Tip>
+
+### Example 2: String and equality filtering
+<CodeGroup>
+
+```rust Query focus={1-3} [expandable]
+QUERY GetActiveUsers (status: String) =>
+    active_users <- N<User>::WHERE(_::{status}::EQ(status))
+    RETURN active_users
+
+QUERY CreateUser (name: String, age: U8, email: String, status: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email,
+        status: status
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+    status: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First create some users with different statuses
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com", "status": "active"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com", "status": "inactive"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com", "status": "active"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com", "status": "pending"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+# Now get only active users
+result = client.query("GetActiveUsers", {"status": "active"})
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First create some users with different statuses
+    let users = vec![
+        ("Alice", 25, "alice@example.com", "active"),
+        ("Bob", 30, "bob@example.com", "inactive"),
+        ("Charlie", 28, "charlie@example.com", "active"),
+        ("Diana", 22, "diana@example.com", "pending"),
+    ];
+
+    for (name, age, email, status) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+            "status": status,
+        })).await?;
+    }
+
+    // Now get only active users
+    let result: serde_json::Value = client.query("GetActiveUsers", &json!({
+        "status": "active"
+    })).await?;
+    println!("Active users: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First create some users with different statuses
+    users := []map[string]any{
+        {"name": "Alice", "age": uint8(25), "email": "alice@example.com", "status": "active"},
+        {"name": "Bob", "age": uint8(30), "email": "bob@example.com", "status": "inactive"},
+        {"name": "Charlie", "age": uint8(28), "email": "charlie@example.com", "status": "active"},
+        {"name": "Diana", "age": uint8(22), "email": "diana@example.com", "status": "pending"},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    // Now get only active users
+    searchPayload := map[string]any{"status": "active"}
+    var result map[string]any
+    if err := client.Query("GetActiveUsers", helix.WithData(searchPayload)).Scan(&result); err != nil {
+        log.Fatalf("GetActiveUsers failed: %s", err)
+    }
+
+    fmt.Printf("Active users: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First create some users with different statuses
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com", status: "active" },
+        { name: "Bob", age: 30, email: "bob@example.com", status: "inactive" },
+        { name: "Charlie", age: 28, email: "charlie@example.com", status: "active" },
+        { name: "Diana", age: 22, email: "diana@example.com", status: "pending" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    // Now get only active users
+    const result = await client.query("GetActiveUsers", { status: "active" });
+    console.log("Active users:", result);
+}
+
+main().catch((err) => {
+    console.error("GetActiveUsers query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# First create some users with different statuses
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com","status":"active"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com","status":"inactive"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com","status":"active"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22,"email":"diana@example.com","status":"pending"}'
+
+# Now get only active users
+curl -X POST \
+  http://localhost:6969/GetActiveUsers \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"active"}'
+```
+</CodeGroup>
+
 ---
 
-## `EXISTS`
+## Filter by Relationships with `EXISTS` &nbsp;
 
 Returns true if a traversal has any results. Otherwise, it returns false.
 
@@ -61,59 +418,256 @@ Returns true if a traversal has any results. Otherwise, it returns false.
 EXISTS(<traversal>)
 ```
 
-### Example
+### Example 1: Using `EXISTS` for relationship filtering
+<CodeGroup>
 
-```rust
-QUERY GetUsersWithFollowers() =>
+```rust Query focus={1-3} [expandable]
+QUERY GetUsersWithFollowers () =>
     users <- N<User>::WHERE(EXISTS(_::In<Follows>))
     RETURN users
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+
+QUERY CreateFollow (follower_id: ID, following_id: ID) =>
+    follower <- N<User>(follower_id)
+    following <- N<User>(following_id)
+    AddE<Follows>::From(follower)::To(following)
+    RETURN "Success"
 ```
 
----
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
 
-## `RANGE`
+E::Follows {
+    From: User,
+    To: User
+}
+```
+</CodeGroup>
 
-Get a range of elements from a traversal. 
-The range is inclusive of the start, but exclusive of the end. 
-e.g. `RANGE(0, 10)` will return 10 elements 0 through 9.
+Here's how to run the query using the SDKs or curl
 
-Both the start and end are required, and must be a positive integer.
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
 
-```rust
-::RANGE(start, end)
+client = Client(local=True, port=6969)
+
+# First create some users
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+]
+
+user_ids = []
+for user in users:
+    result = client.query("CreateUser", user)
+    user_ids.append(result[0]["user"]["id"])
+
+# Create some follow relationships
+# Bob follows Alice, Charlie follows Alice
+client.query("CreateFollow", {"follower_id": user_ids[1], "following_id": user_ids[0]})
+client.query("CreateFollow", {"follower_id": user_ids[2], "following_id": user_ids[0]})
+
+# Now get users who have followers (Alice should be returned)
+result = client.query("GetUsersWithFollowers", {})
+print(result)
 ```
 
-### Example
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
 
-```rust
-QUERY GetRange(start: U32, end: U32) =>
-    range <- N<User>::RANGE(start, end)
-    RETURN range
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First create some users
+    let users = vec![
+        ("Alice", 25, "alice@example.com"),
+        ("Bob", 30, "bob@example.com"),
+        ("Charlie", 28, "charlie@example.com"),
+    ];
+
+    let mut user_ids = Vec::new();
+    for (name, age, email) in &users {
+        let result: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+        })).await?;
+        user_ids.push(result["user"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create some follow relationships
+    // Bob follows Alice, Charlie follows Alice
+    let _follow1: serde_json::Value = client.query("CreateFollow", &json!({
+        "follower_id": user_ids[1],
+        "following_id": user_ids[0]
+    })).await?;
+
+    let _follow2: serde_json::Value = client.query("CreateFollow", &json!({
+        "follower_id": user_ids[2],
+        "following_id": user_ids[0]
+    })).await?;
+
+    // Now get users who have followers (Alice should be returned)
+    let result: serde_json::Value = client.query("GetUsersWithFollowers", &json!({})).await?;
+    println!("Users with followers: {result:#?}");
+
+    Ok(())
+}
 ```
 
----
+```go Go [expandable]
+package main
 
+import (
+    "fmt"
+    "log"
 
-## `ORDER`
+    "github.com/HelixDB/helix-go"
+)
 
-Order the results of a traversal by a property either ascending (`Asc`) or descending (`Desc`).
+func main() {
+    client := helix.NewClient("http://localhost:6969")
 
-```rust
-::ORDER<Asc|Desc>(<property>)
+    // First create some users
+    users := []map[string]any{
+        {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
+        {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
+        {"name": "Charlie", "age": uint8(28), "email": "charlie@example.com"},
+    }
+
+    var userIDs []string
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+        userIDs = append(userIDs, created["user"].(map[string]any)["id"].(string))
+    }
+
+    // Create some follow relationships
+    // Bob follows Alice, Charlie follows Alice
+    followPayload1 := map[string]any{
+        "follower_id":  userIDs[1],
+        "following_id": userIDs[0],
+    }
+    var follow1 map[string]any
+    if err := client.Query("CreateFollow", helix.WithData(followPayload1)).Scan(&follow1); err != nil {
+        log.Fatalf("CreateFollow failed: %s", err)
+    }
+
+    followPayload2 := map[string]any{
+        "follower_id":  userIDs[2],
+        "following_id": userIDs[0],
+    }
+    var follow2 map[string]any
+    if err := client.Query("CreateFollow", helix.WithData(followPayload2)).Scan(&follow2); err != nil {
+        log.Fatalf("CreateFollow failed: %s", err)
+    }
+
+    // Now get users who have followers (Alice should be returned)
+    var result map[string]any
+    if err := client.Query("GetUsersWithFollowers", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("GetUsersWithFollowers failed: %s", err)
+    }
+
+    fmt.Printf("Users with followers: %#v\n", result)
+}
 ```
 
-### Example
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
 
-```rust
-QUERY UserStatistics() =>
-    oldest_users <- N<User>::ORDER<Desc>(_::{age})
-    RETURN oldest_users
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First create some users
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+    ];
+
+    const userIds: string[] = [];
+    for (const user of users) {
+        const result = await client.query("CreateUser", user);
+        userIds.push(result.user.id);
+    }
+
+    // Create some follow relationships
+    // Bob follows Alice, Charlie follows Alice
+    await client.query("CreateFollow", {
+        follower_id: userIds[1],
+        following_id: userIds[0]
+    });
+
+    await client.query("CreateFollow", {
+        follower_id: userIds[2],
+        following_id: userIds[0]
+    });
+
+    // Now get users who have followers (Alice should be returned)
+    const result = await client.query("GetUsersWithFollowers", {});
+    console.log("Users with followers:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUsersWithFollowers query failed:", err);
+});
 ```
 
-```rust
-QUERY UserStatistics() =>
-    youngest_users <- N<User>::ORDER<Asc>(_::{age})
-    RETURN youngest_users
-```
+```bash Curl [expandable]
+# First create some users
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
 
----
+# Capture Alice's ID as <alice_id>
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+# Capture Bob's ID as <bob_id>
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+# Capture Charlie's ID as <charlie_id>
+
+# Create follow relationships (Bob and Charlie follow Alice)
+curl -X POST \
+  http://localhost:6969/CreateFollow \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"<bob_id>","following_id":"<alice_id>"}'
+
+curl -X POST \
+  http://localhost:6969/CreateFollow \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"<charlie_id>","following_id":"<alice_id>"}'
+
+# Now get users who have followers
+curl -X POST \
+  http://localhost:6969/GetUsersWithFollowers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
