@@ -1,117 +1,756 @@
 ---
 title: "Property Access"
-description: "Accessing properties of a node, edge, or vector"
+description: "Access specific properties of nodes, edges, and vectors using property selection syntax."
 ---
 
-## Accessing Properties
+## Select specific properties with `::{}` &nbsp;
 
-You can access properties of an item by using the name of the property as defined
-in the schema.
+Access properties of an item by using the property names as defined in the schema.
+
 ```rust
-// Get specific properties
-::{<SchemaFieldNames>}
+::{<property1>, <property2>, ...}
+::{<property1>: <alias>, <property2>}
 ```
-<Accordion title="Example">
-**In schema.hx:**
-```rust
-N::User{
-    Name: String, 
-    Email: String,
-    Age: U32,
-    Posts: U32
+
+<Note>
+Property access allows you to return only the fields you need, reducing data transfer and improving query performance.
+</Note>
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+### Example 1: Basic property selection
+<CodeGroup>
+
+```rust Query focus={1-3} [expandable]
+QUERY GetUserBasicInfo () =>
+    users <- N<User>::RANGE(0, 10)
+    RETURN users::{name, age}
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First create some users
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+# Get only name and age properties
+result = client.query("GetUserBasicInfo", {})
+print("User basic info:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First create some users
+    let users = vec![
+        ("Alice", 25, "alice@example.com"),
+        ("Bob", 30, "bob@example.com"),
+        ("Charlie", 28, "charlie@example.com"),
+        ("Diana", 22, "diana@example.com"),
+    ];
+
+    for (name, age, email) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+        })).await?;
+    }
+
+    // Get only name and age properties
+    let result: serde_json::Value = client.query("GetUserBasicInfo", &json!({})).await?;
+    println!("User basic info: {result:#?}");
+
+    Ok(())
 }
 ```
 
-**In query.hx:**
+```go Go [expandable]
+package main
 
-```rust {3}
-QUERY findUsers() =>
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First create some users
+    users := []map[string]any{
+        {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
+        {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
+        {"name": "Charlie", "age": uint8(28), "email": "charlie@example.com"},
+        {"name": "Diana", "age": uint8(22), "email": "diana@example.com"},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    // Get only name and age properties
+    var result map[string]any
+    if err := client.Query("GetUserBasicInfo", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("GetUserBasicInfo failed: %s", err)
+    }
+
+    fmt.Printf("User basic info: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First create some users
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+        { name: "Diana", age: 22, email: "diana@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    // Get only name and age properties
+    const result = await client.query("GetUserBasicInfo", {});
+    console.log("User basic info:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserBasicInfo query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# First create some users
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22,"email":"diana@example.com"}'
+
+# Get only name and age properties
+curl -X POST \
+  http://localhost:6969/GetUserBasicInfo \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+### Example 2: Property selection with renaming
+<CodeGroup>
+
+```rust Query focus={1-3} [expandable]
+QUERY GetUserDisplayInfo () =>
     users <- N<User>::RANGE(0, 10)
-    RETURN users::{ Name, Age }
+    RETURN users::{displayName: name, userAge: age}
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
 ```
-Here we are accessing the `Name` and `Age` properties of each user.
 
-**JSON Output:**
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+</CodeGroup>
 
-```rust
-"users": [
-    {
-        "Name": "John",
-        "Age": 30
-    },
-    ...
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First create some users
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com"},
 ]
+
+for user in users:
+    client.query("CreateUser", user)
+
+# Get properties with renamed fields
+result = client.query("GetUserDisplayInfo", {})
+print("User display info:", result)
 ```
-</Accordion>
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First create some users
+    let users = vec![
+        ("Alice", 25, "alice@example.com"),
+        ("Bob", 30, "bob@example.com"),
+        ("Charlie", 28, "charlie@example.com"),
+        ("Diana", 22, "diana@example.com"),
+    ];
+
+    for (name, age, email) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+        })).await?;
+    }
+
+    // Get properties with renamed fields
+    let result: serde_json::Value = client.query("GetUserDisplayInfo", &json!({})).await?;
+    println!("User display info: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First create some users
+    users := []map[string]any{
+        {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
+        {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
+        {"name": "Charlie", "age": uint8(28), "email": "charlie@example.com"},
+        {"name": "Diana", "age": uint8(22), "email": "diana@example.com"},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    // Get properties with renamed fields
+    var result map[string]any
+    if err := client.Query("GetUserDisplayInfo", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("GetUserDisplayInfo failed: %s", err)
+    }
+
+    fmt.Printf("User display info: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First create some users
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+        { name: "Diana", age: 22, email: "diana@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    // Get properties with renamed fields
+    const result = await client.query("GetUserDisplayInfo", {});
+    console.log("User display info:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserDisplayInfo query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# First create some users
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22,"email":"diana@example.com"}'
+
+# Get properties with renamed fields
+curl -X POST \
+  http://localhost:6969/GetUserDisplayInfo \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
 
 ---
 
-## Accessing the ID
+## Access unique identifiers with `::ID` &nbsp;
+
+Access the unique identifier of any node, edge, or vector.
 
 ```rust
 ::ID
 ```
 
-```rust
-QUERY findUsers() =>
-    users <- N<User>::RANGE(0, 1)
+<Note>
+Every element in HelixDB has a unique ID that can be accessed using the `::ID` syntax.
+</Note>
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+### Example 1: Getting element IDs
+<CodeGroup>
+
+```rust Query focus={1-3} [expandable]
+QUERY GetUserIDs () =>
+    users <- N<User>::RANGE(0, 5)
     RETURN users::ID
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
 ```
-<Accordion title="JSON Output">
-```json
-"users": [
-    {
-        "id": "c2ca233f-0cd8-4fae-8136-b40593792071"
-    },
-    ...
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First create some users
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
 ]
+
+for user in users:
+    client.query("CreateUser", user)
+
+# Get only the IDs
+result = client.query("GetUserIDs", {})
+print("User IDs:", result)
 ```
-</Accordion>
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First create some users
+    let users = vec![
+        ("Alice", 25, "alice@example.com"),
+        ("Bob", 30, "bob@example.com"),
+        ("Charlie", 28, "charlie@example.com"),
+    ];
+
+    for (name, age, email) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+        })).await?;
+    }
+
+    // Get only the IDs
+    let result: serde_json::Value = client.query("GetUserIDs", &json!({})).await?;
+    println!("User IDs: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First create some users
+    users := []map[string]any{
+        {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
+        {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
+        {"name": "Charlie", "age": uint8(28), "email": "charlie@example.com"},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    // Get only the IDs
+    var result map[string]any
+    if err := client.Query("GetUserIDs", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("GetUserIDs failed: %s", err)
+    }
+
+    fmt.Printf("User IDs: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First create some users
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    // Get only the IDs
+    const result = await client.query("GetUserIDs", {});
+    console.log("User IDs:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserIDs query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# First create some users
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+# Get only the IDs
+curl -X POST \
+  http://localhost:6969/GetUserIDs \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
 
 ---
 
-## Spread Operator
+## Include all properties with `..` &nbsp;
 
-Using the spread operator, you can remap values while including all 
-other properties of the selected element in the returned object.
+Use the spread operator to include all properties while optionally remapping specific fields.
 
 ```rust
 ::{
-    userID: ID,
-    .. 
+    <alias>: <property>, 
+    ..
 }
 ```
 
-<Accordion title="Example">
-**In schema.hx:**
-```rust
-N::User{
-    name: String,
-    age: U32,
-}
-```
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
 
-**In query.hx:**
-```rust
-QUERY findUsers() =>
-    users <- N<User>::RANGE(0, 10)
+### Example 1: Property aliasing with spread operator
+<CodeGroup>
+
+```rust Query focus={1-5} [expandable]
+QUERY GetUsersWithAlias () =>
+    users <- N<User>::RANGE(0, 5)
     RETURN users::{
         userID: ID,
-        .. 
+        ..
     }
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
 ```
 
-**JSON Output:**
-```json
-"users": [
-    {
-        "userID": "c2ca233f-0cd8-4fae-8136-b40593792071",
-        "name": "John",
-        "age": 30
-    },
-    ...
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First create some users
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
 ]
-```
-</Accordion>
 
----
+for user in users:
+    client.query("CreateUser", user)
+
+# Get users with ID aliased as userID and all other properties
+result = client.query("GetUsersWithAlias", {})
+print("Users with alias:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First create some users
+    let users = vec![
+        ("Alice", 25, "alice@example.com"),
+        ("Bob", 30, "bob@example.com"),
+        ("Charlie", 28, "charlie@example.com"),
+    ];
+
+    for (name, age, email) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+        })).await?;
+    }
+
+    // Get users with ID aliased as userID and all other properties
+    let result: serde_json::Value = client.query("GetUsersWithAlias", &json!({})).await?;
+    println!("Users with alias: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First create some users
+    users := []map[string]any{
+        {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
+        {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
+        {"name": "Charlie", "age": uint8(28), "email": "charlie@example.com"},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    // Get users with ID aliased as userID and all other properties
+    var result map[string]any
+    if err := client.Query("GetUsersWithAlias", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("GetUsersWithAlias failed: %s", err)
+    }
+
+    fmt.Printf("Users with alias: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First create some users
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    // Get users with ID aliased as userID and all other properties
+    const result = await client.query("GetUsersWithAlias", {});
+    console.log("Users with alias:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUsersWithAlias query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# First create some users
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+# Get users with ID aliased as userID and all other properties
+curl -X POST \
+  http://localhost:6969/GetUsersWithAlias \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>

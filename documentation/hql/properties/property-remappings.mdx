@@ -1,77 +1,468 @@
 ---
 title: "Property Remappings"
-description: "Access properties of elements in your graph."
+description: "Rename and restructure properties in query results using simple remappings and nested mappings with closure-style syntax."
 ---
 
-## Simple Remappings
+## Simple Remappings &nbsp;
 
 Sometimes, you may want to rename a property that is returned from a traversal. 
 You can access properties of an item by using the name of the property as defined
 in the schema. 
 ```rust
-::{ new_name: property_name }
+::{new_name: property_name}
+::{alias: _::{property}}
 ```
 You can use the name directly, or if you want to be more explicit, 
 or in cases where there may be name clashes, you can use the `_::` operator.
 
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
 
-### Direct Access
+### Example 1: Basic property remapping
+<CodeGroup>
 
-```rust
-QUERY findUsers() =>
-    users <- N<User>::RANGE(0, 10)
+```rust Query focus={1-5} [expandable]
+QUERY GetUserWithAlias () =>
+    users <- N<User>::RANGE(0, 5)
     RETURN users::{
-        userID: ID, 
+        userID: ID,
+        displayName: name
     }
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
 ```
 
-### Explicit Access
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+</CodeGroup>
 
-```rust
-QUERY findUsers() =>
-    users <- N<User>::RANGE(0, 10)
-    RETURN users::{
-        givenName: _::{name}
-    }
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First create some users
+users = [
+    {"name": "Alice Johnson", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob Smith", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie Brown", "age": 28, "email": "charlie@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+# Get users with remapped property names
+result = client.query("GetUserWithAlias", {})
+print("Users with remapped properties:", result)
 ```
 
----
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
 
-## Nested Mappings
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-If you want to access a properties that traverse from the selected element,
-you can use the nested variable to continue the traversal. 
-These nested mappings work similarly to closures in rust or anonymous functions in javascript.
+    // First create some users
+    let users = vec![
+        ("Alice Johnson", 25, "alice@example.com"),
+        ("Bob Smith", 30, "bob@example.com"),
+        ("Charlie Brown", 28, "charlie@example.com"),
+    ];
 
-- e.g. `|a| { a + 1 }` in rust or `(a) => { a + 1 }` in javascript.
+    for (name, age, email) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+        })).await?;
+    }
 
-We lean heavily on the rust syntax style for nested remappings.
-The following is an overview of the syntax:
+    // Get users with remapped property names
+    let result: serde_json::Value = client.query("GetUserWithAlias", &json!({})).await?;
+    println!("Users with remapped properties: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First create some users
+    users := []map[string]any{
+        {"name": "Alice Johnson", "age": uint8(25), "email": "alice@example.com"},
+        {"name": "Bob Smith", "age": uint8(30), "email": "bob@example.com"},
+        {"name": "Charlie Brown", "age": uint8(28), "email": "charlie@example.com"},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    // Get users with remapped property names
+    var result map[string]any
+    if err := client.Query("GetUserWithAlias", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("GetUserWithAlias failed: %s", err)
+    }
+
+    fmt.Printf("Users with remapped properties: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First create some users
+    const users = [
+        { name: "Alice Johnson", age: 25, email: "alice@example.com" },
+        { name: "Bob Smith", age: 30, email: "bob@example.com" },
+        { name: "Charlie Brown", age: 28, email: "charlie@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    // Get users with remapped property names
+    const result = await client.query("GetUserWithAlias", {});
+    console.log("Users with remapped properties:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserWithAlias query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# First create some users
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice Johnson","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob Smith","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie Brown","age":28,"email":"charlie@example.com"}'
+
+# Get users with remapped property names
+curl -X POST \
+  http://localhost:6969/GetUserWithAlias \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+## Nested Mappings &nbsp;
 
 ```rust
 ::|item_name|{
     field: item_name::traversal,
-    new_field: other::{
-        nested_field: item_name::ID, // here we access the ID from the outer scope
+    nested_field: other::{
+        property: item_name::ID,
         ..
-    },
+    }
 }
 ```
 
+<Note>
 The important thing to note here, is that if we were to access the `ID` like we have shown previously:
 `nested_field: ID`. This ID would be the ID of the `other` item, not the `item_name` item due to the tighter scope.
+</Note>
 
-### Example
+<Warning>
+When accessing properties in nested mappings, scope matters. Use the explicit `item_name::property` syntax to access properties from outer scopes to avoid ambiguity.
+</Warning>
 
-```rust
-QUERY findFriends(userID: String) =>
-  user <- N<User>(userID)
-  posts <- user::Out<Posts>::RANGE(20)
-  RETURN user::|usr|{
-            posts: posts::{
-                postID: ID, // accesses the `postID` property from each `posts`
-                creatorID: usr::ID, // accesses the `ID` property from each `usr` and maps it to `creatorID`
-                ..
-            },
+### Example 1: User posts with nested remappings
+<CodeGroup>
+
+```rust Query focus={1-10} [expandable]
+QUERY GetUserPosts (user_id: ID) =>
+    user <- N<User>(user_id)
+    posts <- user::Out<HasPost>
+    RETURN user::|usr|{
+        posts: posts::{
+            postID: ID,
+            creatorID: usr::ID,
+            creatorName: usr::name,
+            ..
         }
+    }
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+
+QUERY CreatePost (user_id: ID, title: String, content: String) =>
+    user <- N<User>(user_id)
+    post <- AddN<Post>({
+        title: title,
+        content: content
+    })
+    AddE<HasPost>::From(user)::To(post)
+    RETURN post
 ```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+
+N::Post {
+    title: String,
+    content: String
+}
+
+E::HasPost {
+    From: User,
+    To: Post
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First create a user
+user_result = client.query("CreateUser", {
+    "name": "Alice Johnson",
+    "age": 25,
+    "email": "alice@example.com"
+})
+user_id = user_result[0]["user"]["id"]
+
+# Create some posts for the user
+posts = [
+    {"title": "My First Post", "content": "This is my first blog post!"},
+    {"title": "Learning GraphDB", "content": "Graph databases are fascinating."},
+    {"title": "Weekend Plans", "content": "Planning to explore the city."},
+]
+
+for post in posts:
+    client.query("CreatePost", {
+        "user_id": user_id,
+        "title": post["title"],
+        "content": post["content"]
+    })
+
+# Get user posts with nested remappings
+result = client.query("GetUserPosts", {"user_id": user_id})
+print("User posts with nested remappings:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First create a user
+    let user_result: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Alice Johnson",
+        "age": 25,
+        "email": "alice@example.com"
+    })).await?;
+    let user_id = user_result["user"]["id"].as_str().unwrap();
+
+    // Create some posts for the user
+    let posts = vec![
+        ("My First Post", "This is my first blog post!"),
+        ("Learning GraphDB", "Graph databases are fascinating."),
+        ("Weekend Plans", "Planning to explore the city."),
+    ];
+
+    for (title, content) in &posts {
+        let _post: serde_json::Value = client.query("CreatePost", &json!({
+            "user_id": user_id,
+            "title": title,
+            "content": content
+        })).await?;
+    }
+
+    // Get user posts with nested remappings
+    let result: serde_json::Value = client.query("GetUserPosts", &json!({
+        "user_id": user_id
+    })).await?;
+    println!("User posts with nested remappings: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First create a user
+    var userResult map[string]any
+    if err := client.Query("CreateUser", helix.WithData(map[string]any{
+        "name": "Alice Johnson",
+        "age":  uint8(25),
+        "email": "alice@example.com",
+    })).Scan(&userResult); err != nil {
+        log.Fatalf("CreateUser failed: %s", err)
+    }
+    userID := userResult["user"].(map[string]any)["id"].(string)
+
+    // Create some posts for the user
+    posts := []map[string]string{
+        {"title": "My First Post", "content": "This is my first blog post!"},
+        {"title": "Learning GraphDB", "content": "Graph databases are fascinating."},
+        {"title": "Weekend Plans", "content": "Planning to explore the city."},
+    }
+
+    for _, post := range posts {
+        var postResult map[string]any
+        if err := client.Query("CreatePost", helix.WithData(map[string]any{
+            "user_id": userID,
+            "title":   post["title"],
+            "content": post["content"],
+        })).Scan(&postResult); err != nil {
+            log.Fatalf("CreatePost failed: %s", err)
+        }
+    }
+
+    // Get user posts with nested remappings
+    var result map[string]any
+    if err := client.Query("GetUserPosts", helix.WithData(map[string]any{
+        "user_id": userID,
+    })).Scan(&result); err != nil {
+        log.Fatalf("GetUserPosts failed: %s", err)
+    }
+
+    fmt.Printf("User posts with nested remappings: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First create a user
+    const userResult = await client.query("CreateUser", {
+        name: "Alice Johnson",
+        age: 25,
+        email: "alice@example.com"
+    });
+    const userId = userResult.user.id;
+
+    // Create some posts for the user
+    const posts = [
+        { title: "My First Post", content: "This is my first blog post!" },
+        { title: "Learning GraphDB", content: "Graph databases are fascinating." },
+        { title: "Weekend Plans", content: "Planning to explore the city." },
+    ];
+
+    for (const post of posts) {
+        await client.query("CreatePost", {
+            user_id: userId,
+            title: post.title,
+            content: post.content
+        });
+    }
+
+    // Get user posts with nested remappings
+    const result = await client.query("GetUserPosts", { user_id: userId });
+    console.log("User posts with nested remappings:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserPosts query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# First create a user
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice Johnson","age":25,"email":"alice@example.com"}'
+
+# Capture the user ID as <user_id>
+
+# Create some posts for the user
+curl -X POST \
+  http://localhost:6969/CreatePost \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","title":"My First Post","content":"This is my first blog post!"}'
+
+curl -X POST \
+  http://localhost:6969/CreatePost \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","title":"Learning GraphDB","content":"Graph databases are fascinating."}'
+
+curl -X POST \
+  http://localhost:6969/CreatePost \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","title":"Weekend Plans","content":"Planning to explore the city."}'
+
+# Get user posts with nested remappings
+curl -X POST \
+  http://localhost:6969/GetUserPosts \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>"}'
+```
+</CodeGroup>
