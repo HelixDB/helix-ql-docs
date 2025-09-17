@@ -103,7 +103,7 @@
                                 "pages": [
                                     "documentation/hql/traversals/steps_nodes",
                                     "documentation/hql/traversals/steps_edges",
-                                    "documentation/hql/shortest_path"
+                                    "documentation/hql/traversals/shortest_path"
                                 ],
                                 "icon": "right-left-large"
                             },
