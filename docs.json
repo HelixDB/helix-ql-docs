@@ -59,54 +59,87 @@
                         "pages": [
                             "documentation/hql/hql",
                             {
-                                "group": "Create Operations",
+                                "group": "CRUD Operations",
+                                "expanded": false,
                                 "pages": [
-                                    "documentation/hql/create/addN",
-                                    "documentation/hql/create/addE",
-                                    "documentation/hql/create/addV"
+                                    {
+                                        "group": "Create Operations",
+                                        "expanded": false,
+                                        "pages": [
+                                            "documentation/hql/create/addN",
+                                            "documentation/hql/create/addE",
+                                            "documentation/hql/create/addV"
+                                        ],
+                                        "icon": "plus"
+                                    },
+                                    {
+                                        "group": "Select Operations",
+                                        "expanded": false,
+                                        "pages": [
+                                            "documentation/hql/select/selectN",
+                                            "documentation/hql/select/selectE",
+                                            "documentation/hql/select/selectV"
+                                        ],
+                                        "icon": "list-check"
+                                    },
+                                    "documentation/hql/updating",
+                                    "documentation/hql/deleting"
                                 ],
-                                "icon": "plus"
+                                "icon": "database"
                             },
                             {
-                                "group": "Select Operations",
+                                "group": "Vector Operations",
+                                "expanded": false,
                                 "pages": [
-                                    "documentation/hql/select/selectN",
-                                    "documentation/hql/select/selectE",
-                                    "documentation/hql/select/selectV"
+                                    "documentation/hql/vectors/searching",
+                                    "documentation/hql/vectors/embedding"
                                 ],
                                 "icon": "list-check"
                             },
-                            "documentation/hql/vectors/searching",
                             "documentation/hql/keyword_search",
-                            "documentation/hql/vectors/embedding",
-                            "documentation/hql/output_values",
                             {
                                 "group": "Traversals",
+                                "expanded": false,
                                 "pages": [
-                                    "documentation/hql/steps/traversals/steps_nodes",
-                                    "documentation/hql/steps/traversals/steps_edges",
-                                    "documentation/hql/steps/conditions",
-                                    "documentation/hql/steps/mult-conditions",
-                                    "documentation/hql/steps/anonymous"
+                                    "documentation/hql/traversals/steps_nodes",
+                                    "documentation/hql/traversals/steps_edges",
+                                    "documentation/hql/shortest_path"
                                 ],
                                 "icon": "right-left-large"
                             },
-                            "documentation/hql/steps/updating",
-                            "documentation/hql/steps/deleting",
+                            {
+                                "group": "Conditionals",
+                                "expanded": false,
+                                "pages": [
+                                    "documentation/hql/conditionals/conditions",
+                                    "documentation/hql/conditionals/mult-conditions",
+                                    "documentation/hql/conditionals/anonymous"
+                                ],
+                                "icon": "ballot-check"
+                            },
                             {
                                 "group": "Properties",
+                                "expanded": false,
                                 "pages": [
-                                    "documentation/hql/steps/properties/property-access",
-                                    "documentation/hql/steps/properties/property-additions",
-                                    "documentation/hql/steps/properties/property-exclusion",
-                                    "documentation/hql/steps/properties/property-remappings"
+                                    "documentation/hql/properties/property-access",
+                                    "documentation/hql/properties/property-additions",
+                                    "documentation/hql/properties/property-exclusion",
+                                    "documentation/hql/properties/property-remappings"
                                 ],
                                 "icon": "tags"
                             },
-                            "documentation/hql/steps/aggregation",
-                            "documentation/hql/shortest_path",
+                            {
+                                "group": "Aggregation",
+                                "expanded": false,
+                                "pages": [
+                                    "documentation/hql/aggregation/aggregation"
+                                ],
+                                "icon": "layer-group"
+                            },
+                            "documentation/hql/output_values",
                             {
                                 "group": "Errors",
+                                "expanded": false,
                                 "pages": [
                                     "documentation/hql/errors/E101",
                                     "documentation/hql/errors/E102",
