@@ -1,36 +1,493 @@
 ---
 title: "Keyword Search"
-description: "This operation allows you to search based on keywords stored within the properties of nodes."
+description: "Search for keywords in node properties using BM25 ranking algorithm."
 icon: "magnifying-glass"
 ---
 
-## `SearchBM25`
+# Keyword Search using BM25 with `SearchBM25` &nbsp;
 
-Search for keyword on nodes in your graph.
+Search for keywords in nodes using the BM25 ranking algorithm.
 
 ```rust
-SearchBM25<Type>("text", num_search_results)
+SearchBM25<Type>(text, limit)
 ```
 
-### Example
+<Note>
+BM25 is a ranking function used for full-text search. It searches through the text properties of nodes and ranks results based on keyword relevance and frequency.
+</Note>
 
-In schema.hx:
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
 
-```rust
+### Example 1: Basic keyword search
+<CodeGroup>
+
+```rust Query focus={1-3} [expandable]
+QUERY SearchKeyword (keywords: String, limit: I64) =>
+    documents <- SearchBM25<Document>(keywords, limit)
+    RETURN documents
+
+QUERY InsertDocument (content: String, created_at: Date) =>
+    document <- AddN<Document>({ content: content, created_at: created_at })
+    RETURN document
+```
+
+```rust Schema
 N::Document {
-    text: String
-    created_at: I64
+    content: String,
+    created_at: Date
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First insert some documents to search through
+sample_docs = [
+    "Machine learning algorithms for data analysis",
+    "Introduction to artificial intelligence and neural networks",
+    "Database optimization techniques and performance tuning",
+    "Web development with modern JavaScript frameworks"
+]
+
+for content in sample_docs:
+    client.query("InsertDocument", {
+        "content": content,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+# Now search for keywords
+result = client.query("SearchKeyword", {
+    "keywords": "machine learning algorithms",
+    "limit": 5
+})
+
+print(result)
+```
+
+```rust Rust [expandable]
+use chrono::Utc;
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First insert some documents to search through
+    let sample_docs = vec![
+        "Machine learning algorithms for data analysis",
+        "Introduction to artificial intelligence and neural networks",
+        "Database optimization techniques and performance tuning",
+        "Web development with modern JavaScript frameworks"
+    ];
+
+    for content in &sample_docs {
+        let _inserted: serde_json::Value = client.query("InsertDocument", &json!({
+            "content": content,
+            "created_at": Utc::now().to_rfc3339(),
+        })).await?;
+    }
+
+    // Now search for keywords
+    let result: serde_json::Value = client.query("SearchKeyword", &json!({
+        "keywords": "machine learning algorithms",
+        "limit": 5,
+    })).await?;
+
+    println!("Search results: {result:#?}");
+
+    Ok(())
 }
 ```
 
-In query.hx:
+```go Go [expandable]
+package main
 
-```rust
-QUERY SearchKeyword(keywords: String, k: I64) =>
-    // Search for the node in the graph (returns k results)
-    documents <- SearchV<Document>(keywords, k)
-    RETURN documents
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First insert some documents to search through
+    sampleDocs := []string{
+        "Machine learning algorithms for data analysis",
+        "Introduction to artificial intelligence and neural networks",
+        "Database optimization techniques and performance tuning",
+        "Web development with modern JavaScript frameworks",
+    }
+
+    for _, content := range sampleDocs {
+        insertPayload := map[string]any{
+            "content":    content,
+            "created_at": time.Now().UTC().Format(time.RFC3339),
+        }
+
+        var inserted map[string]any
+        if err := client.Query("InsertDocument", helix.WithData(insertPayload)).Scan(&inserted); err != nil {
+            log.Fatalf("InsertDocument failed: %s", err)
+        }
+    }
+
+    // Now search for keywords
+    searchPayload := map[string]any{
+        "keywords": "machine learning algorithms",
+        "limit":    int64(5),
+    }
+
+    var result map[string]any
+    if err := client.Query("SearchKeyword", helix.WithData(searchPayload)).Scan(&result); err != nil {
+        log.Fatalf("SearchKeyword failed: %s", err)
+    }
+
+    fmt.Printf("Search results: %#v\n", result)
+}
 ```
 
----
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First insert some documents to search through
+    const sampleDocs = [
+        "Machine learning algorithms for data analysis",
+        "Introduction to artificial intelligence and neural networks",
+        "Database optimization techniques and performance tuning",
+        "Web development with modern JavaScript frameworks"
+    ];
+
+    for (const content of sampleDocs) {
+        await client.query("InsertDocument", {
+            content: content,
+            created_at: new Date().toISOString(),
+        });
+    }
+
+    // Now search for keywords
+    const result = await client.query("SearchKeyword", {
+        keywords: "machine learning algorithms",
+        limit: 5
+    });
+
+    console.log("Search results:", result);
+}
+
+main().catch((err) => {
+    console.error("SearchKeyword query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# First insert some documents to search through
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Machine learning algorithms for data analysis","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Introduction to artificial intelligence and neural networks","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Database optimization techniques and performance tuning","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+# Now search for keywords
+curl -X POST \
+  http://localhost:6969/SearchKeyword \
+  -H 'Content-Type: application/json' \
+  -d '{"keywords":"machine learning algorithms","limit":5}'
+```
+</CodeGroup>
+
+### Example 2: Keyword search with postfiltering
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY SearchRecentKeywords (keywords: String, limit: I64, cutoff_date: Date) =>
+    documents <- SearchBM25<Document>(keywords, limit)::WHERE(_::{created_at}::GTE(cutoff_date))
+    RETURN documents
+
+QUERY InsertDocument (content: String, created_at: Date) =>
+    document <- AddN<Document>({ content: content, created_at: created_at })
+    RETURN document
+```
+
+```rust Schema
+N::Document {
+    content: String,
+    created_at: Date
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+
+```python Python [expandable]
+from datetime import datetime, timezone, timedelta
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First insert some documents with different dates
+recent_date = datetime.now(timezone.utc).isoformat()
+old_date = (datetime.now(timezone.utc) - timedelta(days=15)).isoformat()
+
+# Insert recent documents
+recent_docs = [
+    "Modern machine learning techniques in 2024",
+    "Latest artificial intelligence research papers"
+]
+
+for content in recent_docs:
+    client.query("InsertDocument", {
+        "content": content,
+        "created_at": recent_date,
+    })
+
+# Insert old documents
+old_docs = [
+    "Traditional machine learning approaches from last year",
+    "Historical AI development milestones"
+]
+
+for content in old_docs:
+    client.query("InsertDocument", {
+        "content": content,
+        "created_at": old_date,
+    })
+
+# Search for documents created in the last 10 days
+cutoff_date = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+
+result = client.query("SearchRecentKeywords", {
+    "keywords": "machine learning artificial intelligence",
+    "limit": 5,
+    "cutoff_date": cutoff_date,
+})
+
+print(result)
+```
+
+```rust Rust [expandable]
+use chrono::{Duration, Utc};
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First insert some documents with different dates
+    let recent_date = Utc::now().to_rfc3339();
+    let old_date = (Utc::now() - Duration::days(15)).to_rfc3339();
+
+    // Insert recent documents
+    let recent_docs = vec![
+        "Modern machine learning techniques in 2024",
+        "Latest artificial intelligence research papers"
+    ];
+
+    for content in &recent_docs {
+        let _inserted: serde_json::Value = client.query("InsertDocument", &json!({
+            "content": content,
+            "created_at": recent_date,
+        })).await?;
+    }
+
+    // Insert old documents
+    let old_docs = vec![
+        "Traditional machine learning approaches from last year",
+        "Historical AI development milestones"
+    ];
+
+    for content in &old_docs {
+        let _inserted: serde_json::Value = client.query("InsertDocument", &json!({
+            "content": content,
+            "created_at": old_date,
+        })).await?;
+    }
+
+    // Search for documents created in the last 10 days
+    let cutoff_date = (Utc::now() - Duration::days(10)).to_rfc3339();
+
+    let result: serde_json::Value = client.query("SearchRecentKeywords", &json!({
+        "keywords": "machine learning artificial intelligence",
+        "limit": 5,
+        "cutoff_date": cutoff_date,
+    })).await?;
+
+    println!("Filtered search results: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First insert some documents with different dates
+    recentDate := time.Now().UTC().Format(time.RFC3339)
+    oldDate := time.Now().UTC().AddDate(0, 0, -15).Format(time.RFC3339)
+
+    // Insert recent documents
+    recentDocs := []string{
+        "Modern machine learning techniques in 2024",
+        "Latest artificial intelligence research papers",
+    }
+
+    for _, content := range recentDocs {
+        insertPayload := map[string]any{
+            "content":    content,
+            "created_at": recentDate,
+        }
+        var inserted map[string]any
+        if err := client.Query("InsertDocument", helix.WithData(insertPayload)).Scan(&inserted); err != nil {
+            log.Fatalf("InsertDocument (recent) failed: %s", err)
+        }
+    }
+
+    // Insert old documents
+    oldDocs := []string{
+        "Traditional machine learning approaches from last year",
+        "Historical AI development milestones",
+    }
+
+    for _, content := range oldDocs {
+        insertPayload := map[string]any{
+            "content":    content,
+            "created_at": oldDate,
+        }
+        var inserted map[string]any
+        if err := client.Query("InsertDocument", helix.WithData(insertPayload)).Scan(&inserted); err != nil {
+            log.Fatalf("InsertDocument (old) failed: %s", err)
+        }
+    }
+
+    // Search for documents created in the last 10 days
+    cutoffDate := time.Now().UTC().AddDate(0, 0, -10).Format(time.RFC3339)
+
+    searchPayload := map[string]any{
+        "keywords":    "machine learning artificial intelligence",
+        "limit":       int64(5),
+        "cutoff_date": cutoffDate,
+    }
+
+    var result map[string]any
+    if err := client.Query("SearchRecentKeywords", helix.WithData(searchPayload)).Scan(&result); err != nil {
+        log.Fatalf("SearchRecentKeywords failed: %s", err)
+    }
+
+    fmt.Printf("Filtered search results: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First insert some documents with different dates
+    const recentDate = new Date().toISOString();
+    const oldDate = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Insert recent documents
+    const recentDocs = [
+        "Modern machine learning techniques in 2024",
+        "Latest artificial intelligence research papers"
+    ];
+
+    for (const content of recentDocs) {
+        await client.query("InsertDocument", {
+            content: content,
+            created_at: recentDate,
+        });
+    }
+
+    // Insert old documents
+    const oldDocs = [
+        "Traditional machine learning approaches from last year",
+        "Historical AI development milestones"
+    ];
+
+    for (const content of oldDocs) {
+        await client.query("InsertDocument", {
+            content: content,
+            created_at: oldDate,
+        });
+    }
+
+    // Search for documents created in the last 10 days
+    const cutoffDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+
+    const result = await client.query("SearchRecentKeywords", {
+        keywords: "machine learning artificial intelligence",
+        limit: 5,
+        cutoff_date: cutoffDate,
+    });
+
+    console.log("Filtered search results:", result);
+}
+
+main().catch((err) => {
+    console.error("SearchRecentKeywords query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Insert recent documents
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Modern machine learning techniques in 2024","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Latest artificial intelligence research papers","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+# Insert old documents (15 days ago)
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Traditional machine learning approaches from last year","created_at":"'"$(date -u -d '15 days ago' +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+# Search for documents created in the last 10 days
+curl -X POST \
+  http://localhost:6969/SearchRecentKeywords \
+  -H 'Content-Type: application/json' \
+  -d '{"keywords":"machine learning artificial intelligence","limit":5,"cutoff_date":"'"$(date -u -d '10 days ago' +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+</CodeGroup>
 
