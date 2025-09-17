@@ -12,11 +12,149 @@ Select vectors from your graph to begin traversal.
 V<Type>(vector_id)
 ```
 
-**Example:**
+### Example 1: Selecting a vector by ID
 
-```rust [expandable]
-QUERY GetVector(vectorID: ID) =>
-    // Select a specific Chunk vector by ID
-    vector <- V<Chunk>(vectorID)
-    RETURN vector
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY GetDocumentVector(vector_id: ID) =>
+    doc_vector <- V<Document>(vector_id)
+    RETURN doc_vector
+
+QUERY CreateDocumentVector (vector: [F64], content: String) =>
+    doc_vector <- AddV<Document>(vector, {
+        content: content
+    })
+    RETURN doc_vector
 ```
+
+```rust Schema
+V::Document {
+    content: String,
+}
+```
+
+</CodeGroup>
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+vector_payload = [0.12, 0.34, 0.56, 0.78]
+
+created = client.query("CreateDocumentVector", {
+    "vector": vector_payload,
+    "content": "Chunk about vector queries.",
+})
+vector_id = created[0]["doc_vector"]["id"]
+
+result = client.query("GetDocumentVector", {"vector_id": vector_id})
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let created: serde_json::Value = client
+        .query(
+            "CreateDocumentVector",
+            &json!({
+                "vector": [0.12, 0.34, 0.56, 0.78],
+                "content": "Chunk about vector queries.",
+            }),
+        )
+        .await?;
+    let vector_id = created["doc_vector"]["id"].as_str().unwrap().to_string();
+
+    let result: serde_json::Value = client
+        .query("GetDocumentVector", &json!({ "vector_id": vector_id }))
+        .await?;
+
+    println!("GetDocumentVector result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    createPayload := map[string]any{
+        "vector":  []float64{0.12, 0.34, 0.56, 0.78},
+        "content": "Chunk about vector queries.",
+    }
+
+    var created map[string]any
+    if err := client.Query("CreateDocumentVector", helix.WithData(createPayload)).Scan(&created); err != nil {
+        log.Fatalf("CreateDocumentVector failed: %s", err)
+    }
+
+    docVector := created["doc_vector"].(map[string]any)
+    vectorID := docVector["id"].(string)
+
+    var result map[string]any
+    if err := client.Query("GetDocumentVector", helix.WithData(map[string]any{
+        "vector_id": vectorID,
+    })).Scan(&result); err != nil {
+        log.Fatalf("GetDocumentVector failed: %s", err)
+    }
+
+    fmt.Printf("GetDocumentVector result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const created = await client.query("CreateDocumentVector", {
+        vector: [0.12, 0.34, 0.56, 0.78],
+        content: "Chunk about vector queries.",
+    });
+    const vectorId: string = created.doc_vector.id;
+
+    const result = await client.query("GetDocumentVector", {
+        vector_id: vectorId,
+    });
+
+    console.log("GetDocumentVector result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetDocumentVector query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateDocumentVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.12,0.34,0.56,0.78],"content":"Chunk about vector queries."}'
+
+# capture returned vector ID as <vector_id>
+
+curl -X POST \
+  http://localhost:6969/GetDocumentVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector_id":"<vector_id>"}'
+```
+
+</CodeGroup>

@@ -12,16 +12,320 @@ Select edges from your graph to begin traversal.
 E<Type>(edge_id)
 ```
 
-**Example:**
+### Example 1: Selecting a follows edge by ID
 
-```rust [expandable]
-QUERY GetFollowers(edgeID: ID) =>
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY GetFollowEdge(edge_id: ID) =>
+    follow_edge <- E<Follows>(edge_id)
+    RETURN follow_edge
 
-    // Select all Follows edges
-    specific_edges <- E<Follows>
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
 
-    // Select a specific Follows edge by ID
-    follow_edge <- E<Follows>(edgeID)
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
+    follows <- AddE<Follows>::From(user1_id)::To(user2_id)
+    RETURN follows
 
-    RETURN specific_edges, follow_edge
 ```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+</CodeGroup>
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreateUser", {
+    "name": "Alice",
+    "age": 25,
+    "email": "alice@example.com",
+})
+alice_id = alice[0]["user"]["id"]
+
+bob = client.query("CreateUser", {
+    "name": "Bob",
+    "age": 28,
+    "email": "bob@example.com",
+})
+bob_id = bob[0]["user"]["id"]
+
+follows = client.query("CreateRelationships", {
+    "user1_id": alice_id,
+    "user2_id": bob_id,
+})
+edge_id = follows[0]["follows"]["id"]
+
+result = client.query("GetFollowEdge", {"edge_id": edge_id})
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let alice: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Alice",
+        "age": 25,
+        "email": "alice@example.com",
+    })).await?;
+    let alice_id = alice["user"]["id"].as_str().unwrap().to_string();
+
+    let bob: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Bob",
+        "age": 28,
+        "email": "bob@example.com",
+    })).await?;
+    let bob_id = bob["user"]["id"].as_str().unwrap().to_string();
+
+    let follows: serde_json::Value = client.query("CreateRelationships", &json!({
+        "user1_id": alice_id,
+        "user2_id": bob_id,
+    })).await?;
+    let edge_id = follows["follows"]["id"].as_str().unwrap().to_string();
+
+    let result: serde_json::Value = client.query("GetFollowEdge", &json!({
+        "edge_id": edge_id,
+    })).await?;
+
+    println!("GetFollowEdge result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    alicePayload := map[string]any{
+        "name":  "Alice",
+        "age":   uint8(25),
+        "email": "alice@example.com",
+    }
+
+    var alice map[string]any
+    if err := client.Query("CreateUser", helix.WithData(alicePayload)).Scan(&alice); err != nil {
+        log.Fatalf("CreateUser (Alice) failed: %s", err)
+    }
+    aliceID := alice["user"].(map[string]any)["id"].(string)
+
+    bobPayload := map[string]any{
+        "name":  "Bob",
+        "age":   uint8(28),
+        "email": "bob@example.com",
+    }
+
+    var bob map[string]any
+    if err := client.Query("CreateUser", helix.WithData(bobPayload)).Scan(&bob); err != nil {
+        log.Fatalf("CreateUser (Bob) failed: %s", err)
+    }
+    bobID := bob["user"].(map[string]any)["id"].(string)
+
+    followsPayload := map[string]any{
+        "user1_id": aliceID,
+        "user2_id": bobID,
+    }
+
+    var follows map[string]any
+    if err := client.Query("CreateRelationships", helix.WithData(followsPayload)).Scan(&follows); err != nil {
+        log.Fatalf("CreateRelationships failed: %s", err)
+    }
+    edgeID := follows["follows"].(map[string]any)["id"].(string)
+
+    var result map[string]any
+    if err := client.Query("GetFollowEdge", helix.WithData(map[string]any{"edge_id": edgeID})).Scan(&result); err != nil {
+        log.Fatalf("GetFollowEdge failed: %s", err)
+    }
+
+    fmt.Printf("GetFollowEdge result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        age: 25,
+        email: "alice@example.com",
+    });
+    const aliceId: string = alice.user.id;
+
+    const bob = await client.query("CreateUser", {
+        name: "Bob",
+        age: 28,
+        email: "bob@example.com",
+    });
+    const bobId: string = bob.user.id;
+
+    const follows = await client.query("CreateRelationships", {
+        user1_id: aliceId,
+        user2_id: bobId,
+    });
+    const edgeId: string = follows.follows.id;
+
+    const result = await client.query("GetFollowEdge", {
+        edge_id: edgeId,
+    });
+
+    console.log("GetFollowEdge result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetFollowEdge query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+# capture returned Alice ID as <alice_id>
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":28,"email":"bob@example.com"}'
+
+# capture returned Bob ID as <bob_id>
+
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{"user1_id":"<alice_id>","user2_id":"<bob_id>"}'
+
+# capture returned edge ID as <edge_id>
+
+curl -X POST \
+  http://localhost:6969/GetFollowEdge \
+  -H 'Content-Type: application/json' \
+  -d '{"edge_id":"<edge_id>"}'
+```
+
+</CodeGroup>
+
+### Example 2: Selecting all follows edges
+
+<CodeGroup>
+```rust Query
+QUERY GetAllFollows () =>
+    follows <- E<Follows>
+    RETURN follows
+```
+
+```rust Schema
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+</CodeGroup>
+
+<CodeGroup>
+```python Python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+result = client.query("GetAllFollows")
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let result: serde_json::Value = client.query("GetAllFollows", &()).await?;
+    println!("GetAllFollows result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    var result map[string]any
+    if err := client.Query("GetAllFollows").Scan(&result); err != nil {
+        log.Fatalf("GetAllFollows failed: %s", err)
+    }
+
+    fmt.Printf("GetAllFollows result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("GetAllFollows", {});
+    console.log("GetAllFollows result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetAllFollows query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/GetAllFollows \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+</CodeGroup>

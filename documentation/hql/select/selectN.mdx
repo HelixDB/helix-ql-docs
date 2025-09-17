@@ -15,7 +15,7 @@ N<Type>(node_id)
 ### Example 1: Selecting a user by ID
 
 <CodeGroup>
-```rust Query
+```rust Query focus={1-3} [expandable]
 QUERY GetUser(user_id: ID) =>
     user <- N<User>(user_id)
     RETURN user
@@ -40,7 +40,7 @@ N::User {
 </CodeGroup>
 
 <CodeGroup>
-```python Python
+```python Python [expandable]
 from helix.client import Client
 
 client = Client(local=True, port=6969)
@@ -56,7 +56,7 @@ result = client.query("GetUser", {"user_id": user_id})
 print(result)
 ```
 
-```rust Rust
+```rust Rust [expandable]
 use helix_rs::{HelixDB, HelixDBClient};
 use serde_json::json;
 
@@ -81,7 +81,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-```go Go
+```go Go [expandable]
 package main
 
 import (
@@ -116,7 +116,7 @@ func main() {
 }
 ```
 
-```typescript TypeScript
+```typescript TypeScript [expandable]
 import HelixDB from "helix-ts";
 
 async function main() {
@@ -141,7 +141,7 @@ main().catch((err) => {
 });
 ```
 
-```bash Curl
+```bash Curl [expandable]
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
