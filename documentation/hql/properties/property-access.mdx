@@ -54,7 +54,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create some users
 users = [
     {"name": "Alice", "age": 25, "email": "alice@example.com"},
     {"name": "Bob", "age": 30, "email": "bob@example.com"},
@@ -65,7 +64,6 @@ users = [
 for user in users:
     client.query("CreateUser", user)
 
-# Get only name and age properties
 result = client.query("GetUserBasicInfo", {})
 print("User basic info:", result)
 ```
@@ -78,7 +76,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create some users
     let users = vec![
         ("Alice", 25, "alice@example.com"),
         ("Bob", 30, "bob@example.com"),
@@ -94,7 +91,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Get only name and age properties
     let result: serde_json::Value = client.query("GetUserBasicInfo", &json!({})).await?;
     println!("User basic info: {result:#?}");
 
@@ -115,7 +111,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create some users
     users := []map[string]any{
         {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
         {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
@@ -130,7 +125,6 @@ func main() {
         }
     }
 
-    // Get only name and age properties
     var result map[string]any
     if err := client.Query("GetUserBasicInfo", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetUserBasicInfo failed: %s", err)
@@ -146,7 +140,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create some users
     const users = [
         { name: "Alice", age: 25, email: "alice@example.com" },
         { name: "Bob", age: 30, email: "bob@example.com" },
@@ -158,7 +151,6 @@ async function main() {
         await client.query("CreateUser", user);
     }
 
-    // Get only name and age properties
     const result = await client.query("GetUserBasicInfo", {});
     console.log("User basic info:", result);
 }
@@ -169,7 +161,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create some users
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -190,7 +181,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Diana","age":22,"email":"diana@example.com"}'
 
-# Get only name and age properties
 curl -X POST \
   http://localhost:6969/GetUserBasicInfo \
   -H 'Content-Type: application/json' \
@@ -233,7 +223,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create some users
 users = [
     {"name": "Alice", "age": 25, "email": "alice@example.com"},
     {"name": "Bob", "age": 30, "email": "bob@example.com"},
@@ -244,7 +233,6 @@ users = [
 for user in users:
     client.query("CreateUser", user)
 
-# Get properties with renamed fields
 result = client.query("GetUserDisplayInfo", {})
 print("User display info:", result)
 ```
@@ -257,7 +245,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create some users
     let users = vec![
         ("Alice", 25, "alice@example.com"),
         ("Bob", 30, "bob@example.com"),
@@ -273,7 +260,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Get properties with renamed fields
     let result: serde_json::Value = client.query("GetUserDisplayInfo", &json!({})).await?;
     println!("User display info: {result:#?}");
 
@@ -294,7 +280,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create some users
     users := []map[string]any{
         {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
         {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
@@ -309,7 +294,6 @@ func main() {
         }
     }
 
-    // Get properties with renamed fields
     var result map[string]any
     if err := client.Query("GetUserDisplayInfo", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetUserDisplayInfo failed: %s", err)
@@ -325,7 +309,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create some users
     const users = [
         { name: "Alice", age: 25, email: "alice@example.com" },
         { name: "Bob", age: 30, email: "bob@example.com" },
@@ -337,7 +320,6 @@ async function main() {
         await client.query("CreateUser", user);
     }
 
-    // Get properties with renamed fields
     const result = await client.query("GetUserDisplayInfo", {});
     console.log("User display info:", result);
 }
@@ -348,7 +330,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create some users
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -369,7 +350,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Diana","age":22,"email":"diana@example.com"}'
 
-# Get properties with renamed fields
 curl -X POST \
   http://localhost:6969/GetUserDisplayInfo \
   -H 'Content-Type: application/json' \
@@ -430,7 +410,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create some users
 users = [
     {"name": "Alice", "age": 25, "email": "alice@example.com"},
     {"name": "Bob", "age": 30, "email": "bob@example.com"},
@@ -440,7 +419,6 @@ users = [
 for user in users:
     client.query("CreateUser", user)
 
-# Get only the IDs
 result = client.query("GetUserIDs", {})
 print("User IDs:", result)
 ```
@@ -453,7 +431,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create some users
     let users = vec![
         ("Alice", 25, "alice@example.com"),
         ("Bob", 30, "bob@example.com"),
@@ -468,7 +445,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Get only the IDs
     let result: serde_json::Value = client.query("GetUserIDs", &json!({})).await?;
     println!("User IDs: {result:#?}");
 
@@ -489,7 +465,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create some users
     users := []map[string]any{
         {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
         {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
@@ -503,7 +478,6 @@ func main() {
         }
     }
 
-    // Get only the IDs
     var result map[string]any
     if err := client.Query("GetUserIDs", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetUserIDs failed: %s", err)
@@ -519,7 +493,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create some users
     const users = [
         { name: "Alice", age: 25, email: "alice@example.com" },
         { name: "Bob", age: 30, email: "bob@example.com" },
@@ -530,7 +503,6 @@ async function main() {
         await client.query("CreateUser", user);
     }
 
-    // Get only the IDs
     const result = await client.query("GetUserIDs", {});
     console.log("User IDs:", result);
 }
@@ -541,7 +513,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create some users
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -557,7 +528,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
 
-# Get only the IDs
 curl -X POST \
   http://localhost:6969/GetUserIDs \
   -H 'Content-Type: application/json' \
@@ -620,7 +590,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create some users
 users = [
     {"name": "Alice", "age": 25, "email": "alice@example.com"},
     {"name": "Bob", "age": 30, "email": "bob@example.com"},
@@ -630,7 +599,6 @@ users = [
 for user in users:
     client.query("CreateUser", user)
 
-# Get users with ID aliased as userID and all other properties
 result = client.query("GetUsersWithAlias", {})
 print("Users with alias:", result)
 ```
@@ -643,7 +611,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create some users
     let users = vec![
         ("Alice", 25, "alice@example.com"),
         ("Bob", 30, "bob@example.com"),
@@ -658,7 +625,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Get users with ID aliased as userID and all other properties
     let result: serde_json::Value = client.query("GetUsersWithAlias", &json!({})).await?;
     println!("Users with alias: {result:#?}");
 
@@ -679,7 +645,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create some users
     users := []map[string]any{
         {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
         {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
@@ -693,7 +658,6 @@ func main() {
         }
     }
 
-    // Get users with ID aliased as userID and all other properties
     var result map[string]any
     if err := client.Query("GetUsersWithAlias", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetUsersWithAlias failed: %s", err)
@@ -709,7 +673,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create some users
     const users = [
         { name: "Alice", age: 25, email: "alice@example.com" },
         { name: "Bob", age: 30, email: "bob@example.com" },
@@ -720,7 +683,6 @@ async function main() {
         await client.query("CreateUser", user);
     }
 
-    // Get users with ID aliased as userID and all other properties
     const result = await client.query("GetUsersWithAlias", {});
     console.log("Users with alias:", result);
 }
@@ -731,7 +693,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create some users
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -747,7 +708,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
 
-# Get users with ID aliased as userID and all other properties
 curl -X POST \
   http://localhost:6969/GetUsersWithAlias \
   -H 'Content-Type: application/json' \

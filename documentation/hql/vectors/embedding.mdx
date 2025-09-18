@@ -169,7 +169,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First insert some text-based vectors
 sample_texts = [
     "Artificial intelligence is revolutionizing automation",
     "Machine learning algorithms for predictive analytics",
@@ -182,7 +181,6 @@ for text in sample_texts:
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
 
-# Now search with text
 result = client.query("SearchWithText", {
     "query": "artificial intelligence and automation",
     "limit": 5,
@@ -200,7 +198,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First insert some text-based vectors
     let sample_texts = vec![
         "Artificial intelligence is revolutionizing automation",
         "Machine learning algorithms for predictive analytics",
@@ -214,7 +211,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Now search with text
     let result: serde_json::Value = client.query("SearchWithText", &json!({
         "query": "artificial intelligence and automation",
         "limit": 5,
@@ -240,7 +236,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First insert some text-based vectors
     sampleTexts := []string{
         "Artificial intelligence is revolutionizing automation",
         "Machine learning algorithms for predictive analytics",
@@ -259,7 +254,6 @@ func main() {
         }
     }
 
-    // Now search with text
     searchPayload := map[string]any{
         "query": "artificial intelligence and automation",
         "limit": int64(5),
@@ -280,7 +274,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First insert some text-based vectors
     const sampleTexts = [
         "Artificial intelligence is revolutionizing automation",
         "Machine learning algorithms for predictive analytics",
@@ -294,7 +287,6 @@ async function main() {
         });
     }
 
-    // Now search with text
     const result = await client.query("SearchWithText", {
         query: "artificial intelligence and automation",
         limit: 5,
@@ -309,7 +301,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First insert some text-based vectors
 curl -X POST \
   http://localhost:6969/InsertTextAsVector \
   -H 'Content-Type: application/json' \
@@ -325,7 +316,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"content":"Deep learning applications in computer vision","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
 
-# Now search with text
 curl -X POST \
   http://localhost:6969/SearchWithText \
   -H 'Content-Type: application/json' \
@@ -382,14 +372,12 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create a user
 user = client.query("CreateUser", {
     "name": "Alice Johnson",
     "email": "alice@example.com",
 })
 user_id = user[0]["user"]["id"]
 
-# Now create a document and connect it to the user
 result = client.query("CreateUserDocument", {
     "user_id": user_id,
     "content": "This is my personal note about project planning.",
@@ -408,14 +396,12 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create a user
     let user: serde_json::Value = client.query("CreateUser", &json!({
         "name": "Alice Johnson",
         "email": "alice@example.com",
     })).await?;
     let user_id = user["user"]["id"].as_str().unwrap().to_string();
 
-    // Now create a document and connect it to the user
     let result: serde_json::Value = client.query("CreateUserDocument", &json!({
         "user_id": user_id,
         "content": "This is my personal note about project planning.",
@@ -442,7 +428,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create a user
     userPayload := map[string]any{
         "name":  "Alice Johnson",
         "email": "alice@example.com",
@@ -455,7 +440,6 @@ func main() {
 
     userID := user["user"].(map[string]any)["id"].(string)
 
-    // Now create a document and connect it to the user
     docPayload := map[string]any{
         "user_id":    userID,
         "content":    "This is my personal note about project planning.",
@@ -477,14 +461,12 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create a user
     const user = await client.query("CreateUser", {
         name: "Alice Johnson",
         email: "alice@example.com",
     });
     const userId: string = user.user.id;
 
-    // Now create a document and connect it to the user
     const result = await client.query("CreateUserDocument", {
         user_id: userId,
         content: "This is my personal note about project planning.",
@@ -500,15 +482,11 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create a user
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Alice Johnson","email":"alice@example.com"}'
 
-# capture returned user ID as <user_id>
-
-# Now create a document and connect it to the user
 curl -X POST \
   http://localhost:6969/CreateUserDocument \
   -H 'Content-Type: application/json' \
@@ -550,23 +528,19 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First insert some documents with different dates
 recent_date = datetime.now(timezone.utc).isoformat()
 old_date = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
 
-# Insert recent document
 client.query("InsertTextAsVector", {
     "content": "Project milestone review scheduled for next week",
     "created_at": recent_date,
 })
 
-# Insert old document  
 client.query("InsertTextAsVector", {
     "content": "Weekly status report from last month",
     "created_at": old_date,
 })
 
-# Search for documents created in the last 7 days
 cutoff_date = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
 
 result = client.query("SearchRecentNotes", {
@@ -587,23 +561,19 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First insert some documents with different dates
     let recent_date = Utc::now().to_rfc3339();
     let old_date = (Utc::now() - Duration::days(10)).to_rfc3339();
 
-    // Insert recent document
     let _recent: serde_json::Value = client.query("InsertTextAsVector", &json!({
         "content": "Project milestone review scheduled for next week",
         "created_at": recent_date,
     })).await?;
 
-    // Insert old document
     let _old: serde_json::Value = client.query("InsertTextAsVector", &json!({
         "content": "Weekly status report from last month",
         "created_at": old_date,
     })).await?;
 
-    // Search for documents created in the last 7 days
     let cutoff_date = (Utc::now() - Duration::days(7)).to_rfc3339();
 
     let result: serde_json::Value = client.query("SearchRecentNotes", &json!({
@@ -632,11 +602,9 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First insert some documents with different dates
     recentDate := time.Now().UTC().Format(time.RFC3339)
     oldDate := time.Now().UTC().AddDate(0, 0, -10).Format(time.RFC3339)
 
-    // Insert recent document
     recentPayload := map[string]any{
         "content":    "Project milestone review scheduled for next week",
         "created_at": recentDate,
@@ -646,7 +614,6 @@ func main() {
         log.Fatalf("InsertTextAsVector (recent) failed: %s", err)
     }
 
-    // Insert old document
     oldPayload := map[string]any{
         "content":    "Weekly status report from last month",
         "created_at": oldDate,
@@ -656,7 +623,6 @@ func main() {
         log.Fatalf("InsertTextAsVector (old) failed: %s", err)
     }
 
-    // Search for documents created in the last 7 days
     cutoffDate := time.Now().UTC().AddDate(0, 0, -7).Format(time.RFC3339)
 
     searchPayload := map[string]any{
@@ -680,23 +646,19 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First insert some documents with different dates
     const recentDate = new Date().toISOString();
     const oldDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Insert recent document
     await client.query("InsertTextAsVector", {
         content: "Project milestone review scheduled for next week",
         created_at: recentDate,
     });
 
-    // Insert old document
     await client.query("InsertTextAsVector", {
         content: "Weekly status report from last month",
         created_at: oldDate,
     });
 
-    // Search for documents created in the last 7 days
     const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const result = await client.query("SearchRecentNotes", {
@@ -714,19 +676,16 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# Insert recent document
 curl -X POST \
   http://localhost:6969/InsertTextAsVector \
   -H 'Content-Type: application/json' \
   -d '{"content":"Project milestone review scheduled for next week","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
 
-# Insert old document (10 days ago)
 curl -X POST \
   http://localhost:6969/InsertTextAsVector \
   -H 'Content-Type: application/json' \
   -d '{"content":"Weekly status report from last month","created_at":"'"$(date -u -d '10 days ago' +"%Y-%m-%dT%H:%M:%SZ")"'"}'
 
-# Search for documents created in the last 7 days
 curl -X POST \
   http://localhost:6969/SearchRecentNotes \
   -H 'Content-Type: application/json' \

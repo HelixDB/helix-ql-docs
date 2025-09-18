@@ -57,7 +57,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create some users with all properties
 users = [
     {
         "name": "Alice",
@@ -91,7 +90,6 @@ users = [
 for user in users:
     client.query("CreateUser", user)
 
-# Get users excluding sensitive email and location
 result = client.query("GetPublicUserInfo", {})
 print("Public user info (email and location excluded):", result)
 ```
@@ -104,7 +102,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create some users with all properties
     let users = vec![
         ("Alice", 25, "alice@example.com", 42, 150, 89, "New York"),
         ("Bob", 30, "bob@example.com", 28, 203, 156, "San Francisco"),
@@ -123,7 +120,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Get users excluding sensitive email and location
     let result: serde_json::Value = client.query("GetPublicUserInfo", &json!({})).await?;
     println!("Public user info (email and location excluded): {result:#?}");
 
@@ -144,7 +140,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create some users with all properties
     users := []map[string]any{
         {
             "name": "Alice", "age": uint8(25), "email": "alice@example.com",
@@ -167,7 +162,6 @@ func main() {
         }
     }
 
-    // Get users excluding sensitive email and location
     var result map[string]any
     if err := client.Query("GetPublicUserInfo", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetPublicUserInfo failed: %s", err)
@@ -183,7 +177,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create some users with all properties
     const users = [
         {
             name: "Alice",
@@ -218,7 +211,6 @@ async function main() {
         await client.query("CreateUser", user);
     }
 
-    // Get users excluding sensitive email and location
     const result = await client.query("GetPublicUserInfo", {});
     console.log("Public user info (email and location excluded):", result);
 }
@@ -229,7 +221,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create some users with all properties
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -245,7 +236,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Charlie","age":28,"email":"charlie@example.com","posts":67,"followers":89,"following":234,"location":"London"}'
 
-# Get users excluding sensitive email and location
 curl -X POST \
   http://localhost:6969/GetPublicUserInfo \
   -H 'Content-Type: application/json' \

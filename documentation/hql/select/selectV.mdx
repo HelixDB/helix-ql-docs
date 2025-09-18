@@ -149,8 +149,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"vector":[0.12,0.34,0.56,0.78],"content":"Chunk about vector queries."}'
 
-# capture returned vector ID as <vector_id>
-
 curl -X POST \
   http://localhost:6969/GetDocumentVector \
   -H 'Content-Type: application/json' \

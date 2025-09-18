@@ -201,14 +201,10 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
 
-# capture the returned Alice ID (e.g. <alice_id>)
-
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Bob","age":28,"email":"bob@example.com"}'
-
-# capture the returned Bob ID (e.g. <bob_id>)
 
 curl -X POST \
   http://localhost:6969/CreateRelationships \
@@ -406,14 +402,10 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Charlie","age":31,"email":"charlie@example.com"}'
 
-# capture returned Charlie ID as <charlie_id>
-
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Dana","age":29,"email":"dana@example.com"}'
-
-# capture returned Dana ID as <dana_id>
 
 curl -X POST \
   http://localhost:6969/CreateFriendship \
@@ -428,7 +420,6 @@ curl -X POST \
 
 ```rust Query focus={1-5} [expandable]
 QUERY CreateRelationships (user1_id: ID, user2_name: String) =>
-    // Getting user2 by name
     user2 <- N<User>::WHERE(_::{name}::EQ(user2_name))
     follows <- AddE<Follows>::From(user1_id)::To(user2)
     RETURN follows
@@ -601,8 +592,6 @@ curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Eve","age":33,"email":"eve@example.com"}'
-
-# capture returned Eve ID as <eve_id>
 
 curl -X POST \
   http://localhost:6969/CreateUser \

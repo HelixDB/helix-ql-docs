@@ -64,7 +64,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create users with different ages
 users = [
     {"name": "Alice", "age": 25, "email": "alice@example.com"},
     {"name": "Bob", "age": 30, "email": "bob@example.com"},
@@ -77,7 +76,6 @@ users = [
 for user in users:
     client.query("CreateUser", user)
 
-# Group users by age
 result = client.query("GroupUsersByAge", {})
 print("Users grouped by age:", result)
 ```
@@ -90,7 +88,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create users with different ages
     let users = vec![
         ("Alice", 25, "alice@example.com"),
         ("Bob", 30, "bob@example.com"),
@@ -108,7 +105,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Group users by age
     let result: serde_json::Value = client.query("GroupUsersByAge", &json!({})).await?;
     println!("Users grouped by age: {result:#?}");
 
@@ -129,7 +125,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create users with different ages
     users := []map[string]any{
         {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
         {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
@@ -146,7 +141,6 @@ func main() {
         }
     }
 
-    // Group users by age
     var result map[string]any
     if err := client.Query("GroupUsersByAge", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GroupUsersByAge failed: %s", err)
@@ -162,7 +156,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create users with different ages
     const users = [
         { name: "Alice", age: 25, email: "alice@example.com" },
         { name: "Bob", age: 30, email: "bob@example.com" },
@@ -176,7 +169,6 @@ async function main() {
         await client.query("CreateUser", user);
     }
 
-    // Group users by age
     const result = await client.query("GroupUsersByAge", {});
     console.log("Users grouped by age:", result);
 }
@@ -187,7 +179,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create users with different ages
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -218,7 +209,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Frank","age":25,"email":"frank@example.com"}'
 
-# Group users by age
 curl -X POST \
   http://localhost:6969/GroupUsersByAge \
   -H 'Content-Type: application/json' \
@@ -298,7 +288,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create users with different ages
 users = [
     {"name": "Alice Johnson", "age": 25, "email": "alice@company.com"},
     {"name": "Bob Smith", "age": 30, "email": "bob@startup.io"},
@@ -311,7 +300,6 @@ users = [
 for user in users:
     client.query("CreateUser", user)
 
-# Aggregate users by age
 result = client.query("AggregateUsersByAge", {})
 print("Users aggregated by age:", result)
 ```
@@ -324,7 +312,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create users with different ages
     let users = vec![
         ("Alice Johnson", 25, "alice@company.com"),
         ("Bob Smith", 30, "bob@startup.io"),
@@ -342,7 +329,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Aggregate users by age
     let result: serde_json::Value = client.query("AggregateUsersByAge", &json!({})).await?;
     println!("Users aggregated by age: {result:#?}");
 
@@ -363,7 +349,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create users with different ages
     users := []map[string]any{
         {"name": "Alice Johnson", "age": uint8(25), "email": "alice@company.com"},
         {"name": "Bob Smith", "age": uint8(30), "email": "bob@startup.io"},
@@ -380,7 +365,6 @@ func main() {
         }
     }
 
-    // Aggregate users by age
     var result map[string]any
     if err := client.Query("AggregateUsersByAge", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("AggregateUsersByAge failed: %s", err)
@@ -396,7 +380,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create users with different ages
     const users = [
         { name: "Alice Johnson", age: 25, email: "alice@company.com" },
         { name: "Bob Smith", age: 30, email: "bob@startup.io" },
@@ -410,7 +393,6 @@ async function main() {
         await client.query("CreateUser", user);
     }
 
-    // Aggregate users by age
     const result = await client.query("AggregateUsersByAge", {});
     console.log("Users aggregated by age:", result);
 }
@@ -421,7 +403,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create users with different ages
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -452,7 +433,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Frank Miller","age":25,"email":"frank@startup.io"}'
 
-# Aggregate users by age
 curl -X POST \
   http://localhost:6969/AggregateUsersByAge \
   -H 'Content-Type: application/json' \

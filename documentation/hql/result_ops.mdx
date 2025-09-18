@@ -51,7 +51,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create some users
 users = [
     {"name": "Alice", "age": 25, "email": "alice@example.com"},
     {"name": "Bob", "age": 30, "email": "bob@example.com"},
@@ -62,7 +61,6 @@ users = [
 for user in users:
     client.query("CreateUser", user)
 
-# Count total users
 result = client.query("GetUserCount", {})
 print(f"Total users: {result}")
 ```
@@ -75,7 +73,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create some users
     let users = vec![
         ("Alice", 25, "alice@example.com"),
         ("Bob", 30, "bob@example.com"),
@@ -91,7 +88,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Count total users
     let result: serde_json::Value = client.query("GetUserCount", &json!({})).await?;
     println!("Total users: {result:#?}");
 
@@ -112,7 +108,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create some users
     users := []map[string]any{
         {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
         {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
@@ -127,7 +122,6 @@ func main() {
         }
     }
 
-    // Count total users
     var result map[string]any
     if err := client.Query("GetUserCount", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetUserCount failed: %s", err)
@@ -143,7 +137,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create some users
     const users = [
         { name: "Alice", age: 25, email: "alice@example.com" },
         { name: "Bob", age: 30, email: "bob@example.com" },
@@ -155,7 +148,6 @@ async function main() {
         await client.query("CreateUser", user);
     }
 
-    // Count total users
     const result = await client.query("GetUserCount", {});
     console.log("Total users:", result);
 }
@@ -166,7 +158,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create some users
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -187,7 +178,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Diana","age":22,"email":"diana@example.com"}'
 
-# Count total users
 curl -X POST \
   http://localhost:6969/GetUserCount \
   -H 'Content-Type: application/json' \
@@ -249,7 +239,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create many users
 for i in range(20):
     client.query("CreateUser", {
         "name": f"User{i}",
@@ -257,15 +246,12 @@ for i in range(20):
         "email": f"user{i}@example.com"
     })
 
-# Get first 5 users (page 1)
 page1 = client.query("GetUsersPaginated", {"start": 0, "end": 5})
 print("Page 1:", page1)
 
-# Get next 5 users (page 2)
 page2 = client.query("GetUsersPaginated", {"start": 5, "end": 10})
 print("Page 2:", page2)
 
-# Get users 10-15 (page 3)
 page3 = client.query("GetUsersPaginated", {"start": 10, "end": 15})
 print("Page 3:", page3)
 ```
@@ -278,7 +264,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create many users
     for i in 0..20 {
         let _created: serde_json::Value = client.query("CreateUser", &json!({
             "name": format!("User{}", i),
@@ -287,14 +272,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Get first 5 users (page 1)
     let page1: serde_json::Value = client.query("GetUsersPaginated", &json!({
         "start": 0,
         "end": 5
     })).await?;
     println!("Page 1: {page1:#?}");
 
-    // Get next 5 users (page 2)
     let page2: serde_json::Value = client.query("GetUsersPaginated", &json!({
         "start": 5,
         "end": 10
@@ -318,7 +301,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create many users
     for i := 0; i < 20; i++ {
         user := map[string]any{
             "name":  fmt.Sprintf("User%d", i),
@@ -332,7 +314,6 @@ func main() {
         }
     }
 
-    // Get first 5 users (page 1)
     page1Payload := map[string]any{"start": uint32(0), "end": uint32(5)}
     var page1 map[string]any
     if err := client.Query("GetUsersPaginated", helix.WithData(page1Payload)).Scan(&page1); err != nil {
@@ -340,7 +321,6 @@ func main() {
     }
     fmt.Printf("Page 1: %#v\n", page1)
 
-    // Get next 5 users (page 2)
     page2Payload := map[string]any{"start": uint32(5), "end": uint32(10)}
     var page2 map[string]any
     if err := client.Query("GetUsersPaginated", helix.WithData(page2Payload)).Scan(&page2); err != nil {
@@ -356,7 +336,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create many users
     for (let i = 0; i < 20; i++) {
         await client.query("CreateUser", {
             name: `User${i}`,
@@ -365,21 +344,18 @@ async function main() {
         });
     }
 
-    // Get first 5 users (page 1)
     const page1 = await client.query("GetUsersPaginated", {
         start: 0,
         end: 5
     });
     console.log("Page 1:", page1);
 
-    // Get next 5 users (page 2)
     const page2 = await client.query("GetUsersPaginated", {
         start: 5,
         end: 10
     });
     console.log("Page 2:", page2);
 
-    // Get users 10-15 (page 3)
     const page3 = await client.query("GetUsersPaginated", {
         start: 10,
         end: 15
@@ -393,7 +369,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create many users (repeat for i=0 to 19)
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -404,15 +379,11 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"User1","age":21,"email":"user1@example.com"}'
 
-# ... repeat for more users ...
-
-# Get first 5 users (page 1)
 curl -X POST \
   http://localhost:6969/GetUsersPaginated \
   -H 'Content-Type: application/json' \
   -d '{"start":0,"end":5}'
 
-# Get next 5 users (page 2)
 curl -X POST \
   http://localhost:6969/GetUsersPaginated \
   -H 'Content-Type: application/json' \
@@ -474,7 +445,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create users with different ages
 users = [
     {"name": "Alice", "age": 25, "email": "alice@example.com"},
     {"name": "Bob", "age": 45, "email": "bob@example.com"},
@@ -486,7 +456,6 @@ users = [
 for user in users:
     client.query("CreateUser", user)
 
-# Get users sorted by age (oldest first)
 result = client.query("GetUsersOldestFirst", {})
 print("Users (oldest first):", result)
 ```
@@ -499,7 +468,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create users with different ages
     let users = vec![
         ("Alice", 25, "alice@example.com"),
         ("Bob", 45, "bob@example.com"),
@@ -516,7 +484,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Get users sorted by age (oldest first)
     let result: serde_json::Value = client.query("GetUsersOldestFirst", &json!({})).await?;
     println!("Users (oldest first): {result:#?}");
 
@@ -537,7 +504,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create users with different ages
     users := []map[string]any{
         {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
         {"name": "Bob", "age": uint8(45), "email": "bob@example.com"},
@@ -553,7 +519,6 @@ func main() {
         }
     }
 
-    // Get users sorted by age (oldest first)
     var result map[string]any
     if err := client.Query("GetUsersOldestFirst", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetUsersOldestFirst failed: %s", err)
@@ -569,7 +534,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create users with different ages
     const users = [
         { name: "Alice", age: 25, email: "alice@example.com" },
         { name: "Bob", age: 45, email: "bob@example.com" },
@@ -582,7 +546,6 @@ async function main() {
         await client.query("CreateUser", user);
     }
 
-    // Get users sorted by age (oldest first)
     const result = await client.query("GetUsersOldestFirst", {});
     console.log("Users (oldest first):", result);
 }
@@ -593,7 +556,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create users with different ages
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -619,7 +581,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Eve","age":28,"email":"eve@example.com"}'
 
-# Get users sorted by age (oldest first)
 curl -X POST \
   http://localhost:6969/GetUsersOldestFirst \
   -H 'Content-Type: application/json' \
@@ -662,7 +623,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create users with different ages
 users = [
     {"name": "Alice", "age": 25, "email": "alice@example.com"},
     {"name": "Bob", "age": 45, "email": "bob@example.com"},
@@ -674,7 +634,6 @@ users = [
 for user in users:
     client.query("CreateUser", user)
 
-# Get users sorted by age (youngest first)
 result = client.query("GetUsersYoungestFirst", {})
 print("Users (youngest first):", result)
 ```
@@ -687,7 +646,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create users with different ages
     let users = vec![
         ("Alice", 25, "alice@example.com"),
         ("Bob", 45, "bob@example.com"),
@@ -704,7 +662,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Get users sorted by age (youngest first)
     let result: serde_json::Value = client.query("GetUsersYoungestFirst", &json!({})).await?;
     println!("Users (youngest first): {result:#?}");
 
@@ -725,7 +682,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create users with different ages
     users := []map[string]any{
         {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
         {"name": "Bob", "age": uint8(45), "email": "bob@example.com"},
@@ -741,7 +697,6 @@ func main() {
         }
     }
 
-    // Get users sorted by age (youngest first)
     var result map[string]any
     if err := client.Query("GetUsersYoungestFirst", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetUsersYoungestFirst failed: %s", err)
@@ -757,7 +712,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create users with different ages
     const users = [
         { name: "Alice", age: 25, email: "alice@example.com" },
         { name: "Bob", age: 45, email: "bob@example.com" },
@@ -770,7 +724,6 @@ async function main() {
         await client.query("CreateUser", user);
     }
 
-    // Get users sorted by age (youngest first)
     const result = await client.query("GetUsersYoungestFirst", {});
     console.log("Users (youngest first):", result);
 }
@@ -781,7 +734,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create users with different ages
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -807,7 +759,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Eve","age":28,"email":"eve@example.com"}'
 
-# Get users sorted by age (youngest first)
 curl -X POST \
   http://localhost:6969/GetUsersYoungestFirst \
   -H 'Content-Type: application/json' \

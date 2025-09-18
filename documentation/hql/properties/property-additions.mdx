@@ -64,7 +64,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create some users
 users = [
     {"name": "Alice", "age": 25},
     {"name": "Bob", "age": 30},
@@ -77,14 +76,12 @@ for user in users:
     result = client.query("CreateUser", user)
     user_ids.append(result[0]["user"]["id"])
 
-# Create some follow relationships (Alice gets followers)
 for i in range(1, len(user_ids)):
     client.query("CreateFollow", {
         "follower_id": user_ids[i],
-        "following_id": user_ids[0]  # Everyone follows Alice
+        "following_id": user_ids[0]
     })
 
-# Get user details with computed follower count
 result = client.query("GetUserDetails", {})
 print("User details with follower count:", result)
 ```
@@ -97,7 +94,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create some users
     let users = vec![
         ("Alice", 25),
         ("Bob", 30),
@@ -114,15 +110,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         user_ids.push(result["user"]["id"].as_str().unwrap().to_string());
     }
 
-    // Create some follow relationships (Alice gets followers)
     for i in 1..user_ids.len() {
         let _follow: serde_json::Value = client.query("CreateFollow", &json!({
             "follower_id": user_ids[i],
-            "following_id": user_ids[0] // Everyone follows Alice
+            "following_id": user_ids[0]
         })).await?;
     }
 
-    // Get user details with computed follower count
     let result: serde_json::Value = client.query("GetUserDetails", &json!({})).await?;
     println!("User details with follower count: {result:#?}");
 
@@ -143,7 +137,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create some users
     users := []map[string]any{
         {"name": "Alice", "age": uint8(25)},
         {"name": "Bob", "age": uint8(30)},
@@ -160,11 +153,10 @@ func main() {
         userIDs = append(userIDs, created["user"].(map[string]any)["id"].(string))
     }
 
-    // Create some follow relationships (Alice gets followers)
     for i := 1; i < len(userIDs); i++ {
         followPayload := map[string]any{
             "follower_id":  userIDs[i],
-            "following_id": userIDs[0], // Everyone follows Alice
+            "following_id": userIDs[0],
         }
         var follow map[string]any
         if err := client.Query("CreateFollow", helix.WithData(followPayload)).Scan(&follow); err != nil {
@@ -172,7 +164,6 @@ func main() {
         }
     }
 
-    // Get user details with computed follower count
     var result map[string]any
     if err := client.Query("GetUserDetails", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetUserDetails failed: %s", err)
@@ -188,7 +179,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create some users
     const users = [
         { name: "Alice", age: 25 },
         { name: "Bob", age: 30 },
@@ -202,15 +192,13 @@ async function main() {
         userIds.push(result.user.id);
     }
 
-    // Create some follow relationships (Alice gets followers)
     for (let i = 1; i < userIds.length; i++) {
         await client.query("CreateFollow", {
             follower_id: userIds[i],
-            following_id: userIds[0] // Everyone follows Alice
+            following_id: userIds[0]
         });
     }
 
-    // Get user details with computed follower count
     const result = await client.query("GetUserDetails", {});
     console.log("User details with follower count:", result);
 }
@@ -221,36 +209,26 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create some users
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Alice","age":25}'
-
-# Capture Alice's ID as <alice_id>
 
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Bob","age":30}'
 
-# Capture Bob's ID as <bob_id>
-
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Charlie","age":28}'
-
-# Capture Charlie's ID as <charlie_id>
 
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Diana","age":22}'
 
-# Capture Diana's ID as <diana_id>
-
-# Create follow relationships (everyone follows Alice)
 curl -X POST \
   http://localhost:6969/CreateFollow \
   -H 'Content-Type: application/json' \
@@ -266,7 +244,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"follower_id":"<diana_id>","following_id":"<alice_id>"}'
 
-# Get user details with computed follower count
 curl -X POST \
   http://localhost:6969/GetUserDetails \
   -H 'Content-Type: application/json' \

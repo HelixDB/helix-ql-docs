@@ -56,7 +56,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create some users
 users = [
     {"name": "Alice Johnson", "age": 25, "email": "alice@example.com"},
     {"name": "Bob Smith", "age": 30, "email": "bob@example.com"},
@@ -66,7 +65,6 @@ users = [
 for user in users:
     client.query("CreateUser", user)
 
-# Get users with remapped property names
 result = client.query("GetUserWithAlias", {})
 print("Users with remapped properties:", result)
 ```
@@ -79,7 +77,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create some users
     let users = vec![
         ("Alice Johnson", 25, "alice@example.com"),
         ("Bob Smith", 30, "bob@example.com"),
@@ -94,7 +91,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Get users with remapped property names
     let result: serde_json::Value = client.query("GetUserWithAlias", &json!({})).await?;
     println!("Users with remapped properties: {result:#?}");
 
@@ -115,7 +111,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create some users
     users := []map[string]any{
         {"name": "Alice Johnson", "age": uint8(25), "email": "alice@example.com"},
         {"name": "Bob Smith", "age": uint8(30), "email": "bob@example.com"},
@@ -129,7 +124,6 @@ func main() {
         }
     }
 
-    // Get users with remapped property names
     var result map[string]any
     if err := client.Query("GetUserWithAlias", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetUserWithAlias failed: %s", err)
@@ -145,7 +139,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create some users
     const users = [
         { name: "Alice Johnson", age: 25, email: "alice@example.com" },
         { name: "Bob Smith", age: 30, email: "bob@example.com" },
@@ -156,7 +149,6 @@ async function main() {
         await client.query("CreateUser", user);
     }
 
-    // Get users with remapped property names
     const result = await client.query("GetUserWithAlias", {});
     console.log("Users with remapped properties:", result);
 }
@@ -167,7 +159,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create some users
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
@@ -183,7 +174,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Charlie Brown","age":28,"email":"charlie@example.com"}'
 
-# Get users with remapped property names
 curl -X POST \
   http://localhost:6969/GetUserWithAlias \
   -H 'Content-Type: application/json' \
@@ -273,7 +263,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create a user
 user_result = client.query("CreateUser", {
     "name": "Alice Johnson",
     "age": 25,
@@ -281,7 +270,6 @@ user_result = client.query("CreateUser", {
 })
 user_id = user_result[0]["user"]["id"]
 
-# Create some posts for the user
 posts = [
     {"title": "My First Post", "content": "This is my first blog post!"},
     {"title": "Learning GraphDB", "content": "Graph databases are fascinating."},
@@ -295,7 +283,6 @@ for post in posts:
         "content": post["content"]
     })
 
-# Get user posts with nested remappings
 result = client.query("GetUserPosts", {"user_id": user_id})
 print("User posts with nested remappings:", result)
 ```
@@ -308,7 +295,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create a user
     let user_result: serde_json::Value = client.query("CreateUser", &json!({
         "name": "Alice Johnson",
         "age": 25,
@@ -316,7 +302,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     })).await?;
     let user_id = user_result["user"]["id"].as_str().unwrap();
 
-    // Create some posts for the user
     let posts = vec![
         ("My First Post", "This is my first blog post!"),
         ("Learning GraphDB", "Graph databases are fascinating."),
@@ -331,7 +316,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Get user posts with nested remappings
     let result: serde_json::Value = client.query("GetUserPosts", &json!({
         "user_id": user_id
     })).await?;
@@ -354,7 +338,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create a user
     var userResult map[string]any
     if err := client.Query("CreateUser", helix.WithData(map[string]any{
         "name": "Alice Johnson",
@@ -365,7 +348,6 @@ func main() {
     }
     userID := userResult["user"].(map[string]any)["id"].(string)
 
-    // Create some posts for the user
     posts := []map[string]string{
         {"title": "My First Post", "content": "This is my first blog post!"},
         {"title": "Learning GraphDB", "content": "Graph databases are fascinating."},
@@ -383,7 +365,6 @@ func main() {
         }
     }
 
-    // Get user posts with nested remappings
     var result map[string]any
     if err := client.Query("GetUserPosts", helix.WithData(map[string]any{
         "user_id": userID,
@@ -401,7 +382,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create a user
     const userResult = await client.query("CreateUser", {
         name: "Alice Johnson",
         age: 25,
@@ -409,7 +389,6 @@ async function main() {
     });
     const userId = userResult.user.id;
 
-    // Create some posts for the user
     const posts = [
         { title: "My First Post", content: "This is my first blog post!" },
         { title: "Learning GraphDB", content: "Graph databases are fascinating." },
@@ -424,7 +403,6 @@ async function main() {
         });
     }
 
-    // Get user posts with nested remappings
     const result = await client.query("GetUserPosts", { user_id: userId });
     console.log("User posts with nested remappings:", result);
 }
@@ -435,15 +413,11 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create a user
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Alice Johnson","age":25,"email":"alice@example.com"}'
 
-# Capture the user ID as <user_id>
-
-# Create some posts for the user
 curl -X POST \
   http://localhost:6969/CreatePost \
   -H 'Content-Type: application/json' \
@@ -459,7 +433,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"user_id":"<user_id>","title":"Weekend Plans","content":"Planning to explore the city."}'
 
-# Get user posts with nested remappings
 curl -X POST \
   http://localhost:6969/GetUserPosts \
   -H 'Content-Type: application/json' \

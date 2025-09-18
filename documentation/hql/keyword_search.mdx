@@ -50,7 +50,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First insert some documents to search through
 sample_docs = [
     "Machine learning algorithms for data analysis",
     "Introduction to artificial intelligence and neural networks",
@@ -64,7 +63,6 @@ for content in sample_docs:
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
 
-# Now search for keywords
 result = client.query("SearchKeyword", {
     "keywords": "machine learning algorithms",
     "limit": 5
@@ -82,7 +80,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First insert some documents to search through
     let sample_docs = vec![
         "Machine learning algorithms for data analysis",
         "Introduction to artificial intelligence and neural networks",
@@ -97,7 +94,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Now search for keywords
     let result: serde_json::Value = client.query("SearchKeyword", &json!({
         "keywords": "machine learning algorithms",
         "limit": 5,
@@ -123,7 +119,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First insert some documents to search through
     sampleDocs := []string{
         "Machine learning algorithms for data analysis",
         "Introduction to artificial intelligence and neural networks",
@@ -143,7 +138,6 @@ func main() {
         }
     }
 
-    // Now search for keywords
     searchPayload := map[string]any{
         "keywords": "machine learning algorithms",
         "limit":    int64(5),
@@ -164,7 +158,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First insert some documents to search through
     const sampleDocs = [
         "Machine learning algorithms for data analysis",
         "Introduction to artificial intelligence and neural networks",
@@ -179,7 +172,6 @@ async function main() {
         });
     }
 
-    // Now search for keywords
     const result = await client.query("SearchKeyword", {
         keywords: "machine learning algorithms",
         limit: 5
@@ -194,7 +186,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First insert some documents to search through
 curl -X POST \
   http://localhost:6969/InsertDocument \
   -H 'Content-Type: application/json' \
@@ -210,7 +201,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"content":"Database optimization techniques and performance tuning","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
 
-# Now search for keywords
 curl -X POST \
   http://localhost:6969/SearchKeyword \
   -H 'Content-Type: application/json' \
@@ -248,11 +238,9 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First insert some documents with different dates
 recent_date = datetime.now(timezone.utc).isoformat()
 old_date = (datetime.now(timezone.utc) - timedelta(days=15)).isoformat()
 
-# Insert recent documents
 recent_docs = [
     "Modern machine learning techniques in 2024",
     "Latest artificial intelligence research papers"
@@ -264,7 +252,6 @@ for content in recent_docs:
         "created_at": recent_date,
     })
 
-# Insert old documents
 old_docs = [
     "Traditional machine learning approaches from last year",
     "Historical AI development milestones"
@@ -276,7 +263,6 @@ for content in old_docs:
         "created_at": old_date,
     })
 
-# Search for documents created in the last 10 days
 cutoff_date = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
 
 result = client.query("SearchRecentKeywords", {
@@ -297,11 +283,9 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First insert some documents with different dates
     let recent_date = Utc::now().to_rfc3339();
     let old_date = (Utc::now() - Duration::days(15)).to_rfc3339();
 
-    // Insert recent documents
     let recent_docs = vec![
         "Modern machine learning techniques in 2024",
         "Latest artificial intelligence research papers"
@@ -314,7 +298,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Insert old documents
     let old_docs = vec![
         "Traditional machine learning approaches from last year",
         "Historical AI development milestones"
@@ -327,7 +310,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Search for documents created in the last 10 days
     let cutoff_date = (Utc::now() - Duration::days(10)).to_rfc3339();
 
     let result: serde_json::Value = client.query("SearchRecentKeywords", &json!({
@@ -356,11 +338,9 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First insert some documents with different dates
     recentDate := time.Now().UTC().Format(time.RFC3339)
     oldDate := time.Now().UTC().AddDate(0, 0, -15).Format(time.RFC3339)
 
-    // Insert recent documents
     recentDocs := []string{
         "Modern machine learning techniques in 2024",
         "Latest artificial intelligence research papers",
@@ -377,7 +357,6 @@ func main() {
         }
     }
 
-    // Insert old documents
     oldDocs := []string{
         "Traditional machine learning approaches from last year",
         "Historical AI development milestones",
@@ -394,7 +373,6 @@ func main() {
         }
     }
 
-    // Search for documents created in the last 10 days
     cutoffDate := time.Now().UTC().AddDate(0, 0, -10).Format(time.RFC3339)
 
     searchPayload := map[string]any{
@@ -418,11 +396,9 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First insert some documents with different dates
     const recentDate = new Date().toISOString();
     const oldDate = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Insert recent documents
     const recentDocs = [
         "Modern machine learning techniques in 2024",
         "Latest artificial intelligence research papers"
@@ -435,7 +411,6 @@ async function main() {
         });
     }
 
-    // Insert old documents
     const oldDocs = [
         "Traditional machine learning approaches from last year",
         "Historical AI development milestones"
@@ -448,7 +423,6 @@ async function main() {
         });
     }
 
-    // Search for documents created in the last 10 days
     const cutoffDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
 
     const result = await client.query("SearchRecentKeywords", {
@@ -466,7 +440,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# Insert recent documents
 curl -X POST \
   http://localhost:6969/InsertDocument \
   -H 'Content-Type: application/json' \
@@ -477,13 +450,11 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"content":"Latest artificial intelligence research papers","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
 
-# Insert old documents (15 days ago)
 curl -X POST \
   http://localhost:6969/InsertDocument \
   -H 'Content-Type: application/json' \
   -d '{"content":"Traditional machine learning approaches from last year","created_at":"'"$(date -u -d '15 days ago' +"%Y-%m-%dT%H:%M:%SZ")"'"}'
 
-# Search for documents created in the last 10 days
 curl -X POST \
   http://localhost:6969/SearchRecentKeywords \
   -H 'Content-Type: application/json' \

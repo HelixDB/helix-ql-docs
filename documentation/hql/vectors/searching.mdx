@@ -52,7 +52,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First insert a vector to search for
 vector_data = [0.1, 0.2, 0.3, 0.4]
 inserted = client.query("InsertVector", {
     "vector": vector_data,
@@ -60,7 +59,6 @@ inserted = client.query("InsertVector", {
     "created_at": datetime.now(timezone.utc).isoformat(),
 })
 
-# Now search for similar vectors
 result = client.query("SearchVector", {
     "vector": vector_data,
     "limit": 10
@@ -79,14 +77,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let vector_data = vec![0.1, 0.2, 0.3, 0.4];
 
-    // First insert a vector to search for
     let _inserted: serde_json::Value = client.query("InsertVector", &json!({
         "vector": vector_data,
         "content": "Sample document content",
         "created_at": Utc::now().to_rfc3339(),
     })).await?;
 
-    // Now search for similar vectors
     let result: serde_json::Value = client.query("SearchVector", &json!({
         "vector": vector_data,
         "limit": 10,
@@ -114,7 +110,6 @@ func main() {
 
     vectorData := []float64{0.1, 0.2, 0.3, 0.4}
 
-    // First insert a vector to search for
     insertPayload := map[string]any{
         "vector":     vectorData,
         "content":    "Sample document content",
@@ -126,7 +121,6 @@ func main() {
         log.Fatalf("InsertVector failed: %s", err)
     }
 
-    // Now search for similar vectors
     searchPayload := map[string]any{
         "vector": vectorData,
         "limit":  int64(10),
@@ -149,14 +143,12 @@ async function main() {
 
     const vectorData = [0.1, 0.2, 0.3, 0.4];
 
-    // First insert a vector to search for
     const inserted = await client.query("InsertVector", {
         vector: vectorData,
         content: "Sample document content",
         created_at: new Date().toISOString(),
     });
 
-    // Now search for similar vectors
     const result = await client.query("SearchVector", {
         vector: vectorData,
         limit: 10,
@@ -171,13 +163,11 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First insert a vector to search for
 curl -X POST \
   http://localhost:6969/InsertVector \
   -H 'Content-Type: application/json' \
   -d '{"vector":[0.1,0.2,0.3,0.4],"content":"Sample document content","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
 
-# Now search for similar vectors
 curl -X POST \
   http://localhost:6969/SearchVector \
   -H 'Content-Type: application/json' \
@@ -217,25 +207,21 @@ client = Client(local=True, port=6969)
 
 vector_data = [0.12, 0.34, 0.56, 0.78]
 
-# First insert some vectors with different dates
 recent_date = datetime.now(timezone.utc).isoformat()
 old_date = (datetime.now(timezone.utc) - timedelta(days=45)).isoformat()
 
-# Insert recent document
 client.query("InsertVector", {
     "vector": vector_data,
     "content": "Recent document content",
     "created_at": recent_date,
 })
 
-# Insert old document
 client.query("InsertVector", {
     "vector": [0.15, 0.35, 0.55, 0.75],
     "content": "Old document content", 
     "created_at": old_date,
 })
 
-# Search for documents created in the last 30 days
 cutoff_date = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
 
 result = client.query("SearchRecentDocuments", {
@@ -258,25 +244,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let vector_data = vec![0.12, 0.34, 0.56, 0.78];
 
-    // First insert some vectors with different dates
     let recent_date = Utc::now().to_rfc3339();
     let old_date = (Utc::now() - Duration::days(45)).to_rfc3339();
 
-    // Insert recent document
     let _recent: serde_json::Value = client.query("InsertVector", &json!({
         "vector": vector_data,
         "content": "Recent document content",
         "created_at": recent_date,
     })).await?;
 
-    // Insert old document
     let _old: serde_json::Value = client.query("InsertVector", &json!({
         "vector": [0.15, 0.35, 0.55, 0.75],
         "content": "Old document content",
         "created_at": old_date,
     })).await?;
 
-    // Search for documents created in the last 30 days
     let cutoff_date = (Utc::now() - Duration::days(30)).to_rfc3339();
 
     let result: serde_json::Value = client.query("SearchRecentDocuments", &json!({
@@ -307,11 +289,9 @@ func main() {
 
     vectorData := []float64{0.12, 0.34, 0.56, 0.78}
 
-    // First insert some vectors with different dates
     recentDate := time.Now().UTC().Format(time.RFC3339)
     oldDate := time.Now().UTC().AddDate(0, 0, -45).Format(time.RFC3339)
 
-    // Insert recent document
     recentPayload := map[string]any{
         "vector":     vectorData,
         "content":    "Recent document content",
@@ -322,7 +302,6 @@ func main() {
         log.Fatalf("InsertVector (recent) failed: %s", err)
     }
 
-    // Insert old document
     oldPayload := map[string]any{
         "vector":     []float64{0.15, 0.35, 0.55, 0.75},
         "content":    "Old document content",
@@ -333,7 +312,6 @@ func main() {
         log.Fatalf("InsertVector (old) failed: %s", err)
     }
 
-    // Search for documents created in the last 30 days
     cutoffDate := time.Now().UTC().AddDate(0, 0, -30).Format(time.RFC3339)
 
     searchPayload := map[string]any{
@@ -359,25 +337,21 @@ async function main() {
 
     const vectorData = [0.12, 0.34, 0.56, 0.78];
 
-    // First insert some vectors with different dates
     const recentDate = new Date().toISOString();
     const oldDate = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Insert recent document
     await client.query("InsertVector", {
         vector: vectorData,
         content: "Recent document content",
         created_at: recentDate,
     });
 
-    // Insert old document
     await client.query("InsertVector", {
         vector: [0.15, 0.35, 0.55, 0.75],
         content: "Old document content",
         created_at: oldDate,
     });
 
-    // Search for documents created in the last 30 days
     const cutoffDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const result = await client.query("SearchRecentDocuments", {
@@ -395,19 +369,16 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# Insert recent document
 curl -X POST \
   http://localhost:6969/InsertVector \
   -H 'Content-Type: application/json' \
   -d '{"vector":[0.12,0.34,0.56,0.78],"content":"Recent document content","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
 
-# Insert old document (45 days ago)
 curl -X POST \
   http://localhost:6969/InsertVector \
   -H 'Content-Type: application/json' \
   -d '{"vector":[0.15,0.35,0.55,0.75],"content":"Old document content","created_at":"'"$(date -u -d '45 days ago' +"%Y-%m-%dT%H:%M:%SZ")"'"}'
 
-# Search for documents created in the last 30 days
 curl -X POST \
   http://localhost:6969/SearchRecentDocuments \
   -H 'Content-Type: application/json' \
@@ -449,7 +420,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First insert some text-based vectors
 sample_texts = [
     "Introduction to machine learning algorithms",
     "Deep neural networks and AI",
@@ -462,7 +432,6 @@ for text in sample_texts:
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
 
-# Now search with text
 result = client.query("SearchWithText", {
     "text": "machine learning algorithms",
     "limit": 10,
@@ -480,7 +449,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First insert some text-based vectors
     let sample_texts = vec![
         "Introduction to machine learning algorithms",
         "Deep neural networks and AI",
@@ -494,7 +462,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Now search with text
     let result: serde_json::Value = client.query("SearchWithText", &json!({
         "text": "machine learning algorithms",
         "limit": 10,
@@ -520,7 +487,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First insert some text-based vectors
     sampleTexts := []string{
         "Introduction to machine learning algorithms",
         "Deep neural networks and AI",
@@ -539,7 +505,6 @@ func main() {
         }
     }
 
-    // Now search with text
     searchPayload := map[string]any{
         "text":  "machine learning algorithms",
         "limit": int64(10),
@@ -560,7 +525,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First insert some text-based vectors
     const sampleTexts = [
         "Introduction to machine learning algorithms",
         "Deep neural networks and AI",
@@ -574,7 +538,6 @@ async function main() {
         });
     }
 
-    // Now search with text
     const result = await client.query("SearchWithText", {
         text: "machine learning algorithms",
         limit: 10,
@@ -589,7 +552,6 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First insert some text-based vectors
 curl -X POST \
   http://localhost:6969/InsertTextAsVector \
   -H 'Content-Type: application/json' \
@@ -605,7 +567,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"content":"Natural language processing techniques","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
 
-# Now search with text
 curl -X POST \
   http://localhost:6969/SearchWithText \
   -H 'Content-Type: application/json' \

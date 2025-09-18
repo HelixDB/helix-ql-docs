@@ -218,21 +218,15 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
 
-# capture returned Alice ID as <alice_id>
-
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Bob","age":28,"email":"bob@example.com"}'
 
-# capture returned Bob ID as <bob_id>
-
 curl -X POST \
   http://localhost:6969/CreateRelationships \
   -H 'Content-Type: application/json' \
   -d '{"user1_id":"<alice_id>","user2_id":"<bob_id>"}'
-
-# capture returned edge ID as <edge_id>
 
 curl -X POST \
   http://localhost:6969/GetFollowEdge \

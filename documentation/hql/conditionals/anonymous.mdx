@@ -56,7 +56,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create some users
 users = [
     {"name": "Alice", "age": 25, "email": "alice@example.com"},
     {"name": "Bob", "age": 30, "email": "bob@example.com"},
@@ -68,8 +67,7 @@ for user in users:
     result = client.query("CreateUser", user)
     user_ids.append(result[0]["user"]["id"])
 
-# Create many followers for Alice (make her influential)
-for j in range(150):  # Create 150 followers for Alice
+for j in range(150):
     fake_user = client.query("CreateUser", {
         "name": f"Follower{j}",
         "age": 20,
@@ -78,7 +76,6 @@ for j in range(150):  # Create 150 followers for Alice
     fake_id = fake_user[0]["user"]["id"]
     client.query("CreateFollow", {"follower_id": fake_id, "following_id": user_ids[0]})
 
-# Get users with more than 100 followers
 result = client.query("GetInfluentialUsers", {})
 print(result)
 ```
@@ -91,7 +88,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create some users
     let users = vec![
         ("Alice", 25, "alice@example.com"),
         ("Bob", 30, "bob@example.com"),
@@ -108,7 +104,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         user_ids.push(result["user"]["id"].as_str().unwrap().to_string());
     }
 
-    // Create many followers for Alice (make her influential)
     for j in 0..150 {
         let fake_user: serde_json::Value = client.query("CreateUser", &json!({
             "name": format!("Follower{}", j),
@@ -123,7 +118,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })).await?;
     }
 
-    // Get users with more than 100 followers
     let result: serde_json::Value = client.query("GetInfluentialUsers", &json!({})).await?;
     println!("Influential users: {result:#?}");
 
@@ -144,7 +138,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create some users
     users := []map[string]any{
         {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
         {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
@@ -160,7 +153,6 @@ func main() {
         userIDs = append(userIDs, created["user"].(map[string]any)["id"].(string))
     }
 
-    // Create many followers for Alice (make her influential)
     for j := 0; j < 150; j++ {
         fakeUser := map[string]any{
             "name":  fmt.Sprintf("Follower%d", j),
@@ -184,7 +176,6 @@ func main() {
         }
     }
 
-    // Get users with more than 100 followers
     var result map[string]any
     if err := client.Query("GetInfluentialUsers", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetInfluentialUsers failed: %s", err)
@@ -200,7 +191,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create some users
     const users = [
         { name: "Alice", age: 25, email: "alice@example.com" },
         { name: "Bob", age: 30, email: "bob@example.com" },
@@ -213,7 +203,6 @@ async function main() {
         userIds.push(result.user.id);
     }
 
-    // Create many followers for Alice (make her influential)
     for (let j = 0; j < 150; j++) {
         const fakeUser = await client.query("CreateUser", {
             name: `Follower${j}`,
@@ -228,7 +217,6 @@ async function main() {
         });
     }
 
-    // Get users with more than 100 followers
     const result = await client.query("GetInfluentialUsers", {});
     console.log("Influential users:", result);
 }
@@ -239,30 +227,21 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create some users
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
 
-# Capture Alice's ID as <alice_id>
-
-# Create many followers for Alice (repeat 150+ times)
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Follower1","age":20,"email":"follower1@example.com"}'
-
-# Capture follower ID as <follower_id>
 
 curl -X POST \
   http://localhost:6969/CreateFollow \
   -H 'Content-Type: application/json' \
   -d '{"follower_id":"<follower_id>","following_id":"<alice_id>"}'
 
-# ... repeat for 150+ followers ...
-
-# Get users with more than 100 followers
 curl -X POST \
   http://localhost:6969/GetInfluentialUsers \
   -H 'Content-Type: application/json' \
@@ -326,7 +305,6 @@ from helix.client import Client
 
 client = Client(local=True, port=6969)
 
-# First create some users with different statuses
 users = [
     {"name": "Alice", "age": 25, "email": "alice@example.com", "status": "active"},
     {"name": "Bob", "age": 30, "email": "bob@example.com", "status": "active"},
@@ -339,22 +317,18 @@ for user in users:
     result = client.query("CreateUser", user)
     user_ids.append(result[0]["user"]["id"])
 
-# Create posts for some active users
 client.query("CreatePost", {
-    "user_id": user_ids[0],  # Alice
+    "user_id": user_ids[0],
     "title": "My First Post",
     "content": "This is Alice's first post"
 })
 
 client.query("CreatePost", {
-    "user_id": user_ids[1],  # Bob
+    "user_id": user_ids[1],
     "title": "Bob's Thoughts",
     "content": "This is Bob's post"
 })
 
-# Diana (active) has no posts, Charlie (inactive) has no posts
-
-# Get active users who have posts
 result = client.query("GetActiveUsersWithPosts", {})
 print(result)
 ```
@@ -367,7 +341,6 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // First create some users with different statuses
     let users = vec![
         ("Alice", 25, "alice@example.com", "active"),
         ("Bob", 30, "bob@example.com", "active"),
@@ -386,20 +359,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         user_ids.push(result["user"]["id"].as_str().unwrap().to_string());
     }
 
-    // Create posts for some active users
     let _post1: serde_json::Value = client.query("CreatePost", &json!({
-        "user_id": user_ids[0],  // Alice
+        "user_id": user_ids[0],
         "title": "My First Post",
         "content": "This is Alice's first post"
     })).await?;
 
     let _post2: serde_json::Value = client.query("CreatePost", &json!({
-        "user_id": user_ids[1],  // Bob
+        "user_id": user_ids[1],
         "title": "Bob's Thoughts",
         "content": "This is Bob's post"
     })).await?;
 
-    // Get active users who have posts
     let result: serde_json::Value = client.query("GetActiveUsersWithPosts", &json!({})).await?;
     println!("Active users with posts: {result:#?}");
 
@@ -420,7 +391,6 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    // First create some users with different statuses
     users := []map[string]any{
         {"name": "Alice", "age": uint8(25), "email": "alice@example.com", "status": "active"},
         {"name": "Bob", "age": uint8(30), "email": "bob@example.com", "status": "active"},
@@ -437,9 +407,8 @@ func main() {
         userIDs = append(userIDs, created["user"].(map[string]any)["id"].(string))
     }
 
-    // Create posts for some active users
     post1Payload := map[string]any{
-        "user_id": userIDs[0], // Alice
+        "user_id": userIDs[0],
         "title":   "My First Post",
         "content": "This is Alice's first post",
     }
@@ -449,7 +418,7 @@ func main() {
     }
 
     post2Payload := map[string]any{
-        "user_id": userIDs[1], // Bob
+        "user_id": userIDs[1],
         "title":   "Bob's Thoughts",
         "content": "This is Bob's post",
     }
@@ -458,7 +427,6 @@ func main() {
         log.Fatalf("CreatePost failed: %s", err)
     }
 
-    // Get active users who have posts
     var result map[string]any
     if err := client.Query("GetActiveUsersWithPosts", helix.WithData(map[string]any{})).Scan(&result); err != nil {
         log.Fatalf("GetActiveUsersWithPosts failed: %s", err)
@@ -474,7 +442,6 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    // First create some users with different statuses
     const users = [
         { name: "Alice", age: 25, email: "alice@example.com", status: "active" },
         { name: "Bob", age: 30, email: "bob@example.com", status: "active" },
@@ -488,20 +455,18 @@ async function main() {
         userIds.push(result.user.id);
     }
 
-    // Create posts for some active users
     await client.query("CreatePost", {
-        user_id: userIds[0], // Alice
+        user_id: userIds[0],
         title: "My First Post",
         content: "This is Alice's first post"
     });
 
     await client.query("CreatePost", {
-        user_id: userIds[1], // Bob
+        user_id: userIds[1],
         title: "Bob's Thoughts",
         content: "This is Bob's post"
     });
 
-    // Get active users who have posts
     const result = await client.query("GetActiveUsersWithPosts", {});
     console.log("Active users with posts:", result);
 }
@@ -512,20 +477,15 @@ main().catch((err) => {
 ```
 
 ```bash Curl [expandable]
-# First create some users with different statuses
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Alice","age":25,"email":"alice@example.com","status":"active"}'
 
-# Capture Alice's ID as <alice_id>
-
 curl -X POST \
   http://localhost:6969/CreateUser \
   -H 'Content-Type: application/json' \
   -d '{"name":"Bob","age":30,"email":"bob@example.com","status":"active"}'
-
-# Capture Bob's ID as <bob_id>
 
 curl -X POST \
   http://localhost:6969/CreateUser \
@@ -537,7 +497,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"name":"Diana","age":22,"email":"diana@example.com","status":"active"}'
 
-# Create posts for some active users
 curl -X POST \
   http://localhost:6969/CreatePost \
   -H 'Content-Type: application/json' \
@@ -548,7 +507,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"user_id":"<bob_id>","title":"Bob'"'"'s Thoughts","content":"This is Bob'"'"'s post"}'
 
-# Get active users who have posts
 curl -X POST \
   http://localhost:6969/GetActiveUsersWithPosts \
   -H 'Content-Type: application/json' \
