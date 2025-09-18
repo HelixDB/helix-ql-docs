@@ -94,7 +94,7 @@
                                     "documentation/hql/vectors/searching",
                                     "documentation/hql/vectors/embedding"
                                 ],
-                                "icon": "list-check"
+                                "icon": "share-nodes"
                             },
                             "documentation/hql/keyword_search",
                             {
