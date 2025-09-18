@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }),
         )
         .await?;
-    let vector_id = created["doc_vector"]["id"].as_str().unwrap().to_string();
+    let vector_id = created[0]["doc_vector"]["id"].as_str().unwrap().to_string();
 
     let result: serde_json::Value = client
         .query("GetDocumentVector", &json!({ "vector_id": vector_id }))
