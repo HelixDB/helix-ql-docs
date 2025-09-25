@@ -1,0 +1,1017 @@
+---
+title: "Delete Operation"
+icon: "eraser"
+---
+
+## `DROP`
+
+Drops elements from your database. The `DROP` effects the elements returned by the traversal.
+
+```rust
+DROP <traversal>
+```
+You can use the drop on any traversal that returns a list of elements.
+`DROP` will do nothing if the result of the expression is not a list of elements or if the list is empty.
+
+
+### Example 1: Removing a user node by ID
+
+Dropping a node will also remove all related edges that are connected to it.
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY DeleteUserNode (user_id: ID) =>
+    DROP N<User>(user_id)
+    RETURN "Removed user node"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({ name: name, age: age, email: email })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+</CodeGroup>
+
+Heres how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+yara = client.query("CreateUser", {
+    "name": "Yara",
+    "age": 24,
+    "email": "yara@example.com",
+})
+yara_id = yara[0]["user"]["id"]
+
+result = client.query("DeleteUserNode", {"user_id": yara_id})
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let yara: serde_json::Value = client
+        .query(
+            "CreateUser",
+            &json!({
+                "name": "Yara",
+                "age": 24,
+                "email": "yara@example.com",
+            }),
+        )
+        .await?;
+    
+    let yara_id = yara["user"]["id"].as_str().unwrap().to_string();
+
+    let result: serde_json::Value = client
+        .query(
+            "DeleteUserNode",
+            &json!({
+                "user_id": yara_id,
+            }),
+        )
+        .await?;
+
+    println!("DeleteUserNode result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    yaraPayload := map[string]any{
+        "name":  "Yara",
+        "age":   uint8(24),
+        "email": "yara@example.com",
+    }
+    var yara map[string]any
+    if err := client.Query("CreateUser", helix.WithData(yaraPayload)).Scan(&yara); err != nil {
+        log.Fatalf("CreateUser (Yara) failed: %s", err)
+    }
+    yaraID := yara["user"].(map[string]any)["id"].(string)
+
+    var result map[string]any
+    if err := client.Query("DeleteUserNode", helix.WithData(map[string]any{
+        "user_id": yaraID,
+    })).Scan(&result); err != nil {
+        log.Fatalf("DeleteUserNode failed: %s", err)
+    }
+
+    fmt.Printf("DeleteUserNode result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const yara = await client.query("CreateUser", {
+        name: "Yara",
+        age: 24,
+        email: "yara@example.com",
+    });
+    const yaraId: string = yara.user.id;
+
+    const result = await client.query("DeleteUserNode", {
+        user_id: yaraId,
+    });
+
+    console.log("DeleteUserNode result:", result);
+}
+
+main().catch((err) => {
+    console.error("DeleteUserNode query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{\"name\":\"Yara\",\"age\":24,\"email\":\"yara@example.com\"}'
+curl -X POST \
+  http://localhost:6969/DeleteUserNode \
+  -H 'Content-Type: application/json' \
+  -d '{\"user_id\":\"<yara_id>\"}'
+```
+</CodeGroup>
+
+### Example 2: Removing outgoing neighbors
+
+Use `DROP` on the outgoing traversal to delete connected neighbor nodes and the connecting edges.
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY DeleteOutgoingNeighbors (user_id: ID) =>
+    DROP N<User>(user_id)::Out<Follows>
+    RETURN "Removed outgoing neighbors"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({ name: name, age: age, email: email })
+    RETURN user
+
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
+    follows <- AddE<Follows>::From(user1_id)::To(user2_id)
+    RETURN follows
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+</CodeGroup>
+
+Heres how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+lena = client.query("CreateUser", {
+    "name": "Lena",
+    "age": 30,
+    "email": "lena@example.com",
+})
+lena_id = lena[0]["user"]["id"]
+
+mason = client.query("CreateUser", {
+    "name": "Mason",
+    "age": 29,
+    "email": "mason@example.com",
+})
+mason_id = mason[0]["user"]["id"]
+
+client.query("CreateRelationships", {
+    "user1_id": lena_id,
+    "user2_id": mason_id,
+})
+
+result = client.query("DeleteOutgoingNeighbors", {"user_id": lena_id})
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let lena: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Lena",
+        "age": 30,
+        "email": "lena@example.com",
+    })).await?;
+    let lena_id = lena["user"]["id"].as_str().unwrap().to_string();
+
+    let mason: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Mason",
+        "age": 29,
+        "email": "mason@example.com",
+    })).await?;
+    let mason_id = mason["user"]["id"].as_str().unwrap().to_string();
+
+    let _relationship_result: serde_json::Value = client.query("CreateRelationships", &json!({
+        "user1_id": lena_id,
+        "user2_id": mason_id,
+    })).await?;
+
+    let result: serde_json::Value = client.query("DeleteOutgoingNeighbors", &json!({
+        "user_id": lena_id,
+    })).await?;
+
+    println!("DeleteOutgoingNeighbors result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    lenaPayload := map[string]any{
+        "name":  "Lena",
+        "age":   uint8(30),
+        "email": "lena@example.com",
+    }
+    var lena map[string]any
+    if err := client.Query("CreateUser", helix.WithData(lenaPayload)).Scan(&lena); err != nil {
+        log.Fatalf("CreateUser (Lena) failed: %s", err)
+    }
+    lenaID := lena["user"].(map[string]any)["id"].(string)
+
+    masonPayload := map[string]any{
+        "name":  "Mason",
+        "age":   uint8(29),
+        "email": "mason@example.com",
+    }
+    var mason map[string]any
+    if err := client.Query("CreateUser", helix.WithData(masonPayload)).Scan(&mason); err != nil {
+        log.Fatalf("CreateUser (Mason) failed: %s", err)
+    }
+    masonID := mason["user"].(map[string]any)["id"].(string)
+
+    client.Query("CreateRelationships", helix.WithData(map[string]any{
+        "user1_id": lenaID,
+        "user2_id": masonID,
+    }))
+
+    var result map[string]any
+    if err := client.Query("DeleteOutgoingNeighbors", helix.WithData(map[string]any{
+        "user_id": lenaID,
+    })).Scan(&result); err != nil {
+        log.Fatalf("DeleteOutgoingNeighbors failed: %s", err)
+    }
+
+    fmt.Printf("DeleteOutgoingNeighbors result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const lena = await client.query("CreateUser", {
+        name: "Lena",
+        age: 30,
+        email: "lena@example.com",
+    });
+    const lenaId: string = lena.user.id;
+
+    const mason = await client.query("CreateUser", {
+        name: "Mason",
+        age: 29,
+        email: "mason@example.com",
+    });
+    const masonId: string = mason.user.id;
+
+    await client.query("CreateRelationships", {
+        user1_id: lenaId,
+        user2_id: masonId,
+    });
+
+    const result = await client.query("DeleteOutgoingNeighbors", {
+        user_id: lenaId,
+    });
+
+    console.log("DeleteOutgoingNeighbors result:", result);
+}
+
+main().catch((err) => {
+    console.error("DeleteOutgoingNeighbors query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{\"name\":\"Lena\",\"age\":30,\"email\":\"lena@example.com\"}'
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{\"name\":\"Mason\",\"age\":29,\"email\":\"mason@example.com\"}'
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{\"user1_id\":\"<lena_id>\",\"user2_id\":\"<mason_id>\"}'
+
+curl -X POST \
+  http://localhost:6969/DeleteOutgoingNeighbors \
+  -H 'Content-Type: application/json' \
+  -d '{\"user_id\":\"<lena_id>\"}'
+```
+</CodeGroup>
+
+### Example 3: Removing incoming neighbors
+
+Delete any users that follow the target user by traversing incoming connections.
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY DeleteIncomingNeighbors (user_id: ID) =>
+    DROP N<User>(user_id)::In<Follows>
+    RETURN "Removed incoming neighbors"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({ name: name, age: age, email: email })
+    RETURN user
+
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
+    follows <- AddE<Follows>::From(user1_id)::To(user2_id)
+    RETURN follows
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+</CodeGroup>
+
+Heres how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+ophelia = client.query("CreateUser", {
+    "name": "Ophelia",
+    "age": 32,
+    "email": "ophelia@example.com",
+})
+ophelia_id = ophelia[0]["user"]["id"]
+
+paul = client.query("CreateUser", {
+    "name": "Paul",
+    "age": 31,
+    "email": "paul@example.com",
+})
+paul_id = paul[0]["user"]["id"]
+
+client.query("CreateRelationships", {
+    "user1_id": paul_id,
+    "user2_id": ophelia_id,
+})
+
+result = client.query("DeleteIncomingNeighbors", {"user_id": ophelia_id})
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let ophelia: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Ophelia",
+        "age": 32,
+        "email": "ophelia@example.com",
+    })).await?;
+    let ophelia_id = ophelia["user"]["id"].as_str().unwrap().to_string();
+
+    let paul: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Paul",
+        "age": 31,
+        "email": "paul@example.com",
+    })).await?;
+    let paul_id = paul["user"]["id"].as_str().unwrap().to_string();
+
+    let _relationship_result: serde_json::Value = client.query("CreateRelationships", &json!({
+        "user1_id": paul_id,
+        "user2_id": ophelia_id,
+    })).await?;
+
+    let result: serde_json::Value = client.query("DeleteIncomingNeighbors", &json!({
+        "user_id": ophelia_id,
+    })).await?;
+
+    println!("DeleteIncomingNeighbors result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    opheliaPayload := map[string]any{
+        "name":  "Ophelia",
+        "age":   uint8(32),
+        "email": "ophelia@example.com",
+    }
+    var ophelia map[string]any
+    if err := client.Query("CreateUser", helix.WithData(opheliaPayload)).Scan(&ophelia); err != nil {
+        log.Fatalf("CreateUser (Ophelia) failed: %s", err)
+    }
+    opheliaID := ophelia["user"].(map[string]any)["id"].(string)
+
+    paulPayload := map[string]any{
+        "name":  "Paul",
+        "age":   uint8(31),
+        "email": "paul@example.com",
+    }
+    var paul map[string]any
+    if err := client.Query("CreateUser", helix.WithData(paulPayload)).Scan(&paul); err != nil {
+        log.Fatalf("CreateUser (Paul) failed: %s", err)
+    }
+    paulID := paul["user"].(map[string]any)["id"].(string)
+
+    client.Query("CreateRelationships", helix.WithData(map[string]any{
+        "user1_id": paulID,
+        "user2_id": opheliaID,
+    }))
+
+    var result map[string]any
+    if err := client.Query("DeleteIncomingNeighbors", helix.WithData(map[string]any{
+        "user_id": opheliaID,
+    })).Scan(&result); err != nil {
+        log.Fatalf("DeleteIncomingNeighbors failed: %s", err)
+    }
+
+    fmt.Printf("DeleteIncomingNeighbors result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const ophelia = await client.query("CreateUser", {
+        name: "Ophelia",
+        age: 32,
+        email: "ophelia@example.com",
+    });
+    const opheliaId: string = ophelia.user.id;
+
+    const paul = await client.query("CreateUser", {
+        name: "Paul",
+        age: 31,
+        email: "paul@example.com",
+    });
+    const paulId: string = paul.user.id;
+
+    await client.query("CreateRelationships", {
+        user1_id: paulId,
+        user2_id: opheliaId,
+    });
+
+    const result = await client.query("DeleteIncomingNeighbors", {
+        user_id: opheliaId,
+    });
+
+    console.log("DeleteIncomingNeighbors result:", result);
+}
+
+main().catch((err) => {
+    console.error("DeleteIncomingNeighbors query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{\"name\":\"Ophelia\",\"age\":32,\"email\":\"ophelia@example.com\"}'
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{\"name\":\"Paul\",\"age\":31,\"email\":\"paul@example.com\"}'
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{\"user1_id\":\"<paul_id>\",\"user2_id\":\"<ophelia_id>\"}'
+
+curl -X POST \
+  http://localhost:6969/DeleteIncomingNeighbors \
+  -H 'Content-Type: application/json' \
+  -d '{\"user_id\":\"<ophelia_id>\"}'
+```
+</CodeGroup>
+
+### Example 4: Removing outgoing edges only
+
+Strip all follows edges that originate from the user without touching the neighbor nodes.
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY DeleteOutgoingEdges (user_id: ID) =>
+    DROP N<User>(user_id)::OutE<Follows>
+    RETURN "Removed outgoing edges"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({ name: name, age: age, email: email })
+    RETURN user
+
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
+    follows <- AddE<Follows>::From(user1_id)::To(user2_id)
+    RETURN follows
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+</CodeGroup>
+
+Heres how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+riley = client.query("CreateUser", {
+    "name": "Riley",
+    "age": 26,
+    "email": "riley@example.com",
+})
+riley_id = riley[0]["user"]["id"]
+
+sam = client.query("CreateUser", {
+    "name": "Sam",
+    "age": 25,
+    "email": "sam@example.com",
+})
+sam_id = sam[0]["user"]["id"]
+
+client.query("CreateRelationships", {
+    "user1_id": riley_id,
+    "user2_id": sam_id,
+})
+
+result = client.query("DeleteOutgoingEdges", {"user_id": riley_id})
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let riley: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Riley",
+        "age": 26,
+        "email": "riley@example.com",
+    })).await?;
+    let riley_id = riley["user"]["id"].as_str().unwrap().to_string();
+
+    let sam: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Sam",
+        "age": 25,
+        "email": "sam@example.com",
+    })).await?;
+    let sam_id = sam["user"]["id"].as_str().unwrap().to_string();
+
+    let _relationship_result: serde_json::Value = client.query("CreateRelationships", &json!({
+        "user1_id": riley_id,
+        "user2_id": sam_id,
+    })).await?;
+
+    let result: serde_json::Value = client.query("DeleteOutgoingEdges", &json!({
+        "user_id": riley_id,
+    })).await?;
+
+    println!("DeleteOutgoingEdges result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    rileyPayload := map[string]any{
+        "name":  "Riley",
+        "age":   uint8(26),
+        "email": "riley@example.com",
+    }
+    var riley map[string]any
+    if err := client.Query("CreateUser", helix.WithData(rileyPayload)).Scan(&riley); err != nil {
+        log.Fatalf("CreateUser (Riley) failed: %s", err)
+    }
+    rileyID := riley["user"].(map[string]any)["id"].(string)
+
+    samPayload := map[string]any{
+        "name":  "Sam",
+        "age":   uint8(25),
+        "email": "sam@example.com",
+    }
+    var sam map[string]any
+    if err := client.Query("CreateUser", helix.WithData(samPayload)).Scan(&sam); err != nil {
+        log.Fatalf("CreateUser (Sam) failed: %s", err)
+    }
+    samID := sam["user"].(map[string]any)["id"].(string)
+
+    client.Query("CreateRelationships", helix.WithData(map[string]any{
+        "user1_id": rileyID,
+        "user2_id": samID,
+    }))
+
+    var result map[string]any
+    if err := client.Query("DeleteOutgoingEdges", helix.WithData(map[string]any{
+        "user_id": rileyID,
+    })).Scan(&result); err != nil {
+        log.Fatalf("DeleteOutgoingEdges failed: %s", err)
+    }
+
+    fmt.Printf("DeleteOutgoingEdges result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const riley = await client.query("CreateUser", {
+        name: "Riley",
+        age: 26,
+        email: "riley@example.com",
+    });
+    const rileyId: string = riley.user.id;
+
+    const sam = await client.query("CreateUser", {
+        name: "Sam",
+        age: 25,
+        email: "sam@example.com",
+    });
+    const samId: string = sam.user.id;
+
+    await client.query("CreateRelationships", {
+        user1_id: rileyId,
+        user2_id: samId,
+    });
+
+    const result = await client.query("DeleteOutgoingEdges", {
+        user_id: rileyId,
+    });
+
+    console.log("DeleteOutgoingEdges result:", result);
+}
+
+main().catch((err) => {
+    console.error("DeleteOutgoingEdges query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{\"name\":\"Riley\",\"age\":26,\"email\":\"riley@example.com\"}'
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{\"name\":\"Sam\",\"age\":25,\"email\":\"sam@example.com\"}'
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{\"user1_id\":\"<riley_id>\",\"user2_id\":\"<sam_id>\"}'
+
+curl -X POST \
+  http://localhost:6969/DeleteOutgoingEdges \
+  -H 'Content-Type: application/json' \
+  -d '{\"user_id\":\"<riley_id>\"}'
+```
+</CodeGroup>
+
+### Example 5: Removing incoming edges only
+
+Target follows edges pointing at the user while leaving the neighbor nodes untouched.
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY DeleteIncomingEdges (user_id: ID) =>
+    DROP N<User>(user_id)::InE<Follows>
+    RETURN "Removed incoming edges"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({ name: name, age: age, email: email })
+    RETURN user
+
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
+    follows <- AddE<Follows>::From(user1_id)::To(user2_id)
+    RETURN follows
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+</CodeGroup>
+
+Heres how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+uma = client.query("CreateUser", {
+    "name": "Uma",
+    "age": 28,
+    "email": "uma@example.com",
+})
+uma_id = uma[0]["user"]["id"]
+
+vince = client.query("CreateUser", {
+    "name": "Vince",
+    "age": 29,
+    "email": "vince@example.com",
+})
+vince_id = vince[0]["user"]["id"]
+
+client.query("CreateRelationships", {
+    "user1_id": vince_id,
+    "user2_id": uma_id,
+})
+
+result = client.query("DeleteIncomingEdges", {"user_id": uma_id})
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let uma: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Uma",
+        "age": 28,
+        "email": "uma@example.com",
+    })).await?;
+    let uma_id = uma["user"]["id"].as_str().unwrap().to_string();
+
+    let vince: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Vince",
+        "age": 29,
+        "email": "vince@example.com",
+    })).await?;
+    let vince_id = vince["user"]["id"].as_str().unwrap().to_string();
+
+    let _relationship_result: serde_json::Value = client.query("CreateRelationships", &json!({
+        "user1_id": vince_id,
+        "user2_id": uma_id,
+    })).await?;
+
+    let result: serde_json::Value = client.query("DeleteIncomingEdges", &json!({
+        "user_id": uma_id,
+    })).await?;
+
+    println!("DeleteIncomingEdges result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    umaPayload := map[string]any{
+        "name":  "Uma",
+        "age":   uint8(28),
+        "email": "uma@example.com",
+    }
+    var uma map[string]any
+    if err := client.Query("CreateUser", helix.WithData(umaPayload)).Scan(&uma); err != nil {
+        log.Fatalf("CreateUser (Uma) failed: %s", err)
+    }
+    umaID := uma["user"].(map[string]any)["id"].(string)
+
+    vincePayload := map[string]any{
+        "name":  "Vince",
+        "age":   uint8(29),
+        "email": "vince@example.com",
+    }
+    var vince map[string]any
+    if err := client.Query("CreateUser", helix.WithData(vincePayload)).Scan(&vince); err != nil {
+        log.Fatalf("CreateUser (Vince) failed: %s", err)
+    }
+    vinceID := vince["user"].(map[string]any)["id"].(string)
+
+    client.Query("CreateRelationships", helix.WithData(map[string]any{
+        "user1_id": vinceID,
+        "user2_id": umaID,
+    }))
+
+    var result map[string]any
+    if err := client.Query("DeleteIncomingEdges", helix.WithData(map[string]any{
+        "user_id": umaID,
+    })).Scan(&result); err != nil {
+        log.Fatalf("DeleteIncomingEdges failed: %s", err)
+    }
+
+    fmt.Printf("DeleteIncomingEdges result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const uma = await client.query("CreateUser", {
+        name: "Uma",
+        age: 28,
+        email: "uma@example.com",
+    });
+    const umaId: string = uma.user.id;
+
+    const vince = await client.query("CreateUser", {
+        name: "Vince",
+        age: 29,
+        email: "vince@example.com",
+    });
+    const vinceId: string = vince.user.id;
+
+    await client.query("CreateRelationships", {
+        user1_id: vinceId,
+        user2_id: umaId,
+    });
+
+    const result = await client.query("DeleteIncomingEdges", {
+        user_id: umaId,
+    });
+
+    console.log("DeleteIncomingEdges result:", result);
+}
+
+main().catch((err) => {
+    console.error("DeleteIncomingEdges query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{\"name\":\"Uma\",\"age\":28,\"email\":\"uma@example.com\"}'
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{\"name\":\"Vince\",\"age\":29,\"email\":\"vince@example.com\"}'
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{\"user1_id\":\"<vince_id>\",\"user2_id\":\"<uma_id>\"}'
+
+curl -X POST \
+  http://localhost:6969/DeleteIncomingEdges \
+  -H 'Content-Type: application/json' \
+  -d '{\"user_id\":\"<uma_id>\"}'
+```
+</CodeGroup>
+
+
+<Note>
+Currently, Helix does not support deleting vectors from the graph.
+As a workaround, you can delete the node and/or the edge that the vector is attached to.
+</Note>

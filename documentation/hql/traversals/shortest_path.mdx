@@ -1,0 +1,288 @@
+---
+title: "Shortest Path"
+description: "Find the shortest path between two nodes using Breadth-First Search."
+icon: ""
+---
+
+## `::ShortestPath`
+
+Breadth-first search finds the minimum number of hops between nodes along a specific edge type.
+
+```rust
+::ShortestPath<EdgeType>::To(to_id: ID)
+::ShortestPath<EdgeType>::From(from_id: ID)
+```
+
+### Example 1: Finding routes between locations
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY GetShortestPath (from_id: ID, to_id: ID) =>
+    path <- N<Location>(from_id)::ShortestPath<Road>::To(to_id)
+    RETURN path
+
+QUERY CreateLocation (name: String) =>
+    location <- AddN<Location>({
+        name: name,
+    })
+    RETURN location
+
+QUERY ConnectLocations (from_id: ID, to_id: ID, distance_km: U32) =>
+    road <- AddE<Road>({
+        distance_km: distance_km,
+    })::From(from_id)::To(to_id)
+    RETURN road
+```
+
+```rust Schema
+N::Location {
+    name: String,
+}
+
+E::Road {
+    From: Location,
+    To: Location,
+    Properties: {
+        distance_km: U32,
+    }
+}
+```
+
+</CodeGroup>
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+central = client.query("CreateLocation", {"name": "Central Station"})
+market = client.query("CreateLocation", {"name": "Market Square"})
+harbor = client.query("CreateLocation", {"name": "Harbor"})
+
+central_id = central[0]["location"]["id"]
+market_id = market[0]["location"]["id"]
+harbor_id = harbor[0]["location"]["id"]
+
+client.query("ConnectLocations", {
+    "from_id": central_id,
+    "to_id": market_id,
+    "distance_km": 2,
+})
+client.query("ConnectLocations", {
+    "from_id": market_id,
+    "to_id": harbor_id,
+    "distance_km": 3,
+})
+
+result = client.query("GetShortestPath", {
+    "from_id": central_id,
+    "to_id": harbor_id,
+})
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let central: serde_json::Value = client.query("CreateLocation", &json!({
+        "name": "Central Station",
+    })).await?;
+    let market: serde_json::Value = client.query("CreateLocation", &json!({
+        "name": "Market Square",
+    })).await?;
+    let harbor: serde_json::Value = client.query("CreateLocation", &json!({
+        "name": "Harbor",
+    })).await?;
+
+    let central_id = central["location"]["id"].as_str().unwrap().to_string();
+    let market_id = market["location"]["id"].as_str().unwrap().to_string();
+    let harbor_id = harbor["location"]["id"].as_str().unwrap().to_string();
+
+    client.query::<_, serde_json::Value>("ConnectLocations", &json!({
+        "from_id": central_id,
+        "to_id": market_id,
+        "distance_km": 2,
+    })).await?;
+
+    client.query::<_, serde_json::Value>("ConnectLocations", &json!({
+        "from_id": market_id,
+        "to_id": harbor_id,
+        "distance_km": 3,
+    })).await?;
+
+    let result: serde_json::Value = client.query("GetShortestPath", &json!({
+        "from_id": central_id,
+        "to_id": harbor_id,
+    })).await?;
+
+    println!("GetShortestPath result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    var central map[string]any
+    if err := client.Query("CreateLocation",
+        helix.WithData(map[string]any{"name": "Central Station"}),
+    ).Scan(&central); err != nil {
+        log.Fatalf("CreateLocation (Central) failed: %s", err)
+    }
+
+    var market map[string]any
+    if err := client.Query("CreateLocation",
+        helix.WithData(map[string]any{"name": "Market Square"}),
+    ).Scan(&market); err != nil {
+        log.Fatalf("CreateLocation (Market) failed: %s", err)
+    }
+
+    var harbor map[string]any
+    if err := client.Query("CreateLocation",
+        helix.WithData(map[string]any{"name": "Harbor"}),
+    ).Scan(&harbor); err != nil {
+        log.Fatalf("CreateLocation (Harbor) failed: %s", err)
+    }
+
+    centralID := central["location"].(map[string]any)["id"].(string)
+    marketID := market["location"].(map[string]any)["id"].(string)
+    harborID := harbor["location"].(map[string]any)["id"].(string)
+
+    if err := client.Query("ConnectLocations",
+        helix.WithData(map[string]any{
+            "from_id": centralID,
+            "to_id": marketID,
+            "distance_km": uint32(2),
+        }),
+    ).Scan(&map[string]any{}); err != nil {
+        log.Fatalf("ConnectLocations (Central -> Market) failed: %s", err)
+    }
+
+    if err := client.Query("ConnectLocations",
+        helix.WithData(map[string]any{
+            "from_id": marketID,
+            "to_id": harborID,
+            "distance_km": uint32(3),
+        }),
+    ).Scan(&map[string]any{}); err != nil {
+        log.Fatalf("ConnectLocations (Market -> Harbor) failed: %s", err)
+    }
+
+    var result map[string]any
+    if err := client.Query("GetShortestPath",
+        helix.WithData(map[string]any{
+            "from_id": centralID,
+            "to_id": harborID,
+        }),
+    ).Scan(&result); err != nil {
+        log.Fatalf("GetShortestPath failed: %s", err)
+    }
+
+    fmt.Printf("GetShortestPath result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const central = await client.query("CreateLocation", {
+        name: "Central Station",
+    });
+    const market = await client.query("CreateLocation", {
+        name: "Market Square",
+    });
+    const harbor = await client.query("CreateLocation", {
+        name: "Harbor",
+    });
+
+    await client.query("ConnectLocations", {
+        from_id: central.location.id,
+        to_id: market.location.id,
+        distance_km: 2,
+    });
+
+    await client.query("ConnectLocations", {
+        from_id: market.location.id,
+        to_id: harbor.location.id,
+        distance_km: 3,
+    });
+
+    const result = await client.query("GetShortestPath", {
+        from_id: central.location.id,
+        to_id: harbor.location.id,
+    });
+
+    console.log("GetShortestPath result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetShortestPath query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+central=$(curl -s -X POST \
+  http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Central Station"}')
+central_id=$(echo "$central" | jq -r '.location.id')
+
+market=$(curl -s -X POST \
+  http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Market Square"}')
+market_id=$(echo "$market" | jq -r '.location.id')
+
+harbor=$(curl -s -X POST \
+  http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Harbor"}')
+harbor_id=$(echo "$harbor" | jq -r '.location.id')
+
+curl -X POST \
+  http://localhost:6969/ConnectLocations \
+  -H 'Content-Type: application/json' \
+  -d '{"from_id":"'"$central_id"'","to_id":"'"$market_id"'","distance_km":2}'
+
+curl -X POST \
+  http://localhost:6969/ConnectLocations \
+  -H 'Content-Type: application/json' \
+  -d '{"from_id":"'"$market_id"'","to_id":"'"$harbor_id"'","distance_km":3}'
+
+curl -X POST \
+  http://localhost:6969/GetShortestPath \
+  -H 'Content-Type: application/json' \
+  -d '{"from_id":"'"$central_id"'","to_id":"'"$harbor_id"'"}'
+```
+
+</CodeGroup>
+
+---
+
+### Return Type
+
+```
+[([Nodes], [Edges])]
+```
+
+The shortest-path result is an array of tuples because multiple equally short routes can be returned.

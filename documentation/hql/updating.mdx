@@ -1,0 +1,185 @@
+---
+title: "Updating Items"
+icon: "arrows-rotate"
+---
+
+## Update Nodes using `UPDATE` &nbsp;
+
+Modify properties on existing elements.
+
+```rust
+::UPDATE({<properties_list>})
+```
+
+
+### Example 1: Updating a person's profile
+
+<CodeGroup>
+```rust Query focus={1-6} [expandable]
+QUERY UpdateUser(user_id: ID, new_name: String, new_age: U32) =>
+    updated <- N<Person>(user_id)::UPDATE({
+        name: new_name,
+        age: new_age
+    })
+    RETURN updated
+
+QUERY CreatePerson(name: String, age: U32) =>
+    person <- AddN<Person>({
+        name: name,
+        age: age,
+    })
+    RETURN person
+```
+
+```rust Schema
+N::Person {
+    name: String,
+    age: U32,
+}
+```
+</CodeGroup>
+
+<Info>
+You only need to include the fields you want to change. Any omitted properties stay the same.
+</Info>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreatePerson", {
+    "name": "Alice",
+    "age": 25,
+})[0]["person"]
+
+updated = client.query("UpdateUser", {
+    "user_id": alice["id"],
+    "new_name": "Alice Johnson",
+    "new_age": 26,
+})[0]["updated"]
+
+print("Updated user:", updated)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let result: serde_json::Value = client.query("CreatePerson", &json!({
+        "name": "Alice",
+        "age": 25,
+    })).await?;
+    let alice_id = result["person"]["id"].as_str().unwrap().to_string();
+
+    let updated: serde_json::Value = client.query("UpdateUser", &json!({
+        "user_id": alice_id,
+        "new_name": "Alice Johnson",
+        "new_age": 26,
+    })).await?;
+
+    println!("Updated user: {updated:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    createPayload := map[string]any{
+        "name": "Alice",
+        "age":  uint32(25),
+    }
+
+    var createResp map[string]any
+    if err := client.Query("CreatePerson", helix.WithData(createPayload)).Scan(&createResp); err != nil {
+        log.Fatalf("CreatePerson failed: %s", err)
+    }
+
+    updatePayload := map[string]any{
+        "user_id":  createResp["person"].(map[string]any)["id"],
+        "new_name": "Alice Johnson",
+        "new_age":  uint32(26),
+    }
+
+    var updated map[string]any
+    if err := client.Query("UpdateUser", helix.WithData(updatePayload)).Scan(&updated); err != nil {
+        log.Fatalf("UpdateUser failed: %s", err)
+    }
+
+    fmt.Printf("Updated user: %#v\n", updated)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const createResp = await client.query("CreatePerson", {
+        name: "Alice",
+        age: 25,
+    });
+
+    const updated = await client.query("UpdateUser", {
+        user_id: createResp.person.id,
+        new_name: "Alice Johnson",
+        new_age: 26,
+    });
+
+    console.log("Updated user:", updated);
+}
+
+main().catch((err) => {
+    console.error("UpdateUser failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25}'
+
+curl -X POST \
+  http://localhost:6969/UpdateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<person_id>","new_name":"Alice Johnson","new_age":26}'
+```
+</CodeGroup>
+
+---
+
+<Danger>
+**The following examples would not work as the types don't match**
+</Danger>
+
+```rust
+QUERY UpdateUser(userID: ID) =>
+    // No email field in Person node
+    updatedUsers <- N<Person>(userID)::UPDATE({ email: "john@example.com" })
+
+    // Age as string instead of U32
+    updatedUsers <- N<Person>(userID)::UPDATE({ age: "Hello" })
+
+    RETURN updatedUsers
+```

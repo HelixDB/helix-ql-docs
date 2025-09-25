@@ -58,39 +58,82 @@
                         "group": "HelixQL",
                         "pages": [
                             "documentation/hql/hql",
-                            "documentation/hql/source/adding",
-                            "documentation/hql/source/source",
-                            "documentation/hql/vectors/searching",
+                            {
+                                "group": "CRUD Operations",
+                                "expanded": false,
+                                "pages": [
+                                    {
+                                        "group": "Create Operations",
+                                        "expanded": false,
+                                        "pages": [
+                                            "documentation/hql/create/addN",
+                                            "documentation/hql/create/addE",
+                                            "documentation/hql/create/addV"
+                                        ],
+                                        "icon": "plus"
+                                    },
+                                    {
+                                        "group": "Select Operations",
+                                        "expanded": false,
+                                        "pages": [
+                                            "documentation/hql/select/selectN",
+                                            "documentation/hql/select/selectE",
+                                            "documentation/hql/select/selectV"
+                                        ],
+                                        "icon": "list-check"
+                                    },
+                                    "documentation/hql/updating",
+                                    "documentation/hql/deleting"
+                                ],
+                                "icon": "database"
+                            },
+                            {
+                                "group": "Vector Operations",
+                                "expanded": false,
+                                "pages": [
+                                    "documentation/hql/vectors/searching",
+                                    "documentation/hql/vectors/embedding"
+                                ],
+                                "icon": "share-nodes"
+                            },
                             "documentation/hql/keyword_search",
-                            "documentation/hql/vectors/embedding",
-                            "documentation/hql/output_values",
                             {
                                 "group": "Traversals",
+                                "expanded": false,
                                 "pages": [
-                                    "documentation/hql/steps/traversals/steps_nodes",
-                                    "documentation/hql/steps/traversals/steps_edges",
-                                    "documentation/hql/steps/conditions",
-                                    "documentation/hql/steps/mult-conditions",
-                                    "documentation/hql/steps/anonymous"
+                                    "documentation/hql/traversals/steps_nodes",
+                                    "documentation/hql/traversals/steps_edges",
+                                    "documentation/hql/traversals/shortest_path"
                                 ],
                                 "icon": "right-left-large"
                             },
-                            "documentation/hql/steps/updating",
-                            "documentation/hql/steps/deleting",
+                            {
+                                "group": "Conditionals",
+                                "expanded": false,
+                                "pages": [
+                                    "documentation/hql/conditionals/conditions",
+                                    "documentation/hql/conditionals/mult-conditions",
+                                    "documentation/hql/conditionals/anonymous"
+                                ],
+                                "icon": "ballot-check"
+                            },
                             {
                                 "group": "Properties",
+                                "expanded": false,
                                 "pages": [
-                                    "documentation/hql/steps/properties/property-access",
-                                    "documentation/hql/steps/properties/property-additions",
-                                    "documentation/hql/steps/properties/property-exclusion",
-                                    "documentation/hql/steps/properties/property-remappings"
+                                    "documentation/hql/properties/property-access",
+                                    "documentation/hql/properties/property-additions",
+                                    "documentation/hql/properties/property-exclusion",
+                                    "documentation/hql/properties/property-remappings"
                                 ],
                                 "icon": "tags"
                             },
-                            "documentation/hql/steps/aggregation",
-                            "documentation/hql/shortest_path",
+                            "documentation/hql/aggregation",
+                            "documentation/hql/result_ops",
+                            "documentation/hql/output_values",
                             {
                                 "group": "Errors",
+                                "expanded": false,
                                 "pages": [
                                     "documentation/hql/errors/E101",
                                     "documentation/hql/errors/E102",
@@ -162,12 +205,11 @@
                         "pages": [
                             "guides/social-network",
                             {
-                                "group": "Professors",
+                                "group": "Professor Search",
                                 "pages": [
                                     "guides/professors/prof",
                                     "guides/professors/helixdb_setup",
-                                    "guides/professors/backend_setup",
-                                    "guides/professors/LLM_setup"
+                                    "guides/professors/backend_setup"
                                 ],
                                 "icon": "user-graduate"
                             }
@@ -181,29 +223,10 @@
                     {
                         "group": "Helix Cloud",
                         "pages": [
-                            "helix-cloud/overview"
+                            "helix-cloud/overview",
+                            "helix-cloud/cloud-dashboard"
                         ]
                     }
-                ]
-            },
-            {
-                "tab": "Blogs",
-                "groups": [
-                    {
-                        "group": "Blogs",
-                        "pages": [
-                            "blogs/overview",
-                            "blogs/kg"
-                        ]
-                    }
-                ]
-            },
-            {
-                "tab": "Releases",
-                "pages": [
-                    "change-log/helixdb",
-                    "change-log/helix-py",
-                    "change-log/helix-cloud"
                 ]
             }
         ]

@@ -1,40 +1,95 @@
 ---
 title: "Output Values"
 description: "What you can return from a query using RETURN."
-icon: "arrow-return-left"
+icon: "arrow-right-from-bracket"
 ---
 
 HelixQL queries end with a `RETURN` clause. You can return bindings (variables),
 projected properties, aggregations, literals, or choose to return nothing at all.
 
+
+## Quick reference
+
+| Return Type       | Syntax                                | Return Type           | Syntax                        |
+|-------------------|---------------------------------------|-----------------------|-------------------------------|
+| Return a binding  | `RETURN users`                        | Exclude fields        | `RETURN users::!{ email }`    |
+| Return multiple   | `RETURN user, posts`                  | Aggregation/scalar    | `RETURN count`                |
+| Project fields    | `RETURN users::{ name, age }` &emsp;  | Literal               | `RETURN "ok"`                 |
+| Only IDs          | `RETURN users::ID` &emsp;             | No payload            | `RETURN NONE`                 |
+
+<Warning>
+When using the [Python SDK](../sdks/helix-py), the output values are wrapped in an array for multiple query calls, so you will need to access the first element of the array to get the result of the first call.
+</Warning>
+
 ## Returning bindings
 
 Return any previously bound value from your traversal.
 
-```rust
+<CodeGroup>
+```rust Query
 QUERY GetAllUsers() =>
     users <- N<User>
     RETURN users
 ```
 
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+```json Output
+{
+  "users": [
+    { "name": "Alice", "age": 25, "email": "alice@example.com" },
+    { "name": "Bob", "age": 30, "email": "bob@example.com" },
+    { "name": "Charlie", "age": 28, "email": "charlie@example.com" },
+  ]
+}
+```
+</CodeGroup>
+
 Returning multiple values creates multiple top-level fields in the response, named
 after the variables.
 
-```rust
+<CodeGroup>
+```rust Query
 QUERY GetUserAndPosts(user_id: ID) =>
     user <- N<User>(user_id)
     posts <- user::Out<User_to_Post>
     RETURN user, posts
 ```
 
-<Accordion title="JSON Output (shape)">
-```json
-{
-  "user": { /* ...user fields... */ },
-  "posts": [ /* ...post items... */ ]
+```rust Schema [expandable]
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+
+N::Post {
+    title: String,
+    content: String
+}
+
+E::User_to_Post {
+    From: User,
+    To: Post
 }
 ```
-</Accordion>
+
+```json Output
+{
+  "user": {"name": "Alice", "age": 25, "email": "alice@example.com"},
+  "posts": [ 
+    {"title": "My First Post", "content": "This is my first blog post!"}, 
+    ...,
+  ]
+}
+```
+</CodeGroup>
 
 ---
 
@@ -42,31 +97,93 @@ QUERY GetUserAndPosts(user_id: ID) =>
 
 Use property projection to shape the returned data.
 
-```rust
+<CodeGroup>
+```rust Query
 QUERY FindUsers() =>
     users <- N<User>::RANGE(0, 10)
     RETURN users::{ name, age }
 ```
 
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+```json Output
+{
+  "users": [
+    { "name": "Alice", "age": 25 },
+    { "name": "Bob", "age": 30 },
+    { "name": "Charlie", "age": 28 }
+  ]
+}
+```
+</CodeGroup>
+
 Return just the `ID` of each element:
 
-```rust
+<CodeGroup>
+```rust Query
 QUERY FindUserIDs() =>
     users <- N<User>::RANGE(0, 10)
     RETURN users::ID
 ```
 
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+```json Output
+{
+  "users": [
+    "c2ca233f-0cd8-4fae-8136-b40593792071",
+    "d3db344g-1de9-5gbf-9247-c51604803082",
+    "e4ec455h-2ef0-6hcg-0358-d62715914193"
+  ]
+}
+```
+</CodeGroup>
+
 Exclude specific properties:
 
-```rust
+<CodeGroup>
+```rust Query
 QUERY FindUsersNoPII() =>
     users <- N<User>::RANGE(0, 10)
     RETURN users::!{ email, location }
 ```
 
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+    location: String
+}
+```
+
+```json Output
+{
+  "users": [
+    { "name": "Alice", "age": 25 },
+    { "name": "Bob", "age": 30 },
+    { "name": "Charlie", "age": 28 }
+  ]
+}
+```
+</CodeGroup>
+
 You can also create nested or remapped shapes in `RETURN` using nested mappings:
 
-```rust
+<CodeGroup>
+```rust Query
 QUERY FindFriends(user_id: ID) =>
     user <- N<User>(user_id)
     posts <- user::Out<User_to_Post>::RANGE(20)
@@ -80,10 +197,48 @@ QUERY FindFriends(user_id: ID) =>
     }
 ```
 
-See property access, remappings, and exclusion for more details:
-- `steps/properties/property-access.mdx`
-- `steps/properties/property-remappings.mdx`
-- `steps/properties/property-exclusion.mdx`
+```rust Schema [expandable]
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+
+N::Post {
+    title: String,
+    content: String
+}
+
+E::User_to_Post {
+    From: User,
+    To: Post
+}
+```
+
+```json Output
+{
+  "user": {
+    "userID": "c2ca233f-0cd8-4fae-8136-b40593792071",
+    "posts": [
+      {
+        "postID": "d3db344g-1de9-5gbf-9247-c51604803082",
+        "creatorID": "c2ca233f-0cd8-4fae-8136-b40593792071",
+        "title": "My First Post",
+        "content": "This is my first blog post!"
+      },
+      {
+        "postID": "e4ec455h-2ef0-6hcg-0358-d62715914193",
+        "creatorID": "c2ca233f-0cd8-4fae-8136-b40593792071",
+        "title": "Weekend Plans",
+        "content": "Planning to explore the city."
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+See [property access](../hql/properties/property-access), [remappings](../hql/properties/property-remappings), and [exclusion](../hql/properties/property-exclusion) for more details.
 
 ---
 
@@ -91,47 +246,77 @@ See property access, remappings, and exclusion for more details:
 
 Aggregations and scalar bindings can be returned directly:
 
-```rust
+<CodeGroup>
+```rust Query
 QUERY CountUsers() =>
     user_count <- N<User>::COUNT
     RETURN user_count
 ```
 
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+```json Output
+{
+  "user_count": 42
+}
+```
+</CodeGroup>
+
 You can also return literals (strings, numbers, booleans) when useful:
 
-```rust
+<CodeGroup>
+```rust Query
 QUERY DeleteCity(city_id: ID) =>
     DROP N<City>(city_id)
     RETURN "success"
 ```
 
+```rust Schema
+N::City {
+    name: String,
+    population: U32
+}
+```
+
+```json Output
+{
+  "result": "success"
+}
+```
+</CodeGroup>
+
 ---
 
-## Returning nothing: `RETURN NONE`
+## Returning nothing
 
 For mutations or maintenance operations where you do not want a response payload,
 use `RETURN NONE`.
 
-```rust
+<CodeGroup>
+```rust Query
 QUERY DeleteCityQuietly(city_id: ID) =>
     DROP N<City>(city_id)
     RETURN NONE
 ```
 
+```rust Schema
+N::City {
+    name: String,
+    population: U32
+}
+```
+
+```json Output
+{}
+```
+</CodeGroup>
+
 `RETURN NONE` signals that the query intentionally produces no output values. This is
 handy to avoid sending placeholder strings like "success" when a silent acknowledgement
 is preferred.
-
----
-
-## Quick reference
-
-- Return a binding: `RETURN users`
-- Return multiple: `RETURN user, posts`
-- Project fields: `RETURN users::{ name, age }`
-- Only IDs: `RETURN users::ID`
-- Exclude fields: `RETURN users::!{ email }`
-- Aggregation/scalar: `RETURN count`
-- Literal: `RETURN "ok"`
-- No payload: `RETURN NONE`
-

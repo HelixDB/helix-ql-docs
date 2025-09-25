@@ -28,53 +28,29 @@ serde = { version = "1.0.219", features = ["derive"] }
 
 <CodeGroup>
 ```rust main.rs
-use helix_rs::HelixDB;
-use serde::{Serialize, Deserialize};
-
-// Define your data structures 
-#[derive(Serialize)]
-struct UserInput {
-    name: String,
-    age: i32,
-}
-
-#[derive(Deserialize)]
-struct UserOutput {
-    id: String,
-    name: String,
-    age: i32,
-}
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
 
 #[tokio::main]
-async fn main() -> Result<(), HelixError> {
-    // Initialize the client
-    // You can leave 'Some(6969)' as 'None' and it will use 6969 as default
-    let client = HelixDB::new(None, Some(6969), None); 
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize the client (port defaults to 6969 if you pass None)
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    // Create a user input
-    let input = AddUserInput {
-        name: "John".to_string(),
-        age: 20,
-    };
+    let payload = json!({
+        "name": "John",
+        "age": 20,
+    });
 
-    // Define the output structure for the query
-    #[derive(Deserialize)]
-    struct Result {
-        user: AddUserOutput,
-    }
+    let result: serde_json::Value = client.query("AddUser", &payload).await?;
+    println!("Created user: {result:#?}");
 
-    // Run the query
-    //Note that the query name is case sensitive
-    let result: Result = client.query::<AddUserInput, Result>("add_user", &input).await?;
-    println!("Created user with ID: {}", result.user.id);
     Ok(())
-
 }
 
 ````
 
 ```js queries.hx
-QUERY addUser(name: String, age: I32) =>
+QUERY AddUser (name: String, age: U8) =>
     user <- AddN<User>({
         name: name,
         age: age
@@ -86,7 +62,7 @@ QUERY addUser(name: String, age: I32) =>
 ```js schema.hx
 N::User {
     name: String,
-    age: I32
+    age: U8
 }
 ```
 

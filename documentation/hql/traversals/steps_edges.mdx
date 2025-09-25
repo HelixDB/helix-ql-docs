@@ -1,0 +1,828 @@
+---
+title: "Traversals From Edges"
+description: "Move from an edge to its connected nodes or vectors."
+icon: ""
+---
+
+Return the node that the edge originates from.
+
+```rust
+::FromN
+```
+
+### Example 1: Getting the user from a document creation edge
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY GetCreatorFromEdge (creation_id: ID) =>
+    creator <- E<Creates>(creation_id)::FromN
+    RETURN creator
+
+QUERY CreateUser (name: String, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        email: email,
+    })
+    RETURN user
+
+QUERY CreateDocument (user_id: ID, content: String, vector: [F64]) =>
+    document <- AddV<Document>(vector, {
+        content: content
+    })
+    creation_edge <- AddE<Creates>::From(user_id)::To(document)
+    RETURN creation_edge
+```
+
+```rust Schema
+N::User {
+    name: String,
+    email: String,
+}
+
+V::Document {
+    content: String
+}
+
+E::Creates {
+    From: User,
+    To: Document
+}
+```
+
+</CodeGroup>
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreateUser", {"name": "Alice", "email": "alice@example.com"})
+alice_id = alice[0]["user"]["id"]
+
+creation = client.query("CreateDocument", {
+    "user_id": alice_id,
+    "content": "This is my first document",
+    "vector": [0.1, 0.2, 0.3, 0.4, 0.5],
+})
+creation_id = creation[0]["creation_edge"]["id"]
+
+result = client.query("GetCreatorFromEdge", {
+    "creation_id": creation_id,
+})
+print(result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let alice: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Alice",
+        "email": "alice@example.com",
+    })).await?;
+    let alice_id = alice["user"]["id"].as_str().unwrap().to_string();
+
+    let creation: serde_json::Value = client.query("CreateDocument", &json!({
+        "user_id": alice_id,
+        "content": "This is my first document",
+        "vector": [0.1, 0.2, 0.3, 0.4, 0.5],
+    })).await?;
+    let creation_id = creation["creation_edge"]["id"].as_str().unwrap().to_string();
+
+    let result: serde_json::Value = client.query("GetCreatorFromEdge", &json!({
+        "creation_id": creation_id,
+    })).await?;
+    println!("GetCreatorFromEdge result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    var alice map[string]any
+    if err := client.Query("CreateUser",
+        helix.WithData(map[string]any{"name": "Alice", "email": "alice@example.com"}),
+    ).Scan(&alice); err != nil {
+        log.Fatalf("CreateUser (Alice) failed: %s", err)
+    }
+
+    aliceID := alice["user"].(map[string]any)["id"].(string)
+
+    var creation map[string]any
+    if err := client.Query("CreateDocument",
+        helix.WithData(map[string]any{
+            "user_id": aliceID,
+            "content": "This is my first document",
+            "vector": []float64{0.1, 0.2, 0.3, 0.4, 0.5},
+        }),
+    ).Scan(&creation); err != nil {
+        log.Fatalf("CreateDocument failed: %s", err)
+    }
+
+    creationID := creation["creation_edge"].(map[string]any)["id"].(string)
+
+    var result map[string]any
+    if err := client.Query("GetCreatorFromEdge",
+        helix.WithData(map[string]any{"creation_id": creationID}),
+    ).Scan(&result); err != nil {
+        log.Fatalf("GetCreatorFromEdge failed: %s", err)
+    }
+
+    fmt.Printf("GetCreatorFromEdge result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        email: "alice@example.com",
+    });
+
+    const creation = await client.query("CreateDocument", {
+        user_id: alice.user.id,
+        content: "This is my first document",
+        vector: [0.1, 0.2, 0.3, 0.4, 0.5],
+    });
+
+    const result = await client.query("GetCreatorFromEdge", {
+        creation_id: creation.creation_edge.id,
+    });
+
+    console.log("GetCreatorFromEdge result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetCreatorFromEdge query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","email":"alice@example.com"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+creation=$(curl -s -X POST \
+  http://localhost:6969/CreateDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"'"$alice_id"'","content":"This is my first document","vector":[0.1,0.2,0.3,0.4,0.5]}')
+creation_id=$(echo "$creation" | jq -r '.creation_edge.id')
+
+curl -s -X POST \
+  http://localhost:6969/GetCreatorFromEdge \
+  -H 'Content-Type: application/json' \
+  -d '{"creation_id":"'"$creation_id"'"}'
+```
+
+</CodeGroup>
+
+---
+
+## `::FromV` &nbsp; Source Vector
+
+Return the vector (node plus its properties) that the edge originates from.
+
+```rust
+::FromV
+```
+
+### Example 1: Inspecting the document vector from edge
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY GetDocumentVector (creation_id: ID) =>
+    document_vector <- E<Creates>(creation_id)::ToV
+    RETURN document_vector
+
+QUERY CreateUser (name: String, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        email: email,
+    })
+    RETURN user
+
+QUERY CreateDocument (user_id: ID, content: String, vector: [F64]) =>
+    document <- AddV<Document>(vector, {
+        content: content
+    })
+    creation_edge <- AddE<Creates>::From(user_id)::To(document)
+    RETURN creation_edge
+```
+
+```rust Schema
+N::User {
+    name: String,
+    email: String,
+}
+
+V::Document {
+    content: String
+}
+
+E::Creates {
+    From: User,
+    To: Document
+}
+```
+
+</CodeGroup>
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreateUser", {"name": "Alice", "email": "alice@example.com"})
+alice_id = alice[0]["user"]["id"]
+
+creation = client.query("CreateDocument", {
+    "user_id": alice_id,
+    "content": "This is my first document",
+    "vector": [0.1, 0.2, 0.3, 0.4, 0.5],
+})
+creation_id = creation[0]["creation_edge"]["id"]
+
+vector = client.query("GetDocumentVector", {
+    "creation_id": creation_id,
+})
+print(vector)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let alice: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Alice",
+        "email": "alice@example.com",
+    })).await?;
+    let alice_id = alice["user"]["id"].as_str().unwrap().to_string();
+
+    let creation: serde_json::Value = client.query("CreateDocument", &json!({
+        "user_id": alice_id,
+        "content": "This is my first document",
+        "vector": [0.1, 0.2, 0.3, 0.4, 0.5],
+    })).await?;
+    let creation_id = creation["creation_edge"]["id"].as_str().unwrap().to_string();
+
+    let vector: serde_json::Value = client.query("GetDocumentVector", &json!({
+        "creation_id": creation_id,
+    })).await?;
+    println!("GetDocumentVector result: {vector:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    var alice map[string]any
+    if err := client.Query("CreateUser",
+        helix.WithData(map[string]any{"name": "Alice", "email": "alice@example.com"}),
+    ).Scan(&alice); err != nil {
+        log.Fatalf("CreateUser (Alice) failed: %s", err)
+    }
+
+    aliceID := alice["user"].(map[string]any)["id"].(string)
+
+    var creation map[string]any
+    if err := client.Query("CreateDocument",
+        helix.WithData(map[string]any{
+            "user_id": aliceID,
+            "content": "This is my first document",
+            "vector": []float64{0.1, 0.2, 0.3, 0.4, 0.5},
+        }),
+    ).Scan(&creation); err != nil {
+        log.Fatalf("CreateDocument failed: %s", err)
+    }
+
+    creationID := creation["creation_edge"].(map[string]any)["id"].(string)
+
+    var vector map[string]any
+    if err := client.Query("GetDocumentVector",
+        helix.WithData(map[string]any{"creation_id": creationID}),
+    ).Scan(&vector); err != nil {
+        log.Fatalf("GetDocumentVector failed: %s", err)
+    }
+
+    fmt.Printf("GetDocumentVector result: %#v\n", vector)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        email: "alice@example.com",
+    });
+
+    const creation = await client.query("CreateDocument", {
+        user_id: alice.user.id,
+        content: "This is my first document",
+        vector: [0.1, 0.2, 0.3, 0.4, 0.5],
+    });
+
+    const vector = await client.query("GetDocumentVector", {
+        creation_id: creation.creation_edge.id,
+    });
+
+    console.log("GetDocumentVector result:", vector);
+}
+
+main().catch((err) => {
+    console.error("GetDocumentVector query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","email":"alice@example.com"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+creation=$(curl -s -X POST \
+  http://localhost:6969/CreateDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"'"$alice_id"'","content":"This is my first document","vector":[0.1,0.2,0.3,0.4,0.5]}')
+creation_id=$(echo "$creation" | jq -r '.creation_edge.id')
+
+curl -s -X POST \
+  http://localhost:6969/GetDocumentVector \
+  -H 'Content-Type: application/json' \
+  -d '{"creation_id":"'"$creation_id"'"}'
+```
+
+</CodeGroup>
+
+---
+
+## `::ToN` &nbsp; Destination Node
+
+Return the node that the edge points to.
+
+```rust
+::ToN
+```
+
+### Example 1: Getting the followed user from a follow edge
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY GetFollowedUser (follow_id: ID) =>
+    followed_user <- E<Follows>(follow_id)::ToN
+    RETURN followed_user
+
+QUERY CreateUser (name: String, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        email: email,
+    })
+    RETURN user
+
+QUERY FollowUser (follower_id: ID, followed_id: ID, since: String) =>
+    follow_edge <- AddE<Follows>::From(follower_id)::To(followed_id)
+    RETURN follow_edge
+```
+
+```rust Schema
+N::User {
+    name: String,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User
+}
+```
+
+</CodeGroup>
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+from datetime import datetime
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreateUser", {"name": "Alice", "email": "alice@example.com"})
+alice_id = alice[0]["user"]["id"]
+
+bob = client.query("CreateUser", {"name": "Bob", "email": "bob@example.com"})
+bob_id = bob[0]["user"]["id"]
+
+since_value = datetime.now().isoformat()
+
+follow = client.query("FollowUser", {
+    "follower_id": alice_id,
+    "followed_id": bob_id,
+    "since": since_value,
+})
+follow_id = follow[0]["follow_edge"]["id"]
+
+followed_user = client.query("GetFollowedUser", {
+    "follow_id": follow_id,
+})
+print(followed_user)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use chrono::Utc;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+    let since_value = Utc::now().to_rfc3339();
+
+    let alice: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Alice",
+        "email": "alice@example.com",
+    })).await?;
+    let alice_id = alice["user"]["id"].as_str().unwrap().to_string();
+
+    let bob: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Bob",
+        "email": "bob@example.com",
+    })).await?;
+    let bob_id = bob["user"]["id"].as_str().unwrap().to_string();
+
+    let follow: serde_json::Value = client.query("FollowUser", &json!({
+        "follower_id": alice_id,
+        "followed_id": bob_id,
+        "since": since_value,
+    })).await?;
+    let follow_id = follow["follow_edge"]["id"].as_str().unwrap().to_string();
+
+    let followed_user: serde_json::Value = client.query("GetFollowedUser", &json!({
+        "follow_id": follow_id,
+    })).await?;
+    println!("GetFollowedUser result: {followed_user:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+    sinceValue := time.Now().UTC().Format(time.RFC3339)
+
+    var alice map[string]any
+    if err := client.Query("CreateUser",
+        helix.WithData(map[string]any{"name": "Alice", "email": "alice@example.com"}),
+    ).Scan(&alice); err != nil {
+        log.Fatalf("CreateUser (Alice) failed: %s", err)
+    }
+
+    var bob map[string]any
+    if err := client.Query("CreateUser",
+        helix.WithData(map[string]any{"name": "Bob", "email": "bob@example.com"}),
+    ).Scan(&bob); err != nil {
+        log.Fatalf("CreateUser (Bob) failed: %s", err)
+    }
+
+    aliceID := alice["user"].(map[string]any)["id"].(string)
+    bobID := bob["user"].(map[string]any)["id"].(string)
+
+    var follow map[string]any
+    if err := client.Query("FollowUser",
+        helix.WithData(map[string]any{
+            "follower_id": aliceID,
+            "followed_id": bobID,
+            "since": sinceValue,
+        }),
+    ).Scan(&follow); err != nil {
+        log.Fatalf("FollowUser failed: %s", err)
+    }
+
+    followID := follow["follow_edge"].(map[string]any)["id"].(string)
+
+    var followedUser map[string]any
+    if err := client.Query("GetFollowedUser",
+        helix.WithData(map[string]any{"follow_id": followID}),
+    ).Scan(&followedUser); err != nil {
+        log.Fatalf("GetFollowedUser failed: %s", err)
+    }
+
+    fmt.Printf("GetFollowedUser result: %#v\n", followedUser)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+    const sinceValue = new Date().toISOString();
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        email: "alice@example.com",
+    });
+
+    const bob = await client.query("CreateUser", {
+        name: "Bob",
+        email: "bob@example.com",
+    });
+
+    const follow = await client.query("FollowUser", {
+        follower_id: alice.user.id,
+        followed_id: bob.user.id,
+        since: sinceValue,
+    });
+
+    const followedUser = await client.query("GetFollowedUser", {
+        follow_id: follow.follow_edge.id,
+    });
+
+    console.log("GetFollowedUser result:", followedUser);
+}
+
+main().catch((err) => {
+    console.error("GetFollowedUser query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","email":"alice@example.com"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+bob=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","email":"bob@example.com"}')
+bob_id=$(echo "$bob" | jq -r '.user.id')
+
+since=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+follow=$(curl -s -X POST \
+  http://localhost:6969/FollowUser \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"'"$alice_id"'","followed_id":"'"$bob_id"'","since":"'"$since"'"}')
+follow_id=$(echo "$follow" | jq -r '.follow_edge.id')
+
+curl -s -X POST \
+  http://localhost:6969/GetFollowedUser \
+  -H 'Content-Type: application/json' \
+  -d '{"follow_id":"'"$follow_id"'"}'
+```
+
+</CodeGroup>
+
+---
+
+## `::ToV` &nbsp; Destination Vector
+
+Return the vector that the edge points to.
+
+```rust
+::ToV
+```
+
+### Example 1: Inspecting the document vector
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY GetDocumentVector (creation_id: ID) =>
+    document_vector <- E<Creates>(creation_id)::ToV
+    RETURN document_vector
+
+QUERY CreateUser (name: String, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        email: email,
+    })
+    RETURN user
+
+QUERY CreateDocument (user_id: ID, content: String, vector: [F64]) =>
+    document <- AddV<Document>(vector, {
+        content: content
+    })
+    creation_edge <- AddE<Creates>::From(user_id)::To(document)
+    RETURN creation_edge
+```
+
+```rust Schema
+N::User {
+    name: String,
+    email: String,
+}
+
+V::Document {
+    content: String
+}
+
+E::Creates {
+    From: User,
+    To: Document
+}
+```
+
+</CodeGroup>
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreateUser", {"name": "Alice", "email": "alice@example.com"})
+alice_id = alice[0]["user"]["id"]
+
+creation = client.query("CreateDocument", {
+    "user_id": alice_id,
+    "content": "This is my first document",
+    "vector": [0.1, 0.2, 0.3, 0.4, 0.5],
+})
+creation_id = creation[0]["creation_edge"]["id"]
+
+vector = client.query("GetDocumentVector", {
+    "creation_id": creation_id,
+})
+print(vector)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let alice: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Alice",
+        "email": "alice@example.com",
+    })).await?;
+    let alice_id = alice["user"]["id"].as_str().unwrap().to_string();
+
+    let creation: serde_json::Value = client.query("CreateDocument", &json!({
+        "user_id": alice_id,
+        "content": "This is my first document",
+        "vector": [0.1, 0.2, 0.3, 0.4, 0.5],
+    })).await?;
+    let creation_id = creation["creation_edge"]["id"].as_str().unwrap().to_string();
+
+    let vector: serde_json::Value = client.query("GetDocumentVector", &json!({
+        "creation_id": creation_id,
+    })).await?;
+    println!("GetDocumentVector result: {vector:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    var alice map[string]any
+    if err := client.Query("CreateUser",
+        helix.WithData(map[string]any{"name": "Alice", "email": "alice@example.com"}),
+    ).Scan(&alice); err != nil {
+        log.Fatalf("CreateUser (Alice) failed: %s", err)
+    }
+
+    aliceID := alice["user"].(map[string]any)["id"].(string)
+
+    var creation map[string]any
+    if err := client.Query("CreateDocument",
+        helix.WithData(map[string]any{
+            "user_id": aliceID,
+            "content": "This is my first document",
+            "vector": []float64{0.1, 0.2, 0.3, 0.4, 0.5},
+        }),
+    ).Scan(&creation); err != nil {
+        log.Fatalf("CreateDocument failed: %s", err)
+    }
+
+    creationID := creation["creation_edge"].(map[string]any)["id"].(string)
+
+    var vector map[string]any
+    if err := client.Query("GetDocumentVector",
+        helix.WithData(map[string]any{"creation_id": creationID}),
+    ).Scan(&vector); err != nil {
+        log.Fatalf("GetDocumentVector failed: %s", err)
+    }
+
+    fmt.Printf("GetDocumentVector result: %#v\n", vector)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        email: "alice@example.com",
+    });
+
+    const creation = await client.query("CreateDocument", {
+        user_id: alice.user.id,
+        content: "This is my first document",
+        vector: [0.1, 0.2, 0.3, 0.4, 0.5],
+    });
+
+    const vector = await client.query("GetDocumentVector", {
+        creation_id: creation.creation_edge.id,
+    });
+
+    console.log("GetDocumentVector result:", vector);
+}
+
+main().catch((err) => {
+    console.error("GetDocumentVector query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","email":"alice@example.com"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+creation=$(curl -s -X POST \
+  http://localhost:6969/CreateDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"'"$alice_id"'","content":"This is my first document","vector":[0.1,0.2,0.3,0.4,0.5]}')
+creation_id=$(echo "$creation" | jq -r '.creation_edge.id')
+
+curl -s -X POST \
+  http://localhost:6969/GetDocumentVector \
+  -H 'Content-Type: application/json' \
+  -d '{"creation_id":"'"$creation_id"'"}'
+```
+
+</CodeGroup>

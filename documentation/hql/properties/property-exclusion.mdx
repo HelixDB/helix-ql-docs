@@ -1,0 +1,244 @@
+---
+title: "Property Exclusion"
+description: "Exclude specific properties from query results while returning all other properties using the exclusion syntax."
+---
+
+```rust
+::!{<property1>, <property2>, ...}
+```
+
+<Note>
+Property exclusion is useful when you want to return most properties but hide sensitive or unnecessary fields like passwords, internal IDs, or large data fields.
+</Note>
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+### Example 1: Excluding sensitive properties
+<CodeGroup>
+
+```rust Query focus={1-3} [expandable]
+QUERY GetPublicUserInfo () =>
+    users <- N<User>::RANGE(0, 10)
+    RETURN users::!{email, location}
+
+QUERY CreateUser (name: String, age: U8, email: String, posts: U32, followers: U32, following: U32, location: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email,
+        posts: posts,
+        followers: followers,
+        following: following,
+        location: location
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+    posts: U32,
+    followers: U32,
+    following: U32,
+    location: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {
+        "name": "Alice",
+        "age": 25,
+        "email": "alice@example.com",
+        "posts": 42,
+        "followers": 150,
+        "following": 89,
+        "location": "New York"
+    },
+    {
+        "name": "Bob",
+        "age": 30,
+        "email": "bob@example.com",
+        "posts": 28,
+        "followers": 203,
+        "following": 156,
+        "location": "San Francisco"
+    },
+    {
+        "name": "Charlie",
+        "age": 28,
+        "email": "charlie@example.com",
+        "posts": 67,
+        "followers": 89,
+        "following": 234,
+        "location": "London"
+    }
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetPublicUserInfo", {})
+print("Public user info (email and location excluded):", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let users = vec![
+        ("Alice", 25, "alice@example.com", 42, 150, 89, "New York"),
+        ("Bob", 30, "bob@example.com", 28, 203, 156, "San Francisco"),
+        ("Charlie", 28, "charlie@example.com", 67, 89, 234, "London"),
+    ];
+
+    for (name, age, email, posts, followers, following, location) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+            "posts": posts,
+            "followers": followers,
+            "following": following,
+            "location": location,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("GetPublicUserInfo", &json!({})).await?;
+    println!("Public user info (email and location excluded): {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    users := []map[string]any{
+        {
+            "name": "Alice", "age": uint8(25), "email": "alice@example.com",
+            "posts": uint32(42), "followers": uint32(150), "following": uint32(89), "location": "New York",
+        },
+        {
+            "name": "Bob", "age": uint8(30), "email": "bob@example.com",
+            "posts": uint32(28), "followers": uint32(203), "following": uint32(156), "location": "San Francisco",
+        },
+        {
+            "name": "Charlie", "age": uint8(28), "email": "charlie@example.com",
+            "posts": uint32(67), "followers": uint32(89), "following": uint32(234), "location": "London",
+        },
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("GetPublicUserInfo", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("GetPublicUserInfo failed: %s", err)
+    }
+
+    fmt.Printf("Public user info (email and location excluded): %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        {
+            name: "Alice",
+            age: 25,
+            email: "alice@example.com",
+            posts: 42,
+            followers: 150,
+            following: 89,
+            location: "New York"
+        },
+        {
+            name: "Bob",
+            age: 30,
+            email: "bob@example.com",
+            posts: 28,
+            followers: 203,
+            following: 156,
+            location: "San Francisco"
+        },
+        {
+            name: "Charlie",
+            age: 28,
+            email: "charlie@example.com",
+            posts: 67,
+            followers: 89,
+            following: 234,
+            location: "London"
+        }
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetPublicUserInfo", {});
+    console.log("Public user info (email and location excluded):", result);
+}
+
+main().catch((err) => {
+    console.error("GetPublicUserInfo query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com","posts":42,"followers":150,"following":89,"location":"New York"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com","posts":28,"followers":203,"following":156,"location":"San Francisco"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com","posts":67,"followers":89,"following":234,"location":"London"}'
+
+curl -X POST \
+  http://localhost:6969/GetPublicUserInfo \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>

@@ -12,34 +12,52 @@ icon: 'square-js'
 npm install helix-ts
 ```
 
-## Setup
-To setup a simple `Client` to interface with a running helix instance:
-```typescript
+## Quick Start
+
+<CodeGroup>
+```ts main.ts
 import HelixDB from "helix-ts";
 
-// Create a new HelixDB client 
-const client = new HelixDB("https://localhost:6969");
-```
-The default URL is `http://localhost:6969`. For cloud deployments, simply pass in the appropriate URL to the constructor.
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
 
-## Queries
-**helix-ts** has a simple interface for creating queries. First, you can create a new client with the endpoint of your helix instance.
-Then you can start running queries by passing the query name and an argument object matching the query’s expected inputs.
+    const result = await client.query("AddUser", {
+        name: "Alice",
+        age: 25,
+    });
 
-```typescript
-// Query the database
-// Note that the query name is case sensitive
-await client.query("addUser", {
-    name: "John",
-    age: 20
+    console.log("Created user:", result);
+}
+
+main().catch((err) => {
+    console.error("AddUser query failed:", err);
 });
 
-// Get the user
-const user = await client.query("getUser", {
-    name: "John"
-});
+````
 
-console.log(user);
+```js queries.hx
+QUERY AddUser(name: String, age: U8) =>
+    user <- AddN<User>({
+        name: name,
+        age: age
+    })
+    RETURN user
+
+````
+
+```js schema.hx
+N::User {
+    name: String,
+    age: U8
+}
 ```
-> Make sure the argument keys match the expected parameter names in your helix query.
 
+</CodeGroup>
+
+## Configuration
+
+### Custom Endpoint
+
+```ts
+const client = new HelixDB("https://my-endpoint.com:8080");
+```

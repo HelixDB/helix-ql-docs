@@ -1,0 +1,449 @@
+---
+title: "Aggregation"
+description: "Group and aggregate graph data using `GROUP_BY` and `AGGREGATE_BY` operations to analyze patterns and summarize information across nodes and edges."
+icon: "chart-bar"
+---
+
+## Group by properties &nbsp;
+
+Group elements by specific properties to get count summaries.
+
+```rust
+::GROUP_BY(property1, property2, ...)
+```
+
+Returns count summaries:
+```rust
+[
+    {'property': 25, 'count': 3}, 
+    {'property': 30, 'count': 2},
+    {'property': 35, 'count': 1},
+    ...
+]
+```
+
+<Note>
+`GROUP_BY` returns count summaries for each unique combination of the specified properties, useful for analytics and data distribution analysis.
+</Note>
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+### Example 1: Group users by age
+<CodeGroup>
+
+```rust Query focus={1-3} [expandable]
+QUERY GroupUsersByAge () =>
+    users <- N<User>
+    RETURN users::GROUP_BY(age)
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 25, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 30, "email": "diana@example.com"},
+    {"name": "Eve", "age": 35, "email": "eve@example.com"},
+    {"name": "Frank", "age": 25, "email": "frank@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GroupUsersByAge", {})
+print("Users grouped by age:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let users = vec![
+        ("Alice", 25, "alice@example.com"),
+        ("Bob", 30, "bob@example.com"),
+        ("Charlie", 25, "charlie@example.com"),
+        ("Diana", 30, "diana@example.com"),
+        ("Eve", 35, "eve@example.com"),
+        ("Frank", 25, "frank@example.com"),
+    ];
+
+    for (name, age, email) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("GroupUsersByAge", &json!({})).await?;
+    println!("Users grouped by age: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    users := []map[string]any{
+        {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
+        {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
+        {"name": "Charlie", "age": uint8(25), "email": "charlie@example.com"},
+        {"name": "Diana", "age": uint8(30), "email": "diana@example.com"},
+        {"name": "Eve", "age": uint8(35), "email": "eve@example.com"},
+        {"name": "Frank", "age": uint8(25), "email": "frank@example.com"},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("GroupUsersByAge", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("GroupUsersByAge failed: %s", err)
+    }
+
+    fmt.Printf("Users grouped by age: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 25, email: "charlie@example.com" },
+        { name: "Diana", age: 30, email: "diana@example.com" },
+        { name: "Eve", age: 35, email: "eve@example.com" },
+        { name: "Frank", age: 25, email: "frank@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GroupUsersByAge", {});
+    console.log("Users grouped by age:", result);
+}
+
+main().catch((err) => {
+    console.error("GroupUsersByAge query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":25,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":30,"email":"diana@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve","age":35,"email":"eve@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Frank","age":25,"email":"frank@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GroupUsersByAge \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+## Aggregate by properties &nbsp;
+
+Aggregate elements by specific properties to get detailed data grouped by those properties.
+
+```rust
+::AGGREGATE_BY(property1, property2, ...)
+```
+
+Returns grouped data with full objects:
+```rust [expandable]
+[
+    {
+        'count': 3,
+        'data': [
+            {"property1": 25, "property2": "Alice", ...},
+            {"property1": 25, "property2": "Charlie", ...},
+            {"property1": 25, "property2": "Frank", ...}
+        ]
+    },
+    {
+        'count': 2,
+        'data': [
+            {"property1": 30, "property2": "Bob", ...},
+            {"property1": 30, "property2": "Diana", ...}
+        ]
+    },
+    ...
+]
+```
+
+<Note>
+`AGGREGATE_BY` returns the full data objects grouped by the specified properties, providing both count and the actual grouped elements for detailed analysis.
+</Note>
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+### Example 1: Aggregate users by age and email domain
+<CodeGroup>
+
+```rust Query focus={1-3} [expandable]
+QUERY AggregateUsersByAge () =>
+    users <- N<User>
+    RETURN users::AGGREGATE_BY(age)
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice Johnson", "age": 25, "email": "alice@company.com"},
+    {"name": "Bob Smith", "age": 30, "email": "bob@startup.io"},
+    {"name": "Charlie Brown", "age": 25, "email": "charlie@company.com"},
+    {"name": "Diana Prince", "age": 30, "email": "diana@enterprise.org"},
+    {"name": "Eve Wilson", "age": 35, "email": "eve@freelance.net"},
+    {"name": "Frank Miller", "age": 25, "email": "frank@startup.io"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("AggregateUsersByAge", {})
+print("Users aggregated by age:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let users = vec![
+        ("Alice Johnson", 25, "alice@company.com"),
+        ("Bob Smith", 30, "bob@startup.io"),
+        ("Charlie Brown", 25, "charlie@company.com"),
+        ("Diana Prince", 30, "diana@enterprise.org"),
+        ("Eve Wilson", 35, "eve@freelance.net"),
+        ("Frank Miller", 25, "frank@startup.io"),
+    ];
+
+    for (name, age, email) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("AggregateUsersByAge", &json!({})).await?;
+    println!("Users aggregated by age: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    users := []map[string]any{
+        {"name": "Alice Johnson", "age": uint8(25), "email": "alice@company.com"},
+        {"name": "Bob Smith", "age": uint8(30), "email": "bob@startup.io"},
+        {"name": "Charlie Brown", "age": uint8(25), "email": "charlie@company.com"},
+        {"name": "Diana Prince", "age": uint8(30), "email": "diana@enterprise.org"},
+        {"name": "Eve Wilson", "age": uint8(35), "email": "eve@freelance.net"},
+        {"name": "Frank Miller", "age": uint8(25), "email": "frank@startup.io"},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("AggregateUsersByAge", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("AggregateUsersByAge failed: %s", err)
+    }
+
+    fmt.Printf("Users aggregated by age: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice Johnson", age: 25, email: "alice@company.com" },
+        { name: "Bob Smith", age: 30, email: "bob@startup.io" },
+        { name: "Charlie Brown", age: 25, email: "charlie@company.com" },
+        { name: "Diana Prince", age: 30, email: "diana@enterprise.org" },
+        { name: "Eve Wilson", age: 35, email: "eve@freelance.net" },
+        { name: "Frank Miller", age: 25, email: "frank@startup.io" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("AggregateUsersByAge", {});
+    console.log("Users aggregated by age:", result);
+}
+
+main().catch((err) => {
+    console.error("AggregateUsersByAge query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice Johnson","age":25,"email":"alice@company.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob Smith","age":30,"email":"bob@startup.io"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie Brown","age":25,"email":"charlie@company.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana Prince","age":30,"email":"diana@enterprise.org"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve Wilson","age":35,"email":"eve@freelance.net"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Frank Miller","age":25,"email":"frank@startup.io"}'
+
+curl -X POST \
+  http://localhost:6969/AggregateUsersByAge \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+
+---
+
+## Coming Soon
+
+- `DEDUP`
+- Pattern matching

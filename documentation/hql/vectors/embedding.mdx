@@ -1,49 +1,694 @@
 ---
 title: "Embedding Vectors"
+description: "Embed text directly into vectors using the built-in Embed function."
 icon: "link"
 ---
 
-This operation allows you to pass in text directly for inserting and searching vectors.
-The text is automatically embedded with an embedding model of your choice (can be defined
-in your `config.hx.json` file). The default embedding model is `text-embedding-ada-002` from
-OpenAI. Make sure to set your `OPENAI_API_KEY` environment variable with your api key as well.
+## Embed Text using `Embed` &nbsp;
 
-### `Embed`
-
-Embeds the input text and returns a vector
+Automatically embed text into vectors using your configured embedding model.
 
 ```rust
 Embed(text)
 AddV<Type>(Embed(text))
+AddV<Type>(Embed(text), {properties})
+SearchV<Type>(Embed(text), limit)
 ```
 
-**Example:**
+<Note>
+The text is automatically embedded with an embedding model of your choice (can be defined in your `config.hx.json` file). The default embedding model is `text-embedding-ada-002` from OpenAI.
+</Note>
 
-In schema.hx:
+<Warning>
+Make sure to set your `OPENAI_API_KEY` environment variable with your API key in the same location as the `queries.hx`, `schema.hx` and `config.hx.json` files. When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
 
-```rust
+### Example 1: Creating a vector from text
+<CodeGroup>
+
+```rust Query
+QUERY InsertTextAsVector (content: String, created_at: Date) =>
+    document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    RETURN document
+```
+
+```rust Schema
 V::Document {
     content: String,
-    created_at: I64
+    created_at: Date
 }
 ```
 
-In query.hx:
+```.env Environment Variables (.env)
+OPENAI_API_KEY=your_api_key
+```
+</CodeGroup>
 
-```rust
-QUERY InsertText(content: String, created_at: I64) =>
-    // Create an empty user node
-    basic_user <- AddV<Document>(Embed(content))
-    // You could also write it like this with properties
-    AddV<Document>(Embed(content), { content: content, created_at: created_at })
-    RETURN basic_user
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+print(client.query("InsertTextAsVector", {
+    "content": "Machine learning is transforming the way we work.",
+    "created_at": datetime.now(timezone.utc).isoformat(),
+}))
 ```
 
-You can also use the `Embed` function in a search query:
+```rust Rust [expandable]
+use chrono::Utc;
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
 
-```rust
-QUERY SearchText(query: String, limit: I64) =>
-    // Search for documents that are similar to the query
-    results <- SearchV<Document>(Embed(query), limit)
-    RETURN results
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let payload = json!({
+        "content": "Machine learning is transforming the way we work.",
+        "created_at": Utc::now().to_rfc3339(),
+    });
+
+    let result: serde_json::Value = client.query("InsertTextAsVector", &payload).await?;
+    println!("Created document vector: {result:#?}");
+
+    Ok(())
+}
 ```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    payload := map[string]any{
+        "content":    "Machine learning is transforming the way we work.",
+        "created_at": time.Now().UTC().Format(time.RFC3339),
+    }
+
+    var result map[string]any
+    if err := client.Query("InsertTextAsVector", helix.WithData(payload)).Scan(&result); err != nil {
+        log.Fatalf("InsertTextAsVector failed: %s", err)
+    }
+
+    fmt.Printf("Created document vector: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("InsertTextAsVector", {
+        content: "Machine learning is transforming the way we work.",
+        created_at: new Date().toISOString(),
+    });
+
+    console.log("Created document vector:", result);
+}
+
+main().catch((err) => {
+    console.error("InsertTextAsVector query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Machine learning is transforming the way we work.","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+</CodeGroup>
+
+### Example 2: Searching with text embeddings
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY SearchWithText (query: String, limit: I64) =>
+    documents <- SearchV<Document>(Embed(query), limit)
+    RETURN documents
+
+QUERY InsertTextAsVector (content: String, created_at: Date) =>
+    document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    RETURN document
+```
+
+```rust Schema
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+```.env Environment Variables (.env)
+OPENAI_API_KEY=your_api_key
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+
+```python Python [expandable]
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+sample_texts = [
+    "Artificial intelligence is revolutionizing automation",
+    "Machine learning algorithms for predictive analytics",
+    "Deep learning applications in computer vision"
+]
+
+for text in sample_texts:
+    client.query("InsertTextAsVector", {
+        "content": text,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+result = client.query("SearchWithText", {
+    "query": "artificial intelligence and automation",
+    "limit": 5,
+})
+
+print(result)
+```
+
+```rust Rust [expandable]
+use chrono::Utc;
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let sample_texts = vec![
+        "Artificial intelligence is revolutionizing automation",
+        "Machine learning algorithms for predictive analytics",
+        "Deep learning applications in computer vision"
+    ];
+
+    for text in &sample_texts {
+        let _inserted: serde_json::Value = client.query("InsertTextAsVector", &json!({
+            "content": text,
+            "created_at": Utc::now().to_rfc3339(),
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("SearchWithText", &json!({
+        "query": "artificial intelligence and automation",
+        "limit": 5,
+    })).await?;
+
+    println!("Search results: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    sampleTexts := []string{
+        "Artificial intelligence is revolutionizing automation",
+        "Machine learning algorithms for predictive analytics",
+        "Deep learning applications in computer vision",
+    }
+
+    for _, text := range sampleTexts {
+        insertPayload := map[string]any{
+            "content":    text,
+            "created_at": time.Now().UTC().Format(time.RFC3339),
+        }
+
+        var inserted map[string]any
+        if err := client.Query("InsertTextAsVector", helix.WithData(insertPayload)).Scan(&inserted); err != nil {
+            log.Fatalf("InsertTextAsVector failed: %s", err)
+        }
+    }
+
+    searchPayload := map[string]any{
+        "query": "artificial intelligence and automation",
+        "limit": int64(5),
+    }
+
+    var result map[string]any
+    if err := client.Query("SearchWithText", helix.WithData(searchPayload)).Scan(&result); err != nil {
+        log.Fatalf("SearchWithText failed: %s", err)
+    }
+
+    fmt.Printf("Search results: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const sampleTexts = [
+        "Artificial intelligence is revolutionizing automation",
+        "Machine learning algorithms for predictive analytics",
+        "Deep learning applications in computer vision"
+    ];
+
+    for (const text of sampleTexts) {
+        await client.query("InsertTextAsVector", {
+            content: text,
+            created_at: new Date().toISOString(),
+        });
+    }
+
+    const result = await client.query("SearchWithText", {
+        query: "artificial intelligence and automation",
+        limit: 5,
+    });
+
+    console.log("Search results:", result);
+}
+
+main().catch((err) => {
+    console.error("SearchWithText query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Artificial intelligence is revolutionizing automation","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Machine learning algorithms for predictive analytics","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Deep learning applications in computer vision","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/SearchWithText \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"artificial intelligence and automation","limit":5}'
+```
+</CodeGroup>
+
+### Example 3: Creating a vector and connecting it to a user
+<CodeGroup>
+```rust Query focus={1-5} [expandable]
+QUERY CreateUserDocument (user_id: ID, content: String, created_at: Date) =>
+    user <- N<User>(user_id)
+    document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    AddE<User_to_Document_Embedding>::From(user)::To(document)
+    RETURN document
+
+QUERY CreateUser (name: String, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        email: email
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    email: String
+}
+
+V::Document {
+    content: String,
+    created_at: Date
+}
+
+E::User_to_Document_Embedding {
+    From: User,
+    To: Document,
+}
+```
+
+```.env Environment Variables (.env)
+OPENAI_API_KEY=your_api_key
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+
+```python Python [expandable]
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+user = client.query("CreateUser", {
+    "name": "Alice Johnson",
+    "email": "alice@example.com",
+})
+user_id = user[0]["user"]["id"]
+
+result = client.query("CreateUserDocument", {
+    "user_id": user_id,
+    "content": "This is my personal note about project planning.",
+    "created_at": datetime.now(timezone.utc).isoformat(),
+})
+
+print(result)
+```
+
+```rust Rust [expandable]
+use chrono::Utc;
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let user: serde_json::Value = client.query("CreateUser", &json!({
+        "name": "Alice Johnson",
+        "email": "alice@example.com",
+    })).await?;
+    let user_id = user["user"]["id"].as_str().unwrap().to_string();
+
+    let result: serde_json::Value = client.query("CreateUserDocument", &json!({
+        "user_id": user_id,
+        "content": "This is my personal note about project planning.",
+        "created_at": Utc::now().to_rfc3339(),
+    })).await?;
+
+    println!("Created user document: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    userPayload := map[string]any{
+        "name":  "Alice Johnson",
+        "email": "alice@example.com",
+    }
+
+    var user map[string]any
+    if err := client.Query("CreateUser", helix.WithData(userPayload)).Scan(&user); err != nil {
+        log.Fatalf("CreateUser failed: %s", err)
+    }
+
+    userID := user["user"].(map[string]any)["id"].(string)
+
+    docPayload := map[string]any{
+        "user_id":    userID,
+        "content":    "This is my personal note about project planning.",
+        "created_at": time.Now().UTC().Format(time.RFC3339),
+    }
+
+    var result map[string]any
+    if err := client.Query("CreateUserDocument", helix.WithData(docPayload)).Scan(&result); err != nil {
+        log.Fatalf("CreateUserDocument failed: %s", err)
+    }
+
+    fmt.Printf("Created user document: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const user = await client.query("CreateUser", {
+        name: "Alice Johnson",
+        email: "alice@example.com",
+    });
+    const userId: string = user.user.id;
+
+    const result = await client.query("CreateUserDocument", {
+        user_id: userId,
+        content: "This is my personal note about project planning.",
+        created_at: new Date().toISOString(),
+    });
+
+    console.log("Created user document:", result);
+}
+
+main().catch((err) => {
+    console.error("CreateUserDocument query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice Johnson","email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUserDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","content":"This is my personal note about project planning.","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+</CodeGroup>
+
+### Example 4: Semantic search with postfiltering
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY SearchRecentNotes (query: String, limit: I64, cutoff_date: Date) =>
+    documents <- SearchV<Document>(Embed(query), limit)::WHERE(_::{created_at}::GTE(cutoff_date))
+    RETURN documents
+
+QUERY InsertTextAsVector (content: String, created_at: Date) =>
+    document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    RETURN document
+```
+
+```rust Schema
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+```.env Environment Variables (.env)
+OPENAI_API_KEY=your_api_key
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+
+```python Python [expandable]
+from datetime import datetime, timezone, timedelta
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+recent_date = datetime.now(timezone.utc).isoformat()
+old_date = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+
+client.query("InsertTextAsVector", {
+    "content": "Project milestone review scheduled for next week",
+    "created_at": recent_date,
+})
+
+client.query("InsertTextAsVector", {
+    "content": "Weekly status report from last month",
+    "created_at": old_date,
+})
+
+cutoff_date = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+
+result = client.query("SearchRecentNotes", {
+    "query": "project deadlines and milestones",
+    "limit": 10,
+    "cutoff_date": cutoff_date,
+})
+
+print(result)
+```
+
+```rust Rust [expandable]
+use chrono::{Duration, Utc};
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let recent_date = Utc::now().to_rfc3339();
+    let old_date = (Utc::now() - Duration::days(10)).to_rfc3339();
+
+    let _recent: serde_json::Value = client.query("InsertTextAsVector", &json!({
+        "content": "Project milestone review scheduled for next week",
+        "created_at": recent_date,
+    })).await?;
+
+    let _old: serde_json::Value = client.query("InsertTextAsVector", &json!({
+        "content": "Weekly status report from last month",
+        "created_at": old_date,
+    })).await?;
+
+    let cutoff_date = (Utc::now() - Duration::days(7)).to_rfc3339();
+
+    let result: serde_json::Value = client.query("SearchRecentNotes", &json!({
+        "query": "project deadlines and milestones",
+        "limit": 10,
+        "cutoff_date": cutoff_date,
+    })).await?;
+
+    println!("Recent search results: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    recentDate := time.Now().UTC().Format(time.RFC3339)
+    oldDate := time.Now().UTC().AddDate(0, 0, -10).Format(time.RFC3339)
+
+    recentPayload := map[string]any{
+        "content":    "Project milestone review scheduled for next week",
+        "created_at": recentDate,
+    }
+    var recent map[string]any
+    if err := client.Query("InsertTextAsVector", helix.WithData(recentPayload)).Scan(&recent); err != nil {
+        log.Fatalf("InsertTextAsVector (recent) failed: %s", err)
+    }
+
+    oldPayload := map[string]any{
+        "content":    "Weekly status report from last month",
+        "created_at": oldDate,
+    }
+    var old map[string]any
+    if err := client.Query("InsertTextAsVector", helix.WithData(oldPayload)).Scan(&old); err != nil {
+        log.Fatalf("InsertTextAsVector (old) failed: %s", err)
+    }
+
+    cutoffDate := time.Now().UTC().AddDate(0, 0, -7).Format(time.RFC3339)
+
+    searchPayload := map[string]any{
+        "query":       "project deadlines and milestones",
+        "limit":       int64(10),
+        "cutoff_date": cutoffDate,
+    }
+
+    var result map[string]any
+    if err := client.Query("SearchRecentNotes", helix.WithData(searchPayload)).Scan(&result); err != nil {
+        log.Fatalf("SearchRecentNotes failed: %s", err)
+    }
+
+    fmt.Printf("Recent search results: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const recentDate = new Date().toISOString();
+    const oldDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+
+    await client.query("InsertTextAsVector", {
+        content: "Project milestone review scheduled for next week",
+        created_at: recentDate,
+    });
+
+    await client.query("InsertTextAsVector", {
+        content: "Weekly status report from last month",
+        created_at: oldDate,
+    });
+
+    const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const result = await client.query("SearchRecentNotes", {
+        query: "project deadlines and milestones",
+        limit: 10,
+        cutoff_date: cutoffDate,
+    });
+
+    console.log("Recent search results:", result);
+}
+
+main().catch((err) => {
+    console.error("SearchRecentNotes query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Project milestone review scheduled for next week","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Weekly status report from last month","created_at":"'"$(date -u -d '10 days ago' +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/SearchRecentNotes \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"project deadlines and milestones","limit":10,"cutoff_date":"'"$(date -u -d '7 days ago' +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+</CodeGroup>
