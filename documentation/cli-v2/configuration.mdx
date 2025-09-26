@@ -1,0 +1,61 @@
+---
+title: "CLI v2 - Configuration"
+description: "Project configuration with helix.toml and instance settings"
+icon: "sliders"
+mode: "wide"
+---
+
+The CLI v2 uses `helix.toml` at the project root. It defines the project name, queries directory, and instance configurations.
+
+## helix.toml
+
+```toml
+[project]
+name = "my-helix-app"
+queries = "./db/"
+
+[local.dev]
+port = 6969
+build_mode = "debug" # dev | debug | release
+mcp = true
+bm25 = true
+
+[local.dev.vector_config]
+m = 16
+ef_construction = 128
+ef_search = 768
+db_max_size_gb = 20
+
+[local.dev.graph_config]
+secondary_indices = []
+
+# Cloud instances may be present under [cloud]
+[cloud.production]
+type = "helix" # helix | flyio | ecr
+cluster_id = "helix-prod-..."
+region = "us-east-1"
+build_mode = "release"
+mcp = true
+bm25 = true
+```
+
+Notes:
+
+- Vector and graph configs mirror the v1 `config.hx.json` fields and defaults.
+- `build_mode` controls Docker image tags and build targets.
+- `queries` is the folder where `.hx` files live (e.g., `schema.hx`, `queries.hx`).
+
+## Instance Resolution
+
+The CLI reads `helix.toml` to resolve instances. Use `helix status` to list configured instances and types.
+
+## Legacy Compatibility
+
+When building, `config.hx.json` is generated into the instance workspace to preserve compatibility with the engine/runtime.
+
+## Environment & Credentials
+
+- Helix Cloud credentials: `~/.helix/credentials`
+- Fly.io API key (when using API auth): `~/.helix/helix.env` with `FLY_API_KEY=...`
+
+

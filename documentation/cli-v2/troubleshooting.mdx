@@ -1,0 +1,64 @@
+---
+title: "CLI v2 - Troubleshooting"
+description: "Common issues and fixes when using the Helix CLI v2"
+icon: "circle-question"
+mode: "wide"
+---
+
+## Common Errors
+
+### Not in a Helix project
+
+```
+Not in a Helix project directory. Run 'helix init' to create one.
+```
+
+Fix: run `helix init` in your project directory, or `cd` into a folder containing `helix.toml`.
+
+### Docker not available
+
+Symptoms: build/push/start/prune commands fail with Docker errors.
+
+Fix:
+- Install Docker Desktop and start the daemon
+- Ensure your user has permission to use Docker
+
+### No schema definitions found
+
+```
+error: no schema definitions found in project
+```
+
+Fix: ensure `./db/schema.hx` contains at least one `N::` node or `E::` edge definition.
+
+### Compilation failed (query errors)
+
+`helix check` and `helix build` run parsing and analysis. The output will include file paths and hints. Resolve errors in `.hx` files and rerun.
+
+### Fly.io auth errors
+
+Fix:
+- Install `flyctl` and run `flyctl auth login`
+- If using API key auth, create `~/.helix/helix.env` with `FLY_API_KEY=...`
+
+### AWS CLI errors / ECR push fails
+
+Fix:
+- Install `aws` CLI and run `aws configure`
+- Ensure the user has ECR permissions
+
+### Helix Cloud auth missing
+
+```
+Credentials file not found
+```
+
+Fix: run `helix auth login`. Credentials are stored at `~/.helix/credentials`.
+
+## Getting Help
+
+- Run commands with `--help` for usage
+- Check `helix status` for instance and container insights
+- Ask in Discord (`https://discord.com/invite/2stgMPr5BD`)
+
+

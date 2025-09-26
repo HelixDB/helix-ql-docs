@@ -1,0 +1,113 @@
+---
+title: "CLI v2 - Getting Started"
+description: "Install, set up, and authenticate the Helix CLI v2"
+icon: "square-terminal"
+mode: "wide"
+---
+
+<Warning>
+Docker is required for local instances. Install Docker Desktop and ensure the daemon is running. Cloud integrations may require extra CLIs (Fly.io, AWS CLI) noted below.
+</Warning>
+
+## Install
+
+Use the official installer. This downloads a prebuilt binary and sets your PATH.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/HelixDB/helix-db/main/install.sh | bash
+```
+
+- To force reinstall: add `-- -f`
+- To install system-wide: `-- --system` (may require sudo)
+
+Verify installation:
+
+```bash
+helix --version
+helix --help
+```
+
+## Update
+
+```bash
+helix update           # checks and updates to the latest release
+helix update --force   # reinstall even if up to date
+```
+
+## Prerequisites
+
+- Docker (for local dev instances)
+- Git (for first-time Helix source cache)
+- Optional, per integration:
+  - Fly.io: `flyctl` and an authenticated session
+  - AWS ECR: `aws` CLI with credentials configured
+
+## Authenticate with Helix Cloud
+
+Helix Cloud operations require login.
+
+```bash
+helix auth login
+```
+
+You’ll be prompted with a verification URL and code. Complete the flow in your browser. Credentials are stored at `~/.helix/credentials`.
+
+To log out:
+
+```bash
+helix auth logout
+```
+
+## Create a New Project
+
+Initialize a project (generates `helix.toml`, `./db/` with `schema.hx` and `queries.hx`).
+
+```bash
+mkdir my-helix-app && cd my-helix-app
+helix init
+```
+
+Common variations:
+
+```bash
+helix init --path .                   # initialize in current directory
+helix init --queries-path ./db/       # custom queries folder (default ./db/)
+
+# Initialize with a cloud instance placeholder (config saved locally, provisioning when available)
+helix init cloud --region us-east-1   # Helix Cloud
+
+# Initialize targeting Fly.io
+helix init fly --vm-size performance-4x --volume-size 20 --public false
+
+# Initialize targeting AWS ECR
+helix init ecr
+```
+
+## Next Steps (Local Dev)
+
+```bash
+helix check                  # validate schema and queries
+helix build dev              # compile queries and generate Docker files
+helix push dev               # build image (if needed) and start the instance
+helix status                 # show project & container status
+helix stop dev               # stop the instance
+```
+
+Connection info for a local instance:
+
+```text
+Local URL: http://localhost:6969
+Container: helix_<project>_dev
+Data volume: <project>/.helix/.volumes/dev
+```
+
+## Enable/Disable Metrics (Optional)
+
+```bash
+helix metrics full    # opt into usage metrics (prompts for email)
+helix metrics basic   # minimal metrics
+helix metrics off     # disable metrics
+helix metrics status  # show current metrics status
+```
+
+

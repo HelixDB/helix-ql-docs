@@ -1,0 +1,193 @@
+---
+title: "CLI v2 - Command Reference"
+description: "All commands, options, and examples for the Helix CLI v2"
+icon: "book"
+mode: "wide"
+---
+
+This page lists each command with parameters and practical examples. Unless specified, commands operate on the nearest parent directory containing `helix.toml`.
+
+## Project Lifecycle
+
+### helix init [options] [subcommand]
+Initialize a new Helix project with `helix.toml` and a default `./db/` folder.
+
+- `--path, -p <PATH>`: Project directory (default: current directory)
+- `--queries-path, -q <PATH>`: Queries directory (default: `./db/`)
+
+Subcommands (choose one to set up a deployment target configuration):
+
+- `cloud [--region <REGION>] [--name <NAME>]`
+- `ecr [--name <NAME>]`
+- `fly [--auth <api_key|cli>] [--volume-size <GB>] [--vm-size <SIZE>] [--public <true|false>] [--name <NAME>]`
+
+Examples:
+
+```bash
+helix init
+helix init --path . --queries-path ./db/
+helix init cloud --region us-east-1
+helix init fly --auth cli --volume-size 20 --vm-size performance-4x --public false
+helix init ecr
+```
+
+### helix add 
+Add a new instance to an existing project.
+
+Deployments:
+
+- `cloud [--region <REGION>] [--name <NAME>]`
+- `ecr [--name <NAME>]`
+- `fly [--auth <api_key|cli>] [--volume-size <GB>] [--vm-size <SIZE>] [--public <true|false>] [--name <NAME>]`
+- `local` (default if no subcommand matches)
+
+```bash
+helix add cloud --name prod --region us-east-1
+helix add fly --name staging --auth cli --vm-size performance-4x --public false
+helix add ecr --name images
+```
+
+### helix check [instance]
+Validate project configuration and `.hx` files.
+
+- `<instance>`: Optional instance name. When omitted, validates all.
+
+```bash
+helix check
+helix check dev
+```
+
+### helix compile [options]
+Parse and analyze `.hx` files and generate Rust code to the output directory.
+
+- `--path, -p <PATH>`: Directory containing `helix.toml` (defaults to auto-detect)
+- `--output, -o <PATH>`: Output directory (default: project root)
+
+```bash
+helix compile --output ./gen
+helix compile --path . --output ./gen
+```
+
+## Build & Deploy
+
+### helix build 
+Compile queries into an instance workspace and generate Docker assets.
+
+```bash
+helix build dev
+```
+
+### helix push 
+Deploy/start an instance.
+
+- Local: builds image, starts via Docker Compose
+- Fly.io: tags, pushes, and deploys image using `flyctl`
+- ECR: tags and pushes image to ECR
+- Helix Cloud: uploads queries to cloud
+
+```bash
+helix push dev
+helix push prod
+```
+
+### helix pull  
+Pull `.hql`/queries from an instance back to the project. Currently shows informative messages; extraction for local/cloud is WIP.
+
+```bash
+helix pull dev
+```
+
+### helix start 
+Start an instance that has already been built.
+
+```bash
+helix start dev
+```
+
+### helix stop 
+Stop a running instance.
+
+```bash
+helix stop dev
+```
+
+### helix status
+Show project info, configured instances, and local container status.
+
+```bash
+helix status
+```
+
+### helix prune [options] [instance]
+Clean up Docker resources and workspaces.
+
+- `--all, -a`: Prune all instances in the project
+- `<instance>`: Prune a specific instance (containers/images, preserves volumes)
+– No args outside a project directory: offers system-wide cleanup of Helix images
+
+```bash
+helix prune                # project cleanup of unused resources
+helix prune dev            # prune a specific instance
+helix prune --all          # prune all instances
+```
+
+### helix delete 
+Permanently delete an instance and ALL its data (removes containers, images, volumes, workspace). For cloud targets, also destroys cloud resources where implemented.
+
+```bash
+helix delete dev
+```
+
+## Cloud & Auth
+
+### helix auth 
+
+- `helix auth login`: interactive GitHub device flow; stores credentials in `~/.helix/credentials`
+- `helix auth logout`: removes stored credentials
+- `helix auth create-key <cluster>`: create a new API key for a cluster (WIP)
+
+```bash
+helix auth login
+helix auth logout
+helix auth create-key helix-prod-uuid
+```
+
+## Metrics & Updates
+
+### helix metrics 
+
+Opt in/out of anonymous usage metrics.
+
+```bash
+helix metrics full
+helix metrics status
+helix metrics off
+```
+
+### helix update [--force]
+
+Self-update to latest release.
+
+```bash
+helix update
+helix update --force
+```
+
+## Migration
+
+### helix migrate [options]
+Migrate a v1 project (with `config.hx.json`, `schema.hx`, queries in root) to v2 (`helix.toml`, `./db/`).
+
+- `--path, -p <DIR>`: Project directory (default: current)
+- `--queries-dir, -q <DIR>`: Destination queries directory (default: `./db/`)
+- `--instance-name, -i <NAME>`: Name for local instance (default: `dev`)
+- `--port <PORT>`: Local port (default: `6969`)
+- `--dry-run`: Show plan only
+- `--no-backup`: Skip backup of v1 files
+
+```bash
+helix migrate --dry-run
+helix migrate --queries-dir ./db/ --instance-name dev --port 6969
+```
+
+

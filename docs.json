@@ -22,9 +22,21 @@
                             "documentation/getting-started/intro",
                             "documentation/getting-started/installation",
                             "documentation/getting-started/quick-start",
-                            "documentation/getting-started/helixcli",
+                            "documentation/cli-v2/overview",
+                            "documentation/cli-v2/getting-started",
                             "documentation/getting-started/helixdb",
                             "documentation/getting-started/graph-database"
+                        ]
+                    },
+                    {
+                        "group": "CLI v2",
+                        "pages": [
+                            "documentation/cli-v2/overview",
+                            "documentation/cli-v2/getting-started",
+                            "documentation/cli-v2/command-reference",
+                            "documentation/cli-v2/configuration",
+                            "documentation/cli-v2/workflows",
+                            "documentation/cli-v2/troubleshooting"
                         ]
                     },
                     {

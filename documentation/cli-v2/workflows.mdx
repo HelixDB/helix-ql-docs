@@ -1,0 +1,88 @@
+---
+title: "CLI v2 - Common Workflows"
+description: "End-to-end examples for local dev and cloud"
+icon: "diagram-project"
+mode: "wide"
+---
+
+## Local Development
+
+1) Initialize and validate
+
+```bash
+helix init
+helix check
+```
+
+2) Build and run
+
+```bash
+helix build dev
+helix push dev
+```
+
+3) Iterate
+
+```bash
+# Edit ./db/schema.hx and ./db/queries.hx
+helix check
+helix push dev   # rebuilds if needed and restarts
+```
+
+4) Inspect status and stop
+
+```bash
+helix status
+helix stop dev
+```
+
+5) Clean up
+
+```bash
+helix prune dev    # remove containers/images for dev (keeps volumes)
+helix prune --all  # clean all instance workspaces in project
+```
+
+## Fly.io Deployment
+
+Prerequisites: `flyctl` installed and authenticated.
+
+```bash
+helix add fly --name prod --auth cli --vm-size performance-4x --public false
+helix build prod
+helix push prod
+```
+
+To start/stop later:
+
+```bash
+helix start prod
+helix stop prod
+``;
+
+## AWS ECR Image Push
+
+Prerequisites: `aws` CLI configured.
+
+```bash
+helix add ecr --name images
+helix build images
+helix push images
+```
+
+## Helix Cloud
+
+Authenticate:
+
+```bash
+helix auth login
+```
+
+Add an instance and deploy queries to the managed cluster:
+
+```bash
+helix add cloud --name prod --region us-east-1
+helix push prod
+```
+
+
