@@ -21,6 +21,7 @@
                         "pages": [
                             "documentation/getting-started/intro",
                             "documentation/getting-started/installation",
+                            "documentation/cli-v2/getting-started",
                             "documentation/getting-started/helixdb",
                             "documentation/getting-started/graph-database"
                         ]
@@ -28,7 +29,6 @@
                     {
                         "group": "CLI",
                         "pages": [
-                            "documentation/cli-v2/getting-started",
                             "documentation/cli-v2/command-reference",
                             "documentation/cli-v2/configuration",
                             "documentation/cli-v2/workflows",
