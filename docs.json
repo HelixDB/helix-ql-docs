@@ -22,14 +22,12 @@
                             "documentation/getting-started/intro",
                             "documentation/getting-started/installation",
                             "documentation/getting-started/quick-start",
-                            "documentation/cli-v2/overview",
-                            "documentation/cli-v2/getting-started",
                             "documentation/getting-started/helixdb",
                             "documentation/getting-started/graph-database"
                         ]
                     },
                     {
-                        "group": "CLI v2",
+                        "group": "CLI",
                         "pages": [
                             "documentation/cli-v2/getting-started",
                             "documentation/cli-v2/command-reference",
