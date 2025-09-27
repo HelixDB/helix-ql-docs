@@ -114,20 +114,6 @@ helix init --queries-path ./database/
 
 Add a new instance to an existing Helix project.
 
-<Example>
-```bash
-# Add a staging environment running on Fly.io
-
-helix add fly --name staging
-
-# Add a local testing instance
-
-helix add local --name testing
-
-````
-</Example>
-
-
 <ResponseField name="helix add [SUBCOMMAND]" >
 
     <Expandable title="subcommands">
@@ -188,20 +174,6 @@ helix add local --name testing
 
 Migrate a v1 Helix project to v2 format.
 
-<Example>
-```bash
-# Migrate current directory
-helix migrate
-
-# Dry run to see what will change
-helix migrate --dry-run
-
-# Migrate with custom settings
-helix migrate --instance-name local --port 7070
-````
-
-</Example>
-
 <ResponseField name="helix migrate [OPTIONS]" >
     <Expandable title="options">
         <ResponseField name="--path | -p [PATH]" type="String">
@@ -237,18 +209,6 @@ helix migrate --instance-name local --port 7070
 
 Validate project configuration and query syntax.
 
-<Example>
-
-```bash
-# Check all instances
-helix check
-
-# Check specific instance
-helix check dev
-```
-
-</Example>
-
 <ResponseField name="helix check [INSTANCE]">
   Name of the instance to check (defaults to all instances)
 </ResponseField>
@@ -256,20 +216,6 @@ helix check dev
 ### `helix compile`
 
 Compile project queries into executable format.
-
-<Example>
-```bash
-# Compile with default settings
-helix compile
-
-# Compile with custom output
-
-helix compile --output ./dist/queries
-
-```
-
-</Example>
-
 
 <ResponseField name="helix compile [OPTIONS]">
   <Expandable title="options">
@@ -287,16 +233,6 @@ helix compile --output ./dist/queries
 
 Build and prepare an instance for deployment.
 
-<Example>
-```bash
-# Build development instance
-helix build dev
-
-# Build production instance
-helix build production
-````
-
-</Example>
 
 <Note>
 **What it does:**
@@ -317,17 +253,6 @@ helix build production
 
 Deploy or update a running instance.
 
-<Example>   
-```bash
-# Deploy development instance
-helix push dev
-
-# Deploy production instance
-
-helix push production
-
-````
-</Example>
 
 <Note>
 **What it does:**
@@ -395,18 +320,6 @@ helix status
 
 Remove unused containers, images, and workspace files.
 
-<Example>
-```bash
-# Prune unused resources
-helix prune
-
-# Prune specific instance
-helix prune dev
-
-# Prune all instances
-helix prune --all
-```
-</Example>
 
 <Note>
 **What it removes:**
@@ -431,13 +344,6 @@ helix prune --all
 
 Permanently delete an instance and all its data.
 
-<Example>
-```bash
-# Delete testing instance
-helix delete testing
-```
-</Example>
-
 <Note>
 **What it removes:**
 
@@ -457,20 +363,6 @@ helix delete testing
 ### `helix auth`
 
 Manage authentication for Helix Cloud.
-
-<Example>
-```bash
-# Login to Helix Cloud
-helix auth login
-
-# Create API key for cluster
-helix auth create-key <CLUSTER_ID>
-
-# Logout
-helix auth logout
-```
-
-</Example>
 
 <ResponseField name="helix auth [SUBCOMMAND]">
   The subcommand to run.
@@ -498,18 +390,6 @@ helix auth logout
 
 Configure telemetry and usage metrics collection.
 
-
-<Example>
-```bash
-# Enable full metrics
-helix metrics full
-
-# Check current status
-helix metrics status
-
-# Disable metrics
-helix metrics off
-```
 </Example>
 
 <ResponseField name="helix metrics [SUBCOMMAND]">
@@ -535,22 +415,9 @@ helix metrics off
   </Expandable>
 </ResponseField>
 
-
-
-
 ### `helix update`
 
 Update the Helix CLI to the latest version.
-
-<Example>
-```bash
-# Check for and install updates
-helix update
-
-# Force reinstall
-helix update --force
-```
-</Example>
 
 <ResponseField name="helix update [OPTIONS]">
   The options to run.
