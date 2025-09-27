@@ -11,12 +11,10 @@ This page provides a comprehensive reference for all commands available in Helix
 
 These options are available for all commands:
 
-<Example>
 ```bash
 helix --help, -h      Show help information for the command
 helix --version, -V   Display the CLI version
 ```
-</Example>
 
 ## Project Management
 
@@ -26,23 +24,6 @@ helix --version, -V   Display the CLI version
 
 Initialize a new Helix project with configuration and structure.
 
-<Example>
-
-```bash
-# Basic initialization of a local instance called dev
-helix init
-
-# Initialize with fly deployment
-
-helix init fly --name prod
-
-# Initialize with custom queries path
-
-helix init --queries-path ./database/
-
-```
-
-</Example>
 
 <ResponseField name="helix init [OPTIONS] [SUBCOMMAND]" >
     
@@ -282,14 +263,6 @@ Deploy or update a running instance.
 
 Start a stopped instance without rebuilding.
 
-<Example>
-```bash
-# Start development instance
-helix start dev
-````
-
-</Example>
-
 <ResponseField name="helix start [INSTANCE]">
   The instance to start.
 </ResponseField>
@@ -297,8 +270,6 @@ helix start dev
 ### `helix stop`
 
 Stop a running instance.
-
-<Example>```bash # Stop development instance helix stop dev ```</Example>
 
 <ResponseField name="helix stop [INSTANCE]">
   The instance to stop.
@@ -308,11 +279,7 @@ Stop a running instance.
 
 Show the status of all instances in the project.
 
-<Example>
-```bash  
-helix status
-```
-</Example>
+
 
 ## Cleanup & Maintenance
 
@@ -390,7 +357,6 @@ Manage authentication for Helix Cloud.
 
 Configure telemetry and usage metrics collection.
 
-</Example>
 
 <ResponseField name="helix metrics [SUBCOMMAND]">
   The subcommand to run.
