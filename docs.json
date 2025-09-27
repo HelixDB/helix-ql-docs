@@ -224,18 +224,6 @@
                         ]
                     }
                 ]
-            },
-            {
-                "tab": "Cloud Service",
-                "groups": [
-                    {
-                        "group": "Helix Cloud",
-                        "pages": [
-                            "helix-cloud/overview",
-                            "helix-cloud/cloud-dashboard"
-                        ]
-                    }
-                ]
             }
         ]
     },
