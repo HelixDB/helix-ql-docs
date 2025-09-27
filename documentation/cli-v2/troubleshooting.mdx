@@ -1,64 +1,500 @@
 ---
-title: "CLI v2 - Troubleshooting"
-description: "Common issues and fixes when using the Helix CLI v2"
-icon: "circle-question"
+title: "Troubleshooting"
+description: "Solutions to common issues and error messages in Helix CLI v2"
+sidebarTitle: "Troubleshooting"
+icon: "wrench"
 mode: "wide"
 ---
 
-## Common Errors
+This guide helps you resolve common issues when using the Helix CLI v2.
 
-### Not in a Helix project
+## Installation Issues
 
+### Command not found: helix
+
+**Problem**: After installation, `helix` command is not recognized.
+
+**Solutions:**
+
+1. Ensure PATH is updated:
+   ```bash
+   echo 'export PATH="$HOME/.helix/bin:$PATH"' >> ~/.bashrc
+   source ~/.bashrc
+   ```
+
+2. For Zsh users:
+   ```bash
+   echo 'export PATH="$HOME/.helix/bin:$PATH"' >> ~/.zshrc
+   source ~/.zshrc
+   ```
+
+3. Verify installation:
+   ```bash
+   ls -la ~/.helix/bin/helix
+   ```
+
+### Permission denied during installation
+
+**Problem**: Installation fails with permission errors.
+
+**Solution**: Use system-wide installation with sudo:
+```bash
+curl -fsSL https://raw.githubusercontent.com/HelixDB/helix-db/main/install.sh | sudo bash -- --system
+```
+
+## Project Configuration Issues
+
+### Not in a Helix project directory
+
+**Error:**
 ```
 Not in a Helix project directory. Run 'helix init' to create one.
 ```
 
-Fix: run `helix init` in your project directory, or `cd` into a folder containing `helix.toml`.
+**Solutions:**
 
-### Docker not available
+1. Initialize a new project:
+   ```bash
+   helix init
+   ```
 
-Symptoms: build/push/start/prune commands fail with Docker errors.
+2. Navigate to project directory:
+   ```bash
+   cd /path/to/your/project
+   ```
 
-Fix:
-- Install Docker Desktop and start the daemon
-- Ensure your user has permission to use Docker
+3. Check for `helix.toml`:
+   ```bash
+   ls helix.toml
+   ```
 
-### No schema definitions found
+### Invalid configuration in helix.toml
 
+**Error:**
 ```
-error: no schema definitions found in project
-```
-
-Fix: ensure `./db/schema.hx` contains at least one `N::` node or `E::` edge definition.
-
-### Compilation failed (query errors)
-
-`helix check` and `helix build` run parsing and analysis. The output will include file paths and hints. Resolve errors in `.hx` files and rerun.
-
-### Fly.io auth errors
-
-Fix:
-- Install `flyctl` and run `flyctl auth login`
-- If using API key auth, create `~/.helix/helix.env` with `FLY_API_KEY=...`
-
-### AWS CLI errors / ECR push fails
-
-Fix:
-- Install `aws` CLI and run `aws configure`
-- Ensure the user has ECR permissions
-
-### Helix Cloud auth missing
-
-```
-Credentials file not found
+Failed to parse helix.toml: invalid type: string "6969", expected u16
 ```
 
-Fix: run `helix auth login`. Credentials are stored at `~/.helix/credentials`.
+**Solution**: Ensure port numbers are integers without quotes:
+```toml
+# Wrong
+[local.dev]
+port = "6969"
+
+# Correct
+[local.dev]
+port = 6969
+```
+
+### Instance not found
+
+**Error:**
+```
+Instance 'production' not found in configuration
+```
+
+**Solutions:**
+
+1. Check available instances:
+   ```bash
+   helix status
+   ```
+
+2. Add the missing instance:
+   ```bash
+   helix add cloud --name production
+   ```
+
+## Docker Issues
+
+### Docker daemon not running
+
+**Error:**
+```
+Cannot connect to Docker daemon. Is the Docker daemon running?
+```
+
+**Solutions:**
+
+1. Start Docker Desktop
+2. On Linux, start Docker service:
+   ```bash
+   sudo systemctl start docker
+   ```
+
+3. Check Docker status:
+   ```bash
+   docker info
+   ```
+
+### Permission denied for Docker socket
+
+**Error:**
+```
+permission denied while trying to connect to the Docker daemon socket
+```
+
+**Solution**: Add user to docker group:
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+### Port already in use
+
+**Error:**
+```
+bind: address already in use
+```
+
+**Solutions:**
+
+1. Find process using the port:
+   ```bash
+   lsof -i :6969
+   ```
+
+2. Stop conflicting service or use different port:
+   ```toml
+   [local.dev]
+   port = 7070
+   ```
+
+### Container name conflict
+
+**Error:**
+```
+Container name "/helix_my-app_dev" is already in use
+```
+
+**Solution**: Remove old container:
+```bash
+docker rm helix_my-app_dev
+# Or force remove
+docker rm -f helix_my-app_dev
+```
+
+## Authentication Issues
+
+### Helix Cloud authentication failed
+
+**Error:**
+```
+Credentials file not found. Please run 'helix auth login' first.
+```
+
+**Solution:**
+```bash
+helix auth login
+```
+
+### Expired credentials
+
+**Error:**
+```
+Authentication token expired
+```
+
+**Solution**: Re-authenticate:
+```bash
+helix auth logout
+helix auth login
+```
+
+### Fly.io authentication issues
+
+**Error:**
+```
+Error authenticating with Fly.io
+```
+
+**Solutions:**
+
+1. For CLI auth:
+   ```bash
+   flyctl auth login
+   ```
+
+### AWS ECR authentication failed
+
+**Error:**
+```
+no basic auth credentials
+```
+
+**Solutions:**
+
+1. Configure AWS CLI:
+   ```bash
+   aws configure
+   ```
+
+2. Login to ECR:
+   ```bash
+   aws ecr get-login-password --region us-west-2 | \
+     docker login --username AWS --password-stdin \
+     123456789.dkr.ecr.us-west-2.amazonaws.com
+   ```
+
+## Build & Deployment Issues
+
+### Build fails with missing files
+
+**Error:**
+```
+Failed to copy queries: No such file or directory
+```
+
+**Solution**: Ensure queries directory exists:
+```bash
+mkdir -p db
+touch db/schema.hx db/queries.hx
+```
+
+### Push fails for cloud instance
+
+**Error:**
+```
+Failed to upload to cloud: network timeout
+```
+
+**Solutions:**
+
+1. Check internet connection
+2. Verify authentication:
+   ```bash
+   helix auth login
+   ```
+3. Check cloud service status
+
+### Instance won't start
+
+**Problem**: `helix push dev` succeeds but instance isn't accessible.
+
+**Debugging steps:**
+
+1. Check container status:
+   ```bash
+   docker ps -a | grep helix
+   ```
+
+2. View container logs:
+   ```bash
+   docker logs helix_my-app_dev
+   ```
+
+3. Test connection:
+   ```bash
+   curl http://localhost:6969/health
+   ```
+
+4. Check port binding:
+   ```bash
+   docker port helix_my-app_dev
+   ```
+
+## Migration Issues
+
+### v1 project detected
+
+**Error:**
+```
+Found v1 project configuration. Run 'helix migrate' to upgrade to v2.
+```
+
+**Solution:**
+```bash
+helix migrate --dry-run  # Preview changes
+helix migrate            # Execute migration
+```
+
+### Migration backup failed
+
+**Error:**
+```
+Failed to create backup directory
+```
+
+**Solution**: Create backup manually:
+```bash
+cp -r . ../project-backup
+helix migrate --no-backup
+```
+
+## Performance Issues
+
+### Slow build times
+
+**Solutions:**
+
+1. Use release mode for production only:
+   ```toml
+   [local.dev]
+   build_mode = "debug"  # Faster builds
+   ```
+
+2. Reduce vector config for development:
+   ```toml
+   [local.dev.vector_config]
+   m = 8                 # Lower for dev
+   ef_construction = 64  # Lower for dev
+   ```
+
+3. Clean Docker cache:
+   ```bash
+   docker system prune -a
+   ```
+
+### High memory usage
+
+**Solutions:**
+
+1. Limit database size:
+   ```toml
+   [local.dev.vector_config]
+   db_max_size_gb = 5  # Reduce for local dev
+   ```
+
+2. Adjust Docker resources in Docker Desktop settings
+
+### Container crashes
+
+**Debugging steps:**
+
+1. Check logs:
+   ```bash
+   docker logs helix_my-app_dev --tail 100
+   ```
+
+2. Inspect exit code:
+   ```bash
+   docker inspect helix_my-app_dev --format='{{.State.ExitCode}}'
+   ```
+
+3. Increase memory limits:
+   ```toml
+   [local.dev.limits]
+   max_memory_gb = 8
+   ```
+
+## Network Issues
+
+### Cannot connect to instance
+
+**Debugging steps:**
+
+1. Check if container is running:
+   ```bash
+   docker ps | grep helix
+   ```
+
+2. Test localhost connection:
+   ```bash
+   telnet localhost 6969
+   ```
+
+3. Check firewall settings:
+   ```bash
+   # macOS
+   sudo pfctl -s rules
+
+   # Linux
+   sudo iptables -L
+   ```
+
+### Connection refused
+
+**Solutions:**
+
+1. Verify port configuration:
+   ```bash
+   grep port helix.toml
+   ```
+
+2. Check port forwarding:
+   ```bash
+   docker inspect helix_my-app_dev | grep -A 10 "Ports"
+   ```
+
+3. Try different port:
+   ```toml
+   [local.dev]
+   port = 7070
+   ```
+
+## Common Error Messages
+
+### "ENOENT: no such file or directory"
+
+**Cause**: Missing required files
+**Solution**: Run `helix init` to create project structure
+
+### "EADDRINUSE: address already in use"
+
+**Cause**: Port conflict
+**Solution**: Use different port or stop conflicting service
+
+### "EPERM: operation not permitted"
+
+**Cause**: Permission issue
+**Solution**: Check file permissions or run with appropriate privileges
+
+### "ECONNREFUSED: Connection refused"
+
+**Cause**: Service not running
+**Solution**: Start the instance with `helix push <instance>`
+
+### "ETIMEDOUT: operation timed out"
+
+**Cause**: Network or performance issue
+**Solution**: Check network connection and increase timeout settings
+
+## Debug Mode
+
+Enable debug logging for detailed troubleshooting:
+
+```bash
+# Set log level
+export HELIX_LOG_LEVEL=debug
+
+# Run command with debug output
+HELIX_LOG_LEVEL=debug helix push dev
+
+# View detailed Docker logs
+docker logs helix_my-app_dev -f --tail 100
+```
 
 ## Getting Help
 
-- Run commands with `--help` for usage
-- Check `helix status` for instance and container insights
-- Ask in Discord (`https://discord.com/invite/2stgMPr5BD`)
+If you're still experiencing issues:
 
+1. **Check the documentation**: [https://docs.helix-db.com](https://docs.helix-db.com)
 
+2. **Search GitHub issues**: [https://github.com/HelixDB/helix-db/issues](https://github.com/HelixDB/helix-db/issues)
+
+3. **Join Discord**: [https://discord.gg/2stgMPr5BD](https://discord.gg/2stgMPr5BD)
+
+4. **Contact support**: founders@helix-db.com
+
+When reporting issues, include:
+- Helix CLI version (`helix --version`)
+- Operating system and version
+- Docker version (`docker --version`)
+- Error messages and logs
+- Steps to reproduce the issue
+- `helix.toml` configuration (remove sensitive data)
+
+## Quick Fixes Checklist
+
+<Accordion title="Before reporting an issue, try these steps">
+  - [ ] Update CLI: `helix update`
+  - [ ] Validate configuration: `helix check`
+  - [ ] Restart Docker Desktop
+  - [ ] Clean up resources: `helix prune`
+  - [ ] Check disk space: `df -h`
+  - [ ] Verify network connectivity
+  - [ ] Review recent changes to `.hx` files
+  - [ ] Check file permissions
+  - [ ] Try with a fresh project: `helix init` in a new directory
+  - [ ] Enable debug logging: `HELIX_LOG_LEVEL=debug`
+</Accordion>

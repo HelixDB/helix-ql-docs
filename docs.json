@@ -31,7 +31,6 @@
                     {
                         "group": "CLI v2",
                         "pages": [
-                            "documentation/cli-v2/overview",
                             "documentation/cli-v2/getting-started",
                             "documentation/cli-v2/command-reference",
                             "documentation/cli-v2/configuration",
