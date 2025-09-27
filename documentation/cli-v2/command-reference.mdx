@@ -1,0 +1,471 @@
+---
+title: "Command Reference"
+description: "Complete reference for all Helix CLI v2 commands and options"
+sidebarTitle: "Command Reference"
+icon: "terminal"
+---
+
+This page provides a comprehensive reference for all commands available in Helix CLI v2.
+
+## Global Options
+
+These options are available for all commands:
+
+```bash
+helix --help, -h      Show help information for the command
+helix --version, -V   Display the CLI version
+```
+
+## Project Management
+
+---
+
+### `helix init`
+
+Initialize a new Helix project with configuration and structure.
+
+
+<ResponseField name="helix init [OPTIONS] [SUBCOMMAND]" >
+    
+    <Expandable title="options">
+    <ResponseField name="--path | -p [PATH]" type="String">
+        The path to the project.
+    </ResponseField>
+    <ResponseField name="--template [TEMPLATE]" type="String">
+        The template to use for the project.
+    </ResponseField>
+    <ResponseField name="--queries-path | -q [PATH]" type="String">
+        The path to the query files.
+    </ResponseField>
+    </Expandable>
+
+  <Expandable title="subcommands">
+    <ResponseField name="helix init cloud" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--region [REGION]" type="String">
+                    The region the instance is deployed to.
+                </ResponseField>
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the instance.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+
+         <ResponseField name="helix init ecr" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the AWS ECR repository. Note this will create the repository if needed.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+
+         <ResponseField name="helix init fly" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the Fly.io app.
+                </ResponseField>
+                <ResponseField name="--volume-size">
+                    The volume size in GB.
+                </ResponseField>
+                <ResponseField name="--vm-size [SIZE]" type="String">
+                     - `shared-cpu-1x` - 1 shared vCPU, 256MB RAM
+                    - `shared-cpu-2x` - 2 shared vCPUs, 512MB RAM
+                    - `shared-cpu-4x` - 4 shared vCPUs, 1GB RAM
+                    - `performance-4x` - 4 dedicated vCPUs, 8GB RAM
+                    - `performance-8x` - 8 dedicated vCPUs, 16GB RAM
+                </ResponseField>
+                <ResponseField name="--public">
+                    Make instance public.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+
+        <ResponseField name="helix init local" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the local instance.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+    </Expandable>
+  Note that `helix init` with no arguments defaults to making a local instance called `dev`.
+</ResponseField>
+
+### `helix add`
+
+Add a new instance to an existing Helix project.
+
+<ResponseField name="helix add [SUBCOMMAND]" >
+
+    <Expandable title="subcommands">
+        <ResponseField name="helix add cloud" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--region [REGION]" type="String">
+                    The region the instance is deployed to.
+                </ResponseField>
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the instance.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+
+        <ResponseField name="helix add ecr" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the AWS ECR repository. Note this will create the repository if needed.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+
+         <ResponseField name="helix add fly" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the Fly.io app.
+                </ResponseField>
+                <ResponseField name="--volume-size">
+                    The volume size in GB.
+                </ResponseField>
+                <ResponseField name="--vm-size [SIZE]" type="String">
+                     - `shared-cpu-1x` - 1 shared vCPU, 256MB RAM
+                    - `shared-cpu-2x` - 2 shared vCPUs, 512MB RAM
+                    - `shared-cpu-4x` - 4 shared vCPUs, 1GB RAM
+                    - `performance-4x` - 4 dedicated vCPUs, 8GB RAM
+                    - `performance-8x` - 8 dedicated vCPUs, 16GB RAM
+                </ResponseField>
+                <ResponseField name="--public">
+                    Make instance public.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+
+         <ResponseField name="helix add local" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the local instance.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+
+    </Expandable>
+  
+</ResponseField>
+
+
+### `helix migrate`
+
+Migrate a v1 Helix project to v2 format.
+
+<ResponseField name="helix migrate [OPTIONS]" >
+    <Expandable title="options">
+        <ResponseField name="--path | -p [PATH]" type="String">
+            The path to the project to migrate. 
+            - Default: current directory
+        </ResponseField>
+        <ResponseField name="--queries-dir | -q [DIR]" type="String">
+            The directory to move .hx files to.
+            - Default: "./db/"
+        </ResponseField>
+        <ResponseField name="--instance-name | -i [NAME]" type="String">
+            The name for the default local instance. 
+            - Default: "dev"
+        </ResponseField>
+        <ResponseField name="--port [PORT]" type="String">
+            The port for the local instance.
+            - Default: 6969
+        </ResponseField>
+        <ResponseField name="--dry-run">
+            Show what would be migrated without making changes.
+        </ResponseField>
+        <ResponseField name="--no-backup">
+            Skip creating backup of v1 files.
+        </ResponseField>
+
+    </Expandable>
+
+</ResponseField>
+
+## Validation & Compilation
+
+### `helix check`
+
+Validate project configuration and query syntax.
+
+<ResponseField name="helix check [INSTANCE]">
+  Name of the instance to check (defaults to all instances)
+</ResponseField>
+
+### `helix compile`
+
+Compile project queries into executable format.
+
+<ResponseField name="helix compile [OPTIONS]">
+  <Expandable title="options">
+    <ResponseField name="--path, -p [PATH]" type="String">
+      The path to the project.
+    </ResponseField>
+    <ResponseField name="--output, -o [PATH]" type="String">
+      The output path for compiled queries.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+
+### `helix build`
+
+Build and prepare an instance for deployment.
+
+
+<Note>
+**What it does:**
+
+1. Validates configuration and queries
+2. Compiles queries
+3. Generates Docker configuration files
+4. Prepares the instance workspace
+</Note>
+
+<ResponseField name="helix build [INSTANCE]">
+  The instance to build.
+</ResponseField>
+
+## Deployment & Instance Management
+
+### `helix push`
+
+Deploy or update a running instance.
+
+
+<Note>
+**What it does:**
+1. Builds the instance if needed
+2. Creates/updates Docker container for local instances
+3. Pushes to cloud provider for remote instances
+4. Starts the instance
+
+</Note>
+
+<ResponseField name="helix push [INSTANCE]">
+  The instance to deploy.
+</ResponseField>
+
+
+
+
+### `helix pull`
+
+<Info>
+    🚧 COMING SOON 🚧
+</Info>
+
+---
+
+### `helix start`
+
+Start a stopped instance without rebuilding.
+
+<ResponseField name="helix start [INSTANCE]">
+  The instance to start.
+</ResponseField>
+
+### `helix stop`
+
+Stop a running instance.
+
+<ResponseField name="helix stop [INSTANCE]">
+  The instance to stop.
+</ResponseField>
+
+### `helix status`
+
+Show the status of all instances in the project.
+
+
+
+## Cleanup & Maintenance
+
+### `helix prune`
+
+Remove unused containers, images, and workspace files.
+
+
+<Note>
+**What it removes:**
+
+- Stopped containers
+- Unused Docker images
+- Workspace files
+- **Note:** Preserves data volumes
+</Note>
+
+<ResponseField name="helix prune [OPTIONS] [INSTANCE]">
+  The instance to prune.
+    <Expandable title="options">
+    <ResponseField name="--all, -a" type="Boolean">
+        Prune all instances in the project.
+    </ResponseField>
+    </Expandable>
+</ResponseField>
+
+
+### `helix delete`
+
+Permanently delete an instance and all its data.
+
+<Note>
+**What it removes:**
+
+- Container and images
+- All data volumes
+- Workspace files
+- Configuration entries
+</Note>
+
+<ResponseField name="helix delete [INSTANCE]">
+  The instance to delete.
+</ResponseField>
+
+
+## Authentication & Cloud
+
+### `helix auth`
+
+Manage authentication for Helix Cloud.
+
+<ResponseField name="helix auth [SUBCOMMAND]">
+  The subcommand to run.
+
+    <Expandable title="subcommands">
+        <ResponseField name="login">
+            Initiates browser-based authentication flow.
+        </ResponseField>
+
+        <ResponseField name="logout">
+            Clears authentication tokens from `~/.helix/credentials`.
+        </ResponseField>
+
+        <ResponseField name="create-key">
+            Generates a new API key for programmatic access.
+        </ResponseField>
+    </Expandable>
+</ResponseField>
+
+
+## Configuration & Settings
+---
+
+### `helix metrics`
+
+Configure telemetry and usage metrics collection.
+
+
+<ResponseField name="helix metrics [SUBCOMMAND]">
+  The subcommand to run.
+
+  <Expandable title="subcommands">
+    <ResponseField name="full">
+      Enable full metrics collection (requires email).
+    </ResponseField>
+
+    <ResponseField name="basic">
+      Enable minimal anonymous metrics.
+    </ResponseField>
+
+    <ResponseField name="off">
+      Disable all metrics collection.
+    </ResponseField>
+
+    <ResponseField name="status">
+      Show current metrics configuration.
+    </ResponseField>
+
+  </Expandable>
+</ResponseField>
+
+### `helix update`
+
+Update the Helix CLI to the latest version.
+
+<ResponseField name="helix update [OPTIONS]">
+  The options to run.
+
+  <Expandable title="options">
+    <ResponseField name="--force" type="Boolean">
+      Force update even if already on latest version.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+    
+
+
+## Common Command Patterns
+
+### Development Workflow
+
+```bash
+# Initialize project
+helix init
+
+# Write schemas and queries
+# ... edit db/schema.hx and db/queries.hx ...
+
+# Validate changes
+helix check
+
+# Build and deploy
+helix build dev
+helix push dev
+
+# Check status
+helix status
+```
+
+### Multi-Instance Setup
+
+```bash
+# Create project with local dev
+helix init
+
+# Add staging environment
+helix add cloud --name staging --region us-east-1
+
+# Add production environment
+helix add cloud --name production --region us-east-1
+
+# Deploy to different environments
+helix push dev          # Local development
+helix push staging      # Staging environment
+helix push production   # Production environment
+```
+
+### Maintenance Operations
+
+```bash
+# Stop all work
+helix stop dev
+
+# Clean up resources
+helix prune
+
+# Remove old instance
+helix delete old-testing
+
+# Update CLI
+helix update
+```
+
+
+## Getting Help
+
+For any command, add `--help` to see detailed usage:
+
+```bash
+helix --help
+helix init --help
+helix auth login --help
+```
+
+For issues or questions:
+
+- GitHub Issues: [https://github.com/HelixDB/helix-db/issues](https://github.com/HelixDB/helix-db/issues)
+- Discord: [https://discord.gg/2stgMPr5BD](https://discord.gg/2stgMPr5BD)
+- Email: founders@helix-db.com

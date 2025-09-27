@@ -1,0 +1,341 @@
+---
+title: "Common Workflows"
+description: "Practical examples and patterns for typical Helix development workflows"
+sidebarTitle: "Workflows"
+icon: "route"
+---
+
+This guide walks through common workflows and best practices for developing with Helix CLI v2.
+
+## Local Development Workflow
+
+### Initial Setup
+
+<Steps>
+  <Step title="Create project">
+    ```bash
+    mkdir my-app && cd my-app
+    helix init
+    ```
+    Note that `helix init` with no arguments defaults to making a local instance called `dev`.
+  </Step>
+
+  <Step title="Define schema">
+    Edit `db/schema.hx`:
+    ```js
+    N::User {
+      name: String,
+      INDEX email: String,
+      created_at: Date DEFAULT NOW
+    }
+
+    N::Post {
+      title: String,
+      content: String,
+      published: Boolean DEFAULT true,
+      created_at: Date DEFAULT NOW
+    }
+    ```
+  </Step>
+
+  <Step title="Create queries">
+    Edit `db/queries.hx`:
+    ```js
+    QUERY createUser(name: String, email: String) =>
+      user <- AddN<User({
+        name: name,
+        email: email,
+      })
+      RETURN user
+
+    QUERY getUserByEmail(email: String) =>
+      user <- N<User>({email: email})
+      RETURN user
+    ```
+  </Step>
+
+  <Step title="Validate">
+    ```bash
+    helix check
+    ```
+  </Step>
+
+  <Step title="Build and deploy">
+    ```bash
+    helix push dev
+    ```
+  </Step>
+
+  <Step title="Test connection">
+    ```bash
+    curl http://localhost:6969/health
+    ```
+  </Step>
+</Steps>
+
+### Development Iteration
+
+When making changes during development:
+
+```bash
+# Edit your .hx files
+vim db/queries.hx
+
+# Validate changes
+helix check
+
+# Deploy changes (rebuilds automatically if needed)
+helix push dev
+
+# Check status
+helix status
+
+# View logs
+docker logs helix_my-app_dev
+
+# Stop when done
+helix stop dev
+```
+
+### Working with Multiple Instances
+
+Create different instances for different purposes:
+
+```bash
+# Add a testing instance
+helix add local --name testing
+
+# Configure different port in helix.toml
+# [local.testing]
+# port = 7070
+
+# Run both instances
+helix push dev
+helix push testing
+
+# Status shows all instances
+helix status
+```
+
+## Multi-Environment Setup
+
+### Development → Staging → Production
+
+<Tabs>
+  <Tab title="Setup">
+    ```bash
+    # Initialize with local dev
+    helix init
+
+    # Add staging environment
+    helix add cloud --name staging --region us-east-1
+
+    # Add production environment
+    helix add cloud --name production --region us-east-1
+    ```
+  </Tab>
+
+  <Tab title="Deploy">
+    ```bash
+    # Deploy to development
+    helix push dev
+
+    # Test thoroughly, then deploy to staging
+    helix push staging
+
+    # After staging validation, deploy to production
+    helix push production
+    ```
+  </Tab>
+
+  <Tab title="Rollback">
+    ```bash
+    # If issues arise, pull previous version
+    helix pull production
+
+    # Or stop the instance
+    helix stop production
+
+    # Fix issues and redeploy
+    helix build production
+    helix push production
+    ```
+  </Tab>
+</Tabs>
+
+## Cloud Deployment Workflows
+
+### Helix Cloud Deployment
+
+<Steps>
+  <Step title="Authenticate">
+    ```bash
+    helix auth login
+    ```
+  </Step>
+
+  <Step title="Initialize cloud instance">
+    ```bash
+    helix init cloud --region us-east-1 --name production
+    ```
+  </Step>
+
+  <Step title="Configure production settings">
+    Edit `helix.toml`:
+    ```toml
+    [cloud.production]
+    type = "helix"
+    region = "us-east-1"
+    build_mode = "release"
+    mcp = true
+    bm25 = true
+
+    [cloud.production.vector_config]
+    m = 32
+    ef_construction = 256
+    ef_search = 1024
+    ```
+  </Step>
+
+  <Step title="Deploy">
+    ```bash
+    helix build production
+    helix push production
+    ```
+  </Step>
+
+  <Step title="Monitor">
+    ```bash
+    helix status
+    ```
+  </Step>
+</Steps>
+
+### Fly.io Deployment
+
+Prerequisites: Install and authenticate `flyctl`
+
+```bash
+# Install flyctl
+curl -L https://fly.io/install.sh | sh
+
+# Authenticate
+fly auth login
+```
+
+Deploy to Fly.io:
+
+<Steps>
+  <Step title="Add Fly.io instance">
+    ```bash
+    helix add fly \
+      --name production \
+      --vm-size performance-4x \
+      --volume-size 20 \
+      --public false
+    ```
+  </Step>
+
+  <Step title="Build and deploy">
+    ```bash
+    helix build production
+    helix push production
+    ```
+  </Step>
+
+  <Step title="Check deployment">
+    ```bash
+    fly status -a my-app-production
+    fly logs -a my-app-production
+    ```
+  </Step>
+
+  <Step title="Scale if needed">
+    ```bash
+    fly scale vm performance-8x -a my-app-production
+    fly scale count 3 -a my-app-production
+    ```
+  </Step>
+</Steps>
+
+### AWS ECR Deployment
+
+Prerequisites: Configure AWS CLI
+
+```bash
+# Configure AWS credentials
+aws configure
+```
+
+Deploy to ECR:
+
+<Steps>
+  <Step title="Add ECR instance">
+    ```bash
+    helix add ecr --name staging
+    ```
+  </Step>
+
+  <Step title="Build image">
+    ```bash
+    helix build staging
+    ```
+  </Step>
+
+  <Step title="Push to ECR">
+    ```bash
+    helix push staging
+    ```
+    This will:
+    - Create ECR repository if needed
+    - Authenticate Docker with ECR
+    - Tag and push the image
+  </Step>
+
+  <Step title="Deploy to ECS/EKS">
+    Use the pushed image in your container orchestration:
+    ```yaml
+    # ECS task definition
+    image: 123456789.dkr.ecr.us-west-2.amazonaws.com/my-app:latest
+    ```
+  </Step>
+</Steps>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Development Best Practices">
+    - Always run `helix check` before deploying
+    - Use descriptive instance names
+    - Keep development and production configurations separate
+    - Regularly clean up unused resources with `helix prune`
+    - Version control your `helix.toml` file
+  </Accordion>
+
+  <Accordion title="Production Best Practices">
+    - Use `build_mode = "release"` for production
+    - Configure appropriate vector parameters for your data scale
+    - Enable monitoring and logging
+    - Set up automated backups
+    - Test migrations in staging first
+  </Accordion>
+
+  <Accordion title="Security Best Practices">
+    - Never commit credentials to version control
+    - Use environment variables for sensitive data
+    - Regularly rotate API keys
+    - Keep CLI updated with `helix update`
+    - Use private instances for production data
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Troubleshooting" icon="wrench" href="/documentation/cli-v2/troubleshooting">
+    Solutions to common issues
+  </Card>
+  <Card title="Configuration Guide" icon="gear" href="/documentation/cli-v2/configuration">
+    Advanced configuration options
+  </Card>
+</CardGroup>

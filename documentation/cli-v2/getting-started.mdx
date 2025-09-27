@@ -1,0 +1,85 @@
+---
+title: "Getting Started"
+description: "Install, configure, and set up the Helix CLI v2 for your development workflow"
+icon: "rocket"
+---
+
+<Warning>
+  **Prerequisites**: - **Rust** version **1.88.0** or higher - **Docker
+  Desktop** (for local development) - **Git** (for first-time Helix source
+  cache) - If using the cloud, you will need the CLIs for deployment targets
+  (**AWS CLI**, **Fly CLI**)
+</Warning>
+
+<Steps>
+
+<Step title="Quick Install">
+  Use the official installer script to automatically download and set up the Helix CLI:
+
+```bash
+curl -sSL https://install.helix-db.com | bash
+```
+
+  <Note>
+    The installer will:
+    - Download the latest Helix CLI binary
+    - Place it in `~/.local/bin/`
+    - Add the directory to your PATH
+    - Create necessary configuration directories
+  </Note>
+</Step>
+
+<Step title="Create project">
+```bash 
+helix init
+```
+</Step>
+
+<Step title="Create schema and queries">
+  Inside the schema.hx file, create your schema.
+  ```js
+  N::User {
+    INDEX name: String,
+    email: String,
+    created_at: Date DEFAULT NOW
+  }
+  ```
+
+Inside the queries.hx file, create your queries.
+
+```js
+QUERY createUser(name: String, email: String) =>
+  user <- AddN<User>({name: name, email: email})
+  RETURN user
+
+QUERY getUser(name: String) =>
+  user <- N<User>({name: name})
+  RETURN user
+```
+
+</Step>
+
+<Step title="Build and deploy">
+```bash 
+helix push dev 
+```
+</Step>
+
+<Step title="Test connection">
+  **Create a user**
+  ```bash
+  curl -X POST http://localhost:6969/createUser -d '{"name": "John Doe", "email": "john.doe@example.com"}'
+  ```
+
+**Get a user**
+
+```bash
+curl -X POST http://localhost:6969/getUser -d '{"name": "John Doe"}'
+```
+
+</Step>
+
+</Steps>
+
+
+You now have a working HelixDB instance running locally with docker! You can now start building your application on top of it.

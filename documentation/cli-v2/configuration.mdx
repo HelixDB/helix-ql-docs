@@ -1,0 +1,171 @@
+---
+title: "Configuration Guide"
+description: "Complete guide to configuring Helix projects with helix.toml and environment settings"
+sidebarTitle: "Configuration"
+icon: "gear"
+mode: "wide"
+---
+
+The Helix CLI noq uses a unified configuration system centered around the `helix.toml` file. This guide covers all configuration options and best practices.
+
+## Configuration File Structure
+
+The `helix.toml` file is the central configuration for your Helix project, defining project metadata, instance configurations, and deployment settings.
+
+### Basic Structure
+
+```toml
+[project]
+name = "my-helix-app"
+queries = "./db/"
+
+[local.dev]
+# Local instance configuration
+
+[cloud.staging.fly]
+# Fly.io instance configuration
+
+[cloud.production.helix]
+# Cloud instance configuration
+```
+
+## Project Configuration
+
+The `[project]` section defines global project settings:
+
+```toml
+[project]
+name = "my-helix-app"        # Project name (required)
+queries = "./db/"            # Path to query files (default: "./db/")
+```
+
+## Local Instance Configuration
+
+Local instances use Docker for containerized development environments.
+
+### Basic Local Configuration
+
+```toml
+[local.dev]
+port = 6969                  # Port for the instance (default: 6969)
+build_mode = "debug"         # Build mode: debug | release (default: debug)
+mcp = true                   # Enable MCP support (default: false)
+bm25 = true                  # Enable BM25 search (default: false)
+```
+
+### Advanced Local Settings
+
+```toml
+[local.dev]
+port = 6969
+build_mode = "release"
+mcp = true
+bm25 = true
+```
+
+### Multiple Local Instances
+
+You can define multiple local instances for different purposes:
+
+```toml
+[local.dev]
+port = 6969
+build_mode = "debug"
+
+[local.testing]
+port = 7070
+build_mode = "debug"
+
+[local.benchmark]
+port = 8080
+build_mode = "release"
+```
+
+## Cloud Instance Configuration
+
+### Helix Cloud
+
+```toml
+[cloud.Helix.production]
+cluster_id = "hlx_abc123"    # Cluster ID given to you by us (contact us if you don't have yours)
+build_mode = "release"       # Build optimization
+mcp = true
+bm25 = true
+
+[cloud.Helix.production.vector_config]
+m = 32
+ef_construction = 256
+ef_search = 1024
+db_max_size_gb = 100
+
+```
+
+### AWS ECR Configuration
+
+```toml
+[cloud.staging.ecr]
+repository_name = "my-helix-app"
+region = "us-east-1"
+registry_url = "123456789.dkr.ecr.us-west-2.amazonaws.com"
+auth_type = "aws_cli"
+build_mode = "debug"
+```
+
+### Fly.io Configuration
+
+```toml
+[cloud.production.fly]
+app_name = "my-helix-app"
+build_mode = "debug"        # Fly.io region
+vm_size = "shared-cpu-4x"   # VM size
+volume_initial_size = 20            # Volume size in GB
+private = false              # Public accessibility
+auth_type = "cli"                # Auth type: cli | api_key
+```
+
+## Build Modes
+
+Build modes control optimization and debugging capabilities:
+
+```toml
+build_mode = "debug"    # Development with debug symbols
+build_mode = "release"  # Production optimized
+build_mode = "dev"      # For use with the dashboard UI
+```
+
+### Mode Characteristics
+
+| Mode      | Debug Symbols | Optimizations | Logging | Use Case    | Dashboard |
+| --------- | ------------- | ------------- | ------- | ----------- | --------- |
+| `debug`   | Yes           | None          | Verbose | Development | No        |
+| `release` | No            | Full          | Normal  | Production  | No        |
+| `dev`     | Yes           | None          | Verbose | Development | Yes       |
+
+
+## Troubleshooting Configuration
+
+### Common Issues
+
+1. **Port conflicts**: Ensure unique ports for each local instance
+2. **Missing credentials**: Run `helix auth login` for cloud features
+3. **Invalid paths**: Use relative paths from project root
+4. **Memory limits**: Adjust `db_max_size_gb` based on available RAM
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Common Workflows"
+    icon="route"
+    href="/documentation/cli-v2/workflows"
+  >
+    Learn typical development patterns
+  </Card>
+  <Card
+    title="Troubleshooting"
+    icon="wrench"
+    href="/documentation/cli-v2/troubleshooting"
+  >
+    Solve common configuration issues
+  </Card>
+</CardGroup>
