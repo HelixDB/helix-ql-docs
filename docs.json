@@ -20,7 +20,6 @@
                         "group": "Getting Started",
                         "pages": [
                             "documentation/getting-started/intro",
-                            "documentation/getting-started/installation",
                             "documentation/cli-v2/getting-started",
                             "documentation/getting-started/helixdb",
                             "documentation/getting-started/graph-database"
