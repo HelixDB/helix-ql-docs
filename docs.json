@@ -47,28 +47,21 @@
             ]
           },
           {
-            "group": "Ecosystem",
-            "pages": [
-              "documentation/infra/overview",
-              "documentation/infra/types",
-              {
-                "group": "Schema Definitions",
-                "icon": "table",
-                "pages": [
-                  "documentation/infra/schema/schema-definition",
-                  "documentation/infra/schema/indexing",
-                  "documentation/infra/schema/default"
-                ]
-              },
-              "documentation/infra/query-structure",
-              "documentation/infra/config"
-            ]
-          },
-          {
             "group": "HelixQL",
             "pages": [
               "documentation/hql/hql",
               {
+                "group": "Schema Definitions",
+                "icon": "table",
+                "pages": [
+                  "documentation/hql/schema/schema-definition",
+                  "documentation/hql/schema/indexing",
+                  "documentation/hql/schema/default"
+                ]
+              },
+               "documentation/hql/types",
+              {
+                
                 "group": "CRUD Operations",
                 "expanded": false,
                 "pages": [

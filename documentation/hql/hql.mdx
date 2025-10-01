@@ -1,19 +1,81 @@
 ---
-title: 'What is HelixQL?'
+title: "What is HelixQL?"
 sidebarTitle: "What is HQL?"
-icon: 'book-open'
+icon: "book-open"
 ---
 
 HelixQL is a strongly typed, compiled query language for HelixDB.
-It was inspired from a combination of Gremlin, Cypher and Rust. 
+It was inspired from a combination of Gremlin, Cypher and Rust.
 
 ## Why yet another query language?
 
 Over the past few years, we've used gremlin extensively for graph queries.
 It's powerful and very expressive, but it's also extremely verbose and horrible to read after any substantial complexity.
 
-The other major issue is that it's obviously completely dynamic and is parsed at runtime when the query is executed. 
+The other major issue is that it's obviously completely dynamic and is parsed at runtime when the query is executed.
 This leads to a horrible developer experience, not knowing if the query is valid until runtime.
 
-Building a new query language from scratch is obviously a big undertaking, 
+Building a new query language from scratch is obviously a big undertaking,
 but we thought it was a necessary step to improve the developer experience and making building with graphs better.
+
+**Example Query Syntax:**
+
+```js
+QUERY QueryName(param1: Type, param2: Type) =>
+    result <- traversal_expression
+    RETURN result
+```
+
+#### Components
+
+- `QUERY`: Keyword to start a query definition
+- `QueryName`: Identifier for the query
+- `parameters`: Input parameters in parentheses
+- `Type`: Type of the parameter (e.g. `String`, `I32`, `F64`, `Boolean`, `[Type]` or schema Node/Edge)
+- `=>`: Separates query header from body
+- `<-`: Assignment operator
+- `RETURN`: Specifies output values
+
+---
+
+## Next Steps
+
+<CardGroup cols={3}>
+    <Card title="Deploy your first query" href="/documentation/cli-v2/getting-started" icon="book-open">
+        Learn how to deploy your first query in HelixQL.
+    </Card>
+    <Card title="Schemas" href="/documentation/hql/schema/schema-definition" icon="table">
+        Learn about how to build your schema in HelixQL.
+    </Card>
+    <Card title="Traversals" href="/documentation/hql/select/selectN" icon="right-left-large">
+        Learn about how to traverse the graph in HelixQL.
+    </Card>
+    <Card title="Creating data" href="/documentation/hql/create/addN" icon="plus">
+        Learn about how to create data in HelixQL.
+    </Card>
+    <Card title="Vector operations" href="/documentation/hql/updating" icon="share-nodes">
+        Learn about how to perform vector operations in HelixQL.
+    </Card>
+    <Card title="Keyword search" href="/documentation/hql/keyword_search" icon="pencil">
+        Learn about how to perform keyword search in HelixQL.
+    </Card>
+    <Card title="Properties" href="/documentation/hql/properties/property-access" icon="tags">
+        Learn about how to access properties in HelixQL.
+    </Card>
+    <Card title="Conditionals" href="/documentation/hql/conditionals/conditions" icon="ballot-check">
+        Learn about how to use conditionals in HelixQL.
+    </Card>
+    <Card title="Result operations" href="/documentation/hql/result_ops" icon="integral">
+        Learn about how to perform result operations in HelixQL.
+    </Card>
+    <Card title="Output values" href="/documentation/hql/output_values" icon="arrow-right-from-bracket">
+        Learn about how to output values in HelixQL.
+    </Card>
+    <Card title="Types" href="/documentation/hql/types" icon="text-size">
+        Learn about the types of HelixQL.
+    </Card>
+    <Card title="Errors" href="/documentation/hql/errors/E101" icon="triangle-exclamation">
+        Troubleshoot errors in HelixQL.
+    </Card>
+
+</CardGroup>

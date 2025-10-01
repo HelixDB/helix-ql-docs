@@ -21,13 +21,6 @@ QUERY getByIndex(index_field: String) =>
     RETURN node
 ```
 
-You must also add it into your `config.hx.json` file:
-```json
-"graph_config": {
-    "secondary_indices": ["field1"]
-},
-```
-
 ---
 
 **Note:** You can currectly only use indexing with nodes. Indexing for edges and vectors is not supported yet.
