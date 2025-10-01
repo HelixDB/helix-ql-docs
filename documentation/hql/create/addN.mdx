@@ -19,7 +19,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 
 ### Example 1: Adding in an empty user node
 <CodeGroup>
-```rust Query
+```rust Query focus={2}
 QUERY CreateUsers () =>
     empty_user <- AddN<User>
     RETURN empty_user
@@ -106,7 +106,7 @@ curl -X POST \
 
 ### Example 2: Adding in user with parameters
 <CodeGroup>
-```rust Query
+```rust Query focus={2-6}
 QUERY CreateUser (name: String, age: U8, email: String) =>
     user <- AddN<User>({
         name: name,
@@ -224,7 +224,7 @@ curl -X POST \
 
 ### Example 3: Adding in a user with predefined properties
 <CodeGroup>
-```rust Query
+```rust Query focus={2-6}
 QUERY CreateUser () =>
     predefined_user <- AddN<User>({
         name: "Alice Johnson",
