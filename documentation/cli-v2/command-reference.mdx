@@ -11,10 +11,12 @@ This page provides a comprehensive reference for all commands available in Helix
 
 These options are available for all commands:
 
+<Example>
 ```bash
 helix --help, -h      Show help information for the command
 helix --version, -V   Display the CLI version
 ```
+</Example>
 
 ## Project Management
 
@@ -24,6 +26,23 @@ helix --version, -V   Display the CLI version
 
 Initialize a new Helix project with configuration and structure.
 
+<Example>
+
+```bash
+# Basic initialization of a local instance called dev
+helix init
+
+# Initialize with fly deployment
+
+helix init fly --name prod
+
+# Initialize with custom queries path
+
+helix init --queries-path ./database/
+
+```
+
+</Example>
 
 <ResponseField name="helix init [OPTIONS] [SUBCOMMAND]" >
     
@@ -95,6 +114,20 @@ Initialize a new Helix project with configuration and structure.
 
 Add a new instance to an existing Helix project.
 
+<Example>
+```bash
+# Add a staging environment running on Fly.io
+
+helix add fly --name staging
+
+# Add a local testing instance
+
+helix add local --name testing
+
+````
+</Example>
+
+
 <ResponseField name="helix add [SUBCOMMAND]" >
 
     <Expandable title="subcommands">
@@ -155,6 +188,20 @@ Add a new instance to an existing Helix project.
 
 Migrate a v1 Helix project to v2 format.
 
+<Example>
+```bash
+# Migrate current directory
+helix migrate
+
+# Dry run to see what will change
+helix migrate --dry-run
+
+# Migrate with custom settings
+helix migrate --instance-name local --port 7070
+````
+
+</Example>
+
 <ResponseField name="helix migrate [OPTIONS]" >
     <Expandable title="options">
         <ResponseField name="--path | -p [PATH]" type="String">
@@ -190,6 +237,18 @@ Migrate a v1 Helix project to v2 format.
 
 Validate project configuration and query syntax.
 
+<Example>
+
+```bash
+# Check all instances
+helix check
+
+# Check specific instance
+helix check dev
+```
+
+</Example>
+
 <ResponseField name="helix check [INSTANCE]">
   Name of the instance to check (defaults to all instances)
 </ResponseField>
@@ -197,6 +256,20 @@ Validate project configuration and query syntax.
 ### `helix compile`
 
 Compile project queries into executable format.
+
+<Example>
+```bash
+# Compile with default settings
+helix compile
+
+# Compile with custom output
+
+helix compile --output ./dist/queries
+
+```
+
+</Example>
+
 
 <ResponseField name="helix compile [OPTIONS]">
   <Expandable title="options">
@@ -214,6 +287,16 @@ Compile project queries into executable format.
 
 Build and prepare an instance for deployment.
 
+<Example>
+```bash
+# Build development instance
+helix build dev
+
+# Build production instance
+helix build production
+````
+
+</Example>
 
 <Note>
 **What it does:**
@@ -234,6 +317,17 @@ Build and prepare an instance for deployment.
 
 Deploy or update a running instance.
 
+<Example>   
+```bash
+# Deploy development instance
+helix push dev
+
+# Deploy production instance
+
+helix push production
+
+````
+</Example>
 
 <Note>
 **What it does:**
@@ -263,6 +357,14 @@ Deploy or update a running instance.
 
 Start a stopped instance without rebuilding.
 
+<Example>
+```bash
+# Start development instance
+helix start dev
+````
+
+</Example>
+
 <ResponseField name="helix start [INSTANCE]">
   The instance to start.
 </ResponseField>
@@ -270,6 +372,8 @@ Start a stopped instance without rebuilding.
 ### `helix stop`
 
 Stop a running instance.
+
+<Example>```bash # Stop development instance helix stop dev ```</Example>
 
 <ResponseField name="helix stop [INSTANCE]">
   The instance to stop.
@@ -279,7 +383,11 @@ Stop a running instance.
 
 Show the status of all instances in the project.
 
-
+<Example>
+```bash  
+helix status
+```
+</Example>
 
 ## Cleanup & Maintenance
 
@@ -287,6 +395,18 @@ Show the status of all instances in the project.
 
 Remove unused containers, images, and workspace files.
 
+<Example>
+```bash
+# Prune unused resources
+helix prune
+
+# Prune specific instance
+helix prune dev
+
+# Prune all instances
+helix prune --all
+```
+</Example>
 
 <Note>
 **What it removes:**
@@ -311,6 +431,13 @@ Remove unused containers, images, and workspace files.
 
 Permanently delete an instance and all its data.
 
+<Example>
+```bash
+# Delete testing instance
+helix delete testing
+```
+</Example>
+
 <Note>
 **What it removes:**
 
@@ -330,6 +457,20 @@ Permanently delete an instance and all its data.
 ### `helix auth`
 
 Manage authentication for Helix Cloud.
+
+<Example>
+```bash
+# Login to Helix Cloud
+helix auth login
+
+# Create API key for cluster
+helix auth create-key <CLUSTER_ID>
+
+# Logout
+helix auth logout
+```
+
+</Example>
 
 <ResponseField name="helix auth [SUBCOMMAND]">
   The subcommand to run.
@@ -358,6 +499,19 @@ Manage authentication for Helix Cloud.
 Configure telemetry and usage metrics collection.
 
 
+<Example>
+```bash
+# Enable full metrics
+helix metrics full
+
+# Check current status
+helix metrics status
+
+# Disable metrics
+helix metrics off
+```
+</Example>
+
 <ResponseField name="helix metrics [SUBCOMMAND]">
   The subcommand to run.
 
@@ -381,9 +535,22 @@ Configure telemetry and usage metrics collection.
   </Expandable>
 </ResponseField>
 
+
+
+
 ### `helix update`
 
 Update the Helix CLI to the latest version.
+
+<Example>
+```bash
+# Check for and install updates
+helix update
+
+# Force reinstall
+helix update --force
+```
+</Example>
 
 <ResponseField name="helix update [OPTIONS]">
   The options to run.
@@ -394,6 +561,7 @@ Update the Helix CLI to the latest version.
     </ResponseField>
   </Expandable>
 </ResponseField>
+    
 
 For issues or questions:
 
