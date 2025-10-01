@@ -1,0 +1,53 @@
+---
+title: "AWS ECR Deployment"
+description: "Practical examples and patterns for typical AWS ECR deployment workflows"
+sidebarTitle: "AWS ECR"
+icon: "aws"
+---
+
+
+## Configure AWS CLI
+
+<Warning>
+  Ensure you have the necessary permissions to create and push to the ECR repository.
+  Using Helix with ECR will NOT work unless you have the necessary permissions via the AWS CLI. 
+</Warning>
+
+```bash
+# Configure AWS credentials
+aws configure
+```
+
+## Deploy to ECR
+
+<Steps>
+  <Step title="Add ECR instance">
+    ```bash
+    helix add ecr --name staging
+    ```
+  </Step>
+
+  <Step title="Build image">
+    ```bash
+    helix build staging
+    ```
+  </Step>
+
+  <Step title="Push to ECR">
+    ```bash
+    helix push staging
+    ```
+    This will:
+    - Create ECR repository if needed
+    - Authenticate Docker with ECR
+    - Tag and push the image
+  </Step>
+
+  <Step title="Deploy to ECS/EKS">
+    Use the pushed image in your container orchestration:
+    ```yaml
+    # ECS task definition
+    image: 123456789.dkr.ecr.us-west-2.amazonaws.com/my-app:latest
+    ```
+  </Step>
+</Steps>

@@ -1,0 +1,50 @@
+---
+title: "Fly.io Deployment"
+description: "Practical examples and patterns for typical Fly.io deployment workflows"
+sidebarTitle: "Fly.io"
+icon: "fly"
+---
+
+
+
+
+## Install and authenticate `flyctl`
+
+```bash
+# Install flyctl
+curl -L https://fly.io/install.sh | sh
+
+# Authenticate
+fly auth login
+```
+## Deploy to Fly.io
+  <Card title="Fly Commands" icon="wrench" href="/documentation/cli-v2/command-reference#param-name-name-6">
+    Commands and configuration for Fly.io via the CLI 
+  </Card>
+
+<Steps>
+  <Step title="Add Fly.io instance">
+    ```bash
+    helix add fly \
+      --name production \
+      --vm-size performance-4x \
+      --volume-size 20 \
+      --public false
+    ```
+  </Step>
+
+  <Step title="Build and deploy">
+    ```bash
+    helix build production
+    helix push production
+    ```
+  </Step>
+
+  <Step title="Check deployment">
+    ```bash
+    fly status -a my-app-production
+    fly logs -a my-app-production
+    ```
+  </Step>
+</Steps>
+

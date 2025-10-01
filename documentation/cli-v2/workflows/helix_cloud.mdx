@@ -1,0 +1,57 @@
+---
+title: "Helix Cloud Deployment"
+description: "Practical examples and patterns for typical Helix Cloud deployment workflows"
+sidebarTitle: "Helix Cloud"
+icon: "dna"
+---
+
+### Helix Cloud Deployment
+
+<Steps>
+  <Step title="Authenticate">
+    ```bash
+    helix auth login
+    ```
+  </Step>
+
+  <Step title="Initialize cloud instance">
+    ```bash
+    helix add cloud --name production
+    ```
+    <Warning>
+        You cannot currently create a new cluster from the CLI. Please contact us to create a new cluster.
+    </Warning>
+  </Step>
+
+  <Step title="Configure production settings">
+    Edit `helix.toml`:
+    ```toml
+    [cloud.production.helix]
+    cluster_id = "REPLACE_WITH_YOUR_CLUSTER_ID"
+    region = "us-east-1"
+    build_mode = "release"
+    mcp = true
+    bm25 = true
+
+    [cloud.production.helix.vector_config]
+    m = 32
+    ef_construction = 256
+    ef_search = 1024
+    ```
+    <Note>
+        Use the cluster ID given to you by us (contact us if you don't have yours).
+    </Note>
+  </Step>
+
+  <Step title="Deploy">
+    ```bash
+    helix push production
+    ```
+  </Step>
+
+  <Step title="Monitor">
+    ```bash
+    helix status
+    ```
+  </Step>
+</Steps>

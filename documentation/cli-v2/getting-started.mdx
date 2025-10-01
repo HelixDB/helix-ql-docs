@@ -83,3 +83,43 @@ curl -X POST http://localhost:6969/getUser -d '{"name": "John Doe"}'
 
 
 You now have a working HelixDB instance running locally with docker! You can now start building your application on top of it.
+
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Development Best Practices">
+    - Always run `helix check` before deploying
+    - Use descriptive instance names
+    - Keep development and production configurations separate
+    - Regularly clean up unused resources with `helix prune`
+    - Version control your `helix.toml` file
+  </Accordion>
+
+  <Accordion title="Production Best Practices">
+    - Use `build_mode = "release"` for production
+    - Configure appropriate vector parameters for your data scale
+    - Enable monitoring and logging
+    - Set up automated backups
+    - Test migrations in staging first
+  </Accordion>
+
+  <Accordion title="Security Best Practices">
+    - Never commit credentials to version control
+    - Use environment variables for sensitive data
+    - Regularly rotate API keys
+    - Keep CLI updated with `helix update`
+    - Use private instances for production data
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Troubleshooting" icon="wrench" href="/documentation/cli-v2/troubleshooting">
+    Solutions to common issues
+  </Card>
+  <Card title="Configuration Guide" icon="gear" href="/documentation/cli-v2/configuration">
+    Advanced configuration options
+  </Card>
+</CardGroup>

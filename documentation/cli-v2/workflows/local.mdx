@@ -1,0 +1,111 @@
+---
+title: "Local Development"
+description: "Practical examples and patterns for typical local development workflows"
+sidebarTitle: "Local"
+icon: "computer"
+---
+
+This guide walks through common workflows and best practices for developing with Helix CLI v2 locally.
+
+### Initial Setup
+
+<Steps>
+  <Step title="Create project">
+    ```bash
+    mkdir my-app && cd my-app
+    helix init
+    ```
+    Note that `helix init` with no arguments defaults to making a local instance called `dev`.
+  </Step>
+
+  <Step title="Define schema">
+    Edit `db/schema.hx`:
+    ```js
+    N::User {
+      name: String,
+      INDEX email: String,
+      created_at: Date DEFAULT NOW
+    }
+
+    N::Post {
+      title: String,
+      content: String,
+      published: Boolean DEFAULT true,
+      created_at: Date DEFAULT NOW
+    }
+    ```
+  </Step>
+
+  <Step title="Create queries">
+    Edit `db/queries.hx`:
+    ```js
+    QUERY createUser(name: String, email: String) =>
+      user <- AddN<User({
+        name: name,
+        email: email,
+      })
+      RETURN user
+
+    QUERY getUserByEmail(email: String) =>
+      user <- N<User>({email: email})
+      RETURN user
+    ```
+  </Step>
+
+  <Step title="Validate">
+    ```bash
+    helix check
+    ```
+  </Step>
+
+  <Step title="Build and deploy">
+    ```bash
+    helix push dev
+    ```
+  </Step>
+</Steps>
+
+### Development Iteration
+
+When making changes during development:
+
+```bash
+# Edit your .hx files
+vim db/queries.hx
+
+# Validate changes
+helix check
+
+# Deploy changes (rebuilds automatically if needed)
+helix push dev
+
+# Check status
+helix status
+
+# View logs
+docker logs helix_my-app_dev
+
+# Stop when done
+helix stop dev
+```
+
+### Working with Multiple Instances
+
+Create different instances for different purposes:
+
+```bash
+# Add a testing instance
+helix add local --name testing
+
+# Configure different port in helix.toml
+# [local.testing]
+# port = 7070
+
+# Run both instances
+helix push dev
+helix push testing
+
+# Status shows all instances
+helix status
+```
+

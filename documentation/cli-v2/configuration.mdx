@@ -3,7 +3,6 @@ title: "Configuration Guide"
 description: "Complete guide to configuring Helix projects with helix.toml and environment settings"
 sidebarTitle: "Configuration"
 icon: "gear"
-mode: "wide"
 ---
 
 The Helix CLI noq uses a unified configuration system centered around the `helix.toml` file. This guide covers all configuration options and best practices.
@@ -86,13 +85,13 @@ build_mode = "release"
 ### Helix Cloud
 
 ```toml
-[cloud.Helix.production]
+[cloud.production.helix]
 cluster_id = "hlx_abc123"    # Cluster ID given to you by us (contact us if you don't have yours)
 build_mode = "release"       # Build optimization
 mcp = true
 bm25 = true
 
-[cloud.Helix.production.vector_config]
+[cloud.production.helix.vector_config]
 m = 32
 ef_construction = 256
 ef_search = 1024
