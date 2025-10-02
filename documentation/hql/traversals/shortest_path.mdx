@@ -37,7 +37,63 @@ Dijkstra's algorithm finds the path with minimum total weight by summing edge we
 
 **Note:** Edge weights must be numeric (integers or floats) and non-negative.
 
-### Example 1: Finding routes between locations
+## Examples
+
+### Example 1: BFS vs Dijkstra comparison
+
+This example demonstrates the difference between BFS (minimum hops) and Dijkstra's algorithm (minimum weight).
+
+<CodeGroup>
+```rust Query focus={1-8} [expandable]
+// BFS finds path with minimum hops (default behavior)
+QUERY GetShortestPathBFS (from_id: ID, to_id: ID) =>
+    path <- N<City>(from_id)::ShortestPath<Road>::To(to_id)
+    RETURN path
+
+// Explicit BFS (same as above)
+QUERY GetShortestPathBFSExplicit (from_id: ID, to_id: ID) =>
+    path <- N<City>(from_id)::ShortestPathBFS<Road>::To(to_id)
+    RETURN path
+
+// Dijkstra finds path with minimum total distance
+QUERY GetShortestPathDijkstra (from_id: ID, to_id: ID) =>
+    path <- N<City>(from_id)::ShortestPathDijkstras<Road>(_::{distance_km})::To(to_id)
+    RETURN path
+
+QUERY CreateCity (name: String) =>
+    city <- AddN<City>({name: name})
+    RETURN city
+
+QUERY ConnectCities (from_id: ID, to_id: ID, distance_km: F64) =>
+    road <- AddE<Road>({
+        distance_km: distance_km,
+    })::From(from_id)::To(to_id)
+    RETURN road
+```
+
+```rust Schema
+N::City {
+    name: String,
+}
+
+E::Road {
+    From: City,
+    To: City,
+    Properties: {
+        distance_km: F64,
+    }
+}
+```
+</CodeGroup>
+
+Consider this graph:
+- City A → City B (distance: 100km, 1 hop)
+- City A → City C → City B (distance: 30km + 40km = 70km, 2 hops)
+
+**BFS** will choose A → B (1 hop, shorter path by hop count)
+**Dijkstra** will choose A → C → B (70km total, shorter path by weight)
+
+### Example 2: Finding routes between locations
 
 <CodeGroup>
 ```rust Query focus={1-3} [expandable]
