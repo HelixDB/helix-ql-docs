@@ -17,7 +17,7 @@ AddN<Type>({properties})
 When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
 </Warning>
 
-### Example 1: Adding in an empty user node
+### Example 1: Adding an empty user node
 <CodeGroup>
 ```rust Query focus={2}
 QUERY CreateUsers () =>
@@ -33,7 +33,7 @@ N::User {
 }
 ```
 </CodeGroup>
-Heres how to run the query using the SDKs or curl
+Here's how to run the query using the SDKs or curl
 
 <CodeGroup>
 ```python Python
@@ -104,7 +104,7 @@ curl -X POST \
 </CodeGroup>
 
 
-### Example 2: Adding in user with parameters
+### Example 2: Adding a user with parameters
 <CodeGroup>
 ```rust Query focus={2-6}
 QUERY CreateUser (name: String, age: U8, email: String) =>
@@ -126,7 +126,7 @@ N::User {
 ```
 </CodeGroup>
 
-Heres how to run the query using the SDKs or curl
+Here's how to run the query using the SDKs or curl
 <CodeGroup>
 ```python Python [expandable]
 from helix.client import Client
@@ -222,7 +222,7 @@ curl -X POST \
 </CodeGroup>
 
 
-### Example 3: Adding in a user with predefined properties
+### Example 3: Adding a user with predefined properties
 <CodeGroup>
 ```rust Query focus={2-6}
 QUERY CreateUser () =>
@@ -245,7 +245,7 @@ N::User {
 </CodeGroup>
 
 
-Heres how to run the query using the SDKs or curl
+Here's how to run the query using the SDKs or curl
 <CodeGroup>
 ```python Python
 from helix.client import Client
