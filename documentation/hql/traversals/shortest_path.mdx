@@ -1,17 +1,41 @@
 ---
 title: "Shortest Path"
-description: "Find the shortest path between two nodes using Breadth-First Search."
+description: "Find the shortest path between two nodes using BFS or Dijkstra's algorithm."
 icon: ""
 ---
 
-## `::ShortestPath`
+## Shortest Path Algorithms
 
-Breadth-first search finds the minimum number of hops between nodes along a specific edge type.
+HelixDB provides multiple algorithms for finding shortest paths between nodes:
+
+### `::ShortestPath` (BFS - Default)
+
+Breadth-first search finds the minimum number of hops between nodes along a specific edge type. This is the default algorithm for backward compatibility.
 
 ```rust
 ::ShortestPath<EdgeType>::To(to_id: ID)
 ::ShortestPath<EdgeType>::From(from_id: ID)
 ```
+
+### `::ShortestPathBFS` (Explicit BFS)
+
+Explicitly use breadth-first search to find the path with minimum hops.
+
+```rust
+::ShortestPathBFS<EdgeType>::To(to_id: ID)
+::ShortestPathBFS<EdgeType>::From(from_id: ID)
+```
+
+### `::ShortestPathDijkstras` (Weighted)
+
+Dijkstra's algorithm finds the path with minimum total weight by summing edge weights. Requires specifying which edge property to use as weight.
+
+```rust
+::ShortestPathDijkstras<EdgeType>(_::{weight_property})::To(to_id: ID)
+::ShortestPathDijkstras<EdgeType>(_::{weight_property})::From(from_id: ID)
+```
+
+**Note:** Edge weights must be numeric (integers or floats) and non-negative.
 
 ### Example 1: Finding routes between locations
 
