@@ -37,6 +37,23 @@ Dijkstra's algorithm finds the path with minimum total weight by summing edge we
 
 **Note:** Edge weights must be numeric (integers or floats) and non-negative.
 
+## Algorithm Selection
+
+Choose the appropriate algorithm based on your use case:
+
+| Algorithm | Use Case | Optimizes For | Edge Weights |
+|-----------|----------|---------------|--------------|
+| `ShortestPath` (BFS) | Social networks, network hops, simple routing | Minimum number of edges/hops | Ignored |
+| `ShortestPathBFS` | Same as above (explicit) | Minimum number of edges/hops | Ignored |
+| `ShortestPathDijkstras` | GPS routing, cost optimization, weighted graphs | Minimum total weight/cost | Required |
+
+### Common Weight Properties
+
+- **Distance**: `distance_km`, `distance_miles`, `length`
+- **Time**: `duration_minutes`, `travel_time`, `delay`
+- **Cost**: `price`, `cost`, `fee`
+- **Capacity**: `bandwidth`, `capacity`, `load`
+
 ## Examples
 
 ### Example 1: BFS vs Dijkstra comparison
