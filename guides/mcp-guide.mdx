@@ -7,8 +7,7 @@ icon: 'rocket-launch'
 ---
 
 # Introduction
-Build agentic graph queries that evolve step-by-step without rebuilding from scratch. HelixDB’s MCP endpoints provide a stateful, incremental query session via a `connection_id`, so each call extends the same traversal. This allows agents to 
-chain and build complex traversal and filter queries over time while being able to view intermediate results. Stream results with `mcp/next` or batch with `mcp/collect`. 
+Build agentic graph queries that evolve step-by-step without rebuilding from scratch. HelixDB’s MCP endpoints provide a stateful, incremental query session via a `connection_id`, so each call extends the same traversal. This allows agents to chain and build complex traversal and filter queries over time while being able to view intermediate results. Stream results with `mcp/next` or batch with `mcp/collect`. 
 
 You can also dynamically pass lists created at runtime, toggle AND/OR property groups, and filter by temporary traversals. Run multiple traversals in concurrently and asynchronously using multiple connection IDs by initializing each traversal with its own `connection_id` to keep them separate and easy to manage.
 
