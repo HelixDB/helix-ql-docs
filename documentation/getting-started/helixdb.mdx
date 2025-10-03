@@ -8,16 +8,18 @@ icon: 'database'
   Rust version 1.88.0 or higher is required. Make sure you have an updated version of Rust installed. Run `rustup update` to update your Rust version.
 </Warning>
 
-## Key Features
+## What are HelixDB's key features?
+
+HelixDB provides:
 
 - **High Performance**: Purpose-built storage engine optimized for both graph and vector operations
 - **Type Safety**: Explicit type definitions to ensure data integrity
 - **Developer-Friendly**: Simple setup and migration
 - **Secure**: Options for encryption at rest
 
-## Data Model
+## How does HelixDB store data?
 
-HelixDB follows the property graph model, which consists of:
+HelixDB uses a property graph model with three core components:
 
 - **Nodes**: Represent entities with unique identifiers and properties
   ```js
@@ -46,3 +48,20 @@ HelixDB follows the property graph model, which consists of:
   ```
 
 This model allows for rich representation of complex domains while maintaining query performance.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Getting started with CLI" icon="rocket" href="/documentation/cli-v2/getting-started">
+    Install and deploy your first HelixDB instance
+  </Card>
+  <Card title="Learn HelixQL" icon="book-open" href="/documentation/hql/hql">
+    Master the HelixQL query language
+  </Card>
+  <Card title="Schema definitions" icon="table" href="/documentation/hql/schema/schema-definition">
+    Define your graph structure
+  </Card>
+  <Card title="Python SDK" icon="python" href="/documentation/sdks/helix-py">
+    Use HelixDB with Python
+  </Card>
+</CardGroup>
