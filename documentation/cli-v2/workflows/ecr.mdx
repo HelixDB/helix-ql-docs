@@ -5,12 +5,12 @@ sidebarTitle: "AWS ECR"
 icon: "aws"
 ---
 
-
 ## Configure AWS CLI
 
 <Warning>
-  Ensure you have the necessary permissions to create and push to the ECR repository.
-  Using Helix with ECR will NOT work unless you have the necessary permissions via the AWS CLI. 
+  Ensure you have the necessary permissions to create and push to the ECR
+  repository. Using Helix with ECR will NOT work unless you have the necessary
+  permissions via the AWS CLI.
 </Warning>
 
 ```bash
@@ -25,17 +25,15 @@ aws configure
     ```bash
     helix add ecr --name staging
     ```
+  <Note>
+        If you don't have a project setup, you can do so with `helix init ecr`.
+ </Note>
   </Step>
 
-  <Step title="Push to ECR">
-    ```bash
-    helix push staging
-    ```
-    This will:
-    - Create ECR repository if needed
-    - Authenticate Docker with ECR
-    - Tag and push the image
-  </Step>
+<Step title="Push to ECR">
+  ```bash helix push staging ``` This will: - Create ECR repository if needed -
+  Authenticate Docker with ECR - Tag and push the image
+</Step>
 
   <Step title="Deploy to ECS/EKS">
     Use the pushed image in your container orchestration:
