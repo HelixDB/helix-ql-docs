@@ -7,16 +7,16 @@ icon: "book-open"
 
 HelixQL is a strongly typed, compiled query language for HelixDB that combines the best features of Gremlin, Cypher, and Rust to provide type-safe graph and vector queries.
 
-## Why yet another query language?
+## Why use HelixQL instead of other query languages?
 
-Over the past few years, we've used Gremlin extensively for graph queries.
-It's powerful and very expressive, but it's also extremely verbose and horrible to read after any substantial complexity.
+HelixQL addresses key limitations found in existing graph query languages:
 
-The other major issue is that it's obviously completely dynamic and is parsed at runtime when the query is executed.
-This leads to a horrible developer experience, not knowing if the query is valid until runtime.
+- **Type safety**: Queries are validated at compile time, catching errors before runtime
+- **Readability**: Clean, concise syntax that remains readable even for complex queries
+- **Performance**: Compiled queries execute faster than dynamically parsed alternatives
+- **Developer experience**: IDE support with autocomplete and type checking
 
-Building a new query language from scratch is obviously a big undertaking,
-but we thought it was a necessary step to improve the developer experience and make building with graphs better.
+Unlike Gremlin's verbose syntax or Cypher's runtime parsing, HelixQL provides a modern, type-safe approach to graph querying.
 
 **Example Query Syntax:**
 
