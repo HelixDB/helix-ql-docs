@@ -105,11 +105,11 @@
                 "expanded": false,
                 "pages": [
                   "documentation/hql/traversals/steps_nodes",
-                  "documentation/hql/traversals/steps_edges",
-                  "documentation/hql/traversals/shortest_path"
+                  "documentation/hql/traversals/steps_edges"
                 ],
                 "icon": "right-left-large"
-              },
+            },
+            "documentation/hql/shortest_path",
               {
                 "group": "Conditionals",
                 "expanded": false,
