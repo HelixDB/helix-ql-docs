@@ -42,9 +42,9 @@ For cloud instances, you can pass in the `api_endpoint` parameter.
 
 Define queries in a PyTorch-like manner, similar to neural network forward passes. Use built-in queries for common operations or define custom queries for complex workflows.
 
-**Pytorch-like Query**
+### PyTorch-like query definition
 
-Given a HelixQL query like this:
+Match your HelixQL queries with Python classes:
 ```rust query.hx
 QUERY add_user(name: String, age: I64) =>
   usr <- AddV<User>({name: name, age: age})
