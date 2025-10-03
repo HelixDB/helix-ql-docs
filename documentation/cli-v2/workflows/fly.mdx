@@ -5,27 +5,52 @@ sidebarTitle: "Fly.io"
 icon: "fly"
 ---
 
+---
 
+## Prerequisites
 
+<Accordion title="Install and authenticate `flyctl`">
 
-## Install and authenticate `flyctl`
+## Install `flyctl`
 
-```bash
-# Install flyctl
-curl -L https://fly.io/install.sh | sh
+    #### <Icon icon="apple" /> macOS
 
-# Authenticate
-fly auth login
-```
-
-<Note>
-    If running on mac use
-    ```bash
+    If using homebrew,
+    ```bash 
     brew install flyctl
     ```
-</Note>
+
+    Otherwise,
+    ```bash
+    curl -L https://fly.io/install.sh | sh
+    ```
+    <Warning>
+    If you used curl to install flyctl, then you need to add the flyctl directory to your shell rc file. Check the output of the install script for the entries to copy and paste into the file. Now you can use the fly command from any directory.
+    </Warning>
+
+    #### <Icon icon="linux" /> Linux
+    ```bash
+    curl -L https://fly.io/install.sh | sh
+    ```
+
+    #### <Icon icon="windows" /> Windows
+    ```bash
+    pwsh -Command "iwr https://fly.io/install.ps1 -useb | iex"
+    ```
+---
+
+## Authenticate `flyctl`
+
+```bash
+fly auth login
+```
+</Accordion>
+
+
+
 
 ## Deploy to Fly.io
+
   <Card title="Fly Commands" icon="wrench" href="/documentation/cli-v2/command-reference#param-name-name-6">
     Commands and configuration for Fly.io via the CLI 
   </Card>
