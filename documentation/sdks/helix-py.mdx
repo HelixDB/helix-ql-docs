@@ -209,10 +209,9 @@ batch_chunks = Chunk.sentence_chunk(texts)
 
 You can find all the different chunking examples inside of [Chunking Feature](../../features/chunking/helix-chunking).
 
-## Loader
-The loader (`helix/loader.py`) currently supports `.parquet`, `.fvecs`, and `.csv` data. Simply pass in the path to your
-file or files and the columns you want to process and the loader does the rest for you and is easy to integrate with
-your queries
+## How do I load data into HelixDB?
+
+The loader supports `.parquet`, `.fvecs`, and `.csv` files. Pass your file path and column names to automatically load data into your queries.
 
 ## More Information
 For more information, check out our [examples](https://github.com/HelixDB/helix-py/tree/main/examples)!
