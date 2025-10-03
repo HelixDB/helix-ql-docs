@@ -73,9 +73,9 @@ db.query(add_user("John", 20))
 
 Make sure that the `Query.query` method returns a list of objects.
 
-## Instance
-To setup a simple `Instance` that manages and automatically starts and stops a helix instance with respect
-to the lifetime of the script:
+## How do I manage HelixDB instances with Python?
+
+Use the `Instance` class to manage HelixDB lifecycle automatically within your Python scripts:
 
 ```python Python
 from helix.instance import Instance
