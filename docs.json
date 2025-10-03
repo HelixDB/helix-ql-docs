@@ -11,6 +11,10 @@
     "decoration": "gradient"
   },
   "favicon": "/favicon.svg",
+  "banner": {
+    "content": "🚀 CLI v2 is now live! See [Getting Started](/documentation/cli-v2/getting-started) for details.",
+    "dismissible": true
+  },
   "navigation": {
     "tabs": [
       {
@@ -28,11 +32,12 @@
           {
             "group": "CLI",
             "pages": [
-              "documentation/cli-v2/command-reference",
+              "documentation/cli-v2/migration",
               "documentation/cli-v2/workflows/local",
               "documentation/cli-v2/workflows/helix_cloud",
               "documentation/cli-v2/workflows/fly",
               "documentation/cli-v2/workflows/ecr",
+              "documentation/cli-v2/command-reference",
               "documentation/cli-v2/configuration",
               "documentation/cli-v2/troubleshooting"
             ]
@@ -59,9 +64,8 @@
                   "documentation/hql/schema/default"
                 ]
               },
-               "documentation/hql/types",
+              "documentation/hql/types",
               {
-                
                 "group": "CRUD Operations",
                 "expanded": false,
                 "pages": [
@@ -108,8 +112,8 @@
                   "documentation/hql/traversals/steps_edges"
                 ],
                 "icon": "right-left-large"
-            },
-            "documentation/hql/shortest_path",
+              },
+              "documentation/hql/shortest_path",
               {
                 "group": "Conditionals",
                 "expanded": false,
