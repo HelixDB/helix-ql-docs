@@ -43,10 +43,28 @@ Once you've defined your MCP queries, you can use them with any LLM provider tha
 from helix.client import Client
 from helix.mcp import MCPServer
 from helix.providers.openai_client import OpenAIProvider
+from fastmcp.tools.tool import FunctionTool
 
-# Start MCP server
+# Initialize MCP server
 client = Client(local=True)
 mcp = MCPServer("helix-mcp", client)
+
+# Add your custom tool to the MCP server
+def get_user_name(id: str):
+    """
+    Get the name of a user
+
+    Args:
+        id: The ID of the user
+
+    Returns:
+        The name of the user
+    """
+    return client.query("get_user_name", {"id": id})
+
+mcp.add_tool(FunctionTool.from_function(get_user_name))
+
+# Start MCP server
 mcp.run()
 
 # Enable MCP in your LLM provider
