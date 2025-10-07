@@ -73,15 +73,14 @@ mcp = MCPServer("helix-mcp", client)
 # Add your custom tool to the MCP server
 def get_user(connection_id: str, user_id: str):
     """
-    Get the name of a user
-
-    Args:
-        id: The ID of the user
-
-    Returns:
-        The name of the user
+    Get the name of a user by their ID
+    Args: connection_id: The connection ID, user_id: The ID of the user
+    Returns: The user object
     """
-    return client.query("get_user", {"connection_id": connection_id, "user_id": user_id})
+    return client.query(
+        "mcp/get_userMcp", 
+        {"connection_id": connection_id, "data":{"user_id": user_id}}
+    )
 
 mcp.add_tool(FunctionTool.from_function(get_user))
 
@@ -101,35 +100,44 @@ llm.enable_mcps("helix-mcp")
 response = llm.generate(f"What is the name of user with ID {user_id}?")
 print(response)
 ```
-{/*
+
 ```typescript TypeScript
 import HelixDB from "helix-ts";
 
 const client = new HelixDB("http://localhost:6969");
 
+// Add your custom MCP tool via /mcp to your MCP server
 // AI agents connected via MCP can call your queries
-// Example: get_user_name, find_users_by_age, etc.
-```
-*/}
 
-{/*
+// Example MCP tool call:
+const connection_id = await client.query("mcp/init", {});
+
+const user = await client.query("mcp/get_userMcp", {
+    connection_id,
+    data: {
+        user_id: user_id
+    }
+});
+```
+
 ```bash Curl
-# Your MCP queries are available at the MCP endpoint
+# Initialize the connection, this will return a connection_id
 curl -X POST \
-  http://localhost:8000/mcp/ \
+  http://localhost:6969/mcp/init \    
+  -H 'Content-Type: application/json' \
+  -d '{}'
+
+# Use the connection_id from above to call the MCP endpoint
+curl -X POST \
+  http://localhost:6969/mcp/get_userMcp \
   -H 'Content-Type: application/json' \
   -d '{
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-      "name": "get_user_name",
-      "arguments": {
-        "user_id": "123"
-      }
+    "connection_id": "connection_id",
+    "data": {
+        "user_id": "user_id"
     }
   }'
 ```
-*/}
 </CodeGroup>
 
 ---
