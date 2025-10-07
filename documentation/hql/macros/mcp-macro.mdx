@@ -1,0 +1,145 @@
+---
+title: "MCP Macro"
+description: "Learn how to turn any HelixQL query into an MCP endpoint using the #[mcp] macro."
+sidebarTitle: "MCP"
+---
+
+## Usage
+
+The `#[mcp]` macro enables you to expose any HelixQL query as an MCP (Model Context Protocol) endpoint, making it directly accessible to AI agents and LLM applications.
+
+
+```rust
+#[mcp]
+QUERY QueryName(param1: Type, param2: Type) =>
+    result <- traversal_expression
+    RETURN result
+```
+<Danger>
+You MUST only return a single object/value from the query otherwise you will get a compile error. (See [E401](../errors/E401))
+</Danger>
+
+### How it works
+
+When you add the `#[mcp]` attribute to a query:
+1. HelixDB automatically registers the query as an MCP tool
+2. The query parameters become the tool's input schema
+3. The query's return type becomes the tool's output schema
+4. AI agents can call this tool directly through the MCP server
+
+
+<Note>
+The MCP macro automatically converts your HelixQL query into a callable MCP tool that can be used by LLM providers like OpenAI, Anthropic, and Gemini.
+</Note>
+
+---
+
+## Using MCP Queries with LLM Providers
+
+Once you've defined your MCP queries, you can use them with any LLM provider that supports MCP:
+
+<CodeGroup>
+```python Python
+from helix.client import Client
+from helix.mcp import MCPServer
+from helix.providers.openai_client import OpenAIProvider
+
+# Start MCP server
+client = Client(local=True)
+mcp = MCPServer("helix-mcp", client)
+mcp.run()
+
+# Enable MCP in your LLM provider
+llm = OpenAIProvider(
+    name="openai-llm",
+    instructions="You are a helpful assistant with access to user data.",
+    model="gpt-4o",
+    history=True
+)
+llm.enable_mcps("helix-mcp")
+
+# The AI can now call your MCP queries
+response = llm.chat("What is the name of user with ID 123?")
+print(response)
+```
+
+```typescript TypeScript
+import HelixDB from "helix-ts";
+
+const client = new HelixDB("http://localhost:6969");
+
+// AI agents connected via MCP can call your queries
+// Example: get_user_name, find_users_by_age, etc.
+```
+
+```bash Curl
+# Your MCP queries are available at the MCP endpoint
+curl -X POST \
+  http://localhost:8000/mcp/ \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "tools/call",
+    "params": {
+      "name": "get_user_name",
+      "arguments": {
+        "user_id": "123"
+      }
+    }
+  }'
+```
+</CodeGroup>
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use descriptive query names">
+    Choose query names that clearly describe what the tool does. AI agents rely on function names to understand capabilities.
+
+    ```rust
+    // Good
+    #[mcp]
+    QUERY get_user_purchase_history(user_id: ID) => ...
+
+    // Less clear
+    #[mcp]
+    QUERY query1(id: ID) => ...
+    ```
+  </Accordion>
+
+  <Accordion title="Keep query signatures simple">
+    Use clear parameter types and avoid overly complex signatures. AI agents work best with straightforward interfaces.
+
+    ```rust
+    // Good
+    #[mcp]
+    QUERY search_products(name: String, max_price: F64) => ...
+
+    // More complex - consider breaking into multiple queries
+    #[mcp]
+    QUERY complex_search(filters: [FilterType], options: SearchOptions) => ...
+    ```
+  </Accordion>
+</AccordionGroup>
+
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="MCP Server Setup" href="/features/mcp/helix-mcp" icon="server">
+    Learn how to set up and configure the HelixDB MCP server
+  </Card>
+  <Card title="MCP Guide" href="/guides/mcp-guide" icon="book">
+    Complete guide for using MCP with HelixDB
+  </Card>
+  <Card title="Query Basics" href="/documentation/hql/hql" icon="code">
+    Learn the fundamentals of writing HelixQL queries
+  </Card>
+  <Card title="LLM Providers" href="/documentation/sdks/helix-py#providers" icon="brain">
+    Using HelixDB with different LLM providers
+  </Card>
+</CardGroup>

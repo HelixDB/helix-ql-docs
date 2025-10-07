@@ -113,6 +113,14 @@
                 ],
                 "icon": "right-left-large"
               },
+              {
+                "group": "Macros",
+                "expanded": false,
+                "pages": [
+                  "documentation/hql/macros/mcp-macro"
+                ],
+                "icon": "wand-magic-sparkles"
+              },
               "documentation/hql/shortest_path",
               {
                 "group": "Conditionals",
