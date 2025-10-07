@@ -53,6 +53,25 @@ For more information about the embedder, see our [Helix Embedders](/documentatio
 
 For more information about the MCP tools, see our [MCP Guide](../../guides/mcp-guide).
 
+### Custom MCP Tools
+You can also add your own custom MCP tools to the MCP server.
+```python
+from fastmcp.tools.tool import FunctionTool
+def get_user_name(id: str):
+    """
+    Get the name of a user
+
+    Args:
+        id: The ID of the user
+
+    Returns:
+        The name of the user
+    """
+    return client.query("get_user_name", {"id": id})
+
+mcp.add_tool(FunctionTool.from_function(get_user_name))
+```
+
 ## Enable MCP in Your LLM Provider
 **OpenAI**:
 ```python
