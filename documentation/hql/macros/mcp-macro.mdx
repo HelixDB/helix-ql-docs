@@ -65,7 +65,7 @@ def get_user_name(id: str):
 mcp.add_tool(FunctionTool.from_function(get_user_name))
 
 # Start MCP server
-mcp.run()
+mcp.run_bg()
 
 # Enable MCP in your LLM provider
 llm = OpenAIProvider(
@@ -77,7 +77,7 @@ llm = OpenAIProvider(
 llm.enable_mcps("helix-mcp")
 
 # The AI can now call your MCP queries
-response = llm.chat("What is the name of user with ID 123?")
+response = llm.generate("What is the name of user with ID 123?")
 print(response)
 ```
 
