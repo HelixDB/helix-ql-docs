@@ -8,7 +8,6 @@ sidebarTitle: "MCP"
 
 The `#[mcp]` macro enables you to expose any HelixQL query as an MCP (Model Context Protocol) endpoint, making it directly accessible to AI agents and LLM applications.
 
-
 ```rust
 #[mcp]
 QUERY QueryName(param1: Type, param2: Type) =>
@@ -18,6 +17,10 @@ QUERY QueryName(param1: Type, param2: Type) =>
 <Danger>
 You MUST only return a single object/value from the query otherwise you will get a compile error. (See [E401](../errors/E401))
 </Danger>
+
+<Warning>
+Make sure to set `mcp = true` under the instance you are using in the `helix.toml` file.
+</Warning>
 
 ### How it works
 
@@ -39,6 +42,24 @@ The MCP macro automatically converts your HelixQL query into a callable MCP tool
 Once you've defined your MCP queries, you can use them with any LLM provider that supports MCP:
 
 <CodeGroup>
+```rust Query focus={1-2}
+#[mcp]
+QUERY get_user(user_id: ID) =>
+    user <- N<User>(user_id)
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U32,
+    email: String
+}
+```
+</CodeGroup>
+
+<CodeGroup>
+
 ```python Python
 from helix.client import Client
 from helix.mcp import MCPServer
@@ -50,7 +71,7 @@ client = Client(local=True)
 mcp = MCPServer("helix-mcp", client)
 
 # Add your custom tool to the MCP server
-def get_user_name(id: str):
+def get_user(connection_id: str, user_id: str):
     """
     Get the name of a user
 
@@ -60,9 +81,9 @@ def get_user_name(id: str):
     Returns:
         The name of the user
     """
-    return client.query("get_user_name", {"id": id})
+    return client.query("get_user", {"connection_id": connection_id, "user_id": user_id})
 
-mcp.add_tool(FunctionTool.from_function(get_user_name))
+mcp.add_tool(FunctionTool.from_function(get_user))
 
 # Start MCP server
 mcp.run_bg()
@@ -77,10 +98,10 @@ llm = OpenAIProvider(
 llm.enable_mcps("helix-mcp")
 
 # The AI can now call your MCP queries
-response = llm.generate("What is the name of user with ID 123?")
+response = llm.generate(f"What is the name of user with ID {user_id}?")
 print(response)
 ```
-
+{/*
 ```typescript TypeScript
 import HelixDB from "helix-ts";
 
@@ -89,7 +110,9 @@ const client = new HelixDB("http://localhost:6969");
 // AI agents connected via MCP can call your queries
 // Example: get_user_name, find_users_by_age, etc.
 ```
+*/}
 
+{/*
 ```bash Curl
 # Your MCP queries are available at the MCP endpoint
 curl -X POST \
@@ -106,6 +129,7 @@ curl -X POST \
     }
   }'
 ```
+*/}
 </CodeGroup>
 
 ---
