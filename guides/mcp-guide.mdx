@@ -258,7 +258,7 @@ The format of the filters is as follows:
 }
 ```
 
-### Property Filter
+<h3>Property Filter</h3>
 The property filter is used to filter the current state of the traversal by the properties of the entity.
 The outer list is the `OR` operation and the inner list is the `AND` operation.    
 ```rust
@@ -294,7 +294,7 @@ List to list comparisons will also use the OR operator for each element in each 
 This allows for using `contains` and `not_contains` operators by using the `==` and `!=` operator with a list of values.
 </Note>
 
-### Traversal Filter
+<h3>Traversal Filter</h3>
 The traversal filter is used to filter the current state of the traversal by the results of a traversal.
 It doesn't actually change the state of the current traversal, it just temporarily traverses and checks the results of the traversal.
 You can have nested filters in the inner filter layer, which can include property and traversal filters with the same structure.
@@ -325,6 +325,85 @@ The traversal filter only has an `AND` operation.
     },
     ...
 ]
+```
+
+---
+
+# MCP Aggregation Tools
+
+<h2>Group `group_by`</h2>
+<h4> Endpoint `"mcp/group_by"` </h4>
+Groups the current state of the traversal by the given properties.
+It returns a list of unique property combinations and their count.
+
+Request Format
+```rust
+{
+    "connection_id": "<connection-id>", 
+    "properties": ["<property-name>", ...]
+}
+```
+
+Parameters
+- `properties` : the properties to group by
+
+Response Format
+```rust
+[
+    {<property-name>: <property-value>, ... , "count": <count>},
+    ...
+]
+```
+
+<h2>Aggregate `aggregate_by`</h2>
+<h4> Endpoint `"mcp/aggregate_by"` </h4>
+Aggregates the current state of the traversal by the given properties.
+It returns a list of groups of jsons each with a count and data as a list of items in that group.
+
+Request Format
+```rust
+{
+    "connection_id": "<connection-id>", 
+    "properties": ["<property-name>", ...]
+}
+```
+
+Parameters
+- `properties` : the properties to aggregate by
+
+Response Format
+```rust
+[
+    {
+        "count": <count>,
+        "data": [
+            {<node-edge-data>},
+            ...
+        ]
+    },
+    ...
+]
+```
+
+<h2>Order `order_by`</h2>
+<h4> Endpoint `"mcp/order_by"` </h4>
+Orders the current state of the traversal by a given property in ascending or descending order.
+
+Request Format
+```rust
+{
+    "connection_id": "<connection-id>", 
+    "data": {"properties": "<property-name>", "order": "<asc-desc>"}
+}
+```
+
+Parameters
+- `properties` : the property to order by
+- `order` : the order to use for the property (asc or desc)
+
+Response Format
+```rust
+{<first-item>}
 ```
 
 ---
