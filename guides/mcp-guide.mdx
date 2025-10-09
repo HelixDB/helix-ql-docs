@@ -31,6 +31,17 @@ Response Format
 <h4> Endpoint `"mcp/next"` </h4>
 Returns the next item in the MCP traversal results.
 
+Request Format
+```rust
+{
+    "connection_id": "<connection-id>"
+}
+```
+
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
 Response Format
 ```rust
 {<node-edge-data>}
@@ -49,9 +60,17 @@ Request Format
 }
 ```
 
-Optional Parameters
-- `range` (optional) : range of results to collect (default: `{"start": 0, "end": -1}`)
-- `drop` (optional) : resets the traversal after collecting results (default: `true`)
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="range" type="json">
+  Range of results to collect (default: `{"start": 0, "end": -1}`)
+</ParamField>
+
+<ParamField path="drop" type="boolean">
+  Resets the traversal after collecting results (default: `true`)
+</ParamField>
 
 Response Format
 ```rust
@@ -70,6 +89,10 @@ Request Format
 {"connection_id": "<connection-id>"}
 ```
 
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
 Response Format
 ```rust
 "<connection-id>"
@@ -83,6 +106,10 @@ Request Format
 ```rust
 {"connection_id": "<connection-id>"}
 ```
+
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
 
 Response Format
 ```rust expandable
@@ -150,8 +177,13 @@ Request Format
 {"connection_id": "<connection-id>", "data": {"node_type": "<node-type>"}}
 ```
 
-Parameters
-- `node_type` : the label of node to retrieve
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="node_type" type="string" required>
+  The label of node to retrieve (name in schema)
+</ParamField>
 
 <h2>Retrieve Edges `e_from_type`</h2>
 <h4> Endpoint `"mcp/e_from_type"` </h4>
@@ -162,8 +194,13 @@ Request Format
 {"connection_id": "<connection-id>", "data": {"edge_type": "<edge-type>"}}
 ```
 
-Parameters
-- `edge_type` : the label of edge to retrieve
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="edge_type" type="string" required>
+  The label of edge to retrieve (name in schema)
+</ParamField>
 
 <h2>Out `out_step`</h2>
 <h4> Endpoint `"mcp/out_step"` </h4>
@@ -178,9 +215,17 @@ Request Format
 }
 ```
 
-Parameters
-- `edge_type` : the target entity (`node` or `vec`)
-- `edge_label` : the label of edge to traverse out
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="edge_type" type="string" required>
+  The target entity (`node` or `vec`)
+</ParamField>
+
+<ParamField path="edge_label" type="string" required>
+  The label of edge to traverse out (name in schema)
+</ParamField>
 
 <h2>OutE `out_e_step`</h2>
 <h4> Endpoint `"mcp/out_e_step"` </h4>
@@ -192,8 +237,13 @@ Request Format
 {"connection_id": "<connection-id>", "data": {"edge_label": "<edge-label>"}}
 ```
 
-Parameters
-- `edge_label` : the label of edge to traverse out
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="edge_label" type="string" required>
+  The label of edge to traverse out (name in schema)
+</ParamField>
 
 <h2>In `in_step`</h2>
 <h4> Endpoint `"mcp/in_step"` </h4>
@@ -208,9 +258,17 @@ Request Format
 }
 ```
 
-Parameters
-- `edge_type` : the source entity (`node` or `vec`)
-- `edge_label` : the label of edge to traverse into
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="edge_type" type="string" required>
+  The source entity (`node` or `vec`)
+</ParamField>
+
+<ParamField path="edge_label" type="string" required>
+  The label of edge to traverse into (name in schema)
+</ParamField>
 
 <h2>InE `in_e_step`</h2>
 <h4> Endpoint `"mcp/in_e_step"` </h4>
@@ -222,10 +280,13 @@ Request Format
 {"connection_id": "<connection-id>", "data": {"edge_label": "<edge-label>"}}
 ```
 
-Parameters
-- `edge_label` : the label of edge to traverse into
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
 
----
+<ParamField path="edge_label" type="string" required>
+  The label of edge to traverse into (name in schema)
+</ParamField>
 
 # MCP Filter Tool
 
@@ -274,12 +335,19 @@ The outer list is the `OR` operation and the inner list is the `AND` operation.
 ]
 ```
 
-Parameters
-- `key` : the name of the property to filter on
-- `operator` : the operator to use for the filter
-- `value` : the value to filter on
+<ParamField path="key" type="string" required>
+  The name of the property to filter on
+</ParamField>
 
-Operators:
+<ParamField path="operator" type="string" required>
+  The operator to use for the filter
+</ParamField>
+
+<ParamField path="value" type="string" required>
+  The value to filter on
+</ParamField>
+
+<h4>Operators</h4>
 
 | Operator | Description | Operator | Description |
 |----------|-------------|----------|-------------|
@@ -344,8 +412,13 @@ Request Format
 }
 ```
 
-Parameters
-- `properties` : the properties to group by
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="properties" type="[string]" required>
+  The properties to group by
+</ParamField>
 
 Response Format
 ```rust
@@ -368,8 +441,13 @@ Request Format
 }
 ```
 
-Parameters
-- `properties` : the properties to aggregate by
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="properties" type="[string]" required>
+  The properties to aggregate by
+</ParamField>
 
 Response Format
 ```rust
@@ -397,9 +475,17 @@ Request Format
 }
 ```
 
-Parameters
-- `properties` : the property to order by
-- `order` : the order to use for the property (asc or desc)
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="properties" type="string" required>
+  The property to order by
+</ParamField>
+
+<ParamField path="order" type="string" required>
+  The order to use for the property (asc or desc)
+</ParamField>
 
 Response Format
 ```rust
@@ -426,10 +512,21 @@ Request Format
 }
 ```
 
-Parameters
-- `vector` : the vector to search for
-- `k` : the number of results to return
-- `min_score` (optional) : the minimum score to return (default: `0.0`)
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="vector" type="[F64]" required>
+  The vector to search for
+</ParamField>
+
+<ParamField path="k" type="I64" required>
+  The number of results to return
+</ParamField>
+
+<ParamField path="min_score" type="F64">
+  The minimum score to return (default: `0.0`)
+</ParamField>
 
 Response Format
 ```rust
@@ -455,9 +552,17 @@ Request Format
 }
 ```
 
-Parameters
-- `query` : the text to search for
-- `label` : the label of the vectors to search for
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="query" type="string" required>
+  The text to search for
+</ParamField>
+
+<ParamField path="label" type="string" required>
+  The label of the vectors to search for (name in schema)
+</ParamField>
 
 Response Format
 ```rust
@@ -481,10 +586,21 @@ Request Format
 }
 ```
 
-Parameters
-- `query` : the text to search for
-- `label` : the label of the nodes, edges, or vectors to search for
-- `limit` : the number of results to return
+<ParamField path="connection_id" type="string" required>
+  Connection ID of the MCP connection
+</ParamField>
+
+<ParamField path="query" type="string" required>
+  The text to search for
+</ParamField>
+
+<ParamField path="label" type="string" required>
+  The label of the node, edge, or vector to search for (name in schema)
+</ParamField>
+
+<ParamField path="limit" type="I64" required>
+  The number of results to return
+</ParamField>
 
 Response Format
 ```rust
