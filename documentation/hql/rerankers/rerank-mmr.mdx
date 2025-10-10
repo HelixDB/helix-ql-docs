@@ -1,0 +1,971 @@
+---
+title: "RerankMMR"
+description: "Diversify search results using Maximal Marginal Relevance."
+icon: "grid-2"
+---
+
+## Rerank with MMR (Maximal Marginal Relevance) &nbsp;
+
+RerankMMR is a diversification technique that balances relevance with diversity to reduce redundancy in search results. It iteratively selects results that are both relevant to the query and dissimilar to already-selected results, ensuring users see varied content instead of near-duplicates.
+
+```rust
+::RerankMMR(lambda: 0.7)                           // Cosine distance (default)
+::RerankMMR(lambda: 0.5, distance: "euclidean")    // Euclidean distance
+::RerankMMR(lambda: 0.6, distance: "dotproduct")   // Dot product distance
+```
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## How It Works
+
+MMR uses an iterative selection process with the following formula:
+
+```
+MMR = λ × Sim1(d, q) - (1-λ) × max(Sim2(d, d_i))
+```
+
+Where:
+- `d` is a candidate document
+- `q` is the query
+- `d_i` are already-selected documents
+- `λ` (lambda) controls the relevance vs. diversity trade-off
+- `Sim1` measures relevance to the query
+- `Sim2` measures similarity to selected documents
+
+The algorithm works by:
+1. Starting with the most relevant result
+2. For each subsequent position, calculating MMR scores for remaining candidates
+3. Selecting the candidate with the highest MMR score (balancing relevance and novelty)
+4. Repeating until all positions are filled
+
+## When to Use RerankMMR
+
+Use RerankMMR when you want to:
+
+- **Diversify search results**: Eliminate near-duplicate content and show varied perspectives
+- **Reduce redundancy**: Avoid showing multiple similar articles, products, or documents
+- **Improve user experience**: Provide comprehensive coverage rather than repetitive results
+- **Balance exploration and relevance**: Give users both highly relevant and exploratory options
+
+## Parameters
+
+### lambda (required)
+
+A value between 0.0 and 1.0 that controls the relevance vs. diversity trade-off:
+
+- **Higher values (0.7-1.0)**: Favor relevance over diversity
+  - Results will be more similar to original ranking
+  - Use when relevance is paramount
+  - Minimal diversification
+
+- **Lower values (0.0-0.3)**: Favor diversity over relevance
+  - Results will be maximally varied
+  - Use when avoiding redundancy is critical
+  - May include less relevant but diverse results
+
+- **Balanced values (0.4-0.6)**: Balance relevance and diversity
+  - Good compromise for most use cases
+  - Maintains reasonable relevance while reducing duplicates
+
+- **Typical recommendation**: Start with 0.5-0.7 for most applications
+
+<Note>
+The optimal lambda value depends on your specific use case. Test different values to find what works best for your users.
+</Note>
+
+### distance (optional, default: "cosine")
+
+The distance metric used for calculating similarity:
+
+- **"cosine"**: Cosine similarity (default)
+  - Works well for normalized vectors
+  - Common choice for text embeddings
+  - Range: -1 to 1
+
+- **"euclidean"**: Euclidean distance
+  - Works well for absolute distances
+  - Sensitive to vector magnitude
+  - Good for spatial data
+
+- **"dotproduct"**: Dot product similarity
+  - Works well for unnormalized vectors
+  - Computationally efficient
+  - Considers vector magnitude
+
+## Example 1: Basic diversification with default cosine distance
+
+<CodeGroup>
+```rust Query focus={1-4}
+QUERY DiverseSearch(query_vec: [F64]) =>
+    results <- SearchV<Document>(query_vec, 100)
+        ::RerankMMR(lambda: 0.7)
+        ::RANGE(0, 10)
+    RETURN results
+
+QUERY InsertDocument(vector: [F64], title: String, category: String) =>
+    document <- AddV<Document>(vector, {
+        title: title,
+        category: category
+    })
+    RETURN document
+```
+
+```rust Schema
+V::Document {
+    title: String,
+    category: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+documents = [
+    {"vector": [0.1, 0.2, 0.3, 0.4], "title": "Introduction to Python", "category": "Programming"},
+    {"vector": [0.11, 0.21, 0.31, 0.41], "title": "Python Basics", "category": "Programming"},
+    {"vector": [0.5, 0.6, 0.7, 0.8], "title": "Machine Learning Overview", "category": "AI"},
+    {"vector": [0.51, 0.61, 0.71, 0.81], "title": "Deep Learning Intro", "category": "AI"},
+    {"vector": [0.3, 0.4, 0.5, 0.6], "title": "Data Structures", "category": "Computer Science"},
+]
+
+for doc in documents:
+    client.query("InsertDocument", doc)
+
+query_vector = [0.12, 0.22, 0.32, 0.42]
+results = client.query("DiverseSearch", {"query_vec": query_vector})
+print("Diverse search results:", results)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let documents = vec![
+        (vec![0.1, 0.2, 0.3, 0.4], "Introduction to Python", "Programming"),
+        (vec![0.11, 0.21, 0.31, 0.41], "Python Basics", "Programming"),
+        (vec![0.5, 0.6, 0.7, 0.8], "Machine Learning Overview", "AI"),
+        (vec![0.51, 0.61, 0.71, 0.81], "Deep Learning Intro", "AI"),
+        (vec![0.3, 0.4, 0.5, 0.6], "Data Structures", "Computer Science"),
+    ];
+
+    for (vector, title, category) in &documents {
+        let _inserted: serde_json::Value = client.query("InsertDocument", &json!({
+            "vector": vector,
+            "title": title,
+            "category": category,
+        })).await?;
+    }
+
+    let query_vector = vec![0.12, 0.22, 0.32, 0.42];
+    let results: serde_json::Value = client.query("DiverseSearch", &json!({
+        "query_vec": query_vector,
+    })).await?;
+
+    println!("Diverse search results: {results:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    documents := []map[string]any{
+        {"vector": []float64{0.1, 0.2, 0.3, 0.4}, "title": "Introduction to Python", "category": "Programming"},
+        {"vector": []float64{0.11, 0.21, 0.31, 0.41}, "title": "Python Basics", "category": "Programming"},
+        {"vector": []float64{0.5, 0.6, 0.7, 0.8}, "title": "Machine Learning Overview", "category": "AI"},
+        {"vector": []float64{0.51, 0.61, 0.71, 0.81}, "title": "Deep Learning Intro", "category": "AI"},
+        {"vector": []float64{0.3, 0.4, 0.5, 0.6}, "title": "Data Structures", "category": "Computer Science"},
+    }
+
+    for _, doc := range documents {
+        var inserted map[string]any
+        if err := client.Query("InsertDocument", helix.WithData(doc)).Scan(&inserted); err != nil {
+            log.Fatalf("InsertDocument failed: %s", err)
+        }
+    }
+
+    queryVector := []float64{0.12, 0.22, 0.32, 0.42}
+    var results map[string]any
+    if err := client.Query("DiverseSearch", helix.WithData(map[string]any{
+        "query_vec": queryVector,
+    })).Scan(&results); err != nil {
+        log.Fatalf("DiverseSearch failed: %s", err)
+    }
+
+    fmt.Printf("Diverse search results: %#v\n", results)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const documents = [
+        { vector: [0.1, 0.2, 0.3, 0.4], title: "Introduction to Python", category: "Programming" },
+        { vector: [0.11, 0.21, 0.31, 0.41], title: "Python Basics", category: "Programming" },
+        { vector: [0.5, 0.6, 0.7, 0.8], title: "Machine Learning Overview", category: "AI" },
+        { vector: [0.51, 0.61, 0.71, 0.81], title: "Deep Learning Intro", category: "AI" },
+        { vector: [0.3, 0.4, 0.5, 0.6], title: "Data Structures", category: "Computer Science" },
+    ];
+
+    for (const doc of documents) {
+        await client.query("InsertDocument", doc);
+    }
+
+    const queryVector = [0.12, 0.22, 0.32, 0.42];
+    const results = await client.query("DiverseSearch", {
+        query_vec: queryVector,
+    });
+
+    console.log("Diverse search results:", results);
+}
+
+main().catch((err) => {
+    console.error("DiverseSearch query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.1,0.2,0.3,0.4],"title":"Introduction to Python","category":"Programming"}'
+
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.11,0.21,0.31,0.41],"title":"Python Basics","category":"Programming"}'
+
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.5,0.6,0.7,0.8],"title":"Machine Learning Overview","category":"AI"}'
+
+curl -X POST \
+  http://localhost:6969/DiverseSearch \
+  -H 'Content-Type: application/json' \
+  -d '{"query_vec":[0.12,0.22,0.32,0.42]}'
+```
+</CodeGroup>
+
+---
+
+## Example 2: High diversity with euclidean distance
+
+<CodeGroup>
+```rust Query focus={1-4}
+QUERY HighDiversitySearch(query_vec: [F64]) =>
+    results <- SearchV<Document>(query_vec, 100)
+        ::RerankMMR(lambda: 0.3, distance: "euclidean")
+        ::RANGE(0, 15)
+    RETURN results
+
+QUERY InsertDocument(vector: [F64], title: String, category: String) =>
+    document <- AddV<Document>(vector, {
+        title: title,
+        category: category
+    })
+    RETURN document
+```
+
+```rust Schema
+V::Document {
+    title: String,
+    category: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+documents = [
+    {"vector": [0.1, 0.2, 0.3, 0.4], "title": "React Tutorial", "category": "Frontend"},
+    {"vector": [0.12, 0.22, 0.32, 0.42], "title": "React Hooks", "category": "Frontend"},
+    {"vector": [0.5, 0.6, 0.7, 0.8], "title": "Node.js Guide", "category": "Backend"},
+    {"vector": [0.2, 0.3, 0.4, 0.5], "title": "Vue.js Basics", "category": "Frontend"},
+]
+
+for doc in documents:
+    client.query("InsertDocument", doc)
+
+query_vector = [0.11, 0.21, 0.31, 0.41]
+results = client.query("HighDiversitySearch", {"query_vec": query_vector})
+print("High diversity results:", results)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let documents = vec![
+        (vec![0.1, 0.2, 0.3, 0.4], "React Tutorial", "Frontend"),
+        (vec![0.12, 0.22, 0.32, 0.42], "React Hooks", "Frontend"),
+        (vec![0.5, 0.6, 0.7, 0.8], "Node.js Guide", "Backend"),
+        (vec![0.2, 0.3, 0.4, 0.5], "Vue.js Basics", "Frontend"),
+    ];
+
+    for (vector, title, category) in &documents {
+        let _inserted: serde_json::Value = client.query("InsertDocument", &json!({
+            "vector": vector,
+            "title": title,
+            "category": category,
+        })).await?;
+    }
+
+    let query_vector = vec![0.11, 0.21, 0.31, 0.41];
+    let results: serde_json::Value = client.query("HighDiversitySearch", &json!({
+        "query_vec": query_vector,
+    })).await?;
+
+    println!("High diversity results: {results:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    documents := []map[string]any{
+        {"vector": []float64{0.1, 0.2, 0.3, 0.4}, "title": "React Tutorial", "category": "Frontend"},
+        {"vector": []float64{0.12, 0.22, 0.32, 0.42}, "title": "React Hooks", "category": "Frontend"},
+        {"vector": []float64{0.5, 0.6, 0.7, 0.8}, "title": "Node.js Guide", "category": "Backend"},
+        {"vector": []float64{0.2, 0.3, 0.4, 0.5}, "title": "Vue.js Basics", "category": "Frontend"},
+    }
+
+    for _, doc := range documents {
+        var inserted map[string]any
+        if err := client.Query("InsertDocument", helix.WithData(doc)).Scan(&inserted); err != nil {
+            log.Fatalf("InsertDocument failed: %s", err)
+        }
+    }
+
+    queryVector := []float64{0.11, 0.21, 0.31, 0.41}
+    var results map[string]any
+    if err := client.Query("HighDiversitySearch", helix.WithData(map[string]any{
+        "query_vec": queryVector,
+    })).Scan(&results); err != nil {
+        log.Fatalf("HighDiversitySearch failed: %s", err)
+    }
+
+    fmt.Printf("High diversity results: %#v\n", results)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const documents = [
+        { vector: [0.1, 0.2, 0.3, 0.4], title: "React Tutorial", category: "Frontend" },
+        { vector: [0.12, 0.22, 0.32, 0.42], title: "React Hooks", category: "Frontend" },
+        { vector: [0.5, 0.6, 0.7, 0.8], title: "Node.js Guide", category: "Backend" },
+        { vector: [0.2, 0.3, 0.4, 0.5], title: "Vue.js Basics", category: "Frontend" },
+    ];
+
+    for (const doc of documents) {
+        await client.query("InsertDocument", doc);
+    }
+
+    const queryVector = [0.11, 0.21, 0.31, 0.41];
+    const results = await client.query("HighDiversitySearch", {
+        query_vec: queryVector,
+    });
+
+    console.log("High diversity results:", results);
+}
+
+main().catch((err) => {
+    console.error("HighDiversitySearch query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.1,0.2,0.3,0.4],"title":"React Tutorial","category":"Frontend"}'
+
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.5,0.6,0.7,0.8],"title":"Node.js Guide","category":"Backend"}'
+
+curl -X POST \
+  http://localhost:6969/HighDiversitySearch \
+  -H 'Content-Type: application/json' \
+  -d '{"query_vec":[0.11,0.21,0.31,0.41]}'
+```
+</CodeGroup>
+
+---
+
+## Example 3: Balanced approach with dot product
+
+<CodeGroup>
+```rust Query focus={1-4}
+QUERY BalancedSearch(query_vec: [F64]) =>
+    results <- SearchV<Document>(query_vec, 100)
+        ::RerankMMR(lambda: 0.5, distance: "dotproduct")
+        ::RANGE(0, 10)
+    RETURN results
+
+QUERY InsertDocument(vector: [F64], title: String, category: String) =>
+    document <- AddV<Document>(vector, {
+        title: title,
+        category: category
+    })
+    RETURN document
+```
+
+```rust Schema
+V::Document {
+    title: String,
+    category: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+documents = [
+    {"vector": [0.1, 0.2, 0.3, 0.4], "title": "Database Design", "category": "Architecture"},
+    {"vector": [0.11, 0.21, 0.31, 0.41], "title": "SQL Optimization", "category": "Database"},
+    {"vector": [0.5, 0.6, 0.7, 0.8], "title": "NoSQL Systems", "category": "Database"},
+    {"vector": [0.3, 0.4, 0.5, 0.6], "title": "API Design", "category": "Architecture"},
+]
+
+for doc in documents:
+    client.query("InsertDocument", doc)
+
+query_vector = [0.12, 0.22, 0.32, 0.42]
+results = client.query("BalancedSearch", {"query_vec": query_vector})
+print("Balanced search results:", results)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let documents = vec![
+        (vec![0.1, 0.2, 0.3, 0.4], "Database Design", "Architecture"),
+        (vec![0.11, 0.21, 0.31, 0.41], "SQL Optimization", "Database"),
+        (vec![0.5, 0.6, 0.7, 0.8], "NoSQL Systems", "Database"),
+        (vec![0.3, 0.4, 0.5, 0.6], "API Design", "Architecture"),
+    ];
+
+    for (vector, title, category) in &documents {
+        let _inserted: serde_json::Value = client.query("InsertDocument", &json!({
+            "vector": vector,
+            "title": title,
+            "category": category,
+        })).await?;
+    }
+
+    let query_vector = vec![0.12, 0.22, 0.32, 0.42];
+    let results: serde_json::Value = client.query("BalancedSearch", &json!({
+        "query_vec": query_vector,
+    })).await?;
+
+    println!("Balanced search results: {results:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    documents := []map[string]any{
+        {"vector": []float64{0.1, 0.2, 0.3, 0.4}, "title": "Database Design", "category": "Architecture"},
+        {"vector": []float64{0.11, 0.21, 0.31, 0.41}, "title": "SQL Optimization", "category": "Database"},
+        {"vector": []float64{0.5, 0.6, 0.7, 0.8}, "title": "NoSQL Systems", "category": "Database"},
+        {"vector": []float64{0.3, 0.4, 0.5, 0.6}, "title": "API Design", "category": "Architecture"},
+    }
+
+    for _, doc := range documents {
+        var inserted map[string]any
+        if err := client.Query("InsertDocument", helix.WithData(doc)).Scan(&inserted); err != nil {
+            log.Fatalf("InsertDocument failed: %s", err)
+        }
+    }
+
+    queryVector := []float64{0.12, 0.22, 0.32, 0.42}
+    var results map[string]any
+    if err := client.Query("BalancedSearch", helix.WithData(map[string]any{
+        "query_vec": queryVector,
+    })).Scan(&results); err != nil {
+        log.Fatalf("BalancedSearch failed: %s", err)
+    }
+
+    fmt.Printf("Balanced search results: %#v\n", results)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const documents = [
+        { vector: [0.1, 0.2, 0.3, 0.4], title: "Database Design", category: "Architecture" },
+        { vector: [0.11, 0.21, 0.31, 0.41], title: "SQL Optimization", category: "Database" },
+        { vector: [0.5, 0.6, 0.7, 0.8], title: "NoSQL Systems", category: "Database" },
+        { vector: [0.3, 0.4, 0.5, 0.6], title: "API Design", category: "Architecture" },
+    ];
+
+    for (const doc of documents) {
+        await client.query("InsertDocument", doc);
+    }
+
+    const queryVector = [0.12, 0.22, 0.32, 0.42];
+    const results = await client.query("BalancedSearch", {
+        query_vec: queryVector,
+    });
+
+    console.log("Balanced search results:", results);
+}
+
+main().catch((err) => {
+    console.error("BalancedSearch query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.1,0.2,0.3,0.4],"title":"Database Design","category":"Architecture"}'
+
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.5,0.6,0.7,0.8],"title":"NoSQL Systems","category":"Database"}'
+
+curl -X POST \
+  http://localhost:6969/BalancedSearch \
+  -H 'Content-Type: application/json' \
+  -d '{"query_vec":[0.12,0.22,0.32,0.42]}'
+```
+</CodeGroup>
+
+---
+
+## Example 4: Dynamic lambda for user-controlled diversity
+
+<CodeGroup>
+```rust Query focus={1-4}
+QUERY CustomDiversitySearch(query_vec: [F64], diversity: F64) =>
+    results <- SearchV<Document>(query_vec, 100)
+        ::RerankMMR(lambda: diversity)
+        ::RANGE(0, 10)
+    RETURN results
+
+QUERY InsertDocument(vector: [F64], title: String, category: String) =>
+    document <- AddV<Document>(vector, {
+        title: title,
+        category: category
+    })
+    RETURN document
+```
+
+```rust Schema
+V::Document {
+    title: String,
+    category: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+documents = [
+    {"vector": [0.1, 0.2, 0.3, 0.4], "title": "Cloud Computing", "category": "Infrastructure"},
+    {"vector": [0.11, 0.21, 0.31, 0.41], "title": "AWS Services", "category": "Cloud"},
+    {"vector": [0.5, 0.6, 0.7, 0.8], "title": "Docker Containers", "category": "DevOps"},
+    {"vector": [0.3, 0.4, 0.5, 0.6], "title": "Kubernetes", "category": "Orchestration"},
+]
+
+for doc in documents:
+    client.query("InsertDocument", doc)
+
+query_vector = [0.12, 0.22, 0.32, 0.42]
+
+# Try different diversity levels
+for diversity_level in [0.3, 0.5, 0.7, 0.9]:
+    results = client.query("CustomDiversitySearch", {
+        "query_vec": query_vector,
+        "diversity": diversity_level
+    })
+    print(f"Results with diversity={diversity_level}:", results)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let documents = vec![
+        (vec![0.1, 0.2, 0.3, 0.4], "Cloud Computing", "Infrastructure"),
+        (vec![0.11, 0.21, 0.31, 0.41], "AWS Services", "Cloud"),
+        (vec![0.5, 0.6, 0.7, 0.8], "Docker Containers", "DevOps"),
+        (vec![0.3, 0.4, 0.5, 0.6], "Kubernetes", "Orchestration"),
+    ];
+
+    for (vector, title, category) in &documents {
+        let _inserted: serde_json::Value = client.query("InsertDocument", &json!({
+            "vector": vector,
+            "title": title,
+            "category": category,
+        })).await?;
+    }
+
+    let query_vector = vec![0.12, 0.22, 0.32, 0.42];
+
+    // Try different diversity levels
+    for diversity in [0.3, 0.5, 0.7, 0.9] {
+        let results: serde_json::Value = client.query("CustomDiversitySearch", &json!({
+            "query_vec": query_vector.clone(),
+            "diversity": diversity,
+        })).await?;
+        println!("Results with diversity={diversity}: {results:#?}");
+    }
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    documents := []map[string]any{
+        {"vector": []float64{0.1, 0.2, 0.3, 0.4}, "title": "Cloud Computing", "category": "Infrastructure"},
+        {"vector": []float64{0.11, 0.21, 0.31, 0.41}, "title": "AWS Services", "category": "Cloud"},
+        {"vector": []float64{0.5, 0.6, 0.7, 0.8}, "title": "Docker Containers", "category": "DevOps"},
+        {"vector": []float64{0.3, 0.4, 0.5, 0.6}, "title": "Kubernetes", "category": "Orchestration"},
+    }
+
+    for _, doc := range documents {
+        var inserted map[string]any
+        if err := client.Query("InsertDocument", helix.WithData(doc)).Scan(&inserted); err != nil {
+            log.Fatalf("InsertDocument failed: %s", err)
+        }
+    }
+
+    queryVector := []float64{0.12, 0.22, 0.32, 0.42}
+
+    // Try different diversity levels
+    for _, diversity := range []float64{0.3, 0.5, 0.7, 0.9} {
+        var results map[string]any
+        if err := client.Query("CustomDiversitySearch", helix.WithData(map[string]any{
+            "query_vec": queryVector,
+            "diversity": diversity,
+        })).Scan(&results); err != nil {
+            log.Fatalf("CustomDiversitySearch failed: %s", err)
+        }
+        fmt.Printf("Results with diversity=%.1f: %#v\n", diversity, results)
+    }
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const documents = [
+        { vector: [0.1, 0.2, 0.3, 0.4], title: "Cloud Computing", category: "Infrastructure" },
+        { vector: [0.11, 0.21, 0.31, 0.41], title: "AWS Services", category: "Cloud" },
+        { vector: [0.5, 0.6, 0.7, 0.8], title: "Docker Containers", category: "DevOps" },
+        { vector: [0.3, 0.4, 0.5, 0.6], title: "Kubernetes", category: "Orchestration" },
+    ];
+
+    for (const doc of documents) {
+        await client.query("InsertDocument", doc);
+    }
+
+    const queryVector = [0.12, 0.22, 0.32, 0.42];
+
+    // Try different diversity levels
+    for (const diversity of [0.3, 0.5, 0.7, 0.9]) {
+        const results = await client.query("CustomDiversitySearch", {
+            query_vec: queryVector,
+            diversity: diversity,
+        });
+        console.log(`Results with diversity=${diversity}:`, results);
+    }
+}
+
+main().catch((err) => {
+    console.error("CustomDiversitySearch query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.1,0.2,0.3,0.4],"title":"Cloud Computing","category":"Infrastructure"}'
+
+curl -X POST \
+  http://localhost:6969/InsertDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.5,0.6,0.7,0.8],"title":"Docker Containers","category":"DevOps"}'
+
+# Try different diversity levels
+curl -X POST \
+  http://localhost:6969/CustomDiversitySearch \
+  -H 'Content-Type: application/json' \
+  -d '{"query_vec":[0.12,0.22,0.32,0.42],"diversity":0.7}'
+
+curl -X POST \
+  http://localhost:6969/CustomDiversitySearch \
+  -H 'Content-Type: application/json' \
+  -d '{"query_vec":[0.12,0.22,0.32,0.42],"diversity":0.3}'
+```
+</CodeGroup>
+
+---
+
+## Chaining with RerankRRF
+
+Combine RRF and MMR for hybrid search with diversification:
+
+<CodeGroup>
+```rust Query focus={1-5}
+QUERY HybridDiverseSearch(query_vec: [F64]) =>
+    results <- SearchV<Document>(query_vec, 150)
+        ::RerankRRF(k: 60)           // First: combine rankings
+        ::RerankMMR(lambda: 0.6)      // Then: diversify
+        ::RANGE(0, 10)
+    RETURN results
+
+QUERY InsertDocument(vector: [F64], title: String, category: String) =>
+    document <- AddV<Document>(vector, {
+        title: title,
+        category: category
+    })
+    RETURN document
+```
+
+```rust Schema
+V::Document {
+    title: String,
+    category: String
+}
+```
+</CodeGroup>
+
+## Best Practices
+
+### Retrieve Sufficient Candidates
+
+MMR works best with a larger pool of candidates:
+
+```rust
+// Good: Fetch 100-200, return 10-20
+SearchV<Document>(vec, 100)::RerankMMR(lambda: 0.7)::RANGE(0, 10)
+
+// Not ideal: Fetch 10, return 10
+SearchV<Document>(vec, 10)::RerankMMR(lambda: 0.7)::RANGE(0, 10)
+```
+
+### Lambda Parameter Tuning
+
+Start with these guidelines and adjust based on your results:
+
+- **News/Articles**: 0.5-0.6 (balance coverage and relevance)
+- **E-commerce**: 0.6-0.7 (favor relevance, some variety)
+- **Content Discovery**: 0.3-0.5 (favor diversity)
+- **FAQ/Support**: 0.7-0.9 (favor relevance)
+
+### Choosing Distance Metrics
+
+- **Text embeddings**: Use "cosine" (default)
+- **Image embeddings**: Use "cosine" or "euclidean"
+- **Custom vectors**: Test all three and compare results
+
+### Combining with Filtering
+
+Apply filters before reranking for better performance:
+
+```rust
+QUERY FilteredDiverseSearch(query_vec: [F64], category: String) =>
+    results <- SearchV<Document>(query_vec, 200)
+        ::WHERE(_::{category}::EQ(category))  // Filter first
+        ::RerankMMR(lambda: 0.6)               // Then diversify
+        ::RANGE(0, 15)
+    RETURN results
+```
+
+## Performance Considerations
+
+<Note>
+MMR has O(n²) complexity due to pairwise comparisons. For optimal performance:
+- Limit the candidate set (e.g., 100-200 results)
+- Consider caching for frequently-accessed queries
+- Monitor query latency and adjust candidate size accordingly
+</Note>
+
+Key performance factors:
+- **Candidate set size**: Larger sets increase computation time quadratically
+- **Distance metric**: Dot product is fastest, euclidean is slowest
+- **Result count**: More results require more iterations
+
+## Troubleshooting
+
+### Results seem too similar
+
+**Problem**: Results still show near-duplicates
+
+**Solutions**:
+- Lower lambda value (try 0.3-0.5)
+- Increase candidate pool size
+- Verify your vectors capture meaningful differences
+
+### Results seem irrelevant
+
+**Problem**: Diverse results but poor relevance
+
+**Solutions**:
+- Increase lambda value (try 0.7-0.9)
+- Ensure initial search retrieves quality candidates
+- Consider using RRF before MMR
+
+### Performance issues
+
+**Problem**: Queries are too slow
+
+**Solutions**:
+- Reduce candidate pool size
+- Use dot product distance metric
+- Return fewer final results
+- Consider caching popular queries
+
+## Use Cases
+
+### News and Media
+
+Diversify news articles to show varied perspectives:
+
+```rust
+SearchV<Article>(query_vec, 100)::RerankMMR(lambda: 0.5)::RANGE(0, 10)
+```
+
+### E-commerce
+
+Show varied product categories while maintaining relevance:
+
+```rust
+SearchV<Product>(query_vec, 150)::RerankMMR(lambda: 0.65)::RANGE(0, 20)
+```
+
+### Content Discovery
+
+Maximize exploration with diverse recommendations:
+
+```rust
+SearchV<Content>(user_vec, 200)::RerankMMR(lambda: 0.4, distance: "euclidean")::RANGE(0, 15)
+```
+
+### Document Retrieval
+
+Balance comprehensive coverage with relevance:
+
+```rust
+SearchV<Document>(query_vec, 100)::RerankMMR(lambda: 0.6)::RANGE(0, 10)
+```
+
+## Related
+
+- [RerankRRF](/documentation/hql/rerankers/rerank-rrf) - For combining multiple search results
+- [Rerankers Overview](/documentation/hql/rerankers/overview) - General reranking concepts
+- [Vector Search](/documentation/hql/vectors/searching) - Basic vector search operations
