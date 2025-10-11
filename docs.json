@@ -105,6 +105,14 @@
               },
               "documentation/hql/keyword_search",
               {
+                "group": "Rerankers",
+                "expanded": false,
+                "pages": [
+                  "documentation/hql/rerankers/overview"
+                ],
+                "icon": "arrows-up-down"
+              },
+              {
                 "group": "Traversals",
                 "expanded": false,
                 "pages": [

@@ -1,0 +1,99 @@
+---
+title: "Rerankers Overview"
+description: "Improve search result quality by reordering results after initial retrieval."
+icon: "arrows-up-down"
+---
+
+## What are Rerankers?
+
+Rerankers are powerful post-processing operations that improve the quality and diversity of search results by reordering them after the initial retrieval phase. They enable you to:
+
+- Combine results from multiple search strategies (hybrid search)
+- Reduce redundancy by diversifying results
+- Optimize the relevance-diversity trade-off
+- Improve the overall user experience of your search application
+
+## When to Use Rerankers
+
+Apply rerankers in your query pipeline when you need to:
+
+- **Merge multiple search methods**: Combine vector search with BM25 keyword search, or merge results from multiple vector searches
+- **Diversify results**: Eliminate near-duplicate content and show varied perspectives
+- **Optimize ranking**: Fine-tune the balance between relevance and variety based on your use case
+- **Improve search quality**: Leverage sophisticated ranking algorithms without changing your underlying search infrastructure
+
+## Available Rerankers
+
+HelixQL provides two powerful reranking strategies:
+
+### RerankRRF (Reciprocal Rank Fusion)
+
+A technique for combining multiple ranked lists without requiring score calibration. Perfect for hybrid search scenarios where you want to merge results from different search methods.
+
+```rust
+::RerankRRF             // Uses default k=60
+::RerankRRF(k: 30.0)    // Custom k parameter
+```
+
+### RerankMMR (Maximal Marginal Relevance)
+
+A diversification technique that balances relevance with diversity to reduce redundancy. Ideal when you want to show varied results instead of similar or duplicate content.
+
+```rust
+::RerankMMR(lambda: 0.7)                           
+```
+
+
+## Basic Usage Pattern
+
+RRF Usage:
+```rust focus=3
+QUERY SearchDocuments(query_vec: [F64]) =>
+    results <- SearchV<Document>(query_vec, 100)
+        ::RerankRRF             // Apply reranking
+        ::RANGE(0, 10)          // Get top 10 results
+    RETURN results
+```
+
+MMR Usage:
+
+```rust focus=3
+QUERY SearchDocuments(query_vec: [F64]) =>
+    results <- SearchV<Document>(query_vec, 100)
+        ::RerankMMR(lambda: 0.7)  // Apply reranking
+        ::RANGE(0, 10)            // Get top 10 results
+    RETURN results
+```
+
+## Chaining Rerankers
+
+You can chain multiple rerankers together for complex result optimization:
+
+```rust focus={3-4}
+QUERY AdvancedSearch(query_vec: [F64]) =>
+    results <- SearchV<Document>(query_vec, 150)
+        ::RerankRRF(k: 60)       // First: combine multiple rankings
+        ::RerankMMR(lambda: 0.6) // Then: diversify results
+        ::RANGE(0, 10)
+    RETURN results
+```
+
+## Best Practices
+
+1. **Retrieve more results initially**: Fetch 100-200 candidates to give rerankers sufficient options to work with
+2. **Apply rerankers before RANGE**: Rerank first, then limit the number of results returned
+3. **Choose the right reranker**: Use RRF for combining searches, MMR for diversification
+4. **Test with your data**: Experiment with different parameters to find what works best for your use case
+
+## Common Patterns
+
+```rust
+// Pattern 1: Simple diversification
+SearchV<Document>(vec, 100)::RerankMMR(lambda: 0.7)::RANGE(0, 10)
+
+// Pattern 2: Hybrid search fusion
+SearchV<Document>(vec, 100)::RerankRRF::RANGE(0, 10)
+
+// Pattern 3: Fusion + diversification
+SearchV<Document>(vec, 150)::RerankRRF::RerankMMR(lambda: 0.6)::RANGE(0, 10)
+```
