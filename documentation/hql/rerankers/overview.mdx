@@ -31,7 +31,7 @@ HelixQL provides two powerful reranking strategies:
 A technique for combining multiple ranked lists without requiring score calibration. Perfect for hybrid search scenarios where you want to merge results from different search methods.
 
 ```rust
-::RerankRRF()           // Uses default k=60
+::RerankRRF             // Uses default k=60
 ::RerankRRF(k: 30.0)    // Custom k parameter
 ```
 
@@ -40,8 +40,7 @@ A technique for combining multiple ranked lists without requiring score calibrat
 A diversification technique that balances relevance with diversity to reduce redundancy. Ideal when you want to show varied results instead of similar or duplicate content.
 
 ```rust
-::RerankMMR(lambda: 0.7)                           // Default cosine distance
-::RerankMMR(lambda: 0.5, distance: "euclidean")    // Custom distance metric
+::RerankMMR(lambda: 0.7)                           
 ```
 
 
@@ -51,7 +50,7 @@ RRF Usage:
 ```rust focus=3
 QUERY SearchDocuments(query_vec: [F64]) =>
     results <- SearchV<Document>(query_vec, 100)
-        ::RerankRRF()           // Apply reranking
+        ::RerankRRF             // Apply reranking
         ::RANGE(0, 10)          // Get top 10 results
     RETURN results
 ```
@@ -93,8 +92,8 @@ QUERY AdvancedSearch(query_vec: [F64]) =>
 SearchV<Document>(vec, 100)::RerankMMR(lambda: 0.7)::RANGE(0, 10)
 
 // Pattern 2: Hybrid search fusion
-SearchV<Document>(vec, 100)::RerankRRF()::RANGE(0, 10)
+SearchV<Document>(vec, 100)::RerankRRF::RANGE(0, 10)
 
 // Pattern 3: Fusion + diversification
-SearchV<Document>(vec, 150)::RerankRRF()::RerankMMR(lambda: 0.6)::RANGE(0, 10)
+SearchV<Document>(vec, 150)::RerankRRF::RerankMMR(lambda: 0.6)::RANGE(0, 10)
 ```
