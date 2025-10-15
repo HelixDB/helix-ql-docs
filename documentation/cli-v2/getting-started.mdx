@@ -66,13 +66,13 @@ helix push dev
 <Step title="Test connection">
   **Create a user**
   ```bash
-  curl -X POST http://localhost:6969/createUser -d '{"name": "John Doe", "email": "john.doe@example.com"}'
+  curl -X POST http://localhost:6969/createUser -H 'Content-Type: application/json' -d '{"name": "John Doe", "email": "john.doe@example.com"}'
   ```
 
 **Get a user**
 
 ```bash
-curl -X POST http://localhost:6969/getUser -d '{"name": "John Doe"}'
+curl -X POST http://localhost:6969/getUser -H 'Content-Type: application/json' -d '{"name": "John Doe"}'
 ```
 
 </Step>
