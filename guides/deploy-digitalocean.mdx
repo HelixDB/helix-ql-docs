@@ -29,6 +29,12 @@ This method builds the Docker image directly on your droplet, eliminating the ne
 
 ### Step 1: Install and Configure doctl
 
+First, create a DigitalOcean API token:
+1. Go to the [Applications & API page](https://cloud.digitalocean.com/account/api/tokens) in the DigitalOcean control panel
+2. Click "Generate New Token"
+3. Give it a name and ensure it has both **read and write** access
+4. Save the token string immediately - it's only displayed once
+
 Install the DigitalOcean CLI tool and authenticate:
 
 ```bash
@@ -41,6 +47,8 @@ doctl auth switch --context helix
 # Verify authentication
 doctl account get
 ```
+
+When prompted during `doctl auth init`, paste your API token.
 
 ### Step 2: Create SSH Key
 
@@ -57,7 +65,9 @@ doctl compute ssh-key import helix-digitalocean \
   --public-key-file ~/.ssh/digitalocean_helix.pub \
   --format ID,Name,FingerPrint
 
-# Save the ID from the output (e.g., 12345678)
+# Save the ID from the output (e.g., 12345678) as you will 
+# need it in the later steps, or get it by running the following command
+doctl compute ssh-key list
 ```
 
 ### Step 3: Create Block Storage Volume
@@ -73,6 +83,8 @@ doctl compute volume create helix-prod-data \
   --format ID,Name,Size,Region
 
 # Save the volume ID from the output (e.g., a1b2c3d4-e5f6-7890-ab12-cd34ef567890)
+# as you will need it in the later steps, or get it by running the following command
+doctl compute volume list
 ```
 
 Choose a region close to your users for better latency. Available regions include `nyc3`, `sfo3`, `ams3`, etc.
@@ -94,6 +106,8 @@ doctl compute droplet create helix-prod \
 
 # Save the droplet ID and IP address from the output
 # Example: ID: 123456789, IP: 192.0.2.1
+# as you will need it in the later steps, or you can get it by running the following command
+doctl compute droplet list
 ```
 
 There are many different droplet sizes and images to choose from. You can find the available sizes and images [here](https://www.digitalocean.com/pricing/droplets).
