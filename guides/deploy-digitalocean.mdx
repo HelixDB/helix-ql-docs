@@ -1,0 +1,369 @@
+---
+title: Deploying Helix to DigitalOcean
+description: This is a walkthrough on how to deploy a HelixDB instance to DigitalOcean's droplets
+icon: "digital-ocean"
+---
+
+This guide walks you through deploying HelixDB to a DigitalOcean Droplet (virtual machine). We'll cover two deployment approaches:
+
+1. **Direct Build**: Build the Docker image directly on the droplet (simpler, no registry needed)
+2. **Container Registry**: Build locally and push to DigitalOcean's Container Registry (more scalable)
+
+Choose the approach that best fits your needs. For most use cases, the Direct Build approach is simpler and sufficient.
+
+---
+
+## Prerequisites
+
+Before you begin, ensure you have:
+- A DigitalOcean account
+- A Helix project ready to deploy
+- Docker installed locally
+---
+
+## Method 1: Direct Build
+
+This method builds the Docker image directly on your droplet, eliminating the need for a container registry.
+
+### Step 1: Install and Configure doctl
+
+First, create a DigitalOcean API token:
+1. Go to the [Applications & API page](https://cloud.digitalocean.com/account/api/tokens) in the DigitalOcean control panel
+2. Click "Generate New Token"
+3. Give it a name and ensure it has both **read and write** access
+4. Save the token string immediately - it's only displayed once
+
+Install the DigitalOcean CLI tool and authenticate:
+
+```bash
+brew install doctl
+
+# Create a new authentication context, not needed / you can use the default context as well
+doctl auth init --context helix
+doctl auth switch --context helix
+
+# Verify authentication
+doctl account get
+```
+
+When prompted during `doctl auth init`, paste your API token.
+
+### Step 2: Create SSH Key
+
+Generate an SSH key pair for secure access to your droplet:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/digitalocean_helix -C "helix-digitalocean"
+```
+
+Import the public key to DigitalOcean and note the returned ID:
+
+```bash
+doctl compute ssh-key import helix-digitalocean \
+  --public-key-file ~/.ssh/digitalocean_helix.pub \
+  --format ID,Name,FingerPrint
+
+# Save the ID from the output (e.g., 12345678) as you will 
+# need it in the later steps, or get it by running the following command
+doctl compute ssh-key list
+```
+
+### Step 3: Create Block Storage Volume
+
+Create a persistent volume for your database data. This ensures data persists even if you recreate the droplet:
+
+```bash
+doctl compute volume create helix-prod-data \
+  --region nyc3 \
+  --size 10GiB \
+  --desc "Helix DB data volume" \
+  --fs-type ext4 \
+  --format ID,Name,Size,Region
+
+# Save the volume ID from the output (e.g., a1b2c3d4-e5f6-7890-ab12-cd34ef567890)
+# as you will need it in the later steps, or get it by running the following command
+doctl compute volume list
+```
+
+Choose a region close to your users for better latency. Available regions include `nyc3`, `sfo3`, `ams3`, etc.
+
+### Step 4: Create Droplet
+
+Create a droplet with Docker pre-installed:
+
+```bash
+doctl compute droplet create helix-prod \
+  --image docker-20-04 \
+  --size s-4vcpu-8gb \
+  --region nyc3 \
+  --ssh-keys <your_ssh_key_id> \
+  --enable-monitoring \
+  --tag-names helix-db \
+  --wait \
+  --format ID,Name,PublicIPv4,Status
+
+# Save the droplet ID and IP address from the output
+# Example: ID: 123456789, IP: 192.0.2.1
+# as you will need it in the later steps, or you can get it by running the following command
+doctl compute droplet list
+```
+
+There are many different droplet sizes and images to choose from. You can find the available sizes and images [here](https://www.digitalocean.com/pricing/droplets).
+
+### Step 5: Attach Volume to Droplet
+
+Attach the block storage volume to your droplet:
+
+```bash
+doctl compute volume-action attach <your_volume_id> <your_droplet_id> --wait
+```
+
+The volume will be automatically mounted at `/mnt/helix-prod-data`.
+
+### Step 6: Copy Helix Build to Droplet
+
+Build your Helix project and copy it to the droplet:
+
+```bash
+cd /path/to/your/helix-project
+helix push dev
+
+rsync -avz -e "ssh -i ~/.ssh/digitalocean_helix" .helix/dev/ root@<your_droplet_ip>:/root/helix-build/
+```
+
+### Step 7: Build Docker Image on Droplet
+
+Build the Docker image directly on the droplet:
+
+```bash
+ssh -i ~/.ssh/digitalocean_helix root@<your_droplet_ip> \
+  "cd /root/helix-build && \
+   docker build -t helix:latest ."
+```
+
+### Step 8: Deploy Container
+
+Run your Helix container with persistent storage:
+
+```bash
+ssh -i ~/.ssh/digitalocean_helix root@<your_droplet_ip> \
+  "docker run -d --name helix --restart unless-stopped \
+     -p 6969:6969 \
+     -v /mnt/helix-prod-data:/data \
+     -e HELIX_PORT=6969 \
+     -e HELIX_DATA_DIR=/data \
+     helix:latest"
+```
+
+Configuration explained:
+- `-d`: Run in detached mode (background)
+- `--name helix`: Name the container for easy reference
+- `--restart unless-stopped`: Automatically restart on system reboot
+- `-p 6969:6969`: Expose port 6969 (HelixDB default)
+- `-v /mnt/helix-prod-data:/data`: Mount persistent volume
+- `-e HELIX_PORT=6969`: Set the port Helix listens on
+- `-e HELIX_DATA_DIR=/data`: Tell Helix where to store data
+
+### Step 9: Configure Firewall
+
+Create a firewall to secure your droplet:
+
+```bash
+doctl compute firewall create --name helix-firewall \
+  --inbound-rules "protocol:tcp,ports:22,address:0.0.0.0/0,address:::/0 \
+protocol:tcp,ports:6969,address:0.0.0.0/0,address:::/0" \
+  --outbound-rules "protocol:tcp,ports:all,address:0.0.0.0/0,address:::/0 \
+protocol:udp,ports:all,address:0.0.0.0/0,address:::/0" \
+  --tag-names helix-db
+```
+
+This firewall allows:
+- **Inbound**: SSH (port 22) and Helix (port 6969) from anywhere
+- **Outbound**: All traffic (needed for updates and dependencies)
+
+For production, consider restricting SSH access to specific IP addresses.
+
+### Step 10: Test Your Deployment
+
+Verify that Helix is running correctly:
+
+This is an example of how to create a user and get a user by name, if your queries are different, you can use the same pattern.
+
+```bash
+# Create a test user
+curl -X POST http://<your_droplet_ip>:6969/createUser \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Jane Doe", "email": "jane@example.com"}'
+
+# Retrieve the user
+curl -X POST http://<your_droplet_ip>:6969/getUser \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Jane Doe"}'
+```
+
+### Redeployments
+
+When you update your Helix queries or schema:
+
+```bash
+cd /path/to/your/helix-project
+helix push dev
+
+# Copy updated files
+rsync -avz -e "ssh -i ~/.ssh/digitalocean_helix" .helix/dev/ root@<your_droplet_ip>:/root/helix-build/
+
+# Rebuild and restart
+ssh -i ~/.ssh/digitalocean_helix root@<your_droplet_ip> \
+  "cd /root/helix-build && \
+   docker build -t helix:latest . && \
+   docker stop helix && \
+   docker rm helix && \
+   docker run -d --name helix --restart unless-stopped \
+     -p 6969:6969 \
+     -v /mnt/helix-prod-data:/data \
+     -e HELIX_PORT=6969 \
+     -e HELIX_DATA_DIR=/data \
+     helix:latest"
+```
+
+**The data will persist even if you restart the droplet, because we are using a persistent volume.**
+
+---
+
+## Method 2: Container Registry
+
+This method uses DigitalOcean's Container Registry to store your Docker images, enabling easier scaling and rollbacks.
+
+### Step 1-2: Prerequisites and SSH Key
+
+Follow Steps 1-2 from Method 1 above.
+
+### Step 3: Create Container Registry
+
+Create a private container registry:
+
+```bash
+doctl registry create helix-registry \
+  --region nyc3 \
+  --subscription-tier starter
+
+# Log in to the registry
+doctl registry login
+```
+
+You can find the subscription tiers [here](https://www.digitalocean.com/pricing/container-registry).
+
+### Step 4-6: Volume and Droplet Setup
+
+Follow Steps 3, 4, and 5 from Method 1 to create the volume, droplet, and attach the volume.
+
+### Step 7: Build and Push Docker Image
+
+Build your image locally and push to the registry:
+
+```bash
+cd /path/to/your/helix-project
+helix push dev
+
+# Build for Linux architecture (important if you're on macOS)
+cd .helix/dev
+docker build --platform linux/amd64 \
+  -t registry.digitalocean.com/helix-registry/helix:latest .
+
+# Push to registry
+docker push registry.digitalocean.com/helix-registry/helix:latest
+```
+
+The `--platform linux/amd64` flag ensures compatibility with DigitalOcean's Linux droplets.
+
+### Step 8: Configure Registry Access on Droplet
+
+Get your registry credentials and log in from the droplet:
+
+```bash
+# Get your docker-config token
+doctl registry docker-config
+
+# Log in on the droplet (replace with your actual credentials)
+ssh -i ~/.ssh/digitalocean_helix root@<your_droplet_ip> \
+  "echo '<your_registry_token>' | docker login registry.digitalocean.com -u <your_email> --password-stdin"
+```
+
+### Step 9: Deploy Container from Registry
+
+Pull and run your image from the registry:
+
+```bash
+ssh -i ~/.ssh/digitalocean_helix root@<your_droplet_ip> \
+  "docker pull registry.digitalocean.com/helix-registry/helix:latest && \
+   docker run -d --name helix --restart unless-stopped \
+     -p 6969:6969 \
+     -v /mnt/helix-prod-data:/data \
+     -e HELIX_PORT=6969 \
+     -e HELIX_DATA_DIR=/data \
+     registry.digitalocean.com/helix-registry/helix:latest"
+```
+
+### Step 10-11: Firewall and Testing
+
+Follow Steps 9-10 from Method 1 to configure the firewall and test your deployment.
+
+### Redeploying with Registry
+
+When you update your code:
+
+```bash
+cd /path/to/your/helix-project
+helix push dev
+
+# Build and push new image
+cd .helix/dev
+docker build --platform linux/amd64 \
+  -t registry.digitalocean.com/helix-registry/helix:latest .
+docker push registry.digitalocean.com/helix-registry/helix:latest
+
+# Update container on droplet
+ssh -i ~/.ssh/digitalocean_helix root@<your_droplet_ip> \
+  "docker stop helix && \
+   docker rm helix && \
+   docker pull registry.digitalocean.com/helix-registry/helix:latest && \
+   docker run -d --name helix --restart unless-stopped \
+     -p 6969:6969 \
+     -v /mnt/helix-prod-data:/data \
+     -e HELIX_PORT=6969 \
+     -e HELIX_DATA_DIR=/data \
+     registry.digitalocean.com/helix-registry/helix:latest"
+```
+
+---
+
+## Cleanup and Resource Deletion
+
+If you want to delete all the resources you created, you can use the following commands:
+```bash
+# Delete droplet
+doctl compute droplet delete <your_droplet_id> --force
+
+# Delete volume (WARNING: This deletes all your data!)
+doctl compute volume delete <your_volume_id> --force
+
+# Delete firewall
+doctl compute firewall delete <your_firewall_id> --force
+
+# Delete registry (Container Registry method only)
+doctl registry delete helix-registry --force
+
+# Delete SSH key
+doctl compute ssh-key delete <your_ssh_key_id> --force
+```
+
+**Important**: Always backup your data before deleting the volume. Once deleted, data cannot be recovered.
+
+---
+
+## Resources
+
+- [DigitalOcean Droplet Pricing](https://www.digitalocean.com/pricing/droplets)
+- [DigitalOcean Container Registry Pricing](https://www.digitalocean.com/pricing/container-registry)
+- [DigitalOcean Volume Pricing](https://www.digitalocean.com/pricing/volumes)
+- [doctl Command Reference](https://docs.digitalocean.com/reference/doctl/reference/)
