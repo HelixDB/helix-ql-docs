@@ -17,10 +17,8 @@ Choose the approach that best fits your needs. For most use cases, the Direct Bu
 
 Before you begin, ensure you have:
 - A DigitalOcean account
-- The `doctl` CLI tool installed
 - A Helix project ready to deploy
 - Docker installed locally
-
 ---
 
 ## Method 1: Direct Build
@@ -172,8 +170,10 @@ Create a firewall to secure your droplet:
 
 ```bash
 doctl compute firewall create --name helix-firewall \
-  --inbound-rules "protocol:tcp,ports:22,address:0.0.0.0/0,address:::/0 protocol:tcp,ports:6969,address:0.0.0.0/0,address:::/0" \
-  --outbound-rules "protocol:tcp,ports:all,address:0.0.0.0/0,address:::/0 protocol:udp,ports:all,address:0.0.0.0/0,address:::/0" \
+  --inbound-rules "protocol:tcp,ports:22,address:0.0.0.0/0,address:::/0 \
+protocol:tcp,ports:6969,address:0.0.0.0/0,address:::/0" \
+  --outbound-rules "protocol:tcp,ports:all,address:0.0.0.0/0,address:::/0 \
+protocol:udp,ports:all,address:0.0.0.0/0,address:::/0" \
   --tag-names helix-db
 ```
 
@@ -255,7 +255,7 @@ You can find the subscription tiers [here](https://www.digitalocean.com/pricing/
 
 ### Step 4-6: Volume and Droplet Setup
 
-Follow Steps 3-5 from Method 1 to create the volume, droplet, and attach the volume.
+Follow Steps 3, 4, and 5 from Method 1 to create the volume, droplet, and attach the volume.
 
 ### Step 7: Build and Push Docker Image
 
