@@ -1,297 +1,298 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "HelixDB Docs",
-  "colors": {
-    "primary": "#F26419",
-    "light": "#FF8548",
-    "dark": "#F26419"
-  },
-  "background": {
-    "decoration": "gradient"
-  },
-  "favicon": "/favicon.svg",
-  "banner": {
-    "content": "🚀 CLI v2 is now live! See [Getting Started](/documentation/cli-v2/getting-started) for details.",
-    "dismissible": true
-  },
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Documentation",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "documentation/getting-started/intro",
-              "documentation/cli-v2/getting-started",
-              "documentation/getting-started/helixdb",
-              "documentation/getting-started/graph-database"
-            ]
-          },
-          {
-            "group": "CLI",
-            "pages": [
-              "documentation/cli-v2/migration",
-              "documentation/cli-v2/workflows/local",
-              "documentation/cli-v2/workflows/helix_cloud",
-              "documentation/cli-v2/workflows/fly",
-              "documentation/cli-v2/workflows/ecr",
-              "documentation/cli-v2/command-reference",
-              "documentation/cli-v2/configuration",
-              "documentation/cli-v2/troubleshooting"
-            ]
-          },
-          {
-            "group": "SDKs",
-            "pages": [
-              "documentation/sdks/helix-py",
-              "documentation/sdks/helix-rs",
-              "documentation/sdks/helix-ts",
-              "documentation/sdks/helix-go"
-            ]
-          },
-          {
-            "group": "HelixQL",
-            "pages": [
-              "documentation/hql/hql",
-              {
-                "group": "Schema Definitions",
-                "icon": "table",
-                "pages": [
-                  "documentation/hql/schema/schema-definition",
-                  "documentation/hql/schema/indexing",
-                  "documentation/hql/schema/default"
+    "$schema": "https://mintlify.com/docs.json",
+    "theme": "mint",
+    "name": "HelixDB Docs",
+    "colors": {
+        "primary": "#F26419",
+        "light": "#FF8548",
+        "dark": "#F26419"
+    },
+    "background": {
+        "decoration": "gradient"
+    },
+    "favicon": "/favicon.svg",
+    "banner": {
+        "content": "🚀 CLI v2 is now live! See [Getting Started](/documentation/cli-v2/getting-started) for details.",
+        "dismissible": true
+    },
+    "navigation": {
+        "tabs": [
+            {
+                "tab": "Documentation",
+                "groups": [
+                    {
+                        "group": "Getting Started",
+                        "pages": [
+                            "documentation/getting-started/intro",
+                            "documentation/cli-v2/getting-started",
+                            "documentation/getting-started/helixdb",
+                            "documentation/getting-started/graph-database"
+                        ]
+                    },
+                    {
+                        "group": "CLI",
+                        "pages": [
+                            "documentation/cli-v2/migration",
+                            "documentation/cli-v2/workflows/local",
+                            "documentation/cli-v2/workflows/helix_cloud",
+                            "documentation/cli-v2/workflows/fly",
+                            "documentation/cli-v2/workflows/ecr",
+                            "documentation/cli-v2/command-reference",
+                            "documentation/cli-v2/configuration",
+                            "documentation/cli-v2/troubleshooting"
+                        ]
+                    },
+                    {
+                        "group": "SDKs",
+                        "pages": [
+                            "documentation/sdks/helix-py",
+                            "documentation/sdks/helix-rs",
+                            "documentation/sdks/helix-ts",
+                            "documentation/sdks/helix-go"
+                        ]
+                    },
+                    {
+                        "group": "HelixQL",
+                        "pages": [
+                            "documentation/hql/hql",
+                            {
+                                "group": "Schema Definitions",
+                                "icon": "table",
+                                "pages": [
+                                    "documentation/hql/schema/schema-definition",
+                                    "documentation/hql/schema/indexing",
+                                    "documentation/hql/schema/default"
+                                ]
+                            },
+                            "documentation/hql/types",
+                            {
+                                "group": "CRUD Operations",
+                                "expanded": false,
+                                "pages": [
+                                    {
+                                        "group": "Create Operations",
+                                        "expanded": false,
+                                        "pages": [
+                                            "documentation/hql/create/addN",
+                                            "documentation/hql/create/addE",
+                                            "documentation/hql/create/addV"
+                                        ],
+                                        "icon": "plus"
+                                    },
+                                    {
+                                        "group": "Select Operations",
+                                        "expanded": false,
+                                        "pages": [
+                                            "documentation/hql/select/selectN",
+                                            "documentation/hql/select/selectE",
+                                            "documentation/hql/select/selectV"
+                                        ],
+                                        "icon": "list-check"
+                                    },
+                                    "documentation/hql/updating",
+                                    "documentation/hql/deleting"
+                                ],
+                                "icon": "database"
+                            },
+                            {
+                                "group": "Vector Operations",
+                                "expanded": false,
+                                "pages": [
+                                    "documentation/hql/vectors/searching",
+                                    "documentation/hql/vectors/embedding"
+                                ],
+                                "icon": "share-nodes"
+                            },
+                            "documentation/hql/keyword_search",
+                            {
+                                "group": "Rerankers",
+                                "expanded": false,
+                                "pages": [
+                                    "documentation/hql/rerankers/overview"
+                                ],
+                                "icon": "arrows-up-down"
+                            },
+                            {
+                                "group": "Traversals",
+                                "expanded": false,
+                                "pages": [
+                                    "documentation/hql/traversals/steps_nodes",
+                                    "documentation/hql/traversals/steps_edges"
+                                ],
+                                "icon": "right-left-large"
+                            },
+                            {
+                                "group": "Macros",
+                                "expanded": false,
+                                "pages": [
+                                    "documentation/hql/macros/mcp-macro"
+                                ],
+                                "icon": "wand-magic-sparkles"
+                            },
+                            "documentation/hql/shortest_path",
+                            {
+                                "group": "Conditionals",
+                                "expanded": false,
+                                "pages": [
+                                    "documentation/hql/conditionals/conditions",
+                                    "documentation/hql/conditionals/mult-conditions",
+                                    "documentation/hql/conditionals/anonymous"
+                                ],
+                                "icon": "ballot-check"
+                            },
+                            {
+                                "group": "Properties",
+                                "expanded": false,
+                                "pages": [
+                                    "documentation/hql/properties/property-access",
+                                    "documentation/hql/properties/property-additions",
+                                    "documentation/hql/properties/property-exclusion",
+                                    "documentation/hql/properties/property-remappings"
+                                ],
+                                "icon": "tags"
+                            },
+                            "documentation/hql/aggregation",
+                            "documentation/hql/result_ops",
+                            "documentation/hql/output_values",
+                            {
+                                "group": "Errors",
+                                "expanded": false,
+                                "pages": [
+                                    "documentation/hql/errors/E101",
+                                    "documentation/hql/errors/E102",
+                                    "documentation/hql/errors/E103",
+                                    "documentation/hql/errors/E105",
+                                    "documentation/hql/errors/E202",
+                                    "documentation/hql/errors/E204",
+                                    "documentation/hql/errors/E205",
+                                    "documentation/hql/errors/E207",
+                                    "documentation/hql/errors/E301",
+                                    "documentation/hql/errors/E302",
+                                    "documentation/hql/errors/E304",
+                                    "documentation/hql/errors/E305",
+                                    "documentation/hql/errors/E401",
+                                    "documentation/hql/errors/E501",
+                                    "documentation/hql/errors/E601",
+                                    "documentation/hql/errors/E602",
+                                    "documentation/hql/errors/E604",
+                                    "documentation/hql/errors/E611",
+                                    "documentation/hql/errors/E612",
+                                    "documentation/hql/errors/E621",
+                                    "documentation/hql/errors/E622",
+                                    "documentation/hql/errors/E631",
+                                    "documentation/hql/errors/E632",
+                                    "documentation/hql/errors/E633",
+                                    "documentation/hql/errors/E641",
+                                    "documentation/hql/errors/E642",
+                                    "documentation/hql/errors/E643",
+                                    "documentation/hql/errors/E644",
+                                    "documentation/hql/errors/E645",
+                                    "documentation/hql/errors/E651",
+                                    "documentation/hql/errors/E652",
+                                    "documentation/hql/errors/E653"
+                                ],
+                                "icon": "triangle-exclamation"
+                            }
+                        ]
+                    }
                 ]
-              },
-              "documentation/hql/types",
-              {
-                "group": "CRUD Operations",
-                "expanded": false,
+            },
+            {
+                "tab": "Features",
                 "pages": [
-                  {
-                    "group": "Create Operations",
-                    "expanded": false,
-                    "pages": [
-                      "documentation/hql/create/addN",
-                      "documentation/hql/create/addE",
-                      "documentation/hql/create/addV"
-                    ],
-                    "icon": "plus"
-                  },
-                  {
-                    "group": "Select Operations",
-                    "expanded": false,
-                    "pages": [
-                      "documentation/hql/select/selectN",
-                      "documentation/hql/select/selectE",
-                      "documentation/hql/select/selectV"
-                    ],
-                    "icon": "list-check"
-                  },
-                  "documentation/hql/updating",
-                  "documentation/hql/deleting"
-                ],
-                "icon": "database"
-              },
-              {
-                "group": "Vector Operations",
-                "expanded": false,
-                "pages": [
-                  "documentation/hql/vectors/searching",
-                  "documentation/hql/vectors/embedding"
-                ],
-                "icon": "share-nodes"
-              },
-              "documentation/hql/keyword_search",
-              {
-                "group": "Rerankers",
-                "expanded": false,
-                "pages": [
-                  "documentation/hql/rerankers/overview"
-                ],
-                "icon": "arrows-up-down"
-              },
-              {
-                "group": "Traversals",
-                "expanded": false,
-                "pages": [
-                  "documentation/hql/traversals/steps_nodes",
-                  "documentation/hql/traversals/steps_edges"
-                ],
-                "icon": "right-left-large"
-              },
-              {
-                "group": "Macros",
-                "expanded": false,
-                "pages": [
-                  "documentation/hql/macros/mcp-macro"
-                ],
-                "icon": "wand-magic-sparkles"
-              },
-              "documentation/hql/shortest_path",
-              {
-                "group": "Conditionals",
-                "expanded": false,
-                "pages": [
-                  "documentation/hql/conditionals/conditions",
-                  "documentation/hql/conditionals/mult-conditions",
-                  "documentation/hql/conditionals/anonymous"
-                ],
-                "icon": "ballot-check"
-              },
-              {
-                "group": "Properties",
-                "expanded": false,
-                "pages": [
-                  "documentation/hql/properties/property-access",
-                  "documentation/hql/properties/property-additions",
-                  "documentation/hql/properties/property-exclusion",
-                  "documentation/hql/properties/property-remappings"
-                ],
-                "icon": "tags"
-              },
-              "documentation/hql/aggregation",
-              "documentation/hql/result_ops",
-              "documentation/hql/output_values",
-              {
-                "group": "Errors",
-                "expanded": false,
-                "pages": [
-                  "documentation/hql/errors/E101",
-                  "documentation/hql/errors/E102",
-                  "documentation/hql/errors/E103",
-                  "documentation/hql/errors/E105",
-                  "documentation/hql/errors/E202",
-                  "documentation/hql/errors/E204",
-                  "documentation/hql/errors/E205",
-                  "documentation/hql/errors/E207",
-                  "documentation/hql/errors/E301",
-                  "documentation/hql/errors/E302",
-                  "documentation/hql/errors/E304",
-                  "documentation/hql/errors/E305",
-                  "documentation/hql/errors/E401",
-                  "documentation/hql/errors/E501",
-                  "documentation/hql/errors/E601",
-                  "documentation/hql/errors/E602",
-                  "documentation/hql/errors/E604",
-                  "documentation/hql/errors/E611",
-                  "documentation/hql/errors/E612",
-                  "documentation/hql/errors/E621",
-                  "documentation/hql/errors/E622",
-                  "documentation/hql/errors/E631",
-                  "documentation/hql/errors/E632",
-                  "documentation/hql/errors/E633",
-                  "documentation/hql/errors/E641",
-                  "documentation/hql/errors/E642",
-                  "documentation/hql/errors/E643",
-                  "documentation/hql/errors/E644",
-                  "documentation/hql/errors/E645",
-                  "documentation/hql/errors/E651",
-                  "documentation/hql/errors/E652",
-                  "documentation/hql/errors/E653"
-                ],
-                "icon": "triangle-exclamation"
-              }
-            ]
-          }
+                    {
+                        "group": "Features",
+                        "pages": [
+                            "features/overview",
+                            "features/mcp/helix-mcp",
+                            "features/chunking/helix-chunking"
+                        ]
+                    }
+                ]
+            },
+            {
+                "tab": "Guides",
+                "groups": [
+                    {
+                        "group": "Guides",
+                        "pages": [
+                            "guides/overview",
+                            "guides/mcp-guide",
+                            "guides/helixir",
+                            "guides/dashboard",
+                            "guides/code-index",
+                            "guides/deploy-digitalocean"
+                        ]
+                    },
+                    {
+                        "group": "Use Cases",
+                        "pages": [
+                            "guides/social-network",
+                            {
+                                "group": "Professor Search",
+                                "pages": [
+                                    "guides/professors/prof",
+                                    "guides/professors/helixdb_setup",
+                                    "guides/professors/backend_setup"
+                                ],
+                                "icon": "user-graduate"
+                            }
+                        ]
+                    }
+                ]
+            }
         ]
-      },
-      {
-        "tab": "Features",
-        "pages": [
-          {
-            "group": "Features",
-            "pages": [
-              "features/overview",
-              "features/mcp/helix-mcp",
-              "features/chunking/helix-chunking"
-            ]
-          }
+    },
+    "logo": {
+        "light": "/logo/light.svg",
+        "dark": "/logo/dark.svg",
+        "href": "https://www.helix-db.com"
+    },
+    "search": {
+        "prompt": "Search HelixDB Docs"
+    },
+    "navbar": {
+        "links": [
+            {
+                "label": "GitHub",
+                "icon": "github",
+                "href": "https://github.com/HelixDB/helix-db"
+            },
+            {
+                "label": "Discord",
+                "icon": "discord",
+                "href": "https://discord.com/invite/2stgMPr5BD"
+            },
+            {
+                "label": "Support",
+                "icon": "envelope",
+                "href": "mailto:founders@helix-db.com"
+            }
         ]
-      },
-      {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Guides",
-            "pages": [
-              "guides/overview",
-              "guides/mcp-guide",
-              "guides/helixir",
-              "guides/dashboard",
-              "guides/code-index"
-            ]
-          },
-          {
-            "group": "Use Cases",
-            "pages": [
-              "guides/social-network",
-              {
-                "group": "Professor Search",
-                "pages": [
-                  "guides/professors/prof",
-                  "guides/professors/helixdb_setup",
-                  "guides/professors/backend_setup"
-                ],
-                "icon": "user-graduate"
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg",
-    "href": "https://www.helix-db.com"
-  },
-  "search": {
-    "prompt": "Search HelixDB Docs"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "GitHub",
-        "icon": "github",
-        "href": "https://github.com/HelixDB/helix-db"
-      },
-      {
-        "label": "Discord",
-        "icon": "discord",
-        "href": "https://discord.com/invite/2stgMPr5BD"
-      },
-      {
-        "label": "Support",
-        "icon": "envelope",
-        "href": "mailto:founders@helix-db.com"
-      }
-    ]
-  },
-  "footer": {
-    "socials": {
-      "website": "https://www.helix-db.com",
-      "github": "https://github.com/HelixDB/helix-db",
-      "discord": "https://discord.com/invite/2stgMPr5BD",
-      "x": "https://x.com/hlx_db",
-      "linkedin": "https://www.linkedin.com/company/helixdb"
+    },
+    "footer": {
+        "socials": {
+            "website": "https://www.helix-db.com",
+            "github": "https://github.com/HelixDB/helix-db",
+            "discord": "https://discord.com/invite/2stgMPr5BD",
+            "x": "https://x.com/hlx_db",
+            "linkedin": "https://www.linkedin.com/company/helixdb"
+        }
+    },
+    "seo": {
+        "metatags": {
+            "description": "HelixDB Documentation to get you started with HelixDB",
+            "keywords": "HelixDB, Documentation, Getting Started, CLI, SDK, Guides, Features, Blogs, RAG, Database, Database, Graph Database, Vector Database, AI, Agents, LLMs, Knowledge Graphs, Retrieval Augmented Generation, Knowledge Graphs, AI Agents, Document databases",
+            "robots": "all",
+            "googlebot": "index, follow",
+            "og:title": "HelixDB Docs",
+            "og:description": "HelixDB Documentation",
+            "og:type": "website",
+            "og:site_name": "HelixDB Documentation",
+            "indexing": "all",
+            "category": "Technology",
+            "language": "en",
+            "author": "HelixDB"
+        }
     }
-  },
-  "seo": {
-    "metatags": {
-      "description": "HelixDB Documentation to get you started with HelixDB",
-      "keywords": "HelixDB, Documentation, Getting Started, CLI, SDK, Guides, Features, Blogs, RAG, Database, Database, Graph Database, Vector Database, AI, Agents, LLMs, Knowledge Graphs, Retrieval Augmented Generation, Knowledge Graphs, AI Agents, Document databases",
-      "robots": "all",
-      "googlebot": "index, follow",
-      "og:title": "HelixDB Docs",
-      "og:description": "HelixDB Documentation",
-      "og:type": "website",
-      "og:site_name": "HelixDB Documentation",
-      "indexing": "all",
-      "category": "Technology",
-      "language": "en",
-      "author": "HelixDB"
-    }
-  }
 }
