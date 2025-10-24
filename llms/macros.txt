@@ -1,0 +1,103 @@
+## Macros
+@tags: macros, mcp, model-context-protocol, ai-agents, decorators, annotations
+
+### Model Context Protocol (MCP) Macro
+
+`#[mcp]` macro exposes any query as an MCP endpoint, making it directly accessible to AI agents.
+
+Notes:
+- MCP queries must return a single object/value from the query otherwise you will get a compile error. 
+- Make sure to enable MCP in your `helix.toml` file.
+
+#### Best Practices for MCP Macros
+- Use descriptive query names: choose names that are easy for AI agents to understand and use.
+- Keep query signatures simple: avoid complex parameters or nested structures.
+
+#### Syntax
+```query.hx
+#[mcp]
+QUERY QueryName(param1: Type, param2: Type) =>
+    result <- traversal_expression
+    RETURN result
+```
+
+#### Example
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U32,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+#[mcp]
+QUERY get_user(user_id: ID) =>
+    user <- N<User>(user_id)
+    RETURN user
+```
+
+- cURL:
+```bash
+# Initialize the connection, this will return a connection_id
+curl -X POST \
+  http://localhost:6969/mcp/init \    
+  -H 'Content-Type: application/json' \
+  -d '{}'
+
+# Use the connection_id from above to call the MCP endpoint
+curl -X POST \
+  http://localhost:6969/mcp/get_userMcp \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "connection_id": "connection_id",
+    "data": {
+        "user_id": "user_id"
+      }
+    }'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+from helix.mcp import MCPServer
+from helix.providers.openai_client import OpenAIProvider
+from fastmcp.tools.tool import FunctionTool
+
+# Initialize MCP server
+client = Client(local=True)
+mcp = MCPServer("helix-mcp", client)
+
+# Add your custom tool to the MCP server
+def get_user(connection_id: str, user_id: str):
+    """
+    Get the name of a user by their ID
+    Args: connection_id: The connection ID, user_id: The ID of the user
+    Returns: The user object
+    """
+    return client.query(
+        "mcp/get_userMcp", 
+        {"connection_id": connection_id, "data":{"user_id": user_id}}
+    )
+
+mcp.add_tool(FunctionTool.from_function(get_user))
+
+# Start MCP server
+mcp.run_bg()
+
+# Enable MCP in your LLM provider
+llm = OpenAIProvider(
+    name="openai-llm",
+    instructions="You are a helpful assistant with access to user data.",
+    model="gpt-4o",
+    history=True
+)
+llm.enable_mcps("helix-mcp")
+
+# The AI can now call your MCP queries
+response = llm.generate(f"What is the name of user with ID {user_id}?")
+print(response)
+```

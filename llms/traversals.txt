@@ -1,0 +1,1022 @@
+## Graph Traversals
+@tags: traversal, graph, navigation, out, in, outE, inE, fromN, toN, fromV, toV, relationships
+
+### Traversal From Nodes and Vectors
+
+Note:
+- Combine traversals with [property access](https://docs.helix-db.com/llms/properties.txt#property-access) or [aggregation](https://docs.helix-db.com/llms/aggregation.txt) for richer results
+
+#### Traverse Out to Nodes and Vectors using `Out`
+
+##### Syntax
+```query.hx
+::Out<EdgeType>
+```
+
+##### Example 1: Listing who a user follows
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    handle: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+    Properties: {
+        since: Date
+    }
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUserFollowing (user_id: ID) =>
+    following <- N<User>(user_id)::Out<Follows>
+    RETURN following
+
+QUERY CreateUser (name: String, handle: String) =>
+    user <- AddN<User>({
+        name: name,
+        handle: handle,
+    })
+    RETURN user
+
+QUERY FollowUser (follower_id: ID, followed_id: ID, since: Date) =>
+    follow_edge <- AddE<Follows>({
+        since: since
+    })::From(follower_id)::To(followed_id)
+    RETURN follow_edge
+```
+
+- cURL:
+```bash
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","handle":"alice"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+bob=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","handle":"bobby"}')
+bob_id=$(echo "$bob" | jq -r '.user.id')
+
+since=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+curl -X POST \
+  http://localhost:6969/FollowUser \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"'"$alice_id"'","followed_id":"'"$bob_id"'","since":"'"$since"'"}'
+
+curl -X POST \
+  http://localhost:6969/GetUserFollowing \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"'"$alice_id"'"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+from datetime import datetime, timezone
+
+client = Client(local=True, port=6969)
+since_value = datetime.now(timezone.utc).isoformat()
+
+alice = client.query("CreateUser", {"name": "Alice", "handle": "alice"})
+bob = client.query("CreateUser", {"name": "Bob", "handle": "bobby"})
+
+alice_id = alice[0]["user"]["id"]
+bob_id = bob[0]["user"]["id"]
+
+client.query("FollowUser", {
+    "follower_id": alice_id,
+    "followed_id": bob_id,
+    "since": since_value,
+})
+
+result = client.query("GetUserFollowing", {"user_id": alice_id})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+    const sinceValue = new Date().toISOString();
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        handle: "alice",
+    });
+    const bob = await client.query("CreateUser", {
+        name: "Bob",
+        handle: "bobby",
+    });
+
+    await client.query("FollowUser", {
+        follower_id: alice.user.id,
+        followed_id: bob.user.id,
+        since: sinceValue,
+    });
+
+    const result = await client.query("GetUserFollowing", {
+        user_id: alice.user.id,
+    });
+
+    console.log("GetUserFollowing result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserFollowing query failed:", err);
+});
+```
+
+#### Traverse In to Nodes and Vectors using `In`
+
+##### Syntax
+```query.hx
+::In<EdgeType>
+```
+
+##### Example 1: Listing who follows a user
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    handle: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+    Properties: {
+        since: Date
+    }
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUserFollowers (user_id: ID) =>
+    followers <- N<User>(user_id)::In<Follows>
+    RETURN followers
+
+QUERY CreateUser (name: String, handle: String) =>
+    user <- AddN<User>({
+        name: name,
+        handle: handle,
+    })
+    RETURN user
+
+QUERY FollowUser (follower_id: ID, followed_id: ID, since: Date) =>
+    follow_edge <- AddE<Follows>({
+        since: since
+    })::From(follower_id)::To(followed_id)
+    RETURN follow_edge
+```
+
+- cURL:
+```bash
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","handle":"alice"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+bob=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","handle":"bobby"}')
+bob_id=$(echo "$bob" | jq -r '.user.id')
+
+since=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+curl -X POST \
+  http://localhost:6969/FollowUser \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"'"$alice_id"'","followed_id":"'"$bob_id"'","since":"'"$since"'"}'
+
+curl -X POST \
+  http://localhost:6969/GetUserFollowers \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"'"$bob_id"'"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+from datetime import datetime, timezone
+
+client = Client(local=True, port=6969)
+since_value = datetime.now(timezone.utc).isoformat()
+
+alice = client.query("CreateUser", {"name": "Alice", "handle": "alice"})
+bob = client.query("CreateUser", {"name": "Bob", "handle": "bobby"})
+
+alice_id = alice[0]["user"]["id"]
+bob_id = bob[0]["user"]["id"]
+
+client.query("FollowUser", {
+    "follower_id": alice_id,
+    "followed_id": bob_id,
+    "since": since_value,
+})
+
+result = client.query("GetUserFollowers", {"user_id": bob_id})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+    const sinceValue = new Date().toISOString();
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        handle: "alice",
+    });
+    const bob = await client.query("CreateUser", {
+        name: "Bob",
+        handle: "bobby",
+    });
+
+    await client.query("FollowUser", {
+        follower_id: alice.user.id,
+        followed_id: bob.user.id,
+        since: sinceValue,
+    });
+
+    const result = await client.query("GetUserFollowers", {
+        user_id: bob.user.id,
+    });
+
+    console.log("GetUserFollowers result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserFollowers query failed:", err);
+});
+```
+
+#### Traverse Out to Edges using `OutE`
+
+##### Syntax
+```query.hx
+::OutE<EdgeType>
+```
+
+##### Example 1: Inspecting follow relationships
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    handle: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+    Properties: {
+        since: Date
+    }
+}
+```
+
+- Query:
+```query.hx
+QUERY GetFollowingEdges (user_id: ID) =>
+    follow_edges <- N<User>(user_id)::OutE<Follows>
+    RETURN follow_edges
+
+QUERY CreateUser (name: String, handle: String) =>
+    user <- AddN<User>({
+        name: name,
+        handle: handle,
+    })
+    RETURN user
+
+QUERY FollowUser (follower_id: ID, followed_id: ID, since: Date) =>
+    follow_edge <- AddE<Follows>({
+        since: since
+    })::From(follower_id)::To(followed_id)
+    RETURN follow_edge
+```
+
+- cURL:
+```bash
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","handle":"alice"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+bob=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","handle":"bobby"}')
+bob_id=$(echo "$bob" | jq -r '.user.id')
+
+since=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+curl -X POST \
+  http://localhost:6969/FollowUser \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"'"$alice_id"'","followed_id":"'"$bob_id"'","since":"'"$since"'"}'
+
+curl -X POST \
+  http://localhost:6969/GetFollowingEdges \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"'"$alice_id"'"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+from datetime import datetime, timezone
+
+client = Client(local=True, port=6969)
+since_value = datetime.now(timezone.utc).isoformat()
+
+alice = client.query("CreateUser", {"name": "Alice", "handle": "alice"})
+bob = client.query("CreateUser", {"name": "Bob", "handle": "bobby"})
+
+alice_id = alice[0]["user"]["id"]
+bob_id = bob[0]["user"]["id"]
+
+client.query("FollowUser", {
+    "follower_id": alice_id,
+    "followed_id": bob_id,
+    "since": since_value,
+})
+
+edges = client.query("GetFollowingEdges", {"user_id": alice_id})
+print(edges)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+    const sinceValue = new Date().toISOString();
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        handle: "alice",
+    });
+    const bob = await client.query("CreateUser", {
+        name: "Bob",
+        handle: "bobby",
+    });
+
+    await client.query("FollowUser", {
+        follower_id: alice.user.id,
+        followed_id: bob.user.id,
+        since: sinceValue,
+    });
+
+    const edges = await client.query("GetFollowingEdges", {
+        user_id: alice.user.id,
+    });
+
+    console.log("GetFollowingEdges result:", edges);
+}
+
+main().catch((err) => {
+    console.error("GetFollowingEdges query failed:", err);
+});
+```
+
+#### Traverse In to Edges using `InE`
+
+##### Syntax
+```query.hx
+::InE<EdgeType>
+```
+
+##### Example 1: Inspecting who followed a user
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    handle: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+    Properties: {
+        since: Date
+    }
+}
+```
+
+- Query:
+```query.hx
+QUERY GetFollowerEdges (user_id: ID) =>
+    follow_edges <- N<User>(user_id)::InE<Follows>
+    RETURN follow_edges
+
+QUERY CreateUser (name: String, handle: String) =>
+    user <- AddN<User>({
+        name: name,
+        handle: handle,
+    })
+    RETURN user
+
+QUERY FollowUser (follower_id: ID, followed_id: ID, since: Date) =>
+    follow_edge <- AddE<Follows>({
+        since: since
+    })::From(follower_id)::To(followed_id)
+    RETURN follow_edge
+```
+
+- cURL:
+```bash
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","handle":"alice"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+bob=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","handle":"bobby"}')
+bob_id=$(echo "$bob" | jq -r '.user.id')
+
+since=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+curl -X POST \
+  http://localhost:6969/FollowUser \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"'"$alice_id"'","followed_id":"'"$bob_id"'","since":"'"$since"'"}'
+
+curl -X POST \
+  http://localhost:6969/GetFollowerEdges \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"'"$bob_id"'"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+from datetime import datetime, timezone
+
+client = Client(local=True, port=6969)
+since_value = datetime.now(timezone.utc).isoformat()
+
+alice = client.query("CreateUser", {"name": "Alice", "handle": "alice"})
+bob = client.query("CreateUser", {"name": "Bob", "handle": "bobby"})
+
+alice_id = alice[0]["user"]["id"]
+bob_id = bob[0]["user"]["id"]
+
+client.query("FollowUser", {
+    "follower_id": alice_id,
+    "followed_id": bob_id,
+    "since": since_value,
+})
+
+edges = client.query("GetFollowerEdges", {"user_id": bob_id})
+print(edges)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+    const sinceValue = new Date().toISOString();
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        handle: "alice",
+    });
+    const bob = await client.query("CreateUser", {
+        name: "Bob",
+        handle: "bobby",
+    });
+
+    await client.query("FollowUser", {
+        follower_id: alice.user.id,
+        followed_id: bob.user.id,
+        since: sinceValue,
+    });
+
+    const edges = await client.query("GetFollowerEdges", {
+        user_id: bob.user.id,
+    });
+
+    console.log("GetFollowerEdges result:", edges);
+}
+
+main().catch((err) => {
+    console.error("GetFollowerEdges query failed:", err);
+});
+```
+
+### Traversal From Edges
+
+#### Traverse to Source Node using `FromN`
+
+##### Syntax
+```query.hx
+::FromN
+```
+
+##### Example 1: Getting the user from a document creation edge
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    email: String,
+}
+
+V::Document {
+    content: String
+}
+
+E::Creates {
+    From: User,
+    To: Document
+}
+```
+
+- Query:
+```query.hx
+QUERY GetCreatorFromEdge (creation_id: ID) =>
+    creator <- E<Creates>(creation_id)::FromN
+    RETURN creator
+
+QUERY CreateUser (name: String, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        email: email,
+    })
+    RETURN user
+
+QUERY CreateDocument (user_id: ID, content: String, vector: [F64]) =>
+    document <- AddV<Document>(vector, {
+        content: content
+    })
+    creation_edge <- AddE<Creates>::From(user_id)::To(document)
+    RETURN creation_edge
+```
+
+- cURL:
+```bash
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","email":"alice@example.com"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+creation=$(curl -s -X POST \
+  http://localhost:6969/CreateDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"'"$alice_id"'","content":"This is my first document","vector":[0.1,0.2,0.3,0.4,0.5]}')
+creation_id=$(echo "$creation" | jq -r '.creation_edge.id')
+
+curl -s -X POST \
+  http://localhost:6969/GetCreatorFromEdge \
+  -H 'Content-Type: application/json' \
+  -d '{"creation_id":"'"$creation_id"'"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreateUser", {"name": "Alice", "email": "alice@example.com"})
+alice_id = alice[0]["user"]["id"]
+
+creation = client.query("CreateDocument", {
+    "user_id": alice_id,
+    "content": "This is my first document",
+    "vector": [0.1, 0.2, 0.3, 0.4, 0.5],
+})
+creation_id = creation[0]["creation_edge"]["id"]
+
+result = client.query("GetCreatorFromEdge", {
+    "creation_id": creation_id,
+})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        email: "alice@example.com",
+    });
+
+    const creation = await client.query("CreateDocument", {
+        user_id: alice.user.id,
+        content: "This is my first document",
+        vector: [0.1, 0.2, 0.3, 0.4, 0.5],
+    });
+
+    const result = await client.query("GetCreatorFromEdge", {
+        creation_id: creation.creation_edge.id,
+    });
+
+    console.log("GetCreatorFromEdge result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetCreatorFromEdge query failed:", err);
+});
+```
+
+#### Traverse to Source Vector using `FromV`
+
+##### Syntax
+```query.hx
+::FromV
+```
+
+#####  Example 1: Inspecting the document vector from edge
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    email: String,
+}
+
+V::Document {
+    content: String
+}
+
+E::Creates {
+    From: User,
+    To: Document
+}
+```
+
+- Query:
+```query.hx
+QUERY GetDocumentVector (creation_id: ID) =>
+    document_vector <- E<Creates>(creation_id)::ToV
+    RETURN document_vector
+
+QUERY CreateUser (name: String, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        email: email,
+    })
+    RETURN user
+
+QUERY CreateDocument (user_id: ID, content: String, vector: [F64]) =>
+    document <- AddV<Document>(vector, {
+        content: content
+    })
+    creation_edge <- AddE<Creates>::From(user_id)::To(document)
+    RETURN creation_edge
+```
+
+- cURL:
+```bash
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","email":"alice@example.com"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+creation=$(curl -s -X POST \
+  http://localhost:6969/CreateDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"'"$alice_id"'","content":"This is my first document","vector":[0.1,0.2,0.3,0.4,0.5]}')
+creation_id=$(echo "$creation" | jq -r '.creation_edge.id')
+
+curl -s -X POST \
+  http://localhost:6969/GetDocumentVector \
+  -H 'Content-Type: application/json' \
+  -d '{"creation_id":"'"$creation_id"'"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreateUser", {"name": "Alice", "email": "alice@example.com"})
+alice_id = alice[0]["user"]["id"]
+
+creation = client.query("CreateDocument", {
+    "user_id": alice_id,
+    "content": "This is my first document",
+    "vector": [0.1, 0.2, 0.3, 0.4, 0.5],
+})
+creation_id = creation[0]["creation_edge"]["id"]
+
+vector = client.query("GetDocumentVector", {
+    "creation_id": creation_id,
+})
+print(vector)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        email: "alice@example.com",
+    });
+
+    const creation = await client.query("CreateDocument", {
+        user_id: alice.user.id,
+        content: "This is my first document",
+        vector: [0.1, 0.2, 0.3, 0.4, 0.5],
+    });
+
+    const vector = await client.query("GetDocumentVector", {
+        creation_id: creation.creation_edge.id,
+    });
+
+    console.log("GetDocumentVector result:", vector);
+}
+
+main().catch((err) => {
+    console.error("GetDocumentVector query failed:", err);
+});
+```
+
+#### Traverse to Target Node using `ToN`
+
+##### Syntax
+```query.hx
+::ToN
+```
+
+##### Example 1: Getting the followed user from a follow edge
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User
+}
+```
+
+- Query:
+```query.hx
+QUERY GetFollowedUser (follow_id: ID) =>
+    followed_user <- E<Follows>(follow_id)::ToN
+    RETURN followed_user
+
+QUERY CreateUser (name: String, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        email: email,
+    })
+    RETURN user
+
+QUERY FollowUser (follower_id: ID, followed_id: ID, since: String) =>
+    follow_edge <- AddE<Follows>::From(follower_id)::To(followed_id)
+    RETURN follow_edge
+```
+
+- cURL:
+```bash
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","email":"alice@example.com"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+bob=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","email":"bob@example.com"}')
+bob_id=$(echo "$bob" | jq -r '.user.id')
+
+since=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+follow=$(curl -s -X POST \
+  http://localhost:6969/FollowUser \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"'"$alice_id"'","followed_id":"'"$bob_id"'","since":"'"$since"'"}')
+follow_id=$(echo "$follow" | jq -r '.follow_edge.id')
+
+curl -s -X POST \
+  http://localhost:6969/GetFollowedUser \
+  -H 'Content-Type: application/json' \
+  -d '{"follow_id":"'"$follow_id"'"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+from datetime import datetime
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreateUser", {"name": "Alice", "email": "alice@example.com"})
+alice_id = alice[0]["user"]["id"]
+
+bob = client.query("CreateUser", {"name": "Bob", "email": "bob@example.com"})
+bob_id = bob[0]["user"]["id"]
+
+since_value = datetime.now().isoformat()
+
+follow = client.query("FollowUser", {
+    "follower_id": alice_id,
+    "followed_id": bob_id,
+    "since": since_value,
+})
+follow_id = follow[0]["follow_edge"]["id"]
+
+followed_user = client.query("GetFollowedUser", {
+    "follow_id": follow_id,
+})
+print(followed_user)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+    const sinceValue = new Date().toISOString();
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        email: "alice@example.com",
+    });
+
+    const bob = await client.query("CreateUser", {
+        name: "Bob",
+        email: "bob@example.com",
+    });
+
+    const follow = await client.query("FollowUser", {
+        follower_id: alice.user.id,
+        followed_id: bob.user.id,
+        since: sinceValue,
+    });
+
+    const followedUser = await client.query("GetFollowedUser", {
+        follow_id: follow.follow_edge.id,
+    });
+
+    console.log("GetFollowedUser result:", followedUser);
+}
+
+main().catch((err) => {
+    console.error("GetFollowedUser query failed:", err);
+});
+```
+
+#### Traverse to Target Vector using `ToV`
+
+##### Syntax
+```query.hx
+::ToV
+```
+
+##### Example 1: Inspecting the document vector
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    email: String,
+}
+
+V::Document {
+    content: String
+}
+
+E::Creates {
+    From: User,
+    To: Document
+}
+```
+
+- Query:
+```query.hx
+QUERY GetDocumentVector (creation_id: ID) =>
+    document_vector <- E<Creates>(creation_id)::ToV
+    RETURN document_vector
+
+QUERY CreateUser (name: String, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        email: email,
+    })
+    RETURN user
+
+QUERY CreateDocument (user_id: ID, content: String, vector: [F64]) =>
+    document <- AddV<Document>(vector, {
+        content: content
+    })
+    creation_edge <- AddE<Creates>::From(user_id)::To(document)
+    RETURN creation_edge
+```
+
+- cURL:
+```bash
+alice=$(curl -s -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","email":"alice@example.com"}')
+alice_id=$(echo "$alice" | jq -r '.user.id')
+
+creation=$(curl -s -X POST \
+  http://localhost:6969/CreateDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"'"$alice_id"'","content":"This is my first document","vector":[0.1,0.2,0.3,0.4,0.5]}')
+creation_id=$(echo "$creation" | jq -r '.creation_edge.id')
+
+curl -s -X POST \
+  http://localhost:6969/GetDocumentVector \
+  -H 'Content-Type: application/json' \
+  -d '{"creation_id":"'"$creation_id"'"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreateUser", {"name": "Alice", "email": "alice@example.com"})
+alice_id = alice[0]["user"]["id"]
+
+creation = client.query("CreateDocument", {
+    "user_id": alice_id,
+    "content": "This is my first document",
+    "vector": [0.1, 0.2, 0.3, 0.4, 0.5],
+})
+creation_id = creation[0]["creation_edge"]["id"]
+
+vector = client.query("GetDocumentVector", {
+    "creation_id": creation_id,
+})
+print(vector)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        email: "alice@example.com",
+    });
+
+    const creation = await client.query("CreateDocument", {
+        user_id: alice.user.id,
+        content: "This is my first document",
+        vector: [0.1, 0.2, 0.3, 0.4, 0.5],
+    });
+
+    const vector = await client.query("GetDocumentVector", {
+        creation_id: creation.creation_edge.id,
+    });
+
+    console.log("GetDocumentVector result:", vector);
+}
+
+main().catch((err) => {
+    console.error("GetDocumentVector query failed:", err);
+});
+```

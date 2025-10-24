@@ -1,0 +1,33 @@
+# HelixDB Overview
+@tags: intro, architecture, helixdb, graph, vector
+
+## TL;DR
+- High Performance: Purpose-built storage engine optimized for both graph and vector operations
+- Graph-Vector Hybrid: Store both graph and vector data in the same database (less overhead than separate databases)
+- Query Language: Designed for traversing and manipulating graph and vector data efficiently
+- Type Safety: Explicit type definitions to ensure data integrity
+- Developer-Friendly: Simple setup and migration
+- Secure: Options for encryption at rest
+
+## Data Model
+- **Nodes**: entities with unique identifiers and properties  
+- **Vectors** – entities with unique identifiers and vector embeddings  
+- **Edges** - directed relationships between nodes and/or vectors, carrying properties  
+
+## Common Use Cases
+1. **Social Networks** – friend graphs, content sharing, community detection  
+2. **Recommendation Engines** – product/content suggestions, “people you may know”, interest matching  
+3. **Fraud Detection** – transaction pattern recognition, suspicious-relationship analysis, risk scoring  
+4. **Knowledge Graphs** – semantic search, data integration, ML feature store, research discovery  
+
+## When to Use a Graph Database
+- Data contains dense, interconnected relationships  
+- Queries require multi-hop traversals or pattern matching  
+- Traditional SQL joins become complex or slow  
+- Hierarchical structures or path finding dominate access patterns 
+
+## Benefits Over Traditional Databases
+- **Performance**: Faster for relationship-heavy queries
+- **Flexibility**: Easier to modify and extend the data model
+- **Intuitive**: More natural way to model connected data
+- **Scalability**: Better handling of complex relationship patterns

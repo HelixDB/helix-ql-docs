@@ -1,0 +1,719 @@
+## Vector Operations
+@tags: vector, search, similarity, embedding, searchV, embed, cosine, euclidean, hnsw
+
+### Vector Search using `SearchV`
+
+#### Syntax
+```query.hx
+SearchV<Type>(vector, limit)
+```
+
+Note: Currently only supports `[F64]` to represent the vector. Support for `[F32]` and binary vectors added in the future.
+
+#### Example 1: Basic vector search
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+- Query:
+```query.hx
+QUERY SearchVector (vector: [F64], limit: I64) =>
+    documents <- SearchV<Document>(vector, limit)
+    RETURN documents
+
+QUERY InsertVector (vector: [F64], content: String, created_at: Date) =>
+    document <- AddV<Document>(vector, { content: content, created_at: created_at })
+    RETURN document
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/InsertVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.1,0.2,0.3,0.4],"content":"Sample document content","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/SearchVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.1,0.2,0.3,0.4],"limit":10}'
+```
+
+- Python SDK:
+```python
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+vector_data = [0.1, 0.2, 0.3, 0.4]
+inserted = client.query("InsertVector", {
+    "vector": vector_data,
+    "content": "Sample document content",
+    "created_at": datetime.now(timezone.utc).isoformat(),
+})
+
+result = client.query("SearchVector", {
+    "vector": vector_data,
+    "limit": 10
+})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const vectorData = [0.1, 0.2, 0.3, 0.4];
+
+    const inserted = await client.query("InsertVector", {
+        vector: vectorData,
+        content: "Sample document content",
+        created_at: new Date().toISOString(),
+    });
+
+    const result = await client.query("SearchVector", {
+        vector: vectorData,
+        limit: 10,
+    });
+
+    console.log("Search results:", result);
+}
+
+main().catch((err) => {
+    console.error("SearchVector query failed:", err);
+});
+```
+
+#### Example 2: Vector search with postfiltering
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+- Query:
+```query.hx
+QUERY SearchRecentDocuments (vector: [F64], limit: I64, cutoff_date: Date) =>
+    documents <- SearchV<Document>(vector, limit)::WHERE(_::{created_at}::GTE(cutoff_date))
+    RETURN documents
+
+QUERY InsertVector (vector: [F64], content: String, created_at: Date) =>
+    document <- AddV<Document>(vector, { content: content, created_at: created_at })
+    RETURN document
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/InsertVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.12,0.34,0.56,0.78],"content":"Recent document content","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.15,0.35,0.55,0.75],"content":"Old document content","created_at":"'"$(date -u -d '45 days ago' +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/SearchRecentDocuments \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.12,0.34,0.56,0.78],"limit":5,"cutoff_date":"'"$(date -u -d '30 days ago' +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+
+- Python SDK:
+```python
+from datetime import datetime, timezone, timedelta
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+vector_data = [0.12, 0.34, 0.56, 0.78]
+
+recent_date = datetime.now(timezone.utc).isoformat()
+old_date = (datetime.now(timezone.utc) - timedelta(days=45)).isoformat()
+
+client.query("InsertVector", {
+    "vector": vector_data,
+    "content": "Recent document content",
+    "created_at": recent_date,
+})
+
+client.query("InsertVector", {
+    "vector": [0.15, 0.35, 0.55, 0.75],
+    "content": "Old document content", 
+    "created_at": old_date,
+})
+
+cutoff_date = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+
+result = client.query("SearchRecentDocuments", {
+    "vector": vector_data,
+    "limit": 5,
+    "cutoff_date": cutoff_date,
+})
+
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const vectorData = [0.12, 0.34, 0.56, 0.78];
+
+    const recentDate = new Date().toISOString();
+    const oldDate = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
+
+    await client.query("InsertVector", {
+        vector: vectorData,
+        content: "Recent document content",
+        created_at: recentDate,
+    });
+
+    await client.query("InsertVector", {
+        vector: [0.15, 0.35, 0.55, 0.75],
+        content: "Old document content",
+        created_at: oldDate,
+    });
+
+    const cutoffDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const result = await client.query("SearchRecentDocuments", {
+        vector: vectorData,
+        limit: 5,
+        cutoff_date: cutoffDate,
+    });
+
+    console.log("Filtered search results:", result);
+}
+
+main().catch((err) => {
+    console.error("SearchRecentDocuments query failed:", err);
+});
+```
+
+####  Example 3: Using the built in [Embed function](https://docs.helix-db.com/llms/vector.txt#embedding-vectors-using-embed)
+
+- Built-in `Embed` function: don't need to send array of floats, just send the text.
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+- Query:
+```query.hx
+QUERY SearchWithText (text: String, limit: I64) =>
+    documents <- SearchV<Document>(Embed(text), limit)
+    RETURN documents
+
+QUERY InsertTextAsVector (content: String, created_at: Date) =>
+    document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    RETURN document
+```
+
+- Environment variables (OpenAI example):
+```.env
+OPENAI_API_KEY=your_api_key
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Introduction to machine learning algorithms","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Deep neural networks and AI","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Natural language processing techniques","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/SearchWithText \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"machine learning algorithms","limit":10}'
+```
+
+- Python SDK:
+```python
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+sample_texts = [
+    "Introduction to machine learning algorithms",
+    "Deep neural networks and AI",
+    "Natural language processing techniques"
+]
+
+for text in sample_texts:
+    client.query("InsertTextAsVector", {
+        "content": text,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+result = client.query("SearchWithText", {
+    "text": "machine learning algorithms",
+    "limit": 10,
+})
+
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const sampleTexts = [
+        "Introduction to machine learning algorithms",
+        "Deep neural networks and AI",
+        "Natural language processing techniques"
+    ];
+
+    for (const text of sampleTexts) {
+        await client.query("InsertTextAsVector", {
+            content: text,
+            created_at: new Date().toISOString(),
+        });
+    }
+
+    const result = await client.query("SearchWithText", {
+        text: "machine learning algorithms",
+        limit: 10,
+    });
+
+    console.log("Text search results:", result);
+}
+
+main().catch((err) => {
+    console.error("SearchWithText query failed:", err);
+});
+```
+
+### Embedding Vectors using `Embed`
+
+#### Syntax
+```query.hx
+AddV<Type>(Embed(text))
+AddV<Type>(Embed(text), {properties})
+SearchV<Type>(Embed(text), limit)
+```
+
+Notes (outdated, will be updated in the future):
+- The text is automatically embedded with an embedding model of your choice (can be defined in your config.hx.json file). 
+- The default embedding model is text-embedding-ada-002 from OpenAI.
+- Make sure to set your OPENAI_API_KEY environment variable with your API key in the same location as the queries.hx, schema.hx and config.hx.json files. 
+
+#### Example 1: Creating a vector from text
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+- Query:
+```query.hx
+QUERY InsertTextAsVector (content: String, created_at: Date) =>
+    document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    RETURN document
+```
+
+- Environment variables (OpenAI example):
+```.env
+OPENAI_API_KEY=your_api_key
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Machine learning is transforming the way we work.","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+
+- Python SDK:
+```python
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+print(client.query("InsertTextAsVector", {
+    "content": "Machine learning is transforming the way we work.",
+    "created_at": datetime.now(timezone.utc).isoformat(),
+}))
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("InsertTextAsVector", {
+        content: "Machine learning is transforming the way we work.",
+        created_at: new Date().toISOString(),
+    });
+
+    console.log("Created document vector:", result);
+}
+
+main().catch((err) => {
+    console.error("InsertTextAsVector query failed:", err);
+});
+```
+
+#### Example 2: Searching with text embeddings
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+- Query:
+```query.hx
+QUERY SearchWithText (query: String, limit: I64) =>
+    documents <- SearchV<Document>(Embed(query), limit)
+    RETURN documents
+
+QUERY InsertTextAsVector (content: String, created_at: Date) =>
+    document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    RETURN document
+```
+
+- Environment variables (OpenAI example):
+```.env
+OPENAI_API_KEY=your_api_key
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Artificial intelligence is revolutionizing automation","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Machine learning algorithms for predictive analytics","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Deep learning applications in computer vision","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/SearchWithText \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"artificial intelligence and automation","limit":5}'
+```
+
+- Python SDK:
+```python
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+sample_texts = [
+    "Artificial intelligence is revolutionizing automation",
+    "Machine learning algorithms for predictive analytics",
+    "Deep learning applications in computer vision"
+]
+
+for text in sample_texts:
+    client.query("InsertTextAsVector", {
+        "content": text,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+result = client.query("SearchWithText", {
+    "query": "artificial intelligence and automation",
+    "limit": 5,
+})
+
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const sampleTexts = [
+        "Artificial intelligence is revolutionizing automation",
+        "Machine learning algorithms for predictive analytics",
+        "Deep learning applications in computer vision"
+    ];
+
+    for (const text of sampleTexts) {
+        await client.query("InsertTextAsVector", {
+            content: text,
+            created_at: new Date().toISOString(),
+        });
+    }
+
+    const result = await client.query("SearchWithText", {
+        query: "artificial intelligence and automation",
+        limit: 5,
+    });
+
+    console.log("Search results:", result);
+}
+
+main().catch((err) => {
+    console.error("SearchWithText query failed:", err);
+});
+```
+
+#### Example 3: Creating a vector and connecting it to a user
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    email: String
+}
+
+V::Document {
+    content: String,
+    created_at: Date
+}
+
+E::User_to_Document_Embedding {
+    From: User,
+    To: Document,
+}
+```
+
+- Query:
+```query.hx
+QUERY CreateUserDocument (user_id: ID, content: String, created_at: Date) =>
+    document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    edge <- AddE<User_to_Document_Embedding>::From(user_id)::To(document)
+    RETURN document
+
+QUERY CreateUser (name: String, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        email: email
+    })
+    RETURN user
+```
+
+- Environment variables (OpenAI example):
+```.env
+OPENAI_API_KEY=your_api_key
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice Johnson","email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUserDocument \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","content":"This is my personal note about project planning.","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+
+- Python SDK:
+```python
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+user = client.query("CreateUser", {
+    "name": "Alice Johnson",
+    "email": "alice@example.com",
+})
+user_id = user[0]["user"]["id"]
+
+result = client.query("CreateUserDocument", {
+    "user_id": user_id,
+    "content": "This is my personal note about project planning.",
+    "created_at": datetime.now(timezone.utc).isoformat(),
+})
+
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const user = await client.query("CreateUser", {
+        name: "Alice Johnson",
+        email: "alice@example.com",
+    });
+    const userId: string = user.user.id;
+
+    const result = await client.query("CreateUserDocument", {
+        user_id: userId,
+        content: "This is my personal note about project planning.",
+        created_at: new Date().toISOString(),
+    });
+
+    console.log("Created user document:", result);
+}
+
+main().catch((err) => {
+    console.error("CreateUserDocument query failed:", err);
+});
+```
+
+#### Example 4: Semantic search with postfiltering
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+- Query:
+```query.hx
+QUERY SearchRecentNotes (query: String, limit: I64, cutoff_date: Date) =>
+    documents <- SearchV<Document>(Embed(query), limit)
+                    ::WHERE(_::{created_at}::GTE(cutoff_date))
+    RETURN documents
+
+QUERY InsertTextAsVector (content: String, created_at: Date) =>
+    document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    RETURN document
+```
+
+- Environment variables (OpenAI example):
+```.env
+OPENAI_API_KEY=your_api_key
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Project milestone review scheduled for next week","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/InsertTextAsVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Weekly status report from last month","created_at":"'"$(date -u -d '10 days ago' +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+
+curl -X POST \
+  http://localhost:6969/SearchRecentNotes \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"project deadlines and milestones","limit":10,"cutoff_date":"'"$(date -u -d '7 days ago' +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+
+- Python SDK:
+```python
+from datetime import datetime, timezone, timedelta
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+recent_date = datetime.now(timezone.utc).isoformat()
+old_date = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+
+client.query("InsertTextAsVector", {
+    "content": "Project milestone review scheduled for next week",
+    "created_at": recent_date,
+})
+
+client.query("InsertTextAsVector", {
+    "content": "Weekly status report from last month",
+    "created_at": old_date,
+})
+
+cutoff_date = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+
+result = client.query("SearchRecentNotes", {
+    "query": "project deadlines and milestones",
+    "limit": 10,
+    "cutoff_date": cutoff_date,
+})
+
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const recentDate = new Date().toISOString();
+    const oldDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+
+    await client.query("InsertTextAsVector", {
+        content: "Project milestone review scheduled for next week",
+        created_at: recentDate,
+    });
+
+    await client.query("InsertTextAsVector", {
+        content: "Weekly status report from last month",
+        created_at: oldDate,
+    });
+
+    const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const result = await client.query("SearchRecentNotes", {
+        query: "project deadlines and milestones",
+        limit: 10,
+        cutoff_date: cutoffDate,
+    });
+
+    console.log("Recent search results:", result);
+}
+
+main().catch((err) => {
+    console.error("SearchRecentNotes query failed:", err);
+});
+```

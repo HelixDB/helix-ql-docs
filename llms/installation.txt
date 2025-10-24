@@ -1,0 +1,68 @@
+# Installation
+@tags: install, cli, setup, docker, prerequisites, quickstart
+
+## Prerequisites
+- Rust version 1.88.0 or higher (required)
+- Docker Desktop for local development (required)
+- Git for first-time Helix source cache (required)
+- Cloud CLIs: AWS CLI, Fly CLI for cloud deployment (optional)
+
+## Install Steps
+
+1. **Install Helix CLI**
+   ```bash
+   curl -sSL https://install.helix-db.com | bash
+   ```
+   Note: Run `helix update` to upgrade; `helix migrate` to migrate existing projects from CLI v1 to CLI v2.
+
+2. **Create project**
+   ```bash
+   helix init
+   ```
+   Creates a new project in the current directory with `helix.toml` file and `db` directory containing `schema.hx` and `queries.hx` files.
+   Read the `helix.toml` file for more information about the configuration.
+
+3. **Define schema and queries**
+    Define the [schema and queries](https://docs.helix-db.com/llms/hql-intro.txt) in the `schema.hx` and `queries.hx` files in the `db` directory.
+    There will be default schema and queries commented out at the top of the files for you.
+
+4. **Build and deploy locally**
+    Build and deploy the project to the local HelixDB instance.
+    ```bash
+    helix push dev
+    ```
+    Replace `<dev>` with the actual name of the instance.
+    Check the [CLI commands](https://docs.helix-db.com/llms/cli.txt#commands) for more information about the build and deploy process.
+    Once Helix CLI is installed and your instance is initialized, continue to [configurations](https://docs.helix-db.com/llms/cli.txt#configurations) to customize ports and instances or jump to [HelixDB SDKs](https://docs.helix-db.com/llms/sdks.txt) or cURL to test your first query.
+
+5. **Test connection**
+    - If you are using a local HelixDB instance, verify that it now runs inside Docker on port designated in the `helix.toml` file (usually `6969`).
+    - Calling a query in the `queries.hx` file should return the expected result. Replace `<port>`, `<query_name>`, and `<parameter_name>` with the actual port, query name, and parameter name. Remember to run create query first before running read, update, delete queries.
+    ```bash
+    curl -X POST http://localhost:<port>/<query_name> \
+      -H "Content-Type: application/json" \
+      -d '{<parameter_name>: <parameter_value>, ...}'
+    ```
+
+## Best Practices
+
+- **Development**
+  - Run `helix check` before every deploy
+  - Use descriptive instance names
+  - Keep dev/prod configs separate
+  - Clean unused resources with `helix prune`
+  - Version-control `helix.toml`
+
+- **Production**
+  - Set `build_mode = "release"`
+  - Tune vector parameters to data scale
+  - Enable monitoring & logging
+  - Automate backups
+  - Test migrations in staging first
+
+- **Security**
+  - Never commit credentials
+  - Use env vars for secrets
+  - Rotate API keys regularly
+  - Keep CLI updated: `helix update`
+  - Use private instances for prod data

@@ -1,0 +1,460 @@
+## Result Operations
+@tags: results, count, limit, skip, sort, order, pagination, filtering
+
+### Count Elements using `COUNT`
+
+#### Syntax
+```query.hx
+::COUNT
+```
+
+#### Example 1: Basic element counting
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUserCount () =>
+    user_count <- N<User>::COUNT
+    RETURN user_count
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22,"email":"diana@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetUserCount \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetUserCount", {})
+print(f"Total users: {result}")
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+        { name: "Diana", age: 22, email: "diana@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetUserCount", {});
+    console.log("Total users:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserCount query failed:", err);
+});
+```
+
+### Scope Results using `RANGE`
+
+#### Syntax
+```query.hx
+::RANGE(start, end)
+```
+
+Notes:
+- Both `start` and `end` are required and must be positive integers (I64).
+- `RANGE` is 0-based, so the first element is 0, the second element is 1, etc.
+- `RANGE` is inclusing of `start` but exclusive of `end`. So `RANGE(0, 10)` will return elements 0 to 9 (10 elements).
+
+#### Example 1: Basic pagination
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUsersPaginated (start: U32, end: U32) =>
+    users <- N<User>::RANGE(start, end)
+    RETURN users
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"User0","age":20,"email":"user0@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"User1","age":21,"email":"user1@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetUsersPaginated \
+  -H 'Content-Type: application/json' \
+  -d '{"start":0,"end":5}'
+
+curl -X POST \
+  http://localhost:6969/GetUsersPaginated \
+  -H 'Content-Type: application/json' \
+  -d '{"start":5,"end":10}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+for i in range(20):
+    client.query("CreateUser", {
+        "name": f"User{i}",
+        "age": 20 + (i % 40),
+        "email": f"user{i}@example.com"
+    })
+
+page1 = client.query("GetUsersPaginated", {"start": 0, "end": 5})
+print("Page 1:", page1)
+
+page2 = client.query("GetUsersPaginated", {"start": 5, "end": 10})
+print("Page 2:", page2)
+
+page3 = client.query("GetUsersPaginated", {"start": 10, "end": 15})
+print("Page 3:", page3)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    for (let i = 0; i < 20; i++) {
+        await client.query("CreateUser", {
+            name: `User${i}`,
+            age: 20 + (i % 40),
+            email: `user${i}@example.com`
+        });
+    }
+
+    const page1 = await client.query("GetUsersPaginated", {
+        start: 0,
+        end: 5
+    });
+    console.log("Page 1:", page1);
+
+    const page2 = await client.query("GetUsersPaginated", {
+        start: 5,
+        end: 10
+    });
+    console.log("Page 2:", page2);
+
+    const page3 = await client.query("GetUsersPaginated", {
+        start: 10,
+        end: 15
+    });
+    console.log("Page 3:", page3);
+}
+
+main().catch((err) => {
+    console.error("GetUsersPaginated query failed:", err);
+});
+```
+
+### Sort Results using `ORDER`
+
+#### Syntax
+```query.hx
+::ORDER<Asc>(_::{property})
+::ORDER<Desc>(_::{property})
+```
+
+Notes:
+- Use `Asc` for ascending order and `Desc` for descending order.
+
+#### Example 1: Sorting by age (oldest first)
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUsersOldestFirst () =>
+    users <- N<User>::ORDER<Desc>(_::{age})
+    RETURN users
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":45,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":19,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":32,"email":"diana@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve","age":28,"email":"eve@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetUsersOldestFirst \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 45, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 19, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 32, "email": "diana@example.com"},
+    {"name": "Eve", "age": 28, "email": "eve@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetUsersOldestFirst", {})
+print("Users (oldest first):", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 45, email: "bob@example.com" },
+        { name: "Charlie", age: 19, email: "charlie@example.com" },
+        { name: "Diana", age: 32, email: "diana@example.com" },
+        { name: "Eve", age: 28, email: "eve@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetUsersOldestFirst", {});
+    console.log("Users (oldest first):", result);
+}
+
+main().catch((err) => {
+    console.error("GetUsersOldestFirst query failed:", err);
+});
+```
+
+#### Example 2: Sorting by age (youngest first)
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUsersYoungestFirst () =>
+    users <- N<User>::ORDER<Asc>(_::{age})
+    RETURN users
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":45,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":19,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":32,"email":"diana@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve","age":28,"email":"eve@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetUsersYoungestFirst \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 45, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 19, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 32, "email": "diana@example.com"},
+    {"name": "Eve", "age": 28, "email": "eve@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetUsersYoungestFirst", {})
+print("Users (youngest first):", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 45, email: "bob@example.com" },
+        { name: "Charlie", age: 19, email: "charlie@example.com" },
+        { name: "Diana", age: 32, email: "diana@example.com" },
+        { name: "Eve", age: 28, email: "eve@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetUsersYoungestFirst", {});
+    console.log("Users (youngest first):", result);
+}
+
+main().catch((err) => {
+    console.error("GetUsersYoungestFirst query failed:", err);
+});
+```

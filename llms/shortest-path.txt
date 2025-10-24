@@ -1,0 +1,208 @@
+## Shortest Path Algorithms
+@tags: shortest-path, algorithms, bfs, dijkstra, pathfinding, graph-algorithms
+
+### Default Algorithm (BFS) using `::ShortestPath`
+
+Notes:
+- Breadth-first search finds the minimum number of hops between nodes along a specific edge type. 
+- This is the default algorithm for backward compatibility.
+
+#### Syntax
+```query.hx
+::ShortestPath<EdgeType>::To(to_id: ID)
+::ShortestPath<EdgeType>::From(from_id: ID)
+```
+
+### Breadth-first Search Algorithm using `::ShortestPathBFS`
+
+#### Syntax
+```query.hx
+::ShortestPathBFS<EdgeType>::To(to_id: ID)
+::ShortestPathBFS<EdgeType>::From(from_id: ID)
+```
+
+### Dijkstra's Algorithm using `::ShortestPathDijkstra`
+
+Notes:
+- Dijkstra's algorithm finds the path with minimum total weight by summing edge weights. 
+- Requires specifying which edge property to use as weight.
+- Edge weights must be numeric (integers or floats) and non-negative.
+
+#### Syntax
+```query.hx
+::ShortestPathDijkstras<EdgeType>(_::{weight_property})::To(to_id: ID)
+::ShortestPathDijkstras<EdgeType>(_::{weight_property})::From(from_id: ID)
+```
+
+### Return Type for Shortest Path Algorithms
+
+The shortest-path result is an array of tuples because multiple equally short routes can be returned.
+
+```json
+[([Node1, Node2, ...], [Edge1, Edge2, ...]), ...]
+```
+
+### Algorithm Selection Rules
+| Algorithm | Use Case | Optimizes For | Edge Weights |
+|-----------|----------|---------------|--------------|
+| `ShortestPath` (BFS) | Social networks, network hops, simple routing | Minimum number of edges/hops | Ignored |
+| `ShortestPathBFS` | Same as above (explicit) | Minimum number of edges/hops | Ignored |
+| `ShortestPathDijkstras` | GPS routing, cost optimization, weighted graphs | Minimum total weight/cost | Required |
+
+### Examples
+
+#### Example 1: BFS vs Dijkstra comparison
+Consider this graph:
+```graph
+A -> B (distance: 100km, 1 hop)
+A -> C -> B (distance: 30km + 40km = 70km, 2 hops)
+```
+
+- `BFS` will choose `A -> B` (1 hop, shorter path by hop count).
+- `Dijkstra` will choose `A -> C -> B` (70km total, shorter path by weight).
+
+#### Example 2: Finding routes between locations
+
+- Schema:
+```schema.hx
+N::Location {
+    name: String,
+}
+
+E::Road {
+    From: Location,
+    To: Location,
+    Properties: {
+        distance_km: U32,
+    }
+}
+```
+
+- Query:
+```query.hx
+QUERY GetShortestPath (from_id: ID, to_id: ID) =>
+    path <- N<Location>(from_id)::ShortestPath<Road>::To(to_id)
+    RETURN path
+
+QUERY CreateLocation (name: String) =>
+    location <- AddN<Location>({
+        name: name,
+    })
+    RETURN location
+
+QUERY ConnectLocations (from_id: ID, to_id: ID, distance_km: U32) =>
+    road <- AddE<Road>({
+        distance_km: distance_km,
+    })::From(from_id)::To(to_id)
+    RETURN road
+```
+
+- cURL:
+```bash
+central=$(curl -s -X POST \
+  http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Central Station"}')
+central_id=$(echo "$central" | jq -r '.location.id')
+
+market=$(curl -s -X POST \
+  http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Market Square"}')
+market_id=$(echo "$market" | jq -r '.location.id')
+
+harbor=$(curl -s -X POST \
+  http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Harbor"}')
+harbor_id=$(echo "$harbor" | jq -r '.location.id')
+
+curl -X POST \
+  http://localhost:6969/ConnectLocations \
+  -H 'Content-Type: application/json' \
+  -d '{"from_id":"'"$central_id"'","to_id":"'"$market_id"'","distance_km":2}'
+
+curl -X POST \
+  http://localhost:6969/ConnectLocations \
+  -H 'Content-Type: application/json' \
+  -d '{"from_id":"'"$market_id"'","to_id":"'"$harbor_id"'","distance_km":3}'
+
+curl -X POST \
+  http://localhost:6969/GetShortestPath \
+  -H 'Content-Type: application/json' \
+  -d '{"from_id":"'"$central_id"'","to_id":"'"$harbor_id"'"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+central = client.query("CreateLocation", {"name": "Central Station"})
+market = client.query("CreateLocation", {"name": "Market Square"})
+harbor = client.query("CreateLocation", {"name": "Harbor"})
+
+central_id = central[0]["location"]["id"]
+market_id = market[0]["location"]["id"]
+harbor_id = harbor[0]["location"]["id"]
+
+client.query("ConnectLocations", {
+    "from_id": central_id,
+    "to_id": market_id,
+    "distance_km": 2,
+})
+client.query("ConnectLocations", {
+    "from_id": market_id,
+    "to_id": harbor_id,
+    "distance_km": 3,
+})
+
+result = client.query("GetShortestPath", {
+    "from_id": central_id,
+    "to_id": harbor_id,
+})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const central = await client.query("CreateLocation", {
+        name: "Central Station",
+    });
+    const market = await client.query("CreateLocation", {
+        name: "Market Square",
+    });
+    const harbor = await client.query("CreateLocation", {
+        name: "Harbor",
+    });
+
+    await client.query("ConnectLocations", {
+        from_id: central.location.id,
+        to_id: market.location.id,
+        distance_km: 2,
+    });
+
+    await client.query("ConnectLocations", {
+        from_id: market.location.id,
+        to_id: harbor.location.id,
+        distance_km: 3,
+    });
+
+    const result = await client.query("GetShortestPath", {
+        from_id: central.location.id,
+        to_id: harbor.location.id,
+    });
+
+    console.log("GetShortestPath result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetShortestPath query failed:", err);
+});
+```
