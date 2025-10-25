@@ -4,7 +4,7 @@
 ### Traversal From Nodes and Vectors
 
 Note:
-- Combine traversals with [property access](https://docs.helix-db.com/llms/properties.txt#property-access) or [aggregation](https://docs.helix-db.com/llms/aggregation.txt) for richer results
+- Combine traversals with [property access](https://helix-llms-txt.mintlify.app/properties.txt#property-access) or [aggregation](https://helix-llms-txt.mintlify.app/aggregation.txt) for richer results
 
 #### Traverse Out to Nodes and Vectors using `Out`
 

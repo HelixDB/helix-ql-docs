@@ -11,7 +11,7 @@
 - Return literal values: `RETURN "success"`
 - No payload: `RETURN NONE`
 
-Note: When using the [Python SDK](https://docs.helix-db.com/llms/sdks.txt#python-sdk-helix-py-pypi), the return values are wrapped in an array for multiple query calls, so you will need to access the first element of the array to get the result of the first call.
+Note: When using the [Python SDK](https://helix-llms-txt.mintlify.app/sdks.txt#python-sdk-helix-py-pypi), the return values are wrapped in an array for multiple query calls, so you will need to access the first element of the array to get the result of the first call.
 
 ### Return elements
 

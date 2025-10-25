@@ -23,7 +23,7 @@
    Read the `helix.toml` file for more information about the configuration.
 
 3. **Define schema and queries**
-    Define the [schema and queries](https://docs.helix-db.com/llms/hql-intro.txt) in the `schema.hx` and `queries.hx` files in the `db` directory.
+    Define the [schema and queries](https://helix-llms-txt.mintlify.app/hql-intro.txt) in the `schema.hx` and `queries.hx` files in the `db` directory.
     There will be default schema and queries commented out at the top of the files for you.
 
 4. **Build and deploy locally**
@@ -32,8 +32,8 @@
     helix push dev
     ```
     Replace `<dev>` with the actual name of the instance.
-    Check the [CLI commands](https://docs.helix-db.com/llms/cli.txt#commands) for more information about the build and deploy process.
-    Once Helix CLI is installed and your instance is initialized, continue to [configurations](https://docs.helix-db.com/llms/cli.txt#configurations) to customize ports and instances or jump to [HelixDB SDKs](https://docs.helix-db.com/llms/sdks.txt) or cURL to test your first query.
+    Check the [CLI commands](https://helix-llms-txt.mintlify.app/cli.txt#commands) for more information about the build and deploy process.
+    Once Helix CLI is installed and your instance is initialized, continue to [configurations](https://helix-llms-txt.mintlify.app/cli.txt#configurations) to customize ports and instances or jump to [HelixDB SDKs](https://helix-llms-txt.mintlify.app/sdks.txt) or cURL to test your first query.
 
 5. **Test connection**
     - If you are using a local HelixDB instance, verify that it now runs inside Docker on port designated in the `helix.toml` file (usually `6969`).
