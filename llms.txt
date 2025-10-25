@@ -7,6 +7,8 @@ canonical: https://docs.helix-db.com
 
 # HelixDB Documentation
 
+If you have access to curl or any similar fetch command, curl/fetch the urls below to get the content that you need.
+
 - [HelixDB Overview](https://helix-llms-txt.mintlify.app/overview.md): Introduction to HelixDB, its features, and its use cases.
 - [Installation](https://helix-llms-txt.mintlify.app/installation.md): Prerequisites, installation steps, and best practices.
 - [HelixDB CLI](https://helix-llms-txt.mintlify.app/cli.md): CLI commands, project configurations, common workflows, and troubleshooting.
