@@ -1,0 +1,27 @@
+---
+title: HelixDB Guide
+last_updated: 2025-10-24
+audience: LLM agents
+canonical: https://docs.helix-db.com
+---
+
+# HelixDB Documentation
+
+- [HelixDB Overview](https://helix-llms-txt.mintlify.app/overview.md): Introduction to HelixDB, its features, and its use cases.
+- [Installation](https://helix-llms-txt.mintlify.app/installation.md): Prerequisites, installation steps, and best practices.
+- [HelixDB CLI](https://helix-llms-txt.mintlify.app/cli.md): CLI commands, project configurations, common workflows, and troubleshooting.
+- [HelixDB SDKs](https://helix-llms-txt.mintlify.app/sdks.md): SDKs for Python, TypeScript, Rust, and Go.
+- [HelixDB Query Language Introduction](https://helix-llms-txt.mintlify.app/hql-intro.md): Helix Query Language components, syntax, and types. Schema definition and rules.
+- [CRUD Operations](https://helix-llms-txt.mintlify.app/crud-operations.md): HQL for creating, reading, updating, and deleting nodes, edges, and vectors.
+- [Graph Traversals](https://helix-llms-txt.mintlify.app/traversals.md): HQL for traversing in and out of nodes, vectors, and edges.
+- [Result Operations](https://helix-llms-txt.mintlify.app/result.md): HQL for operating on traversal results.
+- [Properties Operations](https://helix-llms-txt.mintlify.app/properties.md): HQL for operating on properties of nodes, edges, and vectors.
+- [Return Values](https://helix-llms-txt.mintlify.app/return.md): Return values, rules, and formatting for HQL queries.
+- [Conditionals](https://helix-llms-txt.mintlify.app/conditionals.md): HQL for filtering traversal results with conditionals.
+- [Vector Operations](https://helix-llms-txt.mintlify.app/vector.md): HQL for vector operations.
+- [Keyword Search](https://helix-llms-txt.mintlify.app/keyword.md): HQL for keyword/BM25 search operations.
+- [Rerankers](https://helix-llms-txt.mintlify.app/rerankers.md): HQL for reranking search results.
+- [Aggregation](https://helix-llms-txt.mintlify.app/aggregation.md): HQL for aggregating search results.
+- [Macros](https://helix-llms-txt.mintlify.app/macros.md): HQL macros (MCP endpoints) for custom queries.
+- [Shortest Path Algorithms](https://helix-llms-txt.mintlify.app/shortest-path.md): HQL for shortest path algorithms.
+- [HQL Errors](https://helix-llms-txt.mintlify.app/errors.md): HQL error types and handling.
