@@ -207,7 +207,7 @@ main().catch((err) => {
 });
 ```
 
-####  Example 3: Using the built in [Embed function](https://helix-llms-txt.mintlify.app/vector.txt#embedding-vectors-using-embed)
+####  Example 3: Using the built in [Embed function](https://helix-llms-txt.mintlify.app/llms/vector.txt#embedding-vectors-using-embed)
 
 - Built-in `Embed` function: don't need to send array of floats, just send the text.
 
