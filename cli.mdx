@@ -1,0 +1,1055 @@
+---
+title: "HelixDB CLI V2"
+---
+@tags: cli, commands, reference, v2, management
+
+## TL;DR
+- Complete CLI: All commands for managing HelixDB instances and projects
+- Multi-platform: Local Docker, Fly.io, AWS ECR, and Helix Cloud support
+- Project lifecycle: init → check → build → push → monitor → stop
+- Instance types: Local development, cloud staging, production deployments
+- Migration support: Built-in v1 to v2 project migration tools
+
+## Commands
+
+### Global Options
+- `--help, -h` - Show help information for the command
+- `--version, -V` - Display the CLI version
+
+### Project Management
+
+#### `helix init`
+Initialize a new Helix project with configuration and structure.
+
+**Usage:** `helix init [OPTIONS] [SUBCOMMAND]`
+
+**Options:**
+- `--path, -p [PATH]` - The path to the project
+- `--template [TEMPLATE]` - The template to use for the project
+- `--queries-path, -q [PATH]` - The path to the query files
+
+**Subcommands:**
+- `helix init cloud [OPTIONS]` - Initialize cloud instance
+  - `--region [REGION]` - The region the instance is deployed to
+  - `--name [NAME]` - The name of the instance
+- `helix init ecr [OPTIONS]` - Initialize AWS ECR instance
+  - `--name [NAME]` - The name of the AWS ECR repository (creates if needed)
+- `helix init fly [OPTIONS]` - Initialize Fly.io instance
+  - `--name [NAME]` - The name of the Fly.io app
+  - `--volume-size` - The volume size in GB
+  - `--vm-size [SIZE]` - VM size options:
+    - `shared-cpu-1x` - 1 shared vCPU, 256MB RAM
+    - `shared-cpu-2x` - 2 shared vCPUs, 512MB RAM
+    - `shared-cpu-4x` - 4 shared vCPUs, 1GB RAM
+    - `performance-4x` - 4 dedicated vCPUs, 8GB RAM
+    - `performance-8x` - 8 dedicated vCPUs, 16GB RAM
+  - `--public` - Make instance public
+- `helix init local [OPTIONS]` - Initialize local instance
+  - `--name [NAME]` - The name of the local instance
+
+**Note:** `helix init` with no arguments defaults to making a local instance called `dev`.
+
+#### `helix add`
+Add a new instance to an existing Helix project.
+
+**Usage:** `helix add [SUBCOMMAND]`
+
+**Subcommands:**
+- `helix add cloud [OPTIONS]` - Add cloud instance
+  - `--region [REGION]` - The region the instance is deployed to
+  - `--name [NAME]` - The name of the instance
+- `helix add ecr [OPTIONS]` - Add AWS ECR instance
+  - `--name [NAME]` - The name of the AWS ECR repository (creates if needed)
+- `helix add fly [OPTIONS]` - Add Fly.io instance
+  - `--name [NAME]` - The name of the Fly.io app
+  - `--volume-size` - The volume size in GB
+  - `--vm-size [SIZE]` - VM size options (same as `helix init fly`)
+  - `--public` - Make instance public
+- `helix add local [OPTIONS]` - Add local instance
+  - `--name [NAME]` - The name of the local instance
+
+#### `helix migrate`
+Migrate a v1 Helix project to v2 format.
+
+**Usage:** `helix migrate [OPTIONS]`
+
+**Options:**
+- `--path, -p [PATH]` - The path to the project to migrate (default: current directory)
+- `--queries-dir, -q [DIR]` - The directory to move .hx files to (default: "./db/")
+- `--instance-name, -i [NAME]` - The name for the default local instance (default: "dev")
+- `--port [PORT]` - The port for the local instance (default: 6969)
+- `--dry-run` - Show what would be migrated without making changes
+- `--no-backup` - Skip creating backup of v1 files
+
+### Validation & Compilation
+
+#### `helix check`
+Validate project configuration and query syntax.
+
+**Usage:** `helix check [INSTANCE]`
+- `[INSTANCE]` - Name of the instance to check (defaults to all instances)
+
+#### `helix compile`
+Compile project queries into executable format.
+
+**Usage:** `helix compile [OPTIONS]`
+
+**Options:**
+- `--path, -p [PATH]` - The path to the project
+- `--output, -o [PATH]` - The output path for compiled queries
+
+#### `helix build`
+Build and prepare an instance for deployment.
+
+**What it does:**
+1. Validates configuration and queries
+2. Compiles queries
+3. Generates Docker configuration files
+4. Prepares the instance workspace
+
+**Usage:** `helix build [INSTANCE]`
+- `[INSTANCE]` - The instance to build
+
+### Deployment & Instance Management
+
+#### `helix push`
+Deploy or update a running instance.
+
+**What it does:**
+1. Builds the instance if needed
+2. Creates/updates Docker container for local instances
+3. Pushes to cloud provider for remote instances
+4. Starts the instance
+
+**Usage:** `helix push [INSTANCE]`
+- `[INSTANCE]` - The instance to deploy
+
+#### `helix pull`
+** COMING SOON **
+
+#### `helix start`
+Start a stopped instance without rebuilding.
+
+**Usage:** `helix start [INSTANCE]`
+- `[INSTANCE]` - The instance to start
+
+#### `helix stop`
+Stop a running instance.
+
+**Usage:** `helix stop [INSTANCE]`
+- `[INSTANCE]` - The instance to stop
+
+#### `helix status`
+Show the status of all instances in the project.
+
+### Cleanup & Maintenance
+
+#### `helix prune`
+Remove unused containers, images, and workspace files.
+
+**What it removes:**
+- Stopped containers
+- Unused Docker images
+- Workspace files
+- **Note:** Preserves data volumes
+
+**Usage:** `helix prune [OPTIONS] [INSTANCE]`
+- `[INSTANCE]` - The instance to prune
+- `--all, -a` - Prune all instances in the project
+
+#### `helix delete`
+Permanently delete an instance and all its data.
+
+**What it removes:**
+- Container and images
+- All data volumes
+- Workspace files
+- Configuration entries
+
+**Usage:** `helix delete [INSTANCE]`
+- `[INSTANCE]` - The instance to delete
+
+### Authentication & Cloud
+
+#### `helix auth`
+Manage authentication for Helix Cloud.
+
+**Usage:** `helix auth [SUBCOMMAND]`
+
+**Subcommands:**
+- `login` - Initiates browser-based authentication flow
+- `logout` - Clears authentication tokens from `~/.helix/credentials`
+- `create-key` - Generates a new API key for programmatic access
+
+### Configuration & Settings
+
+#### `helix metrics`
+Configure telemetry and usage metrics collection.
+
+**Usage:** `helix metrics [SUBCOMMAND]`
+
+**Subcommands:**
+- `full` - Enable full metrics collection (requires email)
+- `basic` - Enable minimal anonymous metrics
+- `off` - Disable all metrics collection
+- `status` - Show current metrics configuration
+
+#### `helix update`
+Update the Helix CLI to the latest version.
+
+**Usage:** `helix update [OPTIONS]`
+
+**Options:**
+- `--force` - Force update even if already on latest version
+
+### Support
+- **GitHub Issues:** https://github.com/HelixDB/helix-db/issues
+- **Discord:** https://discord.gg/2stgMPr5BD
+- **Email:** founders@helix-db.com
+
+## Configurations
+@tags: config, toml, settings, deployment, reference
+
+### TL;DR
+- Central config: Single `helix.toml` file manages all project settings
+- Multi-environment: Local dev, staging, production configurations in one file
+- Flexible deployment: Support for Docker, Fly.io, AWS ECR, and Helix Cloud
+- Vector tuning: Configurable HNSW parameters for different data scales
+- Build modes: Debug, release, and dev modes for different use cases
+
+### Configuration File Structure
+
+The `helix.toml` file is the central configuration for your Helix project, defining project metadata, instance configurations, and deployment settings.
+
+#### Basic Structure
+
+```toml
+[project]
+name = "my-helix-app"
+queries = "./db/"
+
+[local.dev]
+# Local instance configuration
+
+[cloud.staging.fly]
+# Fly.io instance configuration
+
+[cloud.production.helix]
+# Cloud instance configuration
+```
+
+### Project Configuration
+
+The `[project]` section defines global project settings:
+
+```toml
+[project]
+name = "my-helix-app"        # Project name (required)
+queries = "./db/"            # Path to query files (default: "./db/")
+```
+
+### Local Instance Configuration
+
+Local instances use Docker for containerized development environments.
+
+#### Basic Local Configuration
+
+```toml
+[local.dev]
+port = 6969                  # Port for the instance (default: 6969)
+build_mode = "debug"         # Build mode: debug | release (default: debug)
+mcp = true                   # Enable MCP support (default: false)
+bm25 = true                  # Enable BM25 search (default: false)
+```
+
+#### Advanced Local Settings
+
+```toml
+[local.dev]
+port = 6969
+build_mode = "release"
+mcp = true
+bm25 = true
+```
+
+#### Multiple Local Instances
+
+You can define multiple local instances for different purposes:
+
+```toml
+[local.dev]
+port = 6969
+build_mode = "debug"
+
+[local.testing]
+port = 7070
+build_mode = "debug"
+
+[local.benchmark]
+port = 8080
+build_mode = "release"
+```
+
+### Cloud Instance Configuration
+
+#### Helix Cloud
+
+```toml
+[cloud.production.helix]
+cluster_id = "hlx_abc123"    # Cluster ID given to you by us (contact us if you don't have yours)
+build_mode = "release"       # Build optimization
+mcp = true
+bm25 = true
+
+[cloud.production.helix.vector_config]
+m = 32
+ef_construction = 256
+ef_search = 1024
+db_max_size_gb = 100
+```
+
+#### AWS ECR Configuration
+
+```toml
+[cloud.staging.ecr]
+repository_name = "my-helix-app"
+region = "us-east-1"
+registry_url = "123456789.dkr.ecr.us-west-2.amazonaws.com"
+auth_type = "aws_cli"
+build_mode = "debug"
+```
+
+#### Fly.io Configuration
+
+```toml
+[cloud.production.fly]
+app_name = "my-helix-app"
+build_mode = "debug"        # Fly.io region
+vm_size = "shared-cpu-4x"   # VM size
+volume_initial_size = 20            # Volume size in GB
+private = false              # Public accessibility
+auth_type = "cli"                # Auth type: cli | api_key
+```
+
+### Build Modes
+
+Build modes control optimization and debugging capabilities:
+
+```toml
+build_mode = "debug"    # Development with debug symbols
+build_mode = "release"  # Production optimized
+build_mode = "dev"      # For use with the dashboard UI
+```
+
+#### Mode Characteristics
+
+```json
+{
+  "`debug`": { "debug_symbols": true, "cargo_optimizations": "none", "logging": "verbose", "use_case": "development", "dashboard_compatible": false },
+  "`release`": { "debug_symbols": false, "cargo_optimizations": "full", "logging": "normal", "use_case": "production", "dashboard_compatible": false },
+  "`dev`": { "debug_symbols": true, "cargo_optimizations": "none", "logging": "verbose", "use_case": "development", "dashboard_compatible": true }
+}
+```
+
+### Common Issues
+
+1. **Port conflicts**: Ensure unique ports for each local instance
+2. **Missing credentials**: Run `helix auth login` for cloud features
+3. **Invalid paths**: Use relative paths from project root
+4. **Memory limits**: Adjust `db_max_size_gb` based on available RAM
+
+## Workflows
+@tags: workflows, development, deployment, devops, patterns
+
+### TL;DR
+- Local-first: Start with local Docker development, scale to cloud
+- Environment progression: dev → staging → production with isolated configs
+- CI/CD ready: Scriptable commands for automated deployments
+- Multi-instance: Run multiple environments simultaneously on different ports
+- Cloud options: Deploy to Fly.io, AWS ECR, or Helix Cloud with same commands
+
+### Local Development
+
+#### Initial Setup
+
+1. Create a new project
+    ```bash
+    mkdir my-app && cd my-app
+    helix init
+    ```
+    Note: `helix init` with no arguments defaults to making a local instance called `dev`.
+
+2. Define schema and queries
+    Edit `db/schema.hx` and `db/queries.hx`.
+
+3. Validate
+    Check the project configuration and query syntax.
+    ```bash
+    helix check
+    ```
+
+4. Build and deploy
+    Build and deploy the project to the local HelixDB instance.
+    ```bash
+    helix push dev
+    ```
+
+#### Development Iteration
+
+When making changes during development:
+
+1. Edit your .hx files
+2. Validate changes: `helix check`
+3. Build and deploy: `helix push dev`
+4. Check status: `helix status`
+5. View logs: `docker logs <docker_container_name>`
+6. Stop when done: `helix stop dev`
+
+#### Working with Multiple Instances
+
+Create different instances for different purposes:
+
+```bash
+# Add a new instance
+helix add local --name <instance_name>
+
+# Run multiple instances
+helix push dev
+helix push <instance_name>
+
+# Check all instances
+helix status
+```
+
+**Environment separation in `helix.toml`:**
+```toml
+[local.dev]
+port = 6969
+build_mode = "debug"
+
+[local.testing]
+port = 7070
+build_mode = "debug"
+
+[local.prod-like]
+port = 8080
+build_mode = "release"
+```
+
+### Cloud Deployment
+
+Cloud deployment supports three platforms with the same workflow pattern:
+- **Helix Cloud**: Managed service (contact team for cluster)
+- **Fly.io**: Container platform
+- **AWS ECR**: Container registry for ECS/EKS
+
+#### Universal Setup Pattern
+
+1. **Add cloud instance**
+   ```bash
+   # Helix Cloud
+   helix add cloud --name <instance_name>
+   
+   # Fly.io
+   helix add fly --name <instance_name>
+   
+   # AWS ECR
+   helix add ecr --name <instance_name>
+   ```
+
+2. **Configure platform-specific settings** in `helix.toml`:
+
+   **Helix Cloud:**
+   ```toml
+   [cloud.<instance_name>.helix]
+   cluster_id = "REPLACE_WITH_YOUR_CLUSTER_ID"
+   region = "us-east-1"
+   build_mode = "release"
+   mcp = true
+   bm25 = true
+   
+   [cloud.<instance_name>.helix.vector_config]
+   m = 32
+   ef_construction = 256
+   ef_search = 1024
+   ```
+
+   **Fly.io:**
+   ```toml
+   [cloud.<instance_name>.fly]
+   app_name = "my-helix-app"
+   build_mode = "release"
+   vm_size = "shared-cpu-4x"
+   volume_initial_size = 20
+   private = false
+   auth_type = "cli"
+   ```
+
+   **AWS ECR:**
+   ```toml
+   [cloud.<instance_name>.ecr]
+   repository_name = "my-helix-app"
+   region = "us-east-1"
+   registry_url = "123456789.dkr.ecr.us-west-2.amazonaws.com"
+   auth_type = "aws_cli"
+   build_mode = "release"
+   ```
+
+3. **Deploy**
+   ```bash
+   helix push <instance_name>
+   ```
+
+4. **Monitor**
+   ```bash
+   helix status
+   ```
+
+#### Platform-Specific Prerequisites
+
+**Helix Cloud:**
+- Authenticate: `helix auth login`
+- **Warning:** Contact HelixDB team to create new clusters
+
+**Fly.io:**
+- Install `flyctl`:
+  ```bash
+  # macOS
+  brew install flyctl
+  # or
+  curl -L https://fly.io/install.sh | sh
+  
+  # Linux
+  curl -L https://fly.io/install.sh | sh
+  
+  # Windows
+  pwsh -Command "iwr https://fly.io/install.ps1 -useb | iex"
+  ```
+- Authenticate: `fly auth login`
+
+**AWS ECR:**
+- Configure AWS CLI: `aws configure`
+- **Warning:** Ensure AWS CLI has necessary ECR permissions
+
+#### Environment Progression Pattern
+
+**Configuration example for all platforms:**
+```toml
+# Local development
+[local.dev]
+port = 6969
+build_mode = "debug"
+
+# Staging environments
+[cloud.staging.helix]
+cluster_id = "hlx_staging_xyz789"
+region = "us-east-1"
+build_mode = "debug"
+
+[cloud.staging.fly]
+app_name = "my-helix-app-staging"
+build_mode = "debug"
+vm_size = "shared-cpu-2x"
+volume_initial_size = 15
+
+[cloud.staging.ecr]
+repository_name = "my-helix-app-staging"
+region = "us-east-1"
+registry_url = "123456789.dkr.ecr.us-west-2.amazonaws.com"
+build_mode = "debug"
+
+# Production environments
+[cloud.production.helix]
+cluster_id = "hlx_prod_xyz789"
+region = "us-east-1"
+build_mode = "release"
+```
+
+**Deployment workflow:**
+```bash
+# Test locally first
+helix push dev
+
+# Deploy to staging
+helix push staging
+
+# After testing, deploy to production
+helix push production
+```
+
+#### Platform-Specific Management
+
+**Helix Cloud:**
+- Scaling: Contact support for cluster scaling
+- Security: Use private clusters, rotate API keys with `helix auth create-key`
+
+**Fly.io:**
+- Check status: `fly status -a <app_name>`
+- View logs: `fly logs -a <app_name>`
+- Security: Use private apps, monitor resource usage
+
+**AWS ECR:**
+- Repository management:
+  ```bash
+  aws ecr describe-repositories
+  aws ecr delete-repository --repository-name my-helix-app --force
+  ```
+- Security: Use IAM roles with least privilege, enable lifecycle policies
+
+## Migration from CLI V1 to CLI V2
+@tags: migration, upgrade, v1, v2, legacy
+
+### TL;DR
+- One-command upgrade: `helix migrate` converts v1 projects automatically
+- Safe migration: Creates backups by default, dry-run option available
+- File reorganization: `config.hx.json` → `helix.toml`, queries → `db/` directory
+- Zero downtime: Test locally before deploying migrated configurations
+- Backward compatible: Existing queries and schemas work unchanged
+
+For users who are using the CLI V1, you can migrate your project to the CLI V2 by following the steps below.
+
+#### Migration Steps
+
+1. Find and enter V1 project
+    ```bash
+    cd path-to-v1-project
+    ```
+    **Note:** The path should be to the directory containing the old `config.hx.json` file.
+
+2. Migrate project
+    ```bash
+    helix migrate
+    ```
+    This will migrate your project to v2 format.
+
+#### Migration Details
+
+##### What gets migrated
+- `config.hx.json` → `helix.toml`
+- Query files → `db/queries.hx`
+- Schema files → `db/schema.hx`
+- Instance configurations → `helix.toml` sections
+
+##### Backup creation
+By default, `helix migrate` creates backups of your v1 files. Use `--no-backup` to skip this.
+
+##### Dry run option
+Use `--dry-run` to see what would be migrated without making changes:
+```bash
+helix migrate --dry-run
+```
+
+#### Post-migration checklist
+
+1. Review helix.toml
+   Check the generated configuration file for accuracy.
+
+2. Test locally
+   ```bash
+   helix check
+   helix push <instance_name>
+   ```
+
+3. Update deployment scripts
+   Update any CI/CD scripts to use v2 commands.
+
+4. Update documentation
+   Update any internal documentation to reference v2 commands and configuration.
+
+
+## Troubleshooting
+@tags: troubleshooting, errors, fixes, debug, logs, docker, auth, network, migration, performance, common-errors
+
+### TL;DR
+- Installation issues: Ensure PATH is updated, use sudo if needed
+- Configuration issues: Check if you are in the correct project directory, check the `helix.toml` file
+- Docker issues: Start Docker Desktop, add user to docker group, use different port
+- Authentication issues: Run `helix auth login` to authenticate
+- Build & deployment issues: Check if queries directory exists, check port binding
+- Migration issues: Run `helix migrate --dry-run` to see what would be migrated without making changes
+- Performance issues: Use release mode for production only, reduce vector config for development, clean Docker cache
+- Network issues: Check if container is running, test localhost connection, check firewall settings
+
+### Installation Issues
+
+#### After installation, helix command is not recognized.
+##### Error: command not found: helix
+##### Solution:
+1. Ensure PATH is updated (Bash):
+```bash
+echo 'export PATH="$HOME/.helix/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+2. Ensure PATH is updated (Zsh):
+```bash
+echo 'export PATH="$HOME/.helix/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+3. Verify installation:
+```bash
+ls -la ~/.helix/bin/helix
+```
+
+#### Permission denied during installation 
+##### Error: installation fails with permission errors.
+##### Solution:
+Use system-wide installation with sudo
+```bash
+curl -fsSL https://raw.githubusercontent.com/HelixDB/helix-db/main/install.sh | sudo bash -- --system
+```
+
+### Project Configuration Issues
+
+#### Not in a Helix project directory
+##### Error: Not in a Helix project directory. Run `helix init` to create one.
+##### Solution:
+1. Check if you are in the correct project directory.
+
+2. Check if the `helix.toml` file exists.
+```bash
+cd path-to-your-project
+ls helix.toml
+```
+
+3. If not found, create a new project with `helix init`.
+```bash
+helix init
+```
+
+#### Invalid configuration in helix.toml
+##### Error: Failed to parse helix.toml: invalid type: string "6969", expected u16
+##### Solution:
+Ensure port numbers are integers without quotes
+```toml
+# Wrong
+[local.dev]
+port = "6969"
+
+# Correct
+[local.dev]
+port = 6969
+```
+
+#### Instance not found
+##### Error: Instance 'production' not found in configuration
+##### Solution:
+1. Check available instances with `helix status`.
+```bash
+helix status
+```
+
+2. If not found, add the missing instance with `helix add <instance_type> --name <instance_name>`.
+```bash
+helix add <instance_type> --name <instance_name> [OPTIONS]
+```
+
+### Docker Issues
+
+#### Docker daemon not running
+##### Error: Cannot connect to Docker daemon. Is the Docker daemon running?
+##### Solution:
+1. For macOS/Windows, start Docker Desktop. For Linux, start Docker daemon (sudo systemctl start docker).
+```bash
+# Start Docker Desktop (macOS/Windows)
+
+# Linux
+sudo systemctl start docker
+```
+
+2. Verify Docker is running
+```bash
+docker info
+```
+
+#### Permission denied for Docker socket
+##### Error: permission denied while trying to connect to the Docker daemon socket
+##### Solution:
+Add user to docker group
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### Port already in use
+##### Error: bind: address already in use
+##### Solution:
+1. Find process using the port
+```bash
+lsof -i :6969
+```
+2. Stop conflicting service or use different port
+```toml
+[local.dev]
+port = 7070
+```
+
+#### Container name conflict
+##### Error: Container name "/helix_my-app_dev" is already in use
+##### Solution:
+1. Check if container is running/in use
+```bash
+docker ps -a | grep helix_my-app_dev
+```
+
+2. Remove old container
+```bash
+docker rm helix_my-app_dev
+# Or force remove
+docker rm -f helix_my-app_dev
+```
+
+### Authentication Issues
+
+#### Helix Cloud authentication failed
+##### Error: Credentials file not found. Please run 'helix auth login' first.
+##### Solution:
+Run `helix auth login` to authenticate.
+```bash
+helix auth login
+```
+
+#### Expired credentials
+##### Error: Authentication token expired
+##### Solution:
+Re-authenticate
+```bash
+helix auth logout
+helix auth login
+```
+
+#### Fly.io authentication issues
+##### Error: Error authenticating with Fly.io
+##### Solution:
+Run CLI auth to authenticate.
+```bash
+flyctl auth login
+```
+
+#### AWS ECR authentication failed
+##### Error: no basic auth credentials
+##### Solution:
+1. Configure AWS CLI
+```bash
+aws configure
+```
+
+2. Login to ECR
+```bash
+aws ecr get-login-password --region us-west-2 | \
+  docker login --username AWS --password-stdin \
+  123456789.dkr.ecr.us-west-2.amazonaws.com
+```
+
+### Build & Deployment Issues
+
+#### Build fails with missing files
+##### Error: Failed to copy queries: No such file or directory
+##### Solution:
+Ensure queries directory exists
+```bash
+mkdir -p db
+touch db/schema.hx db/queries.hx
+```
+
+#### Push fails for cloud instance
+##### Error: Failed to upload to cloud: network timeout
+##### Solution:
+1. Check internet connection
+2. Verify authentication
+```bash
+helix auth login
+```
+3. Check cloud service status
+
+#### Instance won't start after `helix push dev` succeeds
+##### Error: Instance won't start after `helix push dev` succeeds
+##### Solution:
+1. Check container status
+```bash
+docker ps -a | grep helix
+```
+2. View container logs
+```bash
+docker logs helix_my-app_dev
+```
+3. Test connection
+```bash
+curl http://localhost:6969/health
+```
+4. Check port binding
+```bash
+docker port helix_my-app_dev
+```
+
+### Migration Issues
+
+#### v1 project detected
+##### Error: Found v1 project configuration. Run 'helix migrate' to upgrade to v2.
+##### Solution:
+Migrate project to v2 format.
+```bash
+helix migrate --dry-run
+helix migrate
+```
+
+#### Migration backup failed
+##### Error: Failed to create backup directory
+##### Solution:
+Create backup directory manually
+```bash
+cp -r . ../project-backup
+helix migrate --no-backup
+```
+
+### Performance Issues
+
+#### Slow build times
+##### Solution:
+1. Use release mode for production only
+```toml
+[local.dev]
+build_mode = "debug"  # Faster builds
+```
+2. Reduce vector config for development
+```toml
+[local.dev.vector_config]
+m = 8
+ef_construction = 64
+```
+3. Clean Docker cache
+```bash
+docker system prune -a
+```
+
+#### High memory usage
+##### Solution:
+1. Limit database size
+```toml
+[local.dev.vector_config]
+db_max_size_gb = 5
+```
+2. Adjust Docker resources in Docker Desktop settings as needed.
+
+#### Container crashes
+##### Solution:
+1. Check logs
+```bash
+docker logs helix_my-app_dev --tail 100
+```
+2. Inspect exit code
+```bash
+docker inspect helix_my-app_dev --format='{{.State.ExitCode}}'
+```
+3. Increase memory limits
+```toml
+[local.dev.limits]
+max_memory_gb = 8
+```
+
+### Network Issues
+
+#### Cannot connect to instance
+##### Solution:
+1. Check if container is running
+```bash
+docker ps | grep helix
+```
+2. Test localhost connection
+```bash
+telnet localhost 6969
+```
+3. Check firewall settings
+```bash
+# macOS
+sudo pfctl -s rules
+
+# Linux
+sudo iptables -L
+```
+
+#### Connection refused
+##### Solution:
+1. Verify port configuration
+```bash
+grep port helix.toml
+```
+2. Check port forwarding
+```bash
+docker inspect helix_my-app_dev | grep -A 10 "Ports"
+```
+3. Try different port
+```toml
+[local.dev]
+port = 7070
+```
+
+### Common Error Messages
+
+##### Error: "ENOENT: no such file or directory"
+##### Solution: 
+Missing required files. Run `helix init` to create project structure.
+
+#### "EADDRINUSE: address already in use"
+##### Error: "EADDRINUSE: address already in use"
+##### Solution: 
+Port conflict. Use a different port or stop the conflicting service.
+
+#### "EPERM: operation not permitted"
+##### Error: "EPERM: operation not permitted"
+##### Solution: 
+Permission issue. Check file permissions or run with appropriate privileges.
+
+#### "ECONNREFUSED: Connection refused"
+##### Error: "ECONNREFUSED: Connection refused"
+##### Solution: 
+Service not running. Start the instance with `helix push <instance>`.
+
+#### "ETIMEDOUT: operation timed out"
+##### Error: "ETIMEDOUT: operation timed out"
+##### Solution: 
+Network or performance issue. Check network connection and increase timeouts.
+
+### Debug Mode
+
+Enable debug logging for detailed troubleshooting:
+1. Set log level
+```bash
+export HELIX_LOG_LEVEL=debug
+```
+2. Run command with debug output
+```bash
+HELIX_LOG_LEVEL=debug helix push dev
+```
+3. View detailed Docker logs
+```bash
+docker logs helix_my-app_dev -f --tail 100
+```
+
+### Getting Help
+
+1. [Documentation](https://docs.helix-db.com)
+2. [GitHub Issues](https://github.com/HelixDB/helix-db/issues)
+3. [Discord](https://discord.gg/2stgMPr5BD)
+4. [Email](mailto:founders@helix-db.com)
+
+When reporting issues, include:
+- Helix CLI version (`helix --version`)
+- Operating system and version
+- Docker version (`docker --version`)
+- Error messages and logs
+- Steps to reproduce
+- `helix.toml` (redact secrets)
+
+### Quick Fixes Checklist
+
+Before reporting an issue, try these steps:
+1.  Update CLI: `helix update`
+2. Validate configuration: `helix check`
+3. Restart Docker Desktop
+4. Clean up resources: `helix prune`
+5. Check disk space: `df -h`
+6. Verify network connectivity
+7. Review recent changes to `.hx` files
+8. Check file permissions
+9. Try with a fresh project: `helix init`
+10. Enable debug logging: `HELIX_LOG_LEVEL=debug`

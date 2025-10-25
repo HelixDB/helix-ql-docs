@@ -1,0 +1,497 @@
+---
+title: "Helix Software Development Kits (SDKs)"
+---
+@tags: sdk, python, api, client, integration
+
+## Python SDK [helix-py](https://github.com/HelixDB/helix-py) [![PyPI](https://img.shields.io/pypi/v/helix-py.svg)](https://pypi.org/project/helix-py/)
+@tags: python, sdk, client, queries, pytorch, llm, provider, embedding, chunking, mcp, model context protocol, pydantic, cloud
+
+### TL;DR
+- Install: `uv add helix-py` or `pip install helix-py`
+- Connect: `db = helix.Client(local=True)`
+- Query: `db.query('add_user', {"name": "John"})`
+- Embed: `OpenAIEmbedder().embed("text")`
+- Chunk: `Chunk.semantic_chunk(text)`
+- LLM Ready: Built-in support for OpenAI, Gemini, and Anthropic providers with MCP tools
+- Vector Operations: Native embedding support with OpenAI, Gemini, and VoyageAI embedders
+- Text Processing: Integrated chunking with Chonkie for document processing
+- Instance Management: Programmatic control over HelixDB instances (start/stop/deploy)
+- Type Safe: Pydantic models for structured data and responses
+- Local & Cloud: Works with both local Docker instances and cloud deployments
+
+### Installation
+
+```bash
+uv add helix-py
+# OR
+pip install helix-py
+```
+
+### Client
+
+Connect to a running helix instance:
+
+```python
+import helix
+
+# Connect to a local helix instance
+db = helix.Client(local=True, verbose=True)
+
+# Note that the query name is case sensitive (parameters can be empty) -> returns a list of results
+db.query('<query_name>', {<query_parameters>})
+db.query('add_user', {"name": "John", "age": 20})
+```
+
+- Default port: `6969`
+- Change port: pass `port` parameter
+- Cloud instances: local=False, pass `api_endpoint` parameter, optionally `api_key` parameter
+
+### Custom Queries (not recommended for simple queries)
+
+#### PyTorch-like Query Definition
+
+Given a HelixQL query:
+```rust
+QUERY add_user(name: String, age: I64) =>
+  usr <- AddV<User>({name: name, age: age})
+  RETURN usr
+```
+
+Define matching Python class:
+```python
+from helix.client import Query
+from helix.types import Payload
+
+class add_user(Query):
+    def __init__(self, name: str, age: int):
+        super().__init__()
+        self.name = name
+        self.age = age
+
+    def query(self) -> Payload:
+        return [{ "name": self.name, "age": self.age }]
+
+    def response(self, response):
+        return response
+        
+db.query(add_user("John", 20))
+```
+
+Requirements
+- `Query.query` method must return a list of objects
+- Query name is case sensitive
+
+### Instance Management
+
+Setup and manage helix instances programmatically:
+
+```python
+from helix.instance import Instance
+
+helix_instance = Instance("helixdb-cfg", 6969, verbose=True)
+
+# Deploy & redeploy instance
+helix_instance.deploy()
+
+# Start instance
+helix_instance.start()
+
+# Stop instance
+helix_instance.stop()
+
+# Delete instance
+helix_instance.delete()
+
+# Instance status
+print(helix_instance.status())
+```
+
+- `helixdb-cfg`: directory for configuration files
+- Instance auto-stops on script exit
+
+### LLM Providers
+
+#### Available providers:
+- `OpenAIProvider`
+- `GeminiProvider`
+- `AnthropicProvider`
+
+#### Environment variables required:
+- `OPENAI_API_KEY`
+- `GEMINI_API_KEY`
+- `ANTHROPIC_API_KEY`
+
+#### Provider methods:
+- `enable_mcps(name: str, url: str=...) -> bool`
+- `generate(messages, response_model: BaseModel | None=None) -> str | BaseModel`
+
+#### Message formats supported:
+- Free-form text: string
+- Message lists: list of dict or provider-specific `Message` models
+- Structured outputs: Pydantic model validation
+
+#### Example usage:
+```python
+from pydantic import BaseModel
+from helix.providers.openai_client import OpenAIProvider
+
+openai_llm = OpenAIProvider(
+    name="openai-llm",
+    instructions="You are a helpful assistant.",
+    model="gpt-5-nano",
+    history=True
+)
+
+# Free-form text
+print(openai_llm.generate("Hello!"))
+
+# Structured output
+class Person(BaseModel):
+    name: str
+    age: int
+    occupation: str
+
+print(openai_llm.generate([{"role": "user", "content": "Who am I?"}], Person))
+```
+
+#### MCP tools setup:
+```python
+openai_llm.enable_mcps("helix-mcp")  # default: http://localhost:8000/mcp/
+gemini_llm.enable_mcps("helix-mcp", url="https://your-remote-mcp/...")
+```
+
+#### Model notes:
+- OpenAI GPT-5 family: supports reasoning
+- Anthropic: local streamable MCP not supported, use URL-based MCP
+
+### Embedders
+
+#### Available embedders:
+- `OpenAIEmbedder`
+- `GeminiEmbedder`
+- `VoyageAIEmbedder`
+
+#### Embedder interface:
+- `embed(text: str, **kwargs) -> [F64]`
+- `embed_batch(texts: List[str], **kwargs) -> [[F64]]`
+
+#### Usage examples:
+```python
+from helix.embedding.openai_client import OpenAIEmbedder
+from helix.embedding.gemini_client import GeminiEmbedder
+from helix.embedding.voyageai_client import VoyageAIEmbedder
+
+# OpenAI
+openai_embedder = OpenAIEmbedder()
+vec = openai_embedder.embed("Hello world")
+batch = openai_embedder.embed_batch(["a", "b", "c"])
+
+# Gemini
+gemini_embedder = GeminiEmbedder()
+vec = gemini_embedder.embed("doc text", task_type="RETRIEVAL_DOCUMENT")
+
+# Voyage AI
+voyage_embedder = VoyageAIEmbedder()
+vec = voyage_embedder.embed("query text", input_type="query")
+```
+
+### Chunking
+
+Uses [Chonkie](https://chonkie.ai/) for text processing:
+
+```python
+from helix import Chunk
+
+# Basic chunking
+text = "Your long document text here..."
+chunks = Chunk.token_chunk(text)
+
+# Semantic chunking
+semantic_chunks = Chunk.semantic_chunk(text)
+
+# Code chunking
+code_text = "def hello(): print('world')"
+code_chunks = Chunk.code_chunk(code_text, language="python")
+
+# Batch processing
+texts = ["Document 1...", "Document 2...", "Document 3..."]
+batch_chunks = Chunk.sentence_chunk(texts)
+```
+
+## TypeScript SDK [helix-ts](https://github.com/HelixDB/helix-ts) [![npm](https://img.shields.io/npm/v/helix-ts.svg)](https://www.npmjs.com/package/helix-ts)
+@tags: typescript, sdk, client, queries, type-safe, graph, vector, knowledge-graph, search, llm-pipeline
+
+### TL;DR
+- Install: `npm install helix-ts`
+- Connect: `new HelixDB("http://localhost:6969")`
+- Query: `client.query("QueryName", params)`
+- Type Safe: Full TypeScript support with schema validation
+- Graph & Vector: Native support for both graph and vector operations
+- Knowledge Graphs: Built for knowledge graph construction
+- LLM Pipelines: Ideal for search systems and LLM integrations
+- Async/Await and Batch operations supported
+
+### Installation
+
+```bash
+npm install helix-ts
+```
+
+### Configuration
+
+#### Basic connection:
+```typescript
+const client = new HelixDB("http://localhost:6969");
+```
+
+#### Cloud endpoint:
+```typescript
+const client = new HelixDB("https://my-endpoint.com:8080");
+```
+
+#### Error handling:
+```typescript
+client.query("CreateUser", { name: "Alice", age: 25 })
+    .then(result => console.log("Created:", result))
+    .catch(err => console.error("Query failed:", err));
+```
+
+### Quick Start
+
+```typescript
+import HelixDB from "helix-ts";
+
+const client = new HelixDB("http://localhost:6969");
+
+// Execute query
+const result = await client.query("CreateUser", {
+    name: "Alice",
+    age: 25,
+});
+```
+
+### Advanced Usage
+
+#### Async/await pattern:
+```typescript
+async function createUser(name: string, age: number) {
+    try {
+        const user = await client.query("CreateUser", { name, age });
+        return user;
+    } catch (error) {
+        console.error("Failed to create user:", error);
+        throw error;
+    }
+}
+```
+
+#### Batch operations:
+```typescript
+const users = [
+    { name: "Alice", age: 25 },
+    { name: "Bob", age: 30 }
+];
+
+const results = await Promise.all(
+    users.map(user => client.query("CreateUser", user))
+);
+```
+
+## Rust SDK [helix-rs](https://github.com/HelixDB/helix-rs) [![crates.io](https://img.shields.io/crates/v/helix-rs.svg)](https://crates.io/crates/helix-rs)
+@tags: rust, sdk, client, queries, type-safe, graph, vector, knowledge-graph, search, llm-pipeline, async, serde, tokio
+
+### TL;DR
+- Install: `cargo add helix-rs serde tokio`
+- Connect: `HelixDB::new(Some("http://localhost"), Some(6969), None)`
+- Query: `client.query("QueryName", &payload).await?`
+- Type Safe: Full Rust type safety with serde_json
+- Async/Await: Built on tokio for async operations
+- Graph & Vector: Native support for both graph and vector operations
+- Knowledge Graphs: Ideal for knowledge graph construction
+- LLM Pipelines: Perfect for search systems and LLM integrations
+
+### Quick Start
+
+```rust
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+    
+    let result = client.query("CreateUser", &json!({
+        "name": "John",
+        "age": 20,
+    })).await?;
+    
+    println!("Created user: {result:#?}");
+    Ok(())
+}
+```
+
+### Installation
+
+#### Cargo CLI:
+```bash
+cargo add helix-rs
+cargo add serde
+cargo add tokio
+```
+
+#### Cargo.toml:
+```toml
+[dependencies]
+helix-rs = "0.1.9"
+tokio = { version = "1.47.1", features = ["full"] }
+serde = { version = "1.0.219", features = ["derive"] }
+```
+
+### Configuration
+
+#### Basic connection:
+```rust
+let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+```
+
+#### Custom endpoint:
+```rust
+let client = HelixDB::new(
+    Some("https://my-endpoint.com"), 
+    Some(8080), 
+    Some("my-api-key")
+);
+```
+
+### Advanced Usage
+
+#### Async patterns:
+```rust
+#[tokio::main]
+async fn create_user(name: &str, age: u8) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+    
+    let payload = json!({
+        "name": name,
+        "age": age,
+    });
+    
+    client.query("CreateUser", &payload).await
+}
+```
+
+#### Batch operations:
+```rust
+let users = vec![
+    json!({"name": "Alice", "age": 25}),
+    json!({"name": "Bob", "age": 30}),
+];
+
+let results: Vec<serde_json::Value> = futures::future::join_all(
+    users.into_iter().map(|user| client.query("CreateUser", &user))
+).await;
+```
+
+## Go SDK [helix-go](https://github.com/HelixDB/helix-go) [![Go Reference](https://pkg.go.dev/badge/github.com/HelixDB/helix-go.svg)](https://pkg.go.dev/github.com/HelixDB/helix-go) 
+@tags: go, sdk, client, queries, type-safe, graph, vector, knowledge-graph, search, llm-pipeline, goroutines, context
+
+### TL;DR
+- Install: `go get github.com/HelixDB/helix-go`
+- Connect: `helix.NewClient("http://localhost:6969")`
+- Query: `client.Query("QueryName", helix.WithData(payload)).Scan(&result)`
+- Type Safe: Full Go type safety with `map[string]any`
+- Goroutines: Built for concurrent operations
+- Graph & Vector: Native support for both graph and vector operations
+- Knowledge Graphs: Ideal for knowledge graph construction
+- LLM Pipelines: Perfect for search systems and LLM integrations
+
+### Installation
+
+```bash
+go get github.com/HelixDB/helix-go
+```
+
+### Configuration
+
+#### Basic connection:
+```go
+client := helix.NewClient("http://localhost:6969")
+```
+
+#### Custom endpoint:
+```go
+client := helix.NewClient("https://my-endpoint.com:8080")
+```
+
+### Quick Start
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+    
+    var result map[string]any
+    err := client.
+        Query("CreateUser", helix.WithData(map[string]any{
+            "name": "Alice",
+            "age":  uint8(25),
+        })).
+        Scan(&result)
+    
+    if err != nil {
+        log.Fatalf("Query failed: %s", err)
+    }
+    
+    fmt.Printf("Created user: %#v\n", result)
+}
+```
+
+### Advanced Usage
+
+#### Error handling:
+```go
+func createUser(name string, age uint8) (map[string]any, error) {
+    client := helix.NewClient("http://localhost:6969")
+    
+    var result map[string]any
+    err := client.
+        Query("CreateUser", helix.WithData(map[string]any{
+            "name": name,
+            "age":  age,
+        })).
+        Scan(&result)
+    
+    return result, err
+}
+```
+
+#### Concurrent operations:
+```go
+func createUsersConcurrently(users []map[string]any) []map[string]any {
+    client := helix.NewClient("http://localhost:6969")
+    
+    var wg sync.WaitGroup
+    results := make([]map[string]any, len(users))
+    
+    for i, user := range users {
+        wg.Add(1)
+        go func(index int, data map[string]any) {
+            defer wg.Done()
+            var result map[string]any
+            client.Query("CreateUser", helix.WithData(data)).Scan(&result)
+            results[index] = result
+        }(i, user)
+    }
+    
+    wg.Wait()
+    return results
+}
+```
