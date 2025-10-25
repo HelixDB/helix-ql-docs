@@ -1,0 +1,101 @@
+## Rerankers
+@tags: reranker, rerank, ranking, relevance, rrf, mmr, hybrid, diversify
+
+### What are rerankers?
+- Combine results from multiple search strategies (hybrid search)
+- Reduce redundancy by diversifying results
+- Optimize the relevance-diversity trade-off
+- Improve the overall user experience of your search application
+
+### When to use rerankers?
+- Merge multiple search methods: Combine vector search with BM25 keyword search, or merge results from multiple vector searches
+- Diversify results: Eliminate near-duplicate content and show varied perspectives
+- Optimize ranking: Fine-tune the balance between relevance and variety based on your use case
+- Improve search quality: Leverage sophisticated ranking algorithms without changing your underlying search infrastructure
+
+### Best practices for reranking
+- Retrieve more results initially: Fetch 100-200 candidates to give rerankers sufficient options to work with
+- Apply rerankers before RANGE: Rerank first, then limit the number of results returned
+- Choose the right reranker: Use RRF for combining searches, MMR for diversification
+- Test with your data: Experiment with different parameters to find what works best for your use case
+
+### Reciprocal Rank Fusion using `RerankRRF`
+
+- Combine multiple ranked lists without requiring score calibration.
+- Good for merging results from different search methods.
+
+#### Syntax
+```query.hx
+::RerankRRF             // Uses default k=60
+::RerankRRF(k: 30.0)    // Custom k parameter
+```
+
+#### Example: Hybrid search fusion
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+- Query:
+```query.hx
+QUERY SearchDocuments(query_vec: [F64]) =>
+    results <- SearchV<Document>(query_vec, 100)
+        ::RerankRRF             // Apply reranking
+        ::RANGE(0, 10)          // Get top 10 results
+    RETURN results
+```
+
+### Maximal Marginal Relevance using `RerankMMR`
+
+- Balances relevance with diversity to reduce redundancy. 
+- Good for showing varied results instead of similar or duplicate content.
+
+#### Syntax
+```query.hx
+::RerankMMR(lambda: 0.7)
+```
+
+#### Example: Simple diversification
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+- Query:
+```query.hx
+QUERY SearchDocuments(query_vec: [F64]) =>
+    results <- SearchV<Document>(query_vec, 100)
+        ::RerankMMR(lambda: 0.7)  // Apply reranking
+        ::RANGE(0, 10)            // Get top 10 results
+    RETURN results
+```
+
+### Chaining Rerankers
+
+#### Example: Fusion and diversification
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+- Query:
+```query.hx
+QUERY AdvancedSearch(query_vec: [F64]) =>
+    results <- SearchV<Document>(query_vec, 150)
+        ::RerankRRF(k: 60)       // First: combine multiple rankings
+        ::RerankMMR(lambda: 0.6) // Then: diversify results
+        ::RANGE(0, 10)
+    RETURN results
+```

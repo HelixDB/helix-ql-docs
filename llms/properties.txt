@@ -1,0 +1,1023 @@
+## Properties Operations
+@tags: properties, access, fields, attributes, projection, select
+
+### Property Access
+
+#### Select Specific Properties using `{}`
+
+##### Syntax
+```query.hx
+::{<property1>, <property2>, ...}
+::{<property1>: <alias>, <property2>}
+```
+
+Notes:
+- Property access allows you to return only the fields you need, reducing data transfer and improving query performance.
+
+##### Example 1: Basic property selection
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUserBasicInfo () =>
+    users <- N<User>::RANGE(0, 10)
+    RETURN users::{name, age}
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22,"email":"diana@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetUserBasicInfo \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetUserBasicInfo", {})
+print("User basic info:", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+        { name: "Diana", age: 22, email: "diana@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetUserBasicInfo", {});
+    console.log("User basic info:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserBasicInfo query failed:", err);
+});
+```
+
+##### Example 2: Property selection with renaming
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUserDisplayInfo () =>
+    users <- N<User>::RANGE(0, 10)
+    RETURN users::{displayName: name, userAge: age}
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22,"email":"diana@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetUserDisplayInfo \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetUserDisplayInfo", {})
+print("User display info:", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+        { name: "Diana", age: 22, email: "diana@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetUserDisplayInfo", {});
+    console.log("User display info:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserDisplayInfo query failed:", err);
+});
+```
+
+#### Access IDs using `ID`
+
+##### Syntax
+```query.hx
+::ID
+```
+
+Note:
+- Every element in HelixDB has a unique `ID` that can be accessed using the `::ID` syntax.
+
+##### Example 1: Getting element IDs
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUserIDs () =>
+    users <- N<User>::RANGE(0, 5)
+    RETURN users::ID
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetUserIDs \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetUserIDs", {})
+print("User IDs:", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetUserIDs", {});
+    console.log("User IDs:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserIDs query failed:", err);
+});
+```
+
+#### Include All Properties using `..`
+Use the spread operator to include all properties while optionally remapping specific fields.
+
+##### Syntax
+```query.hx
+::{
+    <alias>: <property>, 
+    ..
+}
+```
+
+##### Example 1: Property aliasing with spread operator
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUsersWithAlias () =>
+    users <- N<User>::RANGE(0, 5)
+    RETURN users::{
+        userID: ID,
+        ..
+    }
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetUsersWithAlias \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetUsersWithAlias", {})
+print("Users with alias:", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetUsersWithAlias", {});
+    console.log("Users with alias:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUsersWithAlias query failed:", err);
+});
+```
+
+### Property Addition
+
+#### Syntax
+```query.hx
+::{
+    <new_property>: <schema_field>,
+    <computed_property>: <traversal_expression>
+}
+```
+
+Notes:
+- Property additions allow you to compute derived values and add metadata to your query results without modifying the underlying schema.
+
+#### Example 1: Adding computed properties with traversals
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8
+}
+
+E::Follows {
+    From: User,
+    To: User
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUserDetails () =>
+    users <- N<User>::RANGE(0, 5)
+    RETURN users::{
+        userID: ID,
+        followerCount: _::In<Follows>::COUNT
+    }
+
+QUERY CreateUser (name: String, age: U8) =>
+    user <- AddN<User>({
+        name: name,
+        age: age
+    })
+    RETURN user
+
+QUERY CreateFollow (follower_id: ID, following_id: ID) =>
+    follower <- N<User>(follower_id)
+    following <- N<User>(following_id)
+    AddE<Follows>::From(follower)::To(following)
+    RETURN "Success"
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22}'
+
+curl -X POST \
+  http://localhost:6969/CreateFollow \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"<bob_id>","following_id":"<alice_id>"}'
+
+curl -X POST \
+  http://localhost:6969/CreateFollow \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"<charlie_id>","following_id":"<alice_id>"}'
+
+curl -X POST \
+  http://localhost:6969/CreateFollow \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"<diana_id>","following_id":"<alice_id>"}'
+
+curl -X POST \
+  http://localhost:6969/GetUserDetails \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25},
+    {"name": "Bob", "age": 30},
+    {"name": "Charlie", "age": 28},
+    {"name": "Diana", "age": 22},
+]
+
+user_ids = []
+for user in users:
+    result = client.query("CreateUser", user)
+    user_ids.append(result[0]["user"]["id"])
+
+for i in range(1, len(user_ids)):
+    client.query("CreateFollow", {
+        "follower_id": user_ids[i],
+        "following_id": user_ids[0]
+    })
+
+result = client.query("GetUserDetails", {})
+print("User details with follower count:", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25 },
+        { name: "Bob", age: 30 },
+        { name: "Charlie", age: 28 },
+        { name: "Diana", age: 22 },
+    ];
+
+    const userIds: string[] = [];
+    for (const user of users) {
+        const result = await client.query("CreateUser", user);
+        userIds.push(result.user.id);
+    }
+
+    for (let i = 1; i < userIds.length; i++) {
+        await client.query("CreateFollow", {
+            follower_id: userIds[i],
+            following_id: userIds[0]
+        });
+    }
+
+    const result = await client.query("GetUserDetails", {});
+    console.log("User details with follower count:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserDetails query failed:", err);
+});
+```
+
+### Property Exclusion
+
+#### Syntax
+```query.hx
+::!{<property1>, <property2>, ...}
+```
+
+Notes:
+- Property exclusion is useful when you want to return most properties but hide sensitive or unnecessary fields like passwords, internal IDs, or large data fields.
+
+#### Example 1: Excluding sensitive properties
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+    posts: U32,
+    followers: U32,
+    following: U32,
+    location: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetPublicUserInfo () =>
+    users <- N<User>::RANGE(0, 10)
+    RETURN users::!{email, location}
+
+QUERY CreateUser (name: String, age: U8, email: String, posts: U32, followers: U32, following: U32, location: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email,
+        posts: posts,
+        followers: followers,
+        following: following,
+        location: location
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com","posts":42,"followers":150,"following":89,"location":"New York"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com","posts":28,"followers":203,"following":156,"location":"San Francisco"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com","posts":67,"followers":89,"following":234,"location":"London"}'
+
+curl -X POST \
+  http://localhost:6969/GetPublicUserInfo \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {
+        "name": "Alice",
+        "age": 25,
+        "email": "alice@example.com",
+        "posts": 42,
+        "followers": 150,
+        "following": 89,
+        "location": "New York"
+    },
+    {
+        "name": "Bob",
+        "age": 30,
+        "email": "bob@example.com",
+        "posts": 28,
+        "followers": 203,
+        "following": 156,
+        "location": "San Francisco"
+    },
+    {
+        "name": "Charlie",
+        "age": 28,
+        "email": "charlie@example.com",
+        "posts": 67,
+        "followers": 89,
+        "following": 234,
+        "location": "London"
+    }
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetPublicUserInfo", {})
+print("Public user info (email and location excluded):", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        {
+            name: "Alice",
+            age: 25,
+            email: "alice@example.com",
+            posts: 42,
+            followers: 150,
+            following: 89,
+            location: "New York"
+        },
+        {
+            name: "Bob",
+            age: 30,
+            email: "bob@example.com",
+            posts: 28,
+            followers: 203,
+            following: 156,
+            location: "San Francisco"
+        },
+        {
+            name: "Charlie",
+            age: 28,
+            email: "charlie@example.com",
+            posts: 67,
+            followers: 89,
+            following: 234,
+            location: "London"
+        }
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetPublicUserInfo", {});
+    console.log("Public user info (email and location excluded):", result);
+}
+
+main().catch((err) => {
+    console.error("GetPublicUserInfo query failed:", err);
+});
+```
+
+### Property Remappings
+
+#### Simple Remapping
+
+##### Syntax
+```query.hx
+::{new_name: property_name}
+::{alias: _::{property}}
+```
+
+Notes:
+- You can usually use the name directly
+- If you want to be more explicit or there are name clashes, you can use the `_::` operator.
+
+##### Example 1: Basic property remapping
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUserWithAlias () =>
+    users <- N<User>::RANGE(0, 5)
+    RETURN users::{
+        userID: ID,
+        displayName: name
+    }
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice Johnson","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob Smith","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie Brown","age":28,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetUserWithAlias \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice Johnson", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob Smith", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie Brown", "age": 28, "email": "charlie@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetUserWithAlias", {})
+print("Users with remapped properties:", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice Johnson", age: 25, email: "alice@example.com" },
+        { name: "Bob Smith", age: 30, email: "bob@example.com" },
+        { name: "Charlie Brown", age: 28, email: "charlie@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetUserWithAlias", {});
+    console.log("Users with remapped properties:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserWithAlias query failed:", err);
+});
+```
+
+#### Nested Remapping
+
+##### Syntax
+```query.hx
+::|item_name|{
+    field: item_name::traversal,
+    nested_field: inner_item::{
+        property: item_name::ID,
+        ..
+    }
+}
+```
+
+Notes:
+- If we were to access the ID using: `nested_field: ID`. It would be the ID of the `inner_item` item not the `item_name` item due to the tighter scope.
+- When accessing properties in nested mappings, scope matters. Use the explicit `item_name::property` syntax to access properties from outer scopes to avoid ambiguity.
+
+##### Example 1: User posts with nested remappings
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+
+N::Post {
+    title: String,
+    content: String
+}
+
+E::HasPost {
+    From: User,
+    To: Post
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUserPosts (user_id: ID) =>
+    user <- N<User>(user_id)
+    posts <- user::Out<HasPost>
+    RETURN user::|usr|{
+        posts: posts::{
+            postID: ID,
+            creatorID: usr::ID,
+            creatorName: usr::name,
+            ..
+        }
+    }
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+
+QUERY CreatePost (user_id: ID, title: String, content: String) =>
+    user <- N<User>(user_id)
+    post <- AddN<Post>({
+        title: title,
+        content: content
+    })
+    AddE<HasPost>::From(user)::To(post)
+    RETURN post
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice Johnson","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreatePost \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","title":"My First Post","content":"This is my first blog post!"}'
+
+curl -X POST \
+  http://localhost:6969/CreatePost \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","title":"Learning GraphDB","content":"Graph databases are fascinating."}'
+
+curl -X POST \
+  http://localhost:6969/CreatePost \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","title":"Weekend Plans","content":"Planning to explore the city."}'
+
+curl -X POST \
+  http://localhost:6969/GetUserPosts \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+user_result = client.query("CreateUser", {
+    "name": "Alice Johnson",
+    "age": 25,
+    "email": "alice@example.com"
+})
+user_id = user_result[0]["user"]["id"]
+
+posts = [
+    {"title": "My First Post", "content": "This is my first blog post!"},
+    {"title": "Learning GraphDB", "content": "Graph databases are fascinating."},
+    {"title": "Weekend Plans", "content": "Planning to explore the city."},
+]
+
+for post in posts:
+    client.query("CreatePost", {
+        "user_id": user_id,
+        "title": post["title"],
+        "content": post["content"]
+    })
+
+result = client.query("GetUserPosts", {"user_id": user_id})
+print("User posts with nested remappings:", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const userResult = await client.query("CreateUser", {
+        name: "Alice Johnson",
+        age: 25,
+        email: "alice@example.com"
+    });
+    const userId = userResult.user.id;
+
+    const posts = [
+        { title: "My First Post", content: "This is my first blog post!" },
+        { title: "Learning GraphDB", content: "Graph databases are fascinating." },
+        { title: "Weekend Plans", content: "Planning to explore the city." },
+    ];
+
+    for (const post of posts) {
+        await client.query("CreatePost", {
+            user_id: userId,
+            title: post.title,
+            content: post.content
+        });
+    }
+
+    const result = await client.query("GetUserPosts", { user_id: userId });
+    console.log("User posts with nested remappings:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUserPosts query failed:", err);
+});
+```

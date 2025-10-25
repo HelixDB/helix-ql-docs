@@ -1,0 +1,955 @@
+## Errors
+@tags: errors, error-codes, debugging, troubleshooting, validation, compile-errors, query, query-errors
+
+### E101: Unknown Node Type
+Reference a node type that is not defined in `schema.hx`.
+
+#### Example
+
+- Schema:
+```schema.hx
+// no types defined
+```
+
+- Query:
+```query.hx
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+    RETURN user
+```
+
+#### Solution
+
+Define the node type `User` in `schema.hx`.
+
+- Schema:
+```schema.hx
+N::User {
+    // fields
+}
+```
+
+### E102: Unknown Edge Type
+
+Reference an edge type that is not defined in `schema.hx`.
+
+#### Example
+
+- Schema:
+```schema.hx
+N::User {
+    // fields
+}
+
+N::Post {
+    // fields
+}
+```
+
+- Query:
+```query.hx
+QUERY getUsersPosts(id: ID) =>
+    posts <- N<User>(id)::Out<Posted>
+    RETURN posts
+```
+
+#### Solution
+
+Define the edge type `Posted` in `schema.hx`.
+
+- Schema:
+```schema.hx
+N::User {
+    // fields
+}
+
+N::Post {
+// fields
+}
+
+E::Posted {
+    From: User,
+    To: Post,
+}
+```
+
+### E103: Unknown Vector Type
+
+Reference a vector type that is not defined in `schema.hx`.
+
+#### Example
+
+- Schema:
+```schema.hx
+// no types defined
+```
+
+- Query:
+```query.hx
+QUERY search(query: String) =>
+    results <- SearchV<Document>(Embed(query), 10)
+    RETURN results
+```
+
+#### Solution
+
+Define the vector type `Document` in `schema.hx`.
+
+- Schema:
+```schema.hx
+V::Document {
+    // fields
+}
+```
+
+### E105: Invalid Identifier
+
+Use an invalid identifier in `query.hx`.
+
+#### Example
+
+`Out` is a reserved keyword so it cannot be used as a variable or a parameter name.
+
+- Query:
+```query.hx
+QUERY getUser(id: ID) =>
+    Out <- N<User>(id)
+    RETURN Out
+
+QUERY getUser(Out: ID) =>
+    user <- N<User>(Out)
+    RETURN user
+```
+
+#### Solution
+
+Rename the variable or parameter to a valid identifier.
+
+- Query:
+```query.hx
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+    RETURN user
+
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+    RETURN user
+```
+
+### E202: Field Not in Schema
+
+Reference a field that is not defined in `schema.hx` for a given item type.
+
+#### Example
+
+The field `username` is not defined in `schema.hx` for the `User` item type.
+
+- Schema:
+```schema.hx
+N::User {
+    age: U32,
+}
+```
+
+- Query:
+```query.hx
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+    RETURN user::{username}
+```
+
+#### Solution
+
+Define the field `username` in `schema.hx` for the `User` item type.
+
+- Schema:
+```schema.hx
+N::User {
+    username: String,
+    age: U32,
+}
+```
+
+### E204: Reserved Field Name
+
+Use a reserved field name in `schema.hx` or `query.hx`.
+
+#### Example
+
+The field `id` is a reserved field name for any item type.
+
+- Schema:
+```schema.hx
+N::User {
+    id: String,
+}
+```
+
+#### Solution
+
+Rename the field to a valid identifier.
+
+- Schema:
+```schema.hx
+N::User {
+    github_id: String,
+}
+```
+
+### E205: Type Mismatch
+
+Occurs when the type of a value you’re providing doesn’t match the expected field type defined in `schema.hx`.
+
+#### Example
+
+- Schema:
+```schema.hx
+N::User {
+    someField: String,
+}
+```
+
+- Query:
+```query.hx
+QUERY addUser(someField: U32) =>
+    user <- AddN<User>({someField: someField})
+    RETURN user
+```
+
+#### Solution
+
+Change type of `someField` to `String` or `U32`.
+
+- Schema:
+```schema.hx
+N::User {
+    someField: U32,
+}
+```
+
+- Query:
+```query.hx
+QUERY addUser(someField: U32) =>
+    user <- AddN<User>({someField: someField})
+    RETURN user
+```
+
+### E207: Invalid Edge Type for Item
+
+Use an edge type that exists in `schema.hx` but is not valid for the specific item type you’re working with.
+
+#### Example
+
+In this example, the `Created` edge exists. However, it goes from `User` to `Post`, not from `Post` to `User`. Therefore, it is not valid for an `Out` step from a `Post` node.
+
+- Schema:
+```schema.hx
+N::User {
+    // Fields
+}
+
+N::Post {
+    // Fields
+}
+
+E::Created {
+    From: User,
+    To: Post,
+}
+```
+
+- Query:
+```query.hx
+Query getUserFromPost(postId: ID) =>
+    user <- N<Post>(postId)::Out<Created>
+    RETURN user
+```
+
+#### Solution
+
+Change the traversal to use the `In` step instead of the `Out` step.
+
+- Query:
+```query.hx
+Query getUserFromPost(postId: ID) =>
+    user <- N<Post>(postId)::In<Created>
+```
+
+### E301: Variable Not in Scope
+
+Reference a variable that is not currently in scope or has not been declared.
+
+#### Example
+
+The variable `userId` is not declared.
+
+- Query:
+```query.hx
+Query getUser() =>
+    user <- N<User>(userId)
+    RETURN user
+```
+
+#### Solution
+
+Declare the variable `userId` as a parameter before using it.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user
+```
+
+### E302: Variable Previously Declared
+
+Declare a variable that has already been declared in the current scope.
+
+#### Example
+
+In this example, the variable `userId` is declared twice.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    userId <- N<User>(userId)::ID
+    RETURN userId
+```
+
+#### Solution
+
+Use a different variable name.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user_id <- N<User>(userId)::ID
+    RETURN user_id
+```
+
+### E304: Missing Item Type
+
+An item type is required but not provided in your query.
+
+#### Example
+
+The `User` item type is required but not provided.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user <- N(userId)
+    RETURN user
+
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)::Out
+    RETURN user
+```
+
+#### Solution
+
+Specify the required item type within the `<` and `>` brackets after the traversal step in your query.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)::Out<Knows>
+    RETURN user
+```
+
+### E305: Missing Parameter
+
+A required parameter is missing from a function call or operation.
+
+#### Example
+
+The `SearchV` function is called without the `k` parameter which is required to limit the number of results.
+
+- Query:
+```query.hx
+Query searchUsers(vector: [F64]) =>
+    users <- SearchV<Document>(vector)
+    RETURN users
+```
+
+#### Solution
+
+Provide all required parameters for functions and operations.
+
+- Query:
+```query.hx
+Query searchUsers(vector: [F64]) =>
+    users <- SearchV<Document>(vector, 10)
+    RETURN users
+```
+
+### E401: MCP Single Value Requirement
+
+An MCP (Model Context Protocol) query returns multiple values when only a single value is expected.
+
+#### Example
+
+The MCP query returns multiple users, but MCP expects a single value.
+
+- Query:
+```query.hx
+#[mcp]
+Query getUsers(userId: ID, postId: ID) =>
+    user <- N<User>(userId)
+    post <- N<Post>(postId)
+    RETURN user, post
+```
+
+#### Solution
+
+Ensure MCP queries return exactly one value.
+
+- Query:
+```query.hx
+#[mcp]
+Query getUsers(userId: ID, postId: ID) =>
+    user <- N<User>(userId)
+    post <- N<Post>(postId)
+    RETURN user
+```
+
+### E501: Invalid Date
+
+Provide a date value that cannot be parsed or is in an invalid format.
+
+#### Example
+
+The date value `"2023-99-99"` is invalid and cannot be parsed.
+
+- Schema:
+```schema.hx
+N::Event {
+    date: Date,
+}
+```
+
+- Query:
+```query.hx
+Query addEvent() =>
+    AddN<Event>({date: "2023-99-99"})
+```
+
+#### Solution
+
+Ensure the date value is in the correct format.
+
+- Query:
+```query.hx
+Query addEvent() =>
+    AddN<Event>({date: "2023-01-01"})
+```
+
+### E601: Invalid Traversal
+
+Attempt to perform a malformed traversal.
+
+Note: This error is not currently emitted by the compiler.
+
+#### Example
+
+- Query:
+```query.hx
+Query getUser() =>
+    user <- N()
+```
+
+#### Solution
+
+- Query:
+```query.hx
+Query getUser() =>
+    user <- N<User>
+    RETURN user
+```
+
+### E602: Invalid Step
+
+Use a step that is not valid in the current context.
+
+#### Example
+
+The `OutE<Knows>` step results in edges, but the `Out` step can only be used on nodes.
+
+- Schema:
+```schema.hx
+N::User {
+    // fields
+}
+
+E::Knows {
+    From: User,
+    To: User,
+}
+```
+
+- Query:
+```query.hx
+Query getUser() =>
+    user <- N<User>::OutE<Knows>::Out<Knows>
+    RETURN user
+```
+
+#### Solution
+
+- Query:
+```query.hx
+Query getUser() =>
+    user <- N<User>::Out<Knows>::Out<Knows>
+    RETURN user
+```
+
+### E604: Update Restriction
+
+Performing an update operation on something other than nodes or edges.
+
+#### Example
+
+The update step is used on a vector type which is not allowed yet.
+
+- Query:
+```query.hx
+V::Vector {
+    field1: String,
+}
+```
+
+### E611: Missing To ID
+
+Create an edge without specifying the target node ID.
+
+#### Example
+
+The `AddE` step is used without specifying the `To` parameter.
+
+- Query:
+```query.hx
+Query addEdge(from: ID, to: ID) =>
+    AddE<Follows>::From(from)
+```
+
+#### Solution
+
+Provide both `From` and `To` node IDs when creating edges.
+
+- Query:
+```query.hx
+Query addEdge(from: ID, to: ID) =>
+    AddE<Follows>::From(from)::To(to)
+```
+
+### E612: Missing From ID
+
+Create an edge without specifying the source node ID.
+
+#### Example
+
+The `AddE` step is used without specifying the `From` parameter.
+
+- Query:
+```query.hx
+Query addEdge(to: ID) =>
+    AddE<Follows>::To(to)
+```
+
+#### Solution
+
+Provide both `From` and `To` node IDs when creating edges.
+
+- Query:
+```query.hx
+Query addEdge(from: ID, to: ID) =>
+    AddE<Follows>::From(from)::To(to)
+```
+
+### E621: Invalid Boolean Comparison
+
+Apply a boolean comparison operation to a type that doesn’t support it.
+
+#### Example
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+}
+```
+
+- Query:
+```query.hx
+Query getUser(user1: ID, user2: ID) =>
+    user1 <- N<User>(user1)
+    user2 <- N<User>(user2)
+    is_eq <- user1::EQ(user2)
+    RETURN is_eq
+```
+
+#### Solution
+
+Ensure boolean operations are used on values that result in primitive types like booleans, numbers, or strings.
+
+- Query:
+```query.hx
+Query getUser(user1: ID, user2: ID) =>
+    user1_name <- N<User>(user1)::{name}
+    user2_name <- N<User>(user2)::{name}
+    is_eq <- user1_name::EQ(user2_name)
+    RETURN is_eq
+```
+
+### E622: Type Mismatch in Comparison
+
+Compare a property with a value of a different type.
+
+#### Example
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: I64,
+}
+```
+
+- Query:
+```query.hx
+Query getUser(user: ID) =>
+    user <- N<User>(user)
+    is_eq <- user::{name}::EQ(25)
+    RETURN is_eq
+```
+
+#### Solution
+
+- Query:
+```query.hx
+Query getUser(user: ID) =>
+    user <- N<User>(user)
+    is_eq <- user::{age}::EQ(25)
+    RETURN is_eq
+```
+
+### E631: Incomplete Range
+
+Define a range without both start and end values.
+
+#### Example
+
+- Query:
+```query.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(0)
+    RETURN subset_of_users
+```
+
+#### Solution
+
+- Query:
+```query.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(0, 100)
+    RETURN subset_of_users
+```
+
+### E632: Invalid Range Order
+
+The start value of a range is greater than or equal to the end value. This error is only emitted by the compiler when both start and end values are provided as literals. A runtime error will be emitted if the range is not valid at runtime.
+
+#### Example
+
+The start value is greater than the end value.
+
+- Query:
+```query.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(100, 10)
+    RETURN subset_of_users
+```
+
+#### Solution
+
+Ensure range start value is less than end value.
+
+- Query:
+```query.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(10, 100)
+    RETURN subset_of_users
+```
+
+### E633: Non-Integer Range Index
+
+Use a non-integer value as an index in a range operation.
+
+#### Example
+
+The range index is a float value which is not allowed.
+
+- Query:
+```query.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(1.5, 4.9)
+    RETURN subset_of_users
+
+Query getUser(end: F32) =>
+    subset_of_users <- N<User>::RANGE(0, end)
+    RETURN subset_of_users
+```
+
+#### Solution
+
+Use integer values for range indices or set variable types to integer types.
+
+- Query:
+```query.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(1, 5)
+    RETURN subset_of_users
+    
+Query getUser(end: I64) =>
+    subset_of_users <- N<User>::RANGE(0, end)
+    RETURN subset_of_users
+```
+
+### E641: Closure Position Restriction
+
+Place a closure operation in a position other than the last step of a traversal.
+
+#### Example
+
+The closure is not at the end of the traversal.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::|u|{
+                userID: u::ID
+            }::Out<Knows>
+```
+
+#### Solution
+
+Move the closure to the last step of the traversal.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    out_users <- user::Out<Knows>
+    RETURN out_users, user::|u|{
+                            userID: u::ID
+                        }
+```
+
+### E642: Object Position Restriction
+
+Place an object operation in a position other than the last step of a traversal.
+
+#### Example
+
+The object is not at the end of the traversal.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::{
+                userID: ID
+            }::Out<Knows>
+```
+
+#### Solution
+
+Move the object to the last step of the traversal.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    out_users <- user::Out<Knows>
+    RETURN out_users, user::{
+                            userID: ID
+                        }::Out<Knows>
+```
+
+### E643: Field Previously Excluded
+
+Access or include a field that has been previously excluded in the traversal.
+
+#### Example
+
+The email field is excluded in the traversal, but is being included.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)::!{email}
+    RETURN user::{email}
+```
+
+#### Solution
+
+Remove the exclusion or access the field after the exclusion.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::{email}
+```
+
+### E644: Exclude Position Restriction
+
+Place an exclude operation in a position other than the last step of a traversal or the step before an object remapping or closure remapping step.
+
+#### Example
+
+The exclude step is used before the `Out<Knows>` step which is not allowed.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    users <- N<User>(userId)::!{email}::Out<Knows>
+    RETURN users
+```
+
+#### Solution
+
+Move the exclude step to the last step of the traversal or the step before an object remapping or closure remapping step.
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    users <- N<User>(userId)::Out<Knows>::!{email}
+    RETURN users
+```
+
+### E645
+
+Define an object remapping with no fields.
+
+#### Example
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+}
+```
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::{}
+```
+
+#### Solution
+
+- Query:
+```query.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::{name}
+```
+
+### E651: Non-Iterable Variable
+
+Use a non-iterable variable in an iteration context.
+
+#### Example
+
+The parameter `name` is not iterable, so it cannot be used in an iteration context.
+
+- Query:
+```query.hx
+Query addUser(name: String) =>
+    FOR n IN name {
+        AddN<User>({name: n})
+    }
+    RETURN "User added"
+```
+
+#### Solution
+
+Ensure variables used in iterations are collections or arrays.
+
+- Query:
+```query.hx
+Query addUser(names: [String]) =>
+    FOR n IN names {
+        AddN<User>({name: n})
+    }
+    RETURN "Users added"
+```
+
+### E652: Invalid Field Access
+
+Access a field that doesn't exist on the inner type of an iterable variable.
+
+#### Example
+
+The `nonexistent_field` field doesn't exist on the inner type of the `userData` iterable variable.
+
+- Query:
+```query.hx
+Query addUser(userData: [{name: String, age: I64}]) =>
+    FOR { name, age, nonexistent_field } IN userData {
+        AddN<User>({name: name, age: age})
+    }
+    RETURN "Users added"
+```
+
+#### Solution
+
+Ensure to only access fields that exist on the inner type.
+
+- Query:
+```query.hx
+Query addUser(userData: [{name: String, age: I64}]) =>
+    FOR { name, age } IN userData {
+        AddN<User>({name: name, age: age})
+    }
+    RETURN "Users added"
+```
+
+### E653: Non-Object Inner Type
+
+The inner type of an iterable variable is not an object type, preventing field access or object destructuring.
+
+#### Example
+
+The `names` variable contains strings, not objects, so field access is not allowed.
+
+- Query:
+```query.hx
+Query addUsers(names: [String]) =>
+    FOR {name} In names {
+        AddN<User>({name: name})
+    }
+    RETURN "Users added"
+```
+
+#### Solution
+
+Ensure iterable contains object types for field access.
+
+- Query:
+```query.hx
+Query addUsers(names: [String]) =>
+    FOR name IN names {
+        AddN<User>({name: name})
+    }
+    RETURN "Users added"
+
+Query addUsers(names: [{name: String}]) =>
+    FOR {name} IN names {
+        AddN<User>({name: name})
+    }
+    RETURN "Users added"
+```
