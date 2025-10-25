@@ -2,12 +2,11 @@
 title: HelixDB Guide
 last_updated: 2025-10-24
 audience: LLM agents
-canonical: https://docs.helix-db.com
 ---
 
 # HelixDB Documentation
 
-If you have access to curl or any similar fetch command, curl/fetch the urls below to get the content that you need.
+If you have access to curl, you must curl the urls below to get the content that you need. If not, try to use a browser to access the urls or use similar tools to fetch the content.
 
 - [HelixDB Overview](https://helix-llms-txt.mintlify.app/overview.md): Introduction to HelixDB, its features, and its use cases.
 - [Installation](https://helix-llms-txt.mintlify.app/installation.md): Prerequisites, installation steps, and best practices.
