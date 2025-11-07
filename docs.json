@@ -18,7 +18,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Documentation",
+        "tab": "Database",
         "groups": [
           {
             "group": "Getting Started",
@@ -51,6 +51,18 @@
               "documentation/sdks/helix-go"
             ]
           },
+          {
+            "group": "Other Features",
+            "pages": [
+              "features/mcp/helix-mcp",
+              "features/chunking/helix-chunking"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "HelixQL",
+        "pages": [
           {
             "group": "HelixQL",
             "pages": [
@@ -119,20 +131,21 @@
                 "expanded": false,
                 "pages": [
                   "documentation/hql/traversals/steps_nodes",
-                  "documentation/hql/traversals/steps_edges",
-                  {
-                    "group": "Shortest Paths",
-                    "pages": [
-                      "documentation/hql/traversals/shortest-paths/overview",
-                      "documentation/hql/traversals/shortest-paths/shortest-path-bfs",
-                      "documentation/hql/traversals/shortest-paths/shortest-path-dijkstra",
-                      "documentation/hql/traversals/shortest-paths/shortest-path-astar",
-                      "documentation/hql/traversals/shortest-paths/custom-weights",
-                      "documentation/hql/traversals/shortest-paths/weight-expressions"
-                    ]
-                  }
+                  "documentation/hql/traversals/steps_edges"
                 ],
                 "icon": "right-left-large"
+              },
+              {
+                "group": "Shortest Paths",
+                "icon": "route",
+                "pages": [
+                  "documentation/hql/traversals/shortest-paths/overview",
+                  "documentation/hql/traversals/shortest-paths/shortest-path-bfs",
+                  "documentation/hql/traversals/shortest-paths/shortest-path-dijkstra",
+                  "documentation/hql/traversals/shortest-paths/shortest-path-astar",
+                  "documentation/hql/traversals/shortest-paths/custom-weights",
+                  "documentation/hql/traversals/shortest-paths/weight-expressions"
+                ]
               },
               {
                 "group": "Macros",
@@ -142,7 +155,6 @@
                 ],
                 "icon": "wand-magic-sparkles"
               },
-              "documentation/hql/shortest_path",
               {
                 "group": "Math Functions",
                 "expanded": false,
@@ -240,19 +252,6 @@
                 ],
                 "icon": "triangle-exclamation"
               }
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Features",
-        "pages": [
-          {
-            "group": "Features",
-            "pages": [
-              "features/overview",
-              "features/mcp/helix-mcp",
-              "features/chunking/helix-chunking"
             ]
           }
         ]
