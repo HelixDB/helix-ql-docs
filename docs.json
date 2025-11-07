@@ -150,9 +150,7 @@
               {
                 "group": "Macros",
                 "expanded": false,
-                "pages": [
-                  "documentation/hql/macros/mcp-macro"
-                ],
+                "pages": ["documentation/hql/macros/mcp-macro"],
                 "icon": "wand-magic-sparkles"
               },
               {
@@ -285,6 +283,10 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Benchmarks",
+        "pages": ["benchmarks/v1"]
       }
     ]
   },
