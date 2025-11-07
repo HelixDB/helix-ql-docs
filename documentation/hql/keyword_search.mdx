@@ -210,9 +210,10 @@ curl -X POST \
 
 ### Example 2: Keyword search with postfiltering
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```rust Query focus={1-4} [expandable]
 QUERY SearchRecentKeywords (keywords: String, limit: I64, cutoff_date: Date) =>
-    documents <- SearchBM25<Document>(keywords, limit)::WHERE(_::{created_at}::GTE(cutoff_date))
+    searched_docs <- SearchBM25<Document>(keywords, limit)
+    documents <- searched_docs::WHERE(_::{created_at}::GTE(cutoff_date))
     RETURN documents
 
 QUERY InsertDocument (content: String, created_at: Date) =>
