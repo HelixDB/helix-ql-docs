@@ -55,19 +55,16 @@ QUERY FindFreshestPath(start_id: ID, end_id: ID) =>
     RETURN result
 
 QUERY CreateDataCenter(name: String) =>
-    datacenter <- CREATE V<DataCenter> { name: name }
+    datacenter <- AddN<DataCenter>({ name: name })
     RETURN datacenter
 
 QUERY CreateLink(from_id: ID, to_id: ID, distance: F64, days_old: I64) =>
-    link <- CREATE E<Link>(from_id, to_id) {
-        distance: distance,
-        days_since_update: days_old
-    }
+    link <- AddE<Link>({ distance: distance, days_since_update: days_old })::From(from_id)::To(to_id)
     RETURN link
 ```
 
 ```rust Schema
-V::DataCenter {
+N::DataCenter {
     name: String
 }
 
@@ -369,20 +366,16 @@ QUERY FindOptimalPath(start_id: ID, end_id: ID) =>
     RETURN result
 
 QUERY CreateServer(name: String) =>
-    server <- CREATE V<Server> { name: name }
+    server <- AddN<Server>({ name: name })
     RETURN server
 
 QUERY CreateConnection(from_id: ID, to_id: ID, latency: F64, bandwidth: F64, reliability: F64) =>
-    connection <- CREATE E<Connection>(from_id, to_id) {
-        latency: latency,
-        bandwidth: bandwidth,
-        reliability: reliability
-    }
+    connection <- AddE<Connection>({ latency: latency, bandwidth: bandwidth, reliability: reliability })::From(from_id)::To(to_id)
     RETURN connection
 ```
 
 ```rust Schema
-V::Server {
+N::Server {
     name: String
 }
 
@@ -685,19 +678,16 @@ QUERY FindConditionalPath(start_id: ID, end_id: ID, threshold: F64) =>
     RETURN result
 
 QUERY CreateRouter(name: String) =>
-    router <- CREATE V<Router> { name: name }
+    router <- AddN<Router>({ name: name })
     RETURN router
 
 QUERY CreateCable(from_id: ID, to_id: ID, length: F64, capacity_used: F64) =>
-    cable <- CREATE E<Cable>(from_id, to_id) {
-        length: length,
-        capacity_used: capacity_used
-    }
+    cable <- AddE<Cable>({ length: length, capacity_used: capacity_used })::From(from_id)::To(to_id)
     RETURN cable
 ```
 
 ```rust Schema
-V::Router {
+N::Router {
     name: String
 }
 

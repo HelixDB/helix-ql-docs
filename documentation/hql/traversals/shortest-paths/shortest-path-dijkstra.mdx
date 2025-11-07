@@ -59,19 +59,16 @@ QUERY FindShortestRoute(start_id: ID, end_id: ID) =>
     RETURN result
 
 QUERY CreateCity(name: String, population: I64) =>
-    city <- CREATE V<City> { name: name, population: population }
+    city <- AddN<City>({ name: name, population: population })
     RETURN city
 
 QUERY CreateRoad(from_id: ID, to_id: ID, distance: F64, traffic_level: F64) =>
-    road <- CREATE E<Road>(from_id, to_id) {
-        distance: distance,
-        traffic_level: traffic_level
-    }
+    road <- AddE<Road>({ distance: distance, traffic_level: traffic_level })::From(from_id)::To(to_id)
     RETURN road
 ```
 
 ```rust Schema
-V::City {
+N::City {
     name: String,
     population: I64
 }
@@ -369,16 +366,16 @@ QUERY FindTrafficAwareRoute(start_id: ID, end_id: ID) =>
     RETURN result
 
 QUERY CreateCityWithTraffic(name: String, traffic_factor: F64) =>
-    city <- CREATE V<City> { name: name, traffic_factor: traffic_factor }
+    city <- AddN<City>({ name: name, traffic_factor: traffic_factor })
     RETURN city
 
 QUERY CreateRoad(from_id: ID, to_id: ID, distance: F64) =>
-    road <- CREATE E<Road>(from_id, to_id) { distance: distance }
+    road <- AddE<Road>({ distance: distance })::From(from_id)::To(to_id)
     RETURN road
 ```
 
 ```rust Schema
-V::City {
+N::City {
     name: String,
     traffic_factor: F64  // Multiplier: 1.0 = normal, 2.0 = heavy traffic
 }
@@ -681,19 +678,16 @@ QUERY FindOptimalRoute(start_id: ID, end_id: ID) =>
     RETURN result
 
 QUERY CreateLocation(name: String, traffic_factor: F64) =>
-    location <- CREATE V<Location> { name: name, traffic_factor: traffic_factor }
+    location <- AddN<Location>({ name: name, traffic_factor: traffic_factor })
     RETURN location
 
 QUERY CreateRoute(from_id: ID, to_id: ID, distance: F64, reliability: F64) =>
-    route <- CREATE E<Route>(from_id, to_id) {
-        distance: distance,
-        reliability: reliability
-    }
+    route <- AddE<Route>({ distance: distance, reliability: reliability })::From(from_id)::To(to_id)
     RETURN route
 ```
 
 ```rust Schema
-V::Location {
+N::Location {
     name: String,
     traffic_factor: F64  // Current traffic multiplier
 }

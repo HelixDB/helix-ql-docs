@@ -73,21 +73,21 @@ QUERY FindFastestRoute(start_id: ID, end_id: ID) =>
     RETURN result
 
 QUERY CreateCity(name: String, latitude: F64, longitude: F64, straight_line_dist: F64) =>
-    city <- CREATE V<City> {
+    city <- AddN<City>({
         name: name,
         latitude: latitude,
         longitude: longitude,
         straight_line_distance: straight_line_dist
-    }
+    })
     RETURN city
 
 QUERY CreateHighway(from_id: ID, to_id: ID, distance: F64) =>
-    highway <- CREATE E<Highway>(from_id, to_id) { distance: distance }
+    highway <- AddE<Highway>({ distance: distance })::From(from_id)::To(to_id)
     RETURN highway
 ```
 
 ```rust Schema
-V::City {
+N::City {
     name: String,
     latitude: F64,
     longitude: F64,
@@ -435,22 +435,19 @@ QUERY FindQuickestRoute(start_id: ID, end_id: ID) =>
     RETURN result
 
 QUERY CreateJunction(name: String, est_time: F64) =>
-    junction <- CREATE V<Junction> {
+    junction <- AddN<Junction>({
         name: name,
         estimated_time_remaining: est_time
-    }
+    })
     RETURN junction
 
 QUERY CreateRoad(from_id: ID, to_id: ID, distance: F64, traffic_mult: F64) =>
-    road <- CREATE E<Road>(from_id, to_id) {
-        distance: distance,
-        traffic_multiplier: traffic_mult
-    }
+    road <- AddE<Road>({ distance: distance, traffic_multiplier: traffic_mult })::From(from_id)::To(to_id)
     RETURN road
 ```
 
 ```rust Schema
-V::Junction {
+N::Junction {
     name: String,
     estimated_time_remaining: F64  // Heuristic: est. minutes to destination
 }
@@ -803,7 +800,7 @@ A* returns the same structure as Dijkstra:
 For static targets, pre-calculate and store heuristic values:
 ```rust
 // Pre-calculate straight-line distance to common destinations
-V::City {
+N::City {
     distance_to_hub: F64,
     distance_to_airport: F64
 }

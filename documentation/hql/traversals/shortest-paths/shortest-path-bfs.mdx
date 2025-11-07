@@ -52,16 +52,16 @@ QUERY FindShortestPath(start_id: ID, end_id: ID) =>
     RETURN result
 
 QUERY CreateNetwork(city_name: String) =>
-    city <- CREATE V<City> { name: city_name }
+    city <- AddN<City>({ name: city_name })
     RETURN city
 
 QUERY ConnectCities(from_id: ID, to_id: ID) =>
-    road <- CREATE E<Road>(from_id, to_id) {}
+    road <- AddE<Road>::From(from_id)::To(to_id)
     RETURN road
 ```
 
 ```rust Schema
-V::City {
+N::City {
     name: String
 }
 
@@ -324,16 +324,16 @@ QUERY FindConnection(person1_id: ID, person2_id: ID) =>
     RETURN connection
 
 QUERY CreatePerson(name: String) =>
-    person <- CREATE V<Person> { name: name }
+    person <- AddN<Person>({ name: name })
     RETURN person
 
 QUERY CreateFriendship(from_id: ID, to_id: ID) =>
-    knows <- CREATE E<Knows>(from_id, to_id) {}
+    knows <- AddE<Knows>::From(from_id)::To(to_id)
     RETURN knows
 ```
 
 ```rust Schema
-V::Person {
+N::Person {
     name: String
 }
 

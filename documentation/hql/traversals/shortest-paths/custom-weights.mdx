@@ -106,19 +106,19 @@ QUERY FindFreshRoute(start_id: ID, end_id: ID) =>
     RETURN result
 
 QUERY CreateWarehouse(name: String, days_old: I64) =>
-    warehouse <- CREATE V<Warehouse> {
+    warehouse <- AddN<Warehouse>({
         name: name,
         days_since_update: days_old
-    }
+    })
     RETURN warehouse
 
 QUERY CreateShippingRoute(from_id: ID, to_id: ID, distance: F64) =>
-    route <- CREATE E<ShippingRoute>(from_id, to_id) { distance: distance }
+    route <- AddE<ShippingRoute>({ distance: distance })::From(from_id)::To(to_id)
     RETURN route
 ```
 
 ```rust Schema
-V::Warehouse {
+N::Warehouse {
     name: String,
     days_since_update: I64  // Days since route info was updated
 }
@@ -439,19 +439,19 @@ QUERY FindPopularRoute(start_id: ID, end_id: ID) =>
     RETURN result
 
 QUERY CreateStation(name: String, popularity: F64) =>
-    station <- CREATE V<Station> {
+    station <- AddN<Station>({
         name: name,
         popularity: popularity
-    }
+    })
     RETURN station
 
 QUERY CreateConnection(from_id: ID, to_id: ID, distance: F64) =>
-    connection <- CREATE E<Connection>(from_id, to_id) { distance: distance }
+    connection <- AddE<Connection>({ distance: distance })::From(from_id)::To(to_id)
     RETURN connection
 ```
 
 ```rust Schema
-V::Station {
+N::Station {
     name: String,
     popularity: F64  // Visitor traffic score (higher = more popular)
 }
@@ -767,20 +767,20 @@ QUERY FindBalancedRoute(start_id: ID, end_id: ID) =>
     RETURN result
 
 QUERY CreateNode(name: String, load_factor: F64, capacity: F64) =>
-    node <- CREATE V<Node> {
+    node <- AddN<Node>({
         name: name,
         load_factor: load_factor,
         capacity: capacity
-    }
+    })
     RETURN node
 
 QUERY CreateLink(from_id: ID, to_id: ID, cost: F64) =>
-    link <- CREATE E<Link>(from_id, to_id) { cost: cost }
+    link <- AddE<Link>({ cost: cost })::From(from_id)::To(to_id)
     RETURN link
 ```
 
 ```rust Schema
-V::Node {
+N::Node {
     name: String,
     load_factor: F64,  // Current load (1.0 = normal, 2.0 = heavy)
     capacity: F64      // Available capacity
@@ -1134,7 +1134,7 @@ DIV(_::{distance}, ADD(_::ToN::{popularity}, 0.01))
 For best performance, index properties used in weight calculations:
 ```rust
 // Index frequently-accessed properties
-V::City {
+N::City {
     @index traffic_factor: F64,
     @index popularity: F64
 }
