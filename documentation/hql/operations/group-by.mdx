@@ -1,0 +1,624 @@
+---
+title: "GROUP_BY"
+description: "Group results by property values to organize data."
+icon: "layer-group"
+---
+
+## Group Results by Property Values &nbsp;
+
+GROUP_BY organizes query results into groups based on one or more property values, returning count summaries for each unique combination.
+
+```rust
+::GROUP_BY(property)
+::GROUP_BY(property1, property2)
+```
+
+Returns count summaries:
+```rust
+[
+    {'property': value1, 'count': 3},
+    {'property': value2, 'count': 2},
+    ...
+]
+```
+
+<Note>
+GROUP_BY returns only the count summaries for each unique combination of the specified properties. This is ideal for analytics, distribution analysis, and understanding data patterns without returning full objects.
+</Note>
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## Example 1: Group users by country
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY GroupUsersByCountry () =>
+    users <- N<User>
+    RETURN users::GROUP_BY(country)
+
+QUERY CreateUser (name: String, country: String, city: String, age: U8) =>
+    user <- AddN<User>({
+        name: name,
+        country: country,
+        city: city,
+        age: age
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    country: String,
+    city: String,
+    age: U8
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "country": "USA", "city": "New York", "age": 28},
+    {"name": "Bob", "country": "Canada", "city": "Toronto", "age": 32},
+    {"name": "Charlie", "country": "USA", "city": "Los Angeles", "age": 25},
+    {"name": "Diana", "country": "UK", "city": "London", "age": 30},
+    {"name": "Eve", "country": "Canada", "city": "Vancouver", "age": 27},
+    {"name": "Frank", "country": "USA", "city": "Chicago", "age": 35},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GroupUsersByCountry", {})
+print("Users grouped by country:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let users = vec![
+        ("Alice", "USA", "New York", 28),
+        ("Bob", "Canada", "Toronto", 32),
+        ("Charlie", "USA", "Los Angeles", 25),
+        ("Diana", "UK", "London", 30),
+        ("Eve", "Canada", "Vancouver", 27),
+        ("Frank", "USA", "Chicago", 35),
+    ];
+
+    for (name, country, city, age) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "country": country,
+            "city": city,
+            "age": age,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("GroupUsersByCountry", &json!({})).await?;
+    println!("Users grouped by country: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    users := []map[string]any{
+        {"name": "Alice", "country": "USA", "city": "New York", "age": uint8(28)},
+        {"name": "Bob", "country": "Canada", "city": "Toronto", "age": uint8(32)},
+        {"name": "Charlie", "country": "USA", "city": "Los Angeles", "age": uint8(25)},
+        {"name": "Diana", "country": "UK", "city": "London", "age": uint8(30)},
+        {"name": "Eve", "country": "Canada", "city": "Vancouver", "age": uint8(27)},
+        {"name": "Frank", "country": "USA", "city": "Chicago", "age": uint8(35)},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("GroupUsersByCountry", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("GroupUsersByCountry failed: %s", err)
+    }
+
+    fmt.Printf("Users grouped by country: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", country: "USA", city: "New York", age: 28 },
+        { name: "Bob", country: "Canada", city: "Toronto", age: 32 },
+        { name: "Charlie", country: "USA", city: "Los Angeles", age: 25 },
+        { name: "Diana", country: "UK", city: "London", age: 30 },
+        { name: "Eve", country: "Canada", city: "Vancouver", age: 27 },
+        { name: "Frank", country: "USA", city: "Chicago", age: 35 },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GroupUsersByCountry", {});
+    console.log("Users grouped by country:", result);
+}
+
+main().catch((err) => {
+    console.error("GroupUsersByCountry query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","country":"USA","city":"New York","age":28}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","country":"Canada","city":"Toronto","age":32}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","country":"USA","city":"Los Angeles","age":25}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","country":"UK","city":"London","age":30}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve","country":"Canada","city":"Vancouver","age":27}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Frank","country":"USA","city":"Chicago","age":35}'
+
+curl -X POST \
+  http://localhost:6969/GroupUsersByCountry \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+## Example 2: Group users by multiple properties (country and city)
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY GroupUsersByCountryAndCity () =>
+    users <- N<User>
+    RETURN users::GROUP_BY(country, city)
+
+QUERY CreateUser (name: String, country: String, city: String, age: U8) =>
+    user <- AddN<User>({
+        name: name,
+        country: country,
+        city: city,
+        age: age
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    country: String,
+    city: String,
+    age: U8
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "country": "USA", "city": "New York", "age": 28},
+    {"name": "Bob", "country": "USA", "city": "New York", "age": 32},
+    {"name": "Charlie", "country": "USA", "city": "Los Angeles", "age": 25},
+    {"name": "Diana", "country": "UK", "city": "London", "age": 30},
+    {"name": "Eve", "country": "Canada", "city": "Toronto", "age": 27},
+    {"name": "Frank", "country": "USA", "city": "Los Angeles", "age": 35},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GroupUsersByCountryAndCity", {})
+print("Users grouped by country and city:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let users = vec![
+        ("Alice", "USA", "New York", 28),
+        ("Bob", "USA", "New York", 32),
+        ("Charlie", "USA", "Los Angeles", 25),
+        ("Diana", "UK", "London", 30),
+        ("Eve", "Canada", "Toronto", 27),
+        ("Frank", "USA", "Los Angeles", 35),
+    ];
+
+    for (name, country, city, age) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "country": country,
+            "city": city,
+            "age": age,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("GroupUsersByCountryAndCity", &json!({})).await?;
+    println!("Users grouped by country and city: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    users := []map[string]any{
+        {"name": "Alice", "country": "USA", "city": "New York", "age": uint8(28)},
+        {"name": "Bob", "country": "USA", "city": "New York", "age": uint8(32)},
+        {"name": "Charlie", "country": "USA", "city": "Los Angeles", "age": uint8(25)},
+        {"name": "Diana", "country": "UK", "city": "London", "age": uint8(30)},
+        {"name": "Eve", "country": "Canada", "city": "Toronto", "age": uint8(27)},
+        {"name": "Frank", "country": "USA", "city": "Los Angeles", "age": uint8(35)},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("GroupUsersByCountryAndCity", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("GroupUsersByCountryAndCity failed: %s", err)
+    }
+
+    fmt.Printf("Users grouped by country and city: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", country: "USA", city: "New York", age: 28 },
+        { name: "Bob", country: "USA", city: "New York", age: 32 },
+        { name: "Charlie", country: "USA", city: "Los Angeles", age: 25 },
+        { name: "Diana", country: "UK", city: "London", age: 30 },
+        { name: "Eve", country: "Canada", city: "Toronto", age: 27 },
+        { name: "Frank", country: "USA", city: "Los Angeles", age: 35 },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GroupUsersByCountryAndCity", {});
+    console.log("Users grouped by country and city:", result);
+}
+
+main().catch((err) => {
+    console.error("GroupUsersByCountryAndCity query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","country":"USA","city":"New York","age":28}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","country":"USA","city":"New York","age":32}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","country":"USA","city":"Los Angeles","age":25}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","country":"UK","city":"London","age":30}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve","country":"Canada","city":"Toronto","age":27}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Frank","country":"USA","city":"Los Angeles","age":35}'
+
+curl -X POST \
+  http://localhost:6969/GroupUsersByCountryAndCity \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+## Example 3: Count users per country using COUNT with GROUP_BY
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY CountUsersByCountry () =>
+    users <- N<User>
+    RETURN users::COUNT::GROUP_BY(country)
+
+QUERY CreateUser (name: String, country: String, city: String, age: U8) =>
+    user <- AddN<User>({
+        name: name,
+        country: country,
+        city: city,
+        age: age
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    country: String,
+    city: String,
+    age: U8
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "country": "USA", "city": "New York", "age": 28},
+    {"name": "Bob", "country": "Canada", "city": "Toronto", "age": 32},
+    {"name": "Charlie", "country": "USA", "city": "Los Angeles", "age": 25},
+    {"name": "Diana", "country": "UK", "city": "London", "age": 30},
+    {"name": "Eve", "country": "Canada", "city": "Vancouver", "age": 27},
+    {"name": "Frank", "country": "USA", "city": "Chicago", "age": 35},
+    {"name": "Grace", "country": "USA", "city": "Seattle", "age": 29},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("CountUsersByCountry", {})
+print("Count of users by country:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let users = vec![
+        ("Alice", "USA", "New York", 28),
+        ("Bob", "Canada", "Toronto", 32),
+        ("Charlie", "USA", "Los Angeles", 25),
+        ("Diana", "UK", "London", 30),
+        ("Eve", "Canada", "Vancouver", 27),
+        ("Frank", "USA", "Chicago", 35),
+        ("Grace", "USA", "Seattle", 29),
+    ];
+
+    for (name, country, city, age) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "country": country,
+            "city": city,
+            "age": age,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("CountUsersByCountry", &json!({})).await?;
+    println!("Count of users by country: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    users := []map[string]any{
+        {"name": "Alice", "country": "USA", "city": "New York", "age": uint8(28)},
+        {"name": "Bob", "country": "Canada", "city": "Toronto", "age": uint8(32)},
+        {"name": "Charlie", "country": "USA", "city": "Los Angeles", "age": uint8(25)},
+        {"name": "Diana", "country": "UK", "city": "London", "age": uint8(30)},
+        {"name": "Eve", "country": "Canada", "city": "Vancouver", "age": uint8(27)},
+        {"name": "Frank", "country": "USA", "city": "Chicago", "age": uint8(35)},
+        {"name": "Grace", "country": "USA", "city": "Seattle", "age": uint8(29)},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("CountUsersByCountry", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("CountUsersByCountry failed: %s", err)
+    }
+
+    fmt.Printf("Count of users by country: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", country: "USA", city: "New York", age: 28 },
+        { name: "Bob", country: "Canada", city: "Toronto", age: 32 },
+        { name: "Charlie", country: "USA", city: "Los Angeles", age: 25 },
+        { name: "Diana", country: "UK", city: "London", age: 30 },
+        { name: "Eve", country: "Canada", city: "Vancouver", age: 27 },
+        { name: "Frank", country: "USA", city: "Chicago", age: 35 },
+        { name: "Grace", country: "USA", city: "Seattle", age: 29 },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("CountUsersByCountry", {});
+    console.log("Count of users by country:", result);
+}
+
+main().catch((err) => {
+    console.error("CountUsersByCountry query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","country":"USA","city":"New York","age":28}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","country":"Canada","city":"Toronto","age":32}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","country":"USA","city":"Los Angeles","age":25}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","country":"UK","city":"London","age":30}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve","country":"Canada","city":"Vancouver","age":27}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Frank","country":"USA","city":"Chicago","age":35}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Grace","country":"USA","city":"Seattle","age":29}'
+
+curl -X POST \
+  http://localhost:6969/CountUsersByCountry \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="AGGREGATE_BY" icon="chart-column" href="/documentation/hql/operations/aggregate-by">
+    Aggregate results with full data objects
+  </Card>
+  <Card title="Grouping Guide" icon="book" href="/documentation/hql/operations/grouping-guide">
+    When to use GROUP_BY vs AGGREGATE_BY
+  </Card>
+  <Card title="COUNT Operation" icon="hashtag" href="/documentation/hql/result_ops">
+    Count operation and other result operations
+  </Card>
+  <Card title="Property Access" icon="tag" href="/documentation/hql/properties/property-access">
+    Property filtering and access patterns
+  </Card>
+</CardGroup>

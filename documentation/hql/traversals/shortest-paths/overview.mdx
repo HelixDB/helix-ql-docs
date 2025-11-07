@@ -1,0 +1,164 @@
+---
+title: "Shortest Path Algorithms"
+description: "Find shortest paths in your graph using BFS, Dijkstra, and A* algorithms."
+icon: "route"
+---
+
+## Shortest Path Algorithms in Helix &nbsp;
+
+Helix provides three powerful algorithms for finding shortest paths between nodes in your graph. Each algorithm is optimized for different use cases and graph characteristics.
+
+## Available Algorithms
+
+<CardGroup cols={3}>
+  <Card title="BFS" icon="diagram-project" href="/documentation/hql/traversals/shortest-paths/shortest-path-bfs">
+    Unweighted shortest paths using breadth-first search
+  </Card>
+  <Card title="Dijkstra" icon="route" href="/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra">
+    Weighted shortest paths with custom weight calculations
+  </Card>
+  <Card title="A*" icon="star" href="/documentation/hql/traversals/shortest-paths/shortest-path-astar">
+    Heuristic-guided weighted shortest paths
+  </Card>
+</CardGroup>
+
+## Algorithm Comparison
+
+| Algorithm | Best For | Graph Type | Complexity | Customizable Weights |
+|-----------|----------|------------|------------|---------------------|
+| **BFS** | Hop count minimization | Unweighted | O(V + E) | No |
+| **Dijkstra** | Flexible weight calculations | Weighted | O((V + E) log V) | Yes |
+| **A*** | Goal-directed search | Weighted + Heuristic | O((V + E) log V) | Yes |
+
+<Note>
+All algorithms guarantee finding the optimal shortest path when used correctly. A* can be significantly faster than Dijkstra when a good heuristic is available.
+</Note>
+
+## When to Use Each Algorithm
+
+### Use BFS When:
+- All edges have equal weight (or no weight)
+- You want to minimize hop count
+- Finding social network distances
+- Analyzing friend-of-friend relationships
+- Simple connectivity analysis
+
+### Use Dijkstra When:
+- Edges have different weights (distance, cost, time, etc.)
+- You need custom weight calculations using properties
+- Combining multiple factors into path weights
+- No directional heuristic is available
+- Maximum flexibility is needed
+
+### Use A* When:
+- You have a goal-directed heuristic (e.g., geographic distance)
+- Graph has spatial properties
+- Need faster performance for long paths
+- Heuristic can guide the search effectively
+
+## Quick Examples
+
+### BFS: Unweighted Path
+```rust
+// Find shortest path by hop count
+QUERY FindShortestPath(start_id: ID, end_id: ID) =>
+    path <- N<City>(start_id)
+        ::ShortestPathBFS<Road>
+        ::To(end_id)
+    RETURN path
+```
+
+### Dijkstra: Weighted Path
+```rust
+// Find shortest path by distance
+QUERY FindShortestRoute(start_id: ID, end_id: ID) =>
+    path <- N<City>(start_id)
+        ::ShortestPathDijkstras<Road>(_::{distance})
+        ::To(end_id)
+    RETURN path
+```
+
+### A*: Heuristic-Guided Path
+```rust
+// Find shortest path with geographic heuristic
+QUERY FindOptimalRoute(start_id: ID, end_id: ID) =>
+    path <- N<City>(start_id)
+        ::ShortestPathAStar<Road>(_::{distance}, "straight_line_distance")
+        ::To(end_id)
+    RETURN path
+```
+
+## Custom Weight Expressions
+
+Both Dijkstra and A* support sophisticated weight calculations that can reference:
+
+- **Edge properties**: `_::{property_name}` - Properties on the edge itself
+- **Source node**: `_::FromN::{property_name}` - Properties from the edge's starting node
+- **Destination node**: `_::ToN::{property_name}` - Properties from the edge's ending node
+- **Mathematical operations**: Combine properties with functions like ADD, MUL, POW, etc.
+
+### Example: Traffic-Aware Routing
+```rust
+// Weight = distance * source_traffic_factor
+::ShortestPathDijkstras<Road>(MUL(_::{distance}, _::FromN::{traffic_factor}))
+```
+
+### Example: Multi-Factor Scoring
+```rust
+// Weight = 0.4*distance + 0.3*traffic + 0.3*(1-reliability)
+::ShortestPathDijkstras<Road>(
+    ADD(
+        MUL(_::{distance}, 0.4),
+        ADD(
+            MUL(_::FromN::{traffic_factor}, 0.3),
+            MUL(SUB(1, _::{reliability}), 0.3)
+        )
+    )
+)
+```
+
+<Warning>
+When using custom weights, ensure all weight values are non-negative. Negative weights can lead to incorrect results or infinite loops.
+</Warning>
+
+## Path Result Structure
+
+All shortest path algorithms return the same result structure:
+
+```rust
+{
+    path: [Node],           // Ordered list of nodes in the path
+    edges: [Edge],          // Ordered list of edges in the path
+    total_weight: F64,      // Total weight/cost of the path
+    hop_count: I64          // Number of edges in the path
+}
+```
+
+## Performance Considerations
+
+- **BFS**: Fastest for unweighted graphs, memory efficient
+- **Dijkstra**: Moderate performance, very flexible
+- **A***: Can be much faster than Dijkstra with a good heuristic, but requires additional node property for heuristic
+
+### Tips for Optimal Performance:
+1. Use BFS when weights aren't needed
+2. Index properties used in weight calculations
+3. For A*, ensure heuristic is admissible (never overestimates)
+4. Consider graph density when choosing algorithms
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Custom Weights" icon="scale-balanced" href="/documentation/hql/traversals/shortest-paths/custom-weights">
+    Learn about property contexts and weight expressions
+  </Card>
+  <Card title="Advanced Expressions" icon="function" href="/documentation/hql/traversals/shortest-paths/weight-expressions">
+    Compose complex mathematical weight calculations
+  </Card>
+  <Card title="Graph Traversals" icon="project-diagram" href="/documentation/hql/traversals/steps_edges">
+    Other graph traversal operations
+  </Card>
+  <Card title="Mathematical Functions" icon="calculator" href="/documentation/hql/functions">
+    Available math functions for weight expressions
+  </Card>
+</CardGroup>

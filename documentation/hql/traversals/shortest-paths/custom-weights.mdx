@@ -1,0 +1,1164 @@
+---
+title: "Custom Weight Calculations"
+description: "Use property contexts and expressions to create dynamic path weights."
+icon: "scale-balanced"
+---
+
+## Custom Weight Calculations &nbsp;
+
+Helix's shortest path algorithms support sophisticated weight calculations that can reference properties from edges, source nodes, and destination nodes. This enables real-world routing scenarios where path costs depend on multiple factors and contexts.
+
+<Note>
+Custom weights are available in both [ShortestPathDijkstras](/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra) and [ShortestPathAStar](/documentation/hql/traversals/shortest-paths/shortest-path-astar).
+</Note>
+
+## Property Contexts
+
+Property contexts allow you to reference different parts of the graph structure in your weight expressions:
+
+| Context Syntax | Description | Example Use Case |
+|----------------|-------------|------------------|
+| `_::{property}` | Edge property | Road distance, bandwidth, cost |
+| `_::FromN::{property}` | Source node property | Origin traffic, elevation, population |
+| `_::ToN::{property}` | Destination node property | Target popularity, capacity, demand |
+| `_::FromV::{property}` | Source node vector property | Embedding similarity |
+| `_::ToV::{property}` | Destination node vector property | Feature matching |
+
+<Warning>
+All weight expressions must evaluate to non-negative values. Negative weights can cause incorrect results or infinite loops.
+</Warning>
+
+## Context Reference Table
+
+### Edge Context: `_::{property}`
+
+Access properties directly on the edge being evaluated:
+
+```rust
+// Use edge distance property
+::ShortestPathDijkstras<Road>(_::{distance})
+
+// Use edge bandwidth property
+::ShortestPathDijkstras<Connection>(_::{bandwidth})
+
+// Use edge reliability property
+::ShortestPathDijkstras<Route>(_::{reliability})
+```
+
+**Common use cases:**
+- Distance-based routing
+- Bandwidth optimization
+- Cost minimization
+- Time-based routing
+
+### Source Node Context: `_::FromN::{property}`
+
+Access properties from the node where the edge originates:
+
+```rust
+// Weight based on source traffic
+::ShortestPathDijkstras<Road>(MUL(_::{distance}, _::FromN::{traffic_factor}))
+
+// Avoid high-elevation starting points
+::ShortestPathDijkstras<Trail>(ADD(_::{length}, _::FromN::{elevation}))
+
+// Consider source congestion
+::ShortestPathDijkstras<Connection>(DIV(_::{bandwidth}, _::FromN::{load}))
+```
+
+**Common use cases:**
+- Traffic-aware routing (avoid congested sources)
+- Elevation-based path planning
+- Load balancing (distribute from busy sources)
+- Source capacity constraints
+
+### Destination Node Context: `_::ToN::{property}`
+
+Access properties from the node where the edge terminates:
+
+```rust
+// Prefer popular destinations
+::ShortestPathDijkstras<Road>(DIV(_::{distance}, _::ToN::{popularity}))
+
+// Avoid high-cost destinations
+::ShortestPathDijkstras<Route>(MUL(_::{distance}, _::ToN::{cost_multiplier}))
+
+// Consider destination capacity
+::ShortestPathDijkstras<Connection>(DIV(_::{bandwidth}, _::ToN::{available_capacity}))
+```
+
+**Common use cases:**
+- Popularity-weighted routing
+- Destination capacity management
+- Cost-aware pathfinding
+- Attraction-based navigation
+
+## Example 1: Time-decay routing with source context
+
+<CodeGroup>
+```rust Query focus={1-7}
+QUERY FindFreshRoute(start_id: ID, end_id: ID) =>
+    result <- N<Warehouse>(start_id)
+        ::ShortestPathDijkstras<ShippingRoute>(
+            MUL(_::{distance}, POW(1.1, _::FromN::{days_since_update}))
+        )
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateWarehouse(name: String, days_old: I64) =>
+    warehouse <- CREATE V<Warehouse> {
+        name: name,
+        days_since_update: days_old
+    }
+    RETURN warehouse
+
+QUERY CreateShippingRoute(from_id: ID, to_id: ID, distance: F64) =>
+    route <- CREATE E<ShippingRoute>(from_id, to_id) { distance: distance }
+    RETURN route
+```
+
+```rust Schema
+V::Warehouse {
+    name: String,
+    days_since_update: I64  // Days since route info was updated
+}
+
+E::ShippingRoute {
+    distance: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create warehouses with freshness info
+# Weight = distance * 1.1^(days_since_update)
+# Penalizes routes from warehouses with stale data
+warehouses = {}
+warehouse_data = [
+    ("Main Hub", 0),      # Fresh data
+    ("North Branch", 5),  # 5 days old
+    ("South Branch", 2),  # 2 days old
+    ("East Branch", 10),  # Very stale
+    ("Destination", 0),
+]
+
+for name, days_old in warehouse_data:
+    result = client.query("CreateWarehouse", {
+        "name": name,
+        "days_old": days_old
+    })
+    warehouses[name] = result["warehouse"]["id"]
+
+# Create shipping routes
+routes = [
+    ("Main Hub", "North Branch", 100.0),
+    ("Main Hub", "South Branch", 120.0),
+    ("North Branch", "Destination", 150.0),
+    ("South Branch", "Destination", 140.0),
+    ("Main Hub", "East Branch", 80.0),
+    ("East Branch", "Destination", 130.0),
+]
+
+for from_wh, to_wh, distance in routes:
+    client.query("CreateShippingRoute", {
+        "from_id": warehouses[from_wh],
+        "to_id": warehouses[to_wh],
+        "distance": distance
+    })
+
+# Find route preferring fresh data sources
+result = client.query("FindFreshRoute", {
+    "start_id": warehouses["Main Hub"],
+    "end_id": warehouses["Destination"]
+})
+
+print(f"Route preferring fresh data:")
+print(f"Path: {' -> '.join([node['name'] for node in result['result']['path']])}")
+print(f"Adjusted weight: {result['result']['total_weight']:.2f}")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create warehouses with freshness info
+    let mut warehouses: HashMap<String, String> = HashMap::new();
+    let warehouse_data = vec![
+        ("Main Hub", 0),
+        ("North Branch", 5),
+        ("South Branch", 2),
+        ("East Branch", 10),
+        ("Destination", 0),
+    ];
+
+    for (name, days_old) in &warehouse_data {
+        let result: serde_json::Value = client.query("CreateWarehouse", &json!({
+            "name": name,
+            "days_old": days_old,
+        })).await?;
+        warehouses.insert(name.to_string(), result["warehouse"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create shipping routes
+    let routes = vec![
+        ("Main Hub", "North Branch", 100.0),
+        ("Main Hub", "South Branch", 120.0),
+        ("North Branch", "Destination", 150.0),
+        ("South Branch", "Destination", 140.0),
+        ("Main Hub", "East Branch", 80.0),
+        ("East Branch", "Destination", 130.0),
+    ];
+
+    for (from_wh, to_wh, distance) in &routes {
+        let _route: serde_json::Value = client.query("CreateShippingRoute", &json!({
+            "from_id": warehouses[*from_wh],
+            "to_id": warehouses[*to_wh],
+            "distance": distance,
+        })).await?;
+    }
+
+    // Find route preferring fresh data
+    let result: serde_json::Value = client.query("FindFreshRoute", &json!({
+        "start_id": warehouses["Main Hub"],
+        "end_id": warehouses["Destination"],
+    })).await?;
+
+    println!("Route preferring fresh data: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create warehouses with freshness info
+    warehouses := make(map[string]string)
+    warehouseData := []struct {
+        name    string
+        daysOld int64
+    }{
+        {"Main Hub", 0},
+        {"North Branch", 5},
+        {"South Branch", 2},
+        {"East Branch", 10},
+        {"Destination", 0},
+    }
+
+    for _, wh := range warehouseData {
+        var result map[string]any
+        if err := client.Query("CreateWarehouse", helix.WithData(map[string]any{
+            "name":     wh.name,
+            "days_old": wh.daysOld,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateWarehouse failed: %s", err)
+        }
+        warehouses[wh.name] = result["warehouse"].(map[string]any)["id"].(string)
+    }
+
+    // Create shipping routes
+    routes := []struct {
+        from, to string
+        distance float64
+    }{
+        {"Main Hub", "North Branch", 100.0},
+        {"Main Hub", "South Branch", 120.0},
+        {"North Branch", "Destination", 150.0},
+        {"South Branch", "Destination", 140.0},
+        {"Main Hub", "East Branch", 80.0},
+        {"East Branch", "Destination", 130.0},
+    }
+
+    for _, route := range routes {
+        var r map[string]any
+        if err := client.Query("CreateShippingRoute", helix.WithData(map[string]any{
+            "from_id":  warehouses[route.from],
+            "to_id":    warehouses[route.to],
+            "distance": route.distance,
+        })).Scan(&r); err != nil {
+            log.Fatalf("CreateShippingRoute failed: %s", err)
+        }
+    }
+
+    // Find route preferring fresh data
+    var result map[string]any
+    if err := client.Query("FindFreshRoute", helix.WithData(map[string]any{
+        "start_id": warehouses["Main Hub"],
+        "end_id":   warehouses["Destination"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindFreshRoute failed: %s", err)
+    }
+
+    fmt.Printf("Route preferring fresh data: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create warehouses with freshness info
+    const warehouses: Record<string, string> = {};
+    const warehouseData = [
+        { name: "Main Hub", days_old: 0 },
+        { name: "North Branch", days_old: 5 },
+        { name: "South Branch", days_old: 2 },
+        { name: "East Branch", days_old: 10 },
+        { name: "Destination", days_old: 0 },
+    ];
+
+    for (const wh of warehouseData) {
+        const result = await client.query("CreateWarehouse", wh);
+        warehouses[wh.name] = result.warehouse.id;
+    }
+
+    // Create shipping routes
+    const routes = [
+        { from: "Main Hub", to: "North Branch", distance: 100.0 },
+        { from: "Main Hub", to: "South Branch", distance: 120.0 },
+        { from: "North Branch", to: "Destination", distance: 150.0 },
+        { from: "South Branch", to: "Destination", distance: 140.0 },
+        { from: "Main Hub", to: "East Branch", distance: 80.0 },
+        { from: "East Branch", to: "Destination", distance: 130.0 },
+    ];
+
+    for (const route of routes) {
+        await client.query("CreateShippingRoute", {
+            from_id: warehouses[route.from],
+            to_id: warehouses[route.to],
+            distance: route.distance,
+        });
+    }
+
+    // Find route preferring fresh data
+    const result = await client.query("FindFreshRoute", {
+        start_id: warehouses["Main Hub"],
+        end_id: warehouses["Destination"],
+    });
+
+    console.log("Route preferring fresh data:");
+    console.log("Path:", result.result.path.map((n: any) => n.name).join(" -> "));
+    console.log("Adjusted weight:", result.result.total_weight.toFixed(2));
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create warehouses
+MAIN_ID=$(curl -X POST http://localhost:6969/CreateWarehouse \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Main Hub","days_old":0}' | jq -r '.warehouse.id')
+
+NORTH_ID=$(curl -X POST http://localhost:6969/CreateWarehouse \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"North Branch","days_old":5}' | jq -r '.warehouse.id')
+
+SOUTH_ID=$(curl -X POST http://localhost:6969/CreateWarehouse \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"South Branch","days_old":2}' | jq -r '.warehouse.id')
+
+EAST_ID=$(curl -X POST http://localhost:6969/CreateWarehouse \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"East Branch","days_old":10}' | jq -r '.warehouse.id')
+
+DEST_ID=$(curl -X POST http://localhost:6969/CreateWarehouse \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Destination","days_old":0}' | jq -r '.warehouse.id')
+
+# Create routes
+curl -X POST http://localhost:6969/CreateShippingRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$MAIN_ID\",\"to_id\":\"$NORTH_ID\",\"distance\":100.0}"
+
+curl -X POST http://localhost:6969/CreateShippingRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$MAIN_ID\",\"to_id\":\"$SOUTH_ID\",\"distance\":120.0}"
+
+curl -X POST http://localhost:6969/CreateShippingRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$NORTH_ID\",\"to_id\":\"$DEST_ID\",\"distance\":150.0}"
+
+curl -X POST http://localhost:6969/CreateShippingRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$SOUTH_ID\",\"to_id\":\"$DEST_ID\",\"distance\":140.0}"
+
+curl -X POST http://localhost:6969/CreateShippingRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$MAIN_ID\",\"to_id\":\"$EAST_ID\",\"distance\":80.0}"
+
+curl -X POST http://localhost:6969/CreateShippingRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$EAST_ID\",\"to_id\":\"$DEST_ID\",\"distance\":130.0}"
+
+# Find route
+curl -X POST http://localhost:6969/FindFreshRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$MAIN_ID\",\"end_id\":\"$DEST_ID\"}"
+```
+</CodeGroup>
+
+---
+
+## Example 2: Destination-aware routing with popularity weighting
+
+<CodeGroup>
+```rust Query focus={1-7}
+QUERY FindPopularRoute(start_id: ID, end_id: ID) =>
+    result <- N<Station>(start_id)
+        ::ShortestPathDijkstras<Connection>(
+            DIV(_::{distance}, _::ToN::{popularity})
+        )
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateStation(name: String, popularity: F64) =>
+    station <- CREATE V<Station> {
+        name: name,
+        popularity: popularity
+    }
+    RETURN station
+
+QUERY CreateConnection(from_id: ID, to_id: ID, distance: F64) =>
+    connection <- CREATE E<Connection>(from_id, to_id) { distance: distance }
+    RETURN connection
+```
+
+```rust Schema
+V::Station {
+    name: String,
+    popularity: F64  // Visitor traffic score (higher = more popular)
+}
+
+E::Connection {
+    distance: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create stations with popularity scores
+# Weight = distance / destination_popularity
+# Prefers routes through popular stations
+stations = {}
+station_data = [
+    ("Entry Point", 5.0),
+    ("Scenic Overlook", 8.5),    # Very popular
+    ("Hidden Trail", 2.0),        # Less popular
+    ("Summit View", 9.0),         # Most popular
+    ("Back Route", 3.0),
+]
+
+for name, popularity in station_data:
+    result = client.query("CreateStation", {
+        "name": name,
+        "popularity": popularity
+    })
+    stations[name] = result["station"]["id"]
+
+# Create connections
+connections = [
+    ("Entry Point", "Scenic Overlook", 100.0),
+    ("Entry Point", "Hidden Trail", 80.0),
+    ("Scenic Overlook", "Summit View", 120.0),
+    ("Hidden Trail", "Back Route", 90.0),
+    ("Back Route", "Summit View", 110.0),
+]
+
+for from_st, to_st, distance in connections:
+    client.query("CreateConnection", {
+        "from_id": stations[from_st],
+        "to_id": stations[to_st],
+        "distance": distance
+    })
+
+# Find route preferring popular destinations
+result = client.query("FindPopularRoute", {
+    "start_id": stations["Entry Point"],
+    "end_id": stations["Summit View"]
+})
+
+print(f"Route through popular stations:")
+print(f"Path: {' -> '.join([node['name'] for node in result['result']['path']])}")
+print(f"Popularity-adjusted weight: {result['result']['total_weight']:.2f}")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create stations with popularity scores
+    let mut stations: HashMap<String, String> = HashMap::new();
+    let station_data = vec![
+        ("Entry Point", 5.0),
+        ("Scenic Overlook", 8.5),
+        ("Hidden Trail", 2.0),
+        ("Summit View", 9.0),
+        ("Back Route", 3.0),
+    ];
+
+    for (name, popularity) in &station_data {
+        let result: serde_json::Value = client.query("CreateStation", &json!({
+            "name": name,
+            "popularity": popularity,
+        })).await?;
+        stations.insert(name.to_string(), result["station"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create connections
+    let connections = vec![
+        ("Entry Point", "Scenic Overlook", 100.0),
+        ("Entry Point", "Hidden Trail", 80.0),
+        ("Scenic Overlook", "Summit View", 120.0),
+        ("Hidden Trail", "Back Route", 90.0),
+        ("Back Route", "Summit View", 110.0),
+    ];
+
+    for (from_st, to_st, distance) in &connections {
+        let _conn: serde_json::Value = client.query("CreateConnection", &json!({
+            "from_id": stations[*from_st],
+            "to_id": stations[*to_st],
+            "distance": distance,
+        })).await?;
+    }
+
+    // Find route preferring popular destinations
+    let result: serde_json::Value = client.query("FindPopularRoute", &json!({
+        "start_id": stations["Entry Point"],
+        "end_id": stations["Summit View"],
+    })).await?;
+
+    println!("Route through popular stations: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create stations with popularity scores
+    stations := make(map[string]string)
+    stationData := []struct {
+        name       string
+        popularity float64
+    }{
+        {"Entry Point", 5.0},
+        {"Scenic Overlook", 8.5},
+        {"Hidden Trail", 2.0},
+        {"Summit View", 9.0},
+        {"Back Route", 3.0},
+    }
+
+    for _, st := range stationData {
+        var result map[string]any
+        if err := client.Query("CreateStation", helix.WithData(map[string]any{
+            "name":       st.name,
+            "popularity": st.popularity,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateStation failed: %s", err)
+        }
+        stations[st.name] = result["station"].(map[string]any)["id"].(string)
+    }
+
+    // Create connections
+    connections := []struct {
+        from, to string
+        distance float64
+    }{
+        {"Entry Point", "Scenic Overlook", 100.0},
+        {"Entry Point", "Hidden Trail", 80.0},
+        {"Scenic Overlook", "Summit View", 120.0},
+        {"Hidden Trail", "Back Route", 90.0},
+        {"Back Route", "Summit View", 110.0},
+    }
+
+    for _, conn := range connections {
+        var c map[string]any
+        if err := client.Query("CreateConnection", helix.WithData(map[string]any{
+            "from_id":  stations[conn.from],
+            "to_id":    stations[conn.to],
+            "distance": conn.distance,
+        })).Scan(&c); err != nil {
+            log.Fatalf("CreateConnection failed: %s", err)
+        }
+    }
+
+    // Find route preferring popular destinations
+    var result map[string]any
+    if err := client.Query("FindPopularRoute", helix.WithData(map[string]any{
+        "start_id": stations["Entry Point"],
+        "end_id":   stations["Summit View"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindPopularRoute failed: %s", err)
+    }
+
+    fmt.Printf("Route through popular stations: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create stations with popularity scores
+    const stations: Record<string, string> = {};
+    const stationData = [
+        { name: "Entry Point", popularity: 5.0 },
+        { name: "Scenic Overlook", popularity: 8.5 },
+        { name: "Hidden Trail", popularity: 2.0 },
+        { name: "Summit View", popularity: 9.0 },
+        { name: "Back Route", popularity: 3.0 },
+    ];
+
+    for (const st of stationData) {
+        const result = await client.query("CreateStation", st);
+        stations[st.name] = result.station.id;
+    }
+
+    // Create connections
+    const connections = [
+        { from: "Entry Point", to: "Scenic Overlook", distance: 100.0 },
+        { from: "Entry Point", to: "Hidden Trail", distance: 80.0 },
+        { from: "Scenic Overlook", to: "Summit View", distance: 120.0 },
+        { from: "Hidden Trail", to: "Back Route", distance: 90.0 },
+        { from: "Back Route", to: "Summit View", distance: 110.0 },
+    ];
+
+    for (const conn of connections) {
+        await client.query("CreateConnection", {
+            from_id: stations[conn.from],
+            to_id: stations[conn.to],
+            distance: conn.distance,
+        });
+    }
+
+    // Find route preferring popular destinations
+    const result = await client.query("FindPopularRoute", {
+        start_id: stations["Entry Point"],
+        end_id: stations["Summit View"],
+    });
+
+    console.log("Route through popular stations:");
+    console.log("Path:", result.result.path.map((n: any) => n.name).join(" -> "));
+    console.log("Popularity-adjusted weight:", result.result.total_weight.toFixed(2));
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create stations
+ENTRY_ID=$(curl -X POST http://localhost:6969/CreateStation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Entry Point","popularity":5.0}' | jq -r '.station.id')
+
+SCENIC_ID=$(curl -X POST http://localhost:6969/CreateStation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Scenic Overlook","popularity":8.5}' | jq -r '.station.id')
+
+HIDDEN_ID=$(curl -X POST http://localhost:6969/CreateStation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Hidden Trail","popularity":2.0}' | jq -r '.station.id')
+
+SUMMIT_ID=$(curl -X POST http://localhost:6969/CreateStation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Summit View","popularity":9.0}' | jq -r '.station.id')
+
+BACK_ID=$(curl -X POST http://localhost:6969/CreateStation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Back Route","popularity":3.0}' | jq -r '.station.id')
+
+# Create connections
+curl -X POST http://localhost:6969/CreateConnection \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$ENTRY_ID\",\"to_id\":\"$SCENIC_ID\",\"distance\":100.0}"
+
+curl -X POST http://localhost:6969/CreateConnection \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$ENTRY_ID\",\"to_id\":\"$HIDDEN_ID\",\"distance\":80.0}"
+
+curl -X POST http://localhost:6969/CreateConnection \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$SCENIC_ID\",\"to_id\":\"$SUMMIT_ID\",\"distance\":120.0}"
+
+curl -X POST http://localhost:6969/CreateConnection \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$HIDDEN_ID\",\"to_id\":\"$BACK_ID\",\"distance\":90.0}"
+
+curl -X POST http://localhost:6969/CreateConnection \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$BACK_ID\",\"to_id\":\"$SUMMIT_ID\",\"distance\":110.0}"
+
+# Find route
+curl -X POST http://localhost:6969/FindPopularRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$ENTRY_ID\",\"end_id\":\"$SUMMIT_ID\"}"
+```
+</CodeGroup>
+
+---
+
+## Example 3: Combining source and destination contexts
+
+<CodeGroup>
+```rust Query focus={1-9}
+QUERY FindBalancedRoute(start_id: ID, end_id: ID) =>
+    result <- N<Node>(start_id)
+        ::ShortestPathDijkstras<Link>(
+            MUL(
+                MUL(_::{cost}, _::FromN::{load_factor}),
+                DIV(1, _::ToN::{capacity})
+            )
+        )
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateNode(name: String, load_factor: F64, capacity: F64) =>
+    node <- CREATE V<Node> {
+        name: name,
+        load_factor: load_factor,
+        capacity: capacity
+    }
+    RETURN node
+
+QUERY CreateLink(from_id: ID, to_id: ID, cost: F64) =>
+    link <- CREATE E<Link>(from_id, to_id) { cost: cost }
+    RETURN link
+```
+
+```rust Schema
+V::Node {
+    name: String,
+    load_factor: F64,  // Current load (1.0 = normal, 2.0 = heavy)
+    capacity: F64      // Available capacity
+}
+
+E::Link {
+    cost: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create nodes with load and capacity
+# Weight = cost * source_load / dest_capacity
+# Avoids heavy sources and low-capacity destinations
+nodes = {}
+node_data = [
+    ("Source", 1.0, 100.0),
+    ("Router A", 2.5, 80.0),   # Heavy load
+    ("Router B", 1.2, 120.0),  # Light load, high capacity
+    ("Router C", 1.5, 60.0),
+    ("Destination", 1.0, 200.0),
+]
+
+for name, load, capacity in node_data:
+    result = client.query("CreateNode", {
+        "name": name,
+        "load_factor": load,
+        "capacity": capacity
+    })
+    nodes[name] = result["node"]["id"]
+
+# Create links
+links = [
+    ("Source", "Router A", 10.0),
+    ("Source", "Router B", 15.0),
+    ("Router A", "Destination", 20.0),
+    ("Router B", "Router C", 12.0),
+    ("Router C", "Destination", 18.0),
+]
+
+for from_node, to_node, cost in links:
+    client.query("CreateLink", {
+        "from_id": nodes[from_node],
+        "to_id": nodes[to_node],
+        "cost": cost
+    })
+
+# Find balanced route
+result = client.query("FindBalancedRoute", {
+    "start_id": nodes["Source"],
+    "end_id": nodes["Destination"]
+})
+
+print(f"Balanced route considering load and capacity:")
+print(f"Path: {' -> '.join([node['name'] for node in result['result']['path']])}")
+print(f"Composite weight: {result['result']['total_weight']:.2f}")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create nodes with load and capacity
+    let mut nodes: HashMap<String, String> = HashMap::new();
+    let node_data = vec![
+        ("Source", 1.0, 100.0),
+        ("Router A", 2.5, 80.0),
+        ("Router B", 1.2, 120.0),
+        ("Router C", 1.5, 60.0),
+        ("Destination", 1.0, 200.0),
+    ];
+
+    for (name, load, capacity) in &node_data {
+        let result: serde_json::Value = client.query("CreateNode", &json!({
+            "name": name,
+            "load_factor": load,
+            "capacity": capacity,
+        })).await?;
+        nodes.insert(name.to_string(), result["node"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create links
+    let links = vec![
+        ("Source", "Router A", 10.0),
+        ("Source", "Router B", 15.0),
+        ("Router A", "Destination", 20.0),
+        ("Router B", "Router C", 12.0),
+        ("Router C", "Destination", 18.0),
+    ];
+
+    for (from_node, to_node, cost) in &links {
+        let _link: serde_json::Value = client.query("CreateLink", &json!({
+            "from_id": nodes[*from_node],
+            "to_id": nodes[*to_node],
+            "cost": cost,
+        })).await?;
+    }
+
+    // Find balanced route
+    let result: serde_json::Value = client.query("FindBalancedRoute", &json!({
+        "start_id": nodes["Source"],
+        "end_id": nodes["Destination"],
+    })).await?;
+
+    println!("Balanced route: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create nodes with load and capacity
+    nodes := make(map[string]string)
+    nodeData := []struct {
+        name       string
+        load       float64
+        capacity   float64
+    }{
+        {"Source", 1.0, 100.0},
+        {"Router A", 2.5, 80.0},
+        {"Router B", 1.2, 120.0},
+        {"Router C", 1.5, 60.0},
+        {"Destination", 1.0, 200.0},
+    }
+
+    for _, node := range nodeData {
+        var result map[string]any
+        if err := client.Query("CreateNode", helix.WithData(map[string]any{
+            "name":        node.name,
+            "load_factor": node.load,
+            "capacity":    node.capacity,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateNode failed: %s", err)
+        }
+        nodes[node.name] = result["node"].(map[string]any)["id"].(string)
+    }
+
+    // Create links
+    links := []struct {
+        from, to string
+        cost     float64
+    }{
+        {"Source", "Router A", 10.0},
+        {"Source", "Router B", 15.0},
+        {"Router A", "Destination", 20.0},
+        {"Router B", "Router C", 12.0},
+        {"Router C", "Destination", 18.0},
+    }
+
+    for _, link := range links {
+        var l map[string]any
+        if err := client.Query("CreateLink", helix.WithData(map[string]any{
+            "from_id": nodes[link.from],
+            "to_id":   nodes[link.to],
+            "cost":    link.cost,
+        })).Scan(&l); err != nil {
+            log.Fatalf("CreateLink failed: %s", err)
+        }
+    }
+
+    // Find balanced route
+    var result map[string]any
+    if err := client.Query("FindBalancedRoute", helix.WithData(map[string]any{
+        "start_id": nodes["Source"],
+        "end_id":   nodes["Destination"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindBalancedRoute failed: %s", err)
+    }
+
+    fmt.Printf("Balanced route: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create nodes with load and capacity
+    const nodes: Record<string, string> = {};
+    const nodeData = [
+        { name: "Source", load_factor: 1.0, capacity: 100.0 },
+        { name: "Router A", load_factor: 2.5, capacity: 80.0 },
+        { name: "Router B", load_factor: 1.2, capacity: 120.0 },
+        { name: "Router C", load_factor: 1.5, capacity: 60.0 },
+        { name: "Destination", load_factor: 1.0, capacity: 200.0 },
+    ];
+
+    for (const node of nodeData) {
+        const result = await client.query("CreateNode", node);
+        nodes[node.name] = result.node.id;
+    }
+
+    // Create links
+    const links = [
+        { from: "Source", to: "Router A", cost: 10.0 },
+        { from: "Source", to: "Router B", cost: 15.0 },
+        { from: "Router A", to: "Destination", cost: 20.0 },
+        { from: "Router B", to: "Router C", cost: 12.0 },
+        { from: "Router C", to: "Destination", cost: 18.0 },
+    ];
+
+    for (const link of links) {
+        await client.query("CreateLink", {
+            from_id: nodes[link.from],
+            to_id: nodes[link.to],
+            cost: link.cost,
+        });
+    }
+
+    // Find balanced route
+    const result = await client.query("FindBalancedRoute", {
+        start_id: nodes["Source"],
+        end_id: nodes["Destination"],
+    });
+
+    console.log("Balanced route considering load and capacity:");
+    console.log("Path:", result.result.path.map((n: any) => n.name).join(" -> "));
+    console.log("Composite weight:", result.result.total_weight.toFixed(2));
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create nodes
+SOURCE_ID=$(curl -X POST http://localhost:6969/CreateNode \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Source","load_factor":1.0,"capacity":100.0}' | jq -r '.node.id')
+
+ROUTER_A_ID=$(curl -X POST http://localhost:6969/CreateNode \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Router A","load_factor":2.5,"capacity":80.0}' | jq -r '.node.id')
+
+ROUTER_B_ID=$(curl -X POST http://localhost:6969/CreateNode \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Router B","load_factor":1.2,"capacity":120.0}' | jq -r '.node.id')
+
+ROUTER_C_ID=$(curl -X POST http://localhost:6969/CreateNode \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Router C","load_factor":1.5,"capacity":60.0}' | jq -r '.node.id')
+
+DEST_ID=$(curl -X POST http://localhost:6969/CreateNode \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Destination","load_factor":1.0,"capacity":200.0}' | jq -r '.node.id')
+
+# Create links
+curl -X POST http://localhost:6969/CreateLink \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$SOURCE_ID\",\"to_id\":\"$ROUTER_A_ID\",\"cost\":10.0}"
+
+curl -X POST http://localhost:6969/CreateLink \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$SOURCE_ID\",\"to_id\":\"$ROUTER_B_ID\",\"cost\":15.0}"
+
+curl -X POST http://localhost:6969/CreateLink \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$ROUTER_A_ID\",\"to_id\":\"$DEST_ID\",\"cost\":20.0}"
+
+curl -X POST http://localhost:6969/CreateLink \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$ROUTER_B_ID\",\"to_id\":\"$ROUTER_C_ID\",\"cost\":12.0}"
+
+curl -X POST http://localhost:6969/CreateLink \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$ROUTER_C_ID\",\"to_id\":\"$DEST_ID\",\"cost\":18.0}"
+
+# Find balanced route
+curl -X POST http://localhost:6969/FindBalancedRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$SOURCE_ID\",\"end_id\":\"$DEST_ID\"}"
+```
+</CodeGroup>
+
+---
+
+## Real-World Use Cases
+
+### Traffic-Aware Navigation
+```rust
+// Penalize routes starting from congested areas
+::ShortestPathDijkstras<Road>(MUL(_::{distance}, _::FromN::{congestion}))
+```
+
+### Cost Optimization
+```rust
+// Minimize cost considering both base rate and destination fees
+::ShortestPathDijkstras<Route>(ADD(_::{base_cost}, _::ToN::{destination_fee}))
+```
+
+### Load Balancing
+```rust
+// Distribute traffic away from heavily loaded servers
+::ShortestPathDijkstras<Connection>(DIV(_::{latency}, SUB(1, _::ToN::{load_percent})))
+```
+
+### Capacity Planning
+```rust
+// Prefer high-capacity destinations
+::ShortestPathDijkstras<Link>(DIV(_::{distance}, _::ToN::{available_capacity}))
+```
+
+## Best Practices
+
+### 1. Property Normalization
+Ensure properties are on similar scales:
+```rust
+// Good: Both factors are normalized 0-1
+MUL(_::{distance}, ADD(_::FromN::{traffic}, _::ToN::{congestion}))
+
+// Careful: Distance in miles, traffic as percentage
+MUL(_::{distance}, _::FromN::{traffic_percent})  // May need scaling
+```
+
+### 2. Avoid Division by Zero
+Protect against zero denominators:
+```rust
+// Add small epsilon or use MAX
+DIV(_::{distance}, ADD(_::ToN::{popularity}, 0.01))
+```
+
+### 3. Index Key Properties
+For best performance, index properties used in weight calculations:
+```rust
+// Index frequently-accessed properties
+V::City {
+    @index traffic_factor: F64,
+    @index popularity: F64
+}
+```
+
+### 4. Test Weight Distributions
+Verify weights produce expected behavior:
+- Log sample weights during development
+- Ensure non-negative values
+- Check for reasonable ranges
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Weight Expressions" icon="function" href="/documentation/hql/traversals/shortest-paths/weight-expressions">
+    Advanced mathematical weight calculations
+  </Card>
+  <Card title="ShortestPathDijkstras" icon="route" href="/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra">
+    Full Dijkstra algorithm documentation
+  </Card>
+  <Card title="Mathematical Functions" icon="calculator" href="/documentation/hql/functions">
+    All available math functions
+  </Card>
+  <Card title="Overview" icon="route" href="/documentation/hql/traversals/shortest-paths/overview">
+    Compare all shortest path algorithms
+  </Card>
+</CardGroup>

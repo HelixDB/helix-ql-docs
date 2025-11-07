@@ -1,0 +1,454 @@
+---
+title: "AGGREGATE_BY"
+description: "Aggregate results by property values for summarization."
+icon: "chart-column"
+---
+
+## Aggregate Results with Full Data Objects &nbsp;
+
+AGGREGATE_BY organizes query results into groups based on one or more property values, returning both count summaries and the full data objects for each group.
+
+```rust
+::AGGREGATE_BY(property)
+::AGGREGATE_BY(property1, property2)
+```
+
+Returns grouped data with full objects:
+```rust [expandable]
+[
+    {
+        'count': 3,
+        'data': [
+            {"property1": value1, "property2": "Alice", ...},
+            {"property1": value1, "property2": "Charlie", ...},
+            {"property1": value1, "property2": "Frank", ...}
+        ]
+    },
+    {
+        'count': 2,
+        'data': [
+            {"property1": value2, "property2": "Bob", ...},
+            {"property1": value2, "property2": "Diana", ...}
+        ]
+    },
+    ...
+]
+```
+
+<Note>
+AGGREGATE_BY returns the full data objects grouped by the specified properties, providing both count and the actual grouped elements for detailed analysis. This is useful when you need to work with the actual data in each group, not just counts.
+</Note>
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## Example 1: Aggregate orders by status
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY AggregateOrdersByStatus () =>
+    orders <- N<Order>
+    RETURN orders::AGGREGATE_BY(status)
+
+QUERY CreateOrder (customer_name: String, status: String, total: F64) =>
+    order <- AddN<Order>({
+        customer_name: customer_name,
+        status: status,
+        total: total
+    })
+    RETURN order
+```
+
+```rust Schema
+N::Order {
+    customer_name: String,
+    status: String,
+    total: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+orders = [
+    {"customer_name": "Alice", "status": "pending", "total": 99.99},
+    {"customer_name": "Bob", "status": "shipped", "total": 149.99},
+    {"customer_name": "Charlie", "status": "pending", "total": 75.50},
+    {"customer_name": "Diana", "status": "delivered", "total": 200.00},
+    {"customer_name": "Eve", "status": "shipped", "total": 89.99},
+    {"customer_name": "Frank", "status": "pending", "total": 125.00},
+]
+
+for order in orders:
+    client.query("CreateOrder", order)
+
+result = client.query("AggregateOrdersByStatus", {})
+print("Orders aggregated by status:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let orders = vec![
+        ("Alice", "pending", 99.99),
+        ("Bob", "shipped", 149.99),
+        ("Charlie", "pending", 75.50),
+        ("Diana", "delivered", 200.00),
+        ("Eve", "shipped", 89.99),
+        ("Frank", "pending", 125.00),
+    ];
+
+    for (customer_name, status, total) in &orders {
+        let _created: serde_json::Value = client.query("CreateOrder", &json!({
+            "customer_name": customer_name,
+            "status": status,
+            "total": total,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("AggregateOrdersByStatus", &json!({})).await?;
+    println!("Orders aggregated by status: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    orders := []map[string]any{
+        {"customer_name": "Alice", "status": "pending", "total": 99.99},
+        {"customer_name": "Bob", "status": "shipped", "total": 149.99},
+        {"customer_name": "Charlie", "status": "pending", "total": 75.50},
+        {"customer_name": "Diana", "status": "delivered", "total": 200.00},
+        {"customer_name": "Eve", "status": "shipped", "total": 89.99},
+        {"customer_name": "Frank", "status": "pending", "total": 125.00},
+    }
+
+    for _, order := range orders {
+        var created map[string]any
+        if err := client.Query("CreateOrder", helix.WithData(order)).Scan(&created); err != nil {
+            log.Fatalf("CreateOrder failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("AggregateOrdersByStatus", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("AggregateOrdersByStatus failed: %s", err)
+    }
+
+    fmt.Printf("Orders aggregated by status: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const orders = [
+        { customer_name: "Alice", status: "pending", total: 99.99 },
+        { customer_name: "Bob", status: "shipped", total: 149.99 },
+        { customer_name: "Charlie", status: "pending", total: 75.50 },
+        { customer_name: "Diana", status: "delivered", total: 200.00 },
+        { customer_name: "Eve", status: "shipped", total: 89.99 },
+        { customer_name: "Frank", status: "pending", total: 125.00 },
+    ];
+
+    for (const order of orders) {
+        await client.query("CreateOrder", order);
+    }
+
+    const result = await client.query("AggregateOrdersByStatus", {});
+    console.log("Orders aggregated by status:", result);
+}
+
+main().catch((err) => {
+    console.error("AggregateOrdersByStatus query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateOrder \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Alice","status":"pending","total":99.99}'
+
+curl -X POST \
+  http://localhost:6969/CreateOrder \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Bob","status":"shipped","total":149.99}'
+
+curl -X POST \
+  http://localhost:6969/CreateOrder \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Charlie","status":"pending","total":75.50}'
+
+curl -X POST \
+  http://localhost:6969/CreateOrder \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Diana","status":"delivered","total":200.00}'
+
+curl -X POST \
+  http://localhost:6969/CreateOrder \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Eve","status":"shipped","total":89.99}'
+
+curl -X POST \
+  http://localhost:6969/CreateOrder \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Frank","status":"pending","total":125.00}'
+
+curl -X POST \
+  http://localhost:6969/AggregateOrdersByStatus \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+## Example 2: Aggregate products by category with COUNT
+
+<CodeGroup>
+```rust Query focus={1-3} [expandable]
+QUERY CountProductsByCategory () =>
+    products <- N<Product>
+    RETURN products::COUNT::AGGREGATE_BY(category)
+
+QUERY CreateProduct (name: String, category: String, price: F64, stock: I32) =>
+    product <- AddN<Product>({
+        name: name,
+        category: category,
+        price: price,
+        stock: stock
+    })
+    RETURN product
+```
+
+```rust Schema
+N::Product {
+    name: String,
+    category: String,
+    price: F64,
+    stock: I32
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+products = [
+    {"name": "Laptop", "category": "Electronics", "price": 999.99, "stock": 15},
+    {"name": "Mouse", "category": "Electronics", "price": 29.99, "stock": 50},
+    {"name": "Desk", "category": "Furniture", "price": 299.99, "stock": 10},
+    {"name": "Chair", "category": "Furniture", "price": 199.99, "stock": 20},
+    {"name": "Monitor", "category": "Electronics", "price": 399.99, "stock": 25},
+    {"name": "Bookshelf", "category": "Furniture", "price": 149.99, "stock": 12},
+]
+
+for product in products:
+    client.query("CreateProduct", product)
+
+result = client.query("CountProductsByCategory", {})
+print("Product count aggregated by category:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let products = vec![
+        ("Laptop", "Electronics", 999.99, 15),
+        ("Mouse", "Electronics", 29.99, 50),
+        ("Desk", "Furniture", 299.99, 10),
+        ("Chair", "Furniture", 199.99, 20),
+        ("Monitor", "Electronics", 399.99, 25),
+        ("Bookshelf", "Furniture", 149.99, 12),
+    ];
+
+    for (name, category, price, stock) in &products {
+        let _created: serde_json::Value = client.query("CreateProduct", &json!({
+            "name": name,
+            "category": category,
+            "price": price,
+            "stock": stock,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("CountProductsByCategory", &json!({})).await?;
+    println!("Product count aggregated by category: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    products := []map[string]any{
+        {"name": "Laptop", "category": "Electronics", "price": 999.99, "stock": int32(15)},
+        {"name": "Mouse", "category": "Electronics", "price": 29.99, "stock": int32(50)},
+        {"name": "Desk", "category": "Furniture", "price": 299.99, "stock": int32(10)},
+        {"name": "Chair", "category": "Furniture", "price": 199.99, "stock": int32(20)},
+        {"name": "Monitor", "category": "Electronics", "price": 399.99, "stock": int32(25)},
+        {"name": "Bookshelf", "category": "Furniture", "price": 149.99, "stock": int32(12)},
+    }
+
+    for _, product := range products {
+        var created map[string]any
+        if err := client.Query("CreateProduct", helix.WithData(product)).Scan(&created); err != nil {
+            log.Fatalf("CreateProduct failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("CountProductsByCategory", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("CountProductsByCategory failed: %s", err)
+    }
+
+    fmt.Printf("Product count aggregated by category: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const products = [
+        { name: "Laptop", category: "Electronics", price: 999.99, stock: 15 },
+        { name: "Mouse", category: "Electronics", price: 29.99, stock: 50 },
+        { name: "Desk", category: "Furniture", price: 299.99, stock: 10 },
+        { name: "Chair", category: "Furniture", price: 199.99, stock: 20 },
+        { name: "Monitor", category: "Electronics", price: 399.99, stock: 25 },
+        { name: "Bookshelf", category: "Furniture", price: 149.99, stock: 12 },
+    ];
+
+    for (const product of products) {
+        await client.query("CreateProduct", product);
+    }
+
+    const result = await client.query("CountProductsByCategory", {});
+    console.log("Product count aggregated by category:", result);
+}
+
+main().catch((err) => {
+    console.error("CountProductsByCategory query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateProduct \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Laptop","category":"Electronics","price":999.99,"stock":15}'
+
+curl -X POST \
+  http://localhost:6969/CreateProduct \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Mouse","category":"Electronics","price":29.99,"stock":50}'
+
+curl -X POST \
+  http://localhost:6969/CreateProduct \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Desk","category":"Furniture","price":299.99,"stock":10}'
+
+curl -X POST \
+  http://localhost:6969/CreateProduct \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Chair","category":"Furniture","price":199.99,"stock":20}'
+
+curl -X POST \
+  http://localhost:6969/CreateProduct \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Monitor","category":"Electronics","price":399.99,"stock":25}'
+
+curl -X POST \
+  http://localhost:6969/CreateProduct \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bookshelf","category":"Furniture","price":149.99,"stock":12}'
+
+curl -X POST \
+  http://localhost:6969/CountProductsByCategory \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+## When to Use AGGREGATE_BY vs GROUP_BY
+
+Choose **AGGREGATE_BY** when:
+- You need the actual data objects in each group
+- You want to perform further processing on grouped items
+- You need to display or return the full records
+- You're building reports that show detailed breakdowns
+
+Choose **GROUP_BY** when:
+- You only need counts and summaries
+- Memory efficiency is a priority
+- You're doing analytics or dashboards showing distributions
+- You don't need the actual data, just statistics
+
+<Note>
+AGGREGATE_BY returns more data than GROUP_BY, so it uses more memory and bandwidth. Use GROUP_BY when you only need counts.
+</Note>
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="GROUP_BY" icon="layer-group" href="/documentation/hql/operations/group-by">
+    Group results with count summaries only
+  </Card>
+  <Card title="Grouping Guide" icon="book" href="/documentation/hql/operations/grouping-guide">
+    When to use GROUP_BY vs AGGREGATE_BY
+  </Card>
+  <Card title="COUNT Operation" icon="hashtag" href="/documentation/hql/result_ops">
+    Count operation and other result operations
+  </Card>
+  <Card title="Property Access" icon="tag" href="/documentation/hql/properties/property-access">
+    Property filtering and access patterns
+  </Card>
+</CardGroup>

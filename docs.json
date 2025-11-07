@@ -108,7 +108,9 @@
                 "group": "Rerankers",
                 "expanded": false,
                 "pages": [
-                  "documentation/hql/rerankers/overview"
+                  "documentation/hql/rerankers/overview",
+                  "documentation/hql/rerankers/rerank-rrf",
+                  "documentation/hql/rerankers/rerank-mmr"
                 ],
                 "icon": "arrows-up-down"
               },
@@ -117,7 +119,18 @@
                 "expanded": false,
                 "pages": [
                   "documentation/hql/traversals/steps_nodes",
-                  "documentation/hql/traversals/steps_edges"
+                  "documentation/hql/traversals/steps_edges",
+                  {
+                    "group": "Shortest Paths",
+                    "pages": [
+                      "documentation/hql/traversals/shortest-paths/overview",
+                      "documentation/hql/traversals/shortest-paths/shortest-path-bfs",
+                      "documentation/hql/traversals/shortest-paths/shortest-path-dijkstra",
+                      "documentation/hql/traversals/shortest-paths/shortest-path-astar",
+                      "documentation/hql/traversals/shortest-paths/custom-weights",
+                      "documentation/hql/traversals/shortest-paths/weight-expressions"
+                    ]
+                  }
                 ],
                 "icon": "right-left-large"
               },
@@ -130,6 +143,30 @@
                 "icon": "wand-magic-sparkles"
               },
               "documentation/hql/shortest_path",
+              {
+                "group": "Math Functions",
+                "expanded": false,
+                "pages": [
+                  "documentation/hql/functions/math-overview",
+                  "documentation/hql/functions/arithmetic",
+                  "documentation/hql/functions/unary-math",
+                  "documentation/hql/functions/trigonometry",
+                  "documentation/hql/functions/constants",
+                  "documentation/hql/functions/aggregate-functions"
+                ],
+                "icon": "calculator"
+              },
+              {
+                "group": "Control Flow",
+                "expanded": false,
+                "pages": [
+                  "documentation/hql/control-flow/for-loops",
+                  "documentation/hql/control-flow/for-basic",
+                  "documentation/hql/control-flow/for-destructuring",
+                  "documentation/hql/control-flow/for-nested"
+                ],
+                "icon": "repeat"
+              },
               {
                 "group": "Conditionals",
                 "expanded": false,
@@ -152,6 +189,16 @@
                 "icon": "tags"
               },
               "documentation/hql/aggregation",
+              {
+                "group": "Grouping & Aggregation",
+                "expanded": false,
+                "pages": [
+                  "documentation/hql/operations/group-by",
+                  "documentation/hql/operations/aggregate-by",
+                  "documentation/hql/operations/grouping-guide"
+                ],
+                "icon": "layer-group"
+              },
               "documentation/hql/result_ops",
               "documentation/hql/output_values",
               {

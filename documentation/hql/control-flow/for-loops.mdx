@@ -1,0 +1,69 @@
+---
+title: "FOR Loops"
+description: "Iterate over collections and perform batch operations."
+icon: "repeat"
+---
+
+## Overview
+
+FOR loops enable you to iterate over collections and perform operations on each element. They are essential for batch processing, data transformation, and building complex graph structures.
+
+```rust
+FOR variable IN collection {
+    // Operations on each element
+}
+
+FOR {field1, field2} IN collection {
+    // Operations with destructured fields
+}
+```
+
+<Note>
+FOR loops are executed sequentially, making them ideal for operations that need to maintain order or have dependencies between iterations.
+</Note>
+
+## When to use FOR loops
+
+- **Batch data loading**: Insert multiple nodes or edges from a collection
+- **Data transformation**: Process and update multiple records
+- **Graph construction**: Build relationships between collections of nodes
+- **Nested iterations**: Create connections between all pairs of elements
+
+## Quick examples
+
+### Basic iteration
+```rust
+FOR user IN users {
+    AddN<User>({ name: user.name, age: user.age })
+}
+```
+
+### Destructuring
+```rust
+FOR {name, age, email} IN user_data {
+    AddN<User>({ name: name, age: age, email: email })
+}
+```
+
+### Nested loops
+```rust
+FOR user1 IN users {
+    FOR user2 IN users {
+        AddE<Knows>::From(user1)::To(user2)
+    }
+}
+```
+
+## Detailed guides
+
+<CardGroup cols={3}>
+  <Card title="Basic FOR Loops" icon="arrows-rotate" href="/hql/control-flow/for-basic">
+    Iterate over collections with simple variable binding
+  </Card>
+  <Card title="FOR Loop Destructuring" icon="code-branch" href="/hql/control-flow/for-destructuring">
+    Extract multiple properties directly in loop variable binding
+  </Card>
+  <Card title="Nested FOR Loops" icon="diagram-nested" href="/hql/control-flow/for-nested">
+    Use multiple levels of iteration for complex operations
+  </Card>
+</CardGroup>

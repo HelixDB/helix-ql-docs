@@ -1,0 +1,591 @@
+---
+title: "Basic FOR Loops"
+description: "Iterate over collections with simple variable binding."
+icon: "arrows-rotate"
+---
+
+## Iterate over collections with FOR loops &nbsp;
+
+Use FOR loops to perform operations on each element in a collection. The loop variable can reference the entire element or specific properties.
+
+```rust
+FOR variable IN collection {
+    // Access element properties: variable.property
+    // Perform operations on each element
+}
+```
+
+<Note>
+FOR loops process elements sequentially in the order they appear in the collection. This guarantees consistent execution order for dependent operations.
+</Note>
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+### Example 1: Iterating over nodes to perform updates
+
+<CodeGroup>
+
+```rust Query focus={1-8} [expandable]
+QUERY UpdateUserStatus (user_updates: [{id: ID, status: String}]) =>
+    FOR update IN user_updates {
+        user <- N<User>(update.id)::UPDATE({
+            status: update.status,
+            last_updated: "2024-11-04"
+        })
+    }
+    RETURN "Updated all users"
+
+QUERY CreateUser (name: String, age: U8, email: String, status: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email,
+        status: status,
+        last_updated: "2024-11-01"
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+    status: String,
+    last_updated: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create initial users
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com", "status": "active"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com", "status": "active"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com", "status": "active"},
+]
+
+user_ids = []
+for user in users:
+    result = client.query("CreateUser", user)
+    user_ids.append(result["id"])
+
+# Update their statuses using FOR loop
+user_updates = [
+    {"id": user_ids[0], "status": "inactive"},
+    {"id": user_ids[1], "status": "pending"},
+    {"id": user_ids[2], "status": "active"},
+]
+
+result = client.query("UpdateUserStatus", {"user_updates": user_updates})
+print("Update result:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create initial users
+    let users = vec![
+        ("Alice", 25, "alice@example.com", "active"),
+        ("Bob", 30, "bob@example.com", "active"),
+        ("Charlie", 28, "charlie@example.com", "active"),
+    ];
+
+    let mut user_ids = Vec::new();
+    for (name, age, email, status) in &users {
+        let result: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+            "status": status,
+        })).await?;
+        user_ids.push(result["id"].clone());
+    }
+
+    // Update their statuses using FOR loop
+    let user_updates = vec![
+        json!({"id": user_ids[0], "status": "inactive"}),
+        json!({"id": user_ids[1], "status": "pending"}),
+        json!({"id": user_ids[2], "status": "active"}),
+    ];
+
+    let result: serde_json::Value = client.query("UpdateUserStatus", &json!({
+        "user_updates": user_updates
+    })).await?;
+    println!("Update result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create initial users
+    users := []map[string]any{
+        {"name": "Alice", "age": uint8(25), "email": "alice@example.com", "status": "active"},
+        {"name": "Bob", "age": uint8(30), "email": "bob@example.com", "status": "active"},
+        {"name": "Charlie", "age": uint8(28), "email": "charlie@example.com", "status": "active"},
+    }
+
+    var userIDs []any
+    for _, user := range users {
+        var result map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&result); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+        userIDs = append(userIDs, result["id"])
+    }
+
+    // Update their statuses using FOR loop
+    userUpdates := []map[string]any{
+        {"id": userIDs[0], "status": "inactive"},
+        {"id": userIDs[1], "status": "pending"},
+        {"id": userIDs[2], "status": "active"},
+    }
+
+    var updateResult map[string]any
+    if err := client.Query("UpdateUserStatus", helix.WithData(map[string]any{
+        "user_updates": userUpdates,
+    })).Scan(&updateResult); err != nil {
+        log.Fatalf("UpdateUserStatus failed: %s", err)
+    }
+
+    fmt.Printf("Update result: %#v\n", updateResult)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create initial users
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com", status: "active" },
+        { name: "Bob", age: 30, email: "bob@example.com", status: "active" },
+        { name: "Charlie", age: 28, email: "charlie@example.com", status: "active" },
+    ];
+
+    const userIds = [];
+    for (const user of users) {
+        const result = await client.query("CreateUser", user);
+        userIds.push(result.id);
+    }
+
+    // Update their statuses using FOR loop
+    const userUpdates = [
+        { id: userIds[0], status: "inactive" },
+        { id: userIds[1], status: "pending" },
+        { id: userIds[2], status: "active" },
+    ];
+
+    const result = await client.query("UpdateUserStatus", { user_updates: userUpdates });
+    console.log("Update result:", result);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create initial users and capture their IDs
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com","status":"active"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com","status":"active"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com","status":"active"}'
+
+# Update their statuses using FOR loop (replace IDs with actual values from above)
+curl -X POST \
+  http://localhost:6969/UpdateUserStatus \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "user_updates": [
+      {"id": 1, "status": "inactive"},
+      {"id": 2, "status": "pending"},
+      {"id": 3, "status": "active"}
+    ]
+  }'
+```
+</CodeGroup>
+
+### Example 2: Processing query results
+
+<CodeGroup>
+
+```rust Query focus={1-7} [expandable]
+QUERY ArchiveInactiveUsers () =>
+    inactive_users <- N<User>::WHERE(_::{status}::EQ("inactive"))
+    FOR user IN inactive_users {
+        user::UPDATE({ archived: true, archived_at: "2024-11-04" })
+    }
+    RETURN "Archived inactive users"
+
+QUERY CreateUser (name: String, age: U8, email: String, status: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email,
+        status: status,
+        archived: false,
+        archived_at: ""
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+    status: String,
+    archived: Bool,
+    archived_at: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create users with different statuses
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com", "status": "inactive"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com", "status": "active"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com", "status": "inactive"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com", "status": "active"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+# Archive all inactive users
+result = client.query("ArchiveInactiveUsers", {})
+print("Archive result:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create users with different statuses
+    let users = vec![
+        ("Alice", 25, "alice@example.com", "inactive"),
+        ("Bob", 30, "bob@example.com", "active"),
+        ("Charlie", 28, "charlie@example.com", "inactive"),
+        ("Diana", 22, "diana@example.com", "active"),
+    ];
+
+    for (name, age, email, status) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "age": age,
+            "email": email,
+            "status": status,
+        })).await?;
+    }
+
+    // Archive all inactive users
+    let result: serde_json::Value = client.query("ArchiveInactiveUsers", &json!({})).await?;
+    println!("Archive result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create users with different statuses
+    users := []map[string]any{
+        {"name": "Alice", "age": uint8(25), "email": "alice@example.com", "status": "inactive"},
+        {"name": "Bob", "age": uint8(30), "email": "bob@example.com", "status": "active"},
+        {"name": "Charlie", "age": uint8(28), "email": "charlie@example.com", "status": "inactive"},
+        {"name": "Diana", "age": uint8(22), "email": "diana@example.com", "status": "active"},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    // Archive all inactive users
+    var result map[string]any
+    if err := client.Query("ArchiveInactiveUsers", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("ArchiveInactiveUsers failed: %s", err)
+    }
+
+    fmt.Printf("Archive result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create users with different statuses
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com", status: "inactive" },
+        { name: "Bob", age: 30, email: "bob@example.com", status: "active" },
+        { name: "Charlie", age: 28, email: "charlie@example.com", status: "inactive" },
+        { name: "Diana", age: 22, email: "diana@example.com", status: "active" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    // Archive all inactive users
+    const result = await client.query("ArchiveInactiveUsers", {});
+    console.log("Archive result:", result);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com","status":"inactive"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com","status":"active"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com","status":"inactive"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22,"email":"diana@example.com","status":"active"}'
+
+curl -X POST \
+  http://localhost:6969/ArchiveInactiveUsers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+### Example 3: Batch operations on collections
+
+<CodeGroup>
+
+```rust Query focus={1-10} [expandable]
+QUERY LoadProducts (products: [{name: String, price: F64, category: String}]) =>
+    FOR product IN products {
+        new_product <- AddN<Product>({
+            name: product.name,
+            price: product.price,
+            category: product.category,
+            stock: 100
+        })
+    }
+    RETURN "Products loaded successfully"
+```
+
+```rust Schema
+N::Product {
+    name: String,
+    price: F64,
+    category: String,
+    stock: I32
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Load multiple products in batch
+products = [
+    {"name": "Laptop", "price": 999.99, "category": "Electronics"},
+    {"name": "Mouse", "price": 29.99, "category": "Electronics"},
+    {"name": "Keyboard", "price": 79.99, "category": "Electronics"},
+    {"name": "Monitor", "price": 299.99, "category": "Electronics"},
+    {"name": "Desk Chair", "price": 199.99, "category": "Furniture"},
+]
+
+result = client.query("LoadProducts", {"products": products})
+print("Load result:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Load multiple products in batch
+    let products = vec![
+        json!({"name": "Laptop", "price": 999.99, "category": "Electronics"}),
+        json!({"name": "Mouse", "price": 29.99, "category": "Electronics"}),
+        json!({"name": "Keyboard", "price": 79.99, "category": "Electronics"}),
+        json!({"name": "Monitor", "price": 299.99, "category": "Electronics"}),
+        json!({"name": "Desk Chair", "price": 199.99, "category": "Furniture"}),
+    ];
+
+    let result: serde_json::Value = client.query("LoadProducts", &json!({
+        "products": products
+    })).await?;
+    println!("Load result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Load multiple products in batch
+    products := []map[string]any{
+        {"name": "Laptop", "price": 999.99, "category": "Electronics"},
+        {"name": "Mouse", "price": 29.99, "category": "Electronics"},
+        {"name": "Keyboard", "price": 79.99, "category": "Electronics"},
+        {"name": "Monitor", "price": 299.99, "category": "Electronics"},
+        {"name": "Desk Chair", "price": 199.99, "category": "Furniture"},
+    }
+
+    var result map[string]any
+    if err := client.Query("LoadProducts", helix.WithData(map[string]any{
+        "products": products,
+    })).Scan(&result); err != nil {
+        log.Fatalf("LoadProducts failed: %s", err)
+    }
+
+    fmt.Printf("Load result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Load multiple products in batch
+    const products = [
+        { name: "Laptop", price: 999.99, category: "Electronics" },
+        { name: "Mouse", price: 29.99, category: "Electronics" },
+        { name: "Keyboard", price: 79.99, category: "Electronics" },
+        { name: "Monitor", price: 299.99, category: "Electronics" },
+        { name: "Desk Chair", price: 199.99, category: "Furniture" },
+    ];
+
+    const result = await client.query("LoadProducts", { products });
+    console.log("Load result:", result);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/LoadProducts \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "products": [
+      {"name": "Laptop", "price": 999.99, "category": "Electronics"},
+      {"name": "Mouse", "price": 29.99, "category": "Electronics"},
+      {"name": "Keyboard", "price": 79.99, "category": "Electronics"},
+      {"name": "Monitor", "price": 299.99, "category": "Electronics"},
+      {"name": "Desk Chair", "price": 199.99, "category": "Furniture"}
+    ]
+  }'
+```
+</CodeGroup>
+
+## Related topics
+
+<CardGroup cols={2}>
+  <Card title="FOR Loop Destructuring" icon="code-branch" href="/hql/control-flow/for-destructuring">
+    Extract multiple properties directly in loop variable binding
+  </Card>
+  <Card title="Nested FOR Loops" icon="diagram-nested" href="/hql/control-flow/for-nested">
+    Use multiple levels of iteration for complex operations
+  </Card>
+</CardGroup>

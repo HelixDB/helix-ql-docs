@@ -1,0 +1,1086 @@
+---
+title: "Advanced Weight Expressions"
+description: "Compose complex mathematical weight calculations for sophisticated routing."
+icon: "function"
+---
+
+## Advanced Weight Expressions &nbsp;
+
+Helix supports sophisticated mathematical expressions for calculating path weights. By combining mathematical functions with property contexts, you can model complex real-world routing scenarios with exponential decay, multi-factor scoring, conditional logic, and more.
+
+<Note>
+All mathematical functions available in Helix can be used in weight expressions. See the [Mathematical Functions](/documentation/hql/functions) reference for the complete list.
+</Note>
+
+## Available Mathematical Functions
+
+### Arithmetic Operations
+- **ADD**(a, b) - Addition
+- **SUB**(a, b) - Subtraction
+- **MUL**(a, b) - Multiplication
+- **DIV**(a, b) - Division
+- **MOD**(a, b) - Modulo (remainder)
+
+### Power & Exponential
+- **POW**(base, exponent) - Power
+- **SQRT**(x) - Square root
+- **EXP**(x) - e^x (exponential)
+- **LN**(x) - Natural logarithm
+- **LOG**(x, base) - Logarithm with custom base
+
+### Rounding Functions
+- **CEIL**(x) - Round up
+- **FLOOR**(x) - Round down
+- **ROUND**(x) - Round to nearest
+- **ABS**(x) - Absolute value
+
+### Trigonometric Functions
+- **SIN**(x) - Sine
+- **COS**(x) - Cosine
+- **TAN**(x) - Tangent
+
+### Constants
+- **PI**() - π (3.14159...)
+
+## Example 1: Exponential time decay
+
+<CodeGroup>
+```rust Query focus={1-7}
+QUERY FindFreshestPath(start_id: ID, end_id: ID) =>
+    result <- N<DataCenter>(start_id)
+        ::ShortestPathDijkstras<Link>(
+            MUL(_::{distance}, POW(0.95, DIV(_::{days_since_update}, 30)))
+        )
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateDataCenter(name: String) =>
+    datacenter <- CREATE V<DataCenter> { name: name }
+    RETURN datacenter
+
+QUERY CreateLink(from_id: ID, to_id: ID, distance: F64, days_old: I64) =>
+    link <- CREATE E<Link>(from_id, to_id) {
+        distance: distance,
+        days_since_update: days_old
+    }
+    RETURN link
+```
+
+```rust Schema
+V::DataCenter {
+    name: String
+}
+
+E::Link {
+    distance: F64,
+    days_since_update: I64  // Age of route information
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Weight = distance * 0.95^(days_since_update/30)
+# Exponential decay: fresher routes get lower weights
+
+# Create data centers
+datacenters = {}
+for name in ["DC1", "DC2", "DC3", "DC4", "Target"]:
+    result = client.query("CreateDataCenter", {"name": name})
+    datacenters[name] = result["datacenter"]["id"]
+
+# Create links with varying freshness
+# Format: (from, to, distance, days_old)
+links = [
+    ("DC1", "DC2", 100.0, 0),     # Fresh route
+    ("DC1", "DC3", 90.0, 60),     # Stale route (2 months)
+    ("DC2", "Target", 120.0, 10), # Recent route
+    ("DC3", "DC4", 80.0, 90),     # Very stale (3 months)
+    ("DC4", "Target", 110.0, 5),  # Fresh route
+]
+
+for from_dc, to_dc, distance, days_old in links:
+    client.query("CreateLink", {
+        "from_id": datacenters[from_dc],
+        "to_id": datacenters[to_dc],
+        "distance": distance,
+        "days_old": days_old
+    })
+
+# Find path preferring fresh routes
+result = client.query("FindFreshestPath", {
+    "start_id": datacenters["DC1"],
+    "end_id": datacenters["Target"]
+})
+
+print(f"Path using exponential time decay:")
+print(f"Route: {' -> '.join([node['name'] for node in result['result']['path']])}")
+print(f"Decay-adjusted weight: {result['result']['total_weight']:.2f}")
+print("\nFresher routes are preferred over stale ones")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create data centers
+    let mut datacenters: HashMap<String, String> = HashMap::new();
+    for name in ["DC1", "DC2", "DC3", "DC4", "Target"] {
+        let result: serde_json::Value = client.query("CreateDataCenter", &json!({
+            "name": name,
+        })).await?;
+        datacenters.insert(name.to_string(), result["datacenter"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create links with varying freshness
+    let links = vec![
+        ("DC1", "DC2", 100.0, 0),
+        ("DC1", "DC3", 90.0, 60),
+        ("DC2", "Target", 120.0, 10),
+        ("DC3", "DC4", 80.0, 90),
+        ("DC4", "Target", 110.0, 5),
+    ];
+
+    for (from_dc, to_dc, distance, days_old) in &links {
+        let _link: serde_json::Value = client.query("CreateLink", &json!({
+            "from_id": datacenters[*from_dc],
+            "to_id": datacenters[*to_dc],
+            "distance": distance,
+            "days_old": days_old,
+        })).await?;
+    }
+
+    // Find path preferring fresh routes
+    let result: serde_json::Value = client.query("FindFreshestPath", &json!({
+        "start_id": datacenters["DC1"],
+        "end_id": datacenters["Target"],
+    })).await?;
+
+    println!("Path using exponential time decay: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create data centers
+    datacenters := make(map[string]string)
+    dcNames := []string{"DC1", "DC2", "DC3", "DC4", "Target"}
+
+    for _, name := range dcNames {
+        var result map[string]any
+        if err := client.Query("CreateDataCenter", helix.WithData(map[string]any{
+            "name": name,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateDataCenter failed: %s", err)
+        }
+        datacenters[name] = result["datacenter"].(map[string]any)["id"].(string)
+    }
+
+    // Create links with varying freshness
+    links := []struct {
+        from, to string
+        distance float64
+        daysOld  int64
+    }{
+        {"DC1", "DC2", 100.0, 0},
+        {"DC1", "DC3", 90.0, 60},
+        {"DC2", "Target", 120.0, 10},
+        {"DC3", "DC4", 80.0, 90},
+        {"DC4", "Target", 110.0, 5},
+    }
+
+    for _, link := range links {
+        var l map[string]any
+        if err := client.Query("CreateLink", helix.WithData(map[string]any{
+            "from_id":  datacenters[link.from],
+            "to_id":    datacenters[link.to],
+            "distance": link.distance,
+            "days_old": link.daysOld,
+        })).Scan(&l); err != nil {
+            log.Fatalf("CreateLink failed: %s", err)
+        }
+    }
+
+    // Find path preferring fresh routes
+    var result map[string]any
+    if err := client.Query("FindFreshestPath", helix.WithData(map[string]any{
+        "start_id": datacenters["DC1"],
+        "end_id":   datacenters["Target"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindFreshestPath failed: %s", err)
+    }
+
+    fmt.Printf("Path using exponential time decay: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create data centers
+    const datacenters: Record<string, string> = {};
+    const dcNames = ["DC1", "DC2", "DC3", "DC4", "Target"];
+
+    for (const name of dcNames) {
+        const result = await client.query("CreateDataCenter", { name });
+        datacenters[name] = result.datacenter.id;
+    }
+
+    // Create links with varying freshness
+    const links = [
+        { from: "DC1", to: "DC2", distance: 100.0, days_old: 0 },
+        { from: "DC1", to: "DC3", distance: 90.0, days_old: 60 },
+        { from: "DC2", to: "Target", distance: 120.0, days_old: 10 },
+        { from: "DC3", to: "DC4", distance: 80.0, days_old: 90 },
+        { from: "DC4", to: "Target", distance: 110.0, days_old: 5 },
+    ];
+
+    for (const link of links) {
+        await client.query("CreateLink", {
+            from_id: datacenters[link.from],
+            to_id: datacenters[link.to],
+            distance: link.distance,
+            days_old: link.days_old,
+        });
+    }
+
+    // Find path preferring fresh routes
+    const result = await client.query("FindFreshestPath", {
+        start_id: datacenters["DC1"],
+        end_id: datacenters["Target"],
+    });
+
+    console.log("Path using exponential time decay:");
+    console.log("Route:", result.result.path.map((n: any) => n.name).join(" -> "));
+    console.log("Decay-adjusted weight:", result.result.total_weight.toFixed(2));
+    console.log("\nFresher routes are preferred over stale ones");
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create data centers
+DC1_ID=$(curl -X POST http://localhost:6969/CreateDataCenter \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"DC1"}' | jq -r '.datacenter.id')
+
+DC2_ID=$(curl -X POST http://localhost:6969/CreateDataCenter \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"DC2"}' | jq -r '.datacenter.id')
+
+DC3_ID=$(curl -X POST http://localhost:6969/CreateDataCenter \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"DC3"}' | jq -r '.datacenter.id')
+
+DC4_ID=$(curl -X POST http://localhost:6969/CreateDataCenter \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"DC4"}' | jq -r '.datacenter.id')
+
+TARGET_ID=$(curl -X POST http://localhost:6969/CreateDataCenter \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Target"}' | jq -r '.datacenter.id')
+
+# Create links with varying freshness
+curl -X POST http://localhost:6969/CreateLink \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$DC1_ID\",\"to_id\":\"$DC2_ID\",\"distance\":100.0,\"days_old\":0}"
+
+curl -X POST http://localhost:6969/CreateLink \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$DC1_ID\",\"to_id\":\"$DC3_ID\",\"distance\":90.0,\"days_old\":60}"
+
+curl -X POST http://localhost:6969/CreateLink \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$DC2_ID\",\"to_id\":\"$TARGET_ID\",\"distance\":120.0,\"days_old\":10}"
+
+curl -X POST http://localhost:6969/CreateLink \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$DC3_ID\",\"to_id\":\"$DC4_ID\",\"distance\":80.0,\"days_old\":90}"
+
+curl -X POST http://localhost:6969/CreateLink \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$DC4_ID\",\"to_id\":\"$TARGET_ID\",\"distance\":110.0,\"days_old\":5}"
+
+# Find path preferring fresh routes
+curl -X POST http://localhost:6969/FindFreshestPath \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$DC1_ID\",\"end_id\":\"$TARGET_ID\"}"
+```
+</CodeGroup>
+
+**How it works:**
+- `POW(0.95, DIV(days_since_update, 30))` creates exponential decay
+- At 0 days: multiplier = 1.0 (no penalty)
+- At 30 days: multiplier = 0.95 (5% increase)
+- At 60 days: multiplier = 0.90 (10% increase)
+- At 90 days: multiplier = 0.86 (14% increase)
+
+---
+
+## Example 2: Multi-factor composite scoring
+
+<CodeGroup>
+```rust Query focus={1-13}
+QUERY FindOptimalPath(start_id: ID, end_id: ID) =>
+    result <- N<Server>(start_id)
+        ::ShortestPathDijkstras<Connection>(
+            ADD(
+                MUL(_::{latency}, 0.4),
+                ADD(
+                    MUL(DIV(1, _::{bandwidth}), 0.3),
+                    MUL(
+                        SUB(1, _::{reliability}),
+                        0.3
+                    )
+                )
+            )
+        )
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateServer(name: String) =>
+    server <- CREATE V<Server> { name: name }
+    RETURN server
+
+QUERY CreateConnection(from_id: ID, to_id: ID, latency: F64, bandwidth: F64, reliability: F64) =>
+    connection <- CREATE E<Connection>(from_id, to_id) {
+        latency: latency,
+        bandwidth: bandwidth,
+        reliability: reliability
+    }
+    RETURN connection
+```
+
+```rust Schema
+V::Server {
+    name: String
+}
+
+E::Connection {
+    latency: F64,        // Lower is better (ms)
+    bandwidth: F64,      // Higher is better (Gbps)
+    reliability: F64     // Higher is better (0.0-1.0)
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Composite weight: 40% latency + 30% reciprocal bandwidth + 30% unreliability
+# Balances multiple competing factors
+
+# Create servers
+servers = {}
+for name in ["S1", "S2", "S3", "S4", "S5"]:
+    result = client.query("CreateServer", {"name": name})
+    servers[name] = result["server"]["id"]
+
+# Create connections with different characteristics
+# Format: (from, to, latency_ms, bandwidth_gbps, reliability_0_to_1)
+connections = [
+    ("S1", "S2", 10.0, 10.0, 0.99),   # Low latency, high bandwidth, reliable
+    ("S1", "S3", 5.0, 5.0, 0.85),     # Lowest latency, medium bandwidth, less reliable
+    ("S2", "S5", 20.0, 20.0, 0.98),   # Higher latency, highest bandwidth
+    ("S3", "S4", 15.0, 8.0, 0.90),    # Balanced
+    ("S4", "S5", 8.0, 12.0, 0.95),    # Good all-around
+]
+
+for from_srv, to_srv, latency, bandwidth, reliability in connections:
+    client.query("CreateConnection", {
+        "from_id": servers[from_srv],
+        "to_id": servers[to_srv],
+        "latency": latency,
+        "bandwidth": bandwidth,
+        "reliability": reliability
+    })
+
+# Find optimal path balancing all factors
+result = client.query("FindOptimalPath", {
+    "start_id": servers["S1"],
+    "end_id": servers["S5"]
+})
+
+print(f"Multi-factor optimized path:")
+print(f"Route: {' -> '.join([node['name'] for node in result['result']['path']])}")
+print(f"Composite score: {result['result']['total_weight']:.3f}")
+print(f"(40% latency + 30% inv_bandwidth + 30% unreliability)")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create servers
+    let mut servers: HashMap<String, String> = HashMap::new();
+    for name in ["S1", "S2", "S3", "S4", "S5"] {
+        let result: serde_json::Value = client.query("CreateServer", &json!({
+            "name": name,
+        })).await?;
+        servers.insert(name.to_string(), result["server"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create connections with different characteristics
+    let connections = vec![
+        ("S1", "S2", 10.0, 10.0, 0.99),
+        ("S1", "S3", 5.0, 5.0, 0.85),
+        ("S2", "S5", 20.0, 20.0, 0.98),
+        ("S3", "S4", 15.0, 8.0, 0.90),
+        ("S4", "S5", 8.0, 12.0, 0.95),
+    ];
+
+    for (from_srv, to_srv, latency, bandwidth, reliability) in &connections {
+        let _conn: serde_json::Value = client.query("CreateConnection", &json!({
+            "from_id": servers[*from_srv],
+            "to_id": servers[*to_srv],
+            "latency": latency,
+            "bandwidth": bandwidth,
+            "reliability": reliability,
+        })).await?;
+    }
+
+    // Find optimal path balancing all factors
+    let result: serde_json::Value = client.query("FindOptimalPath", &json!({
+        "start_id": servers["S1"],
+        "end_id": servers["S5"],
+    })).await?;
+
+    println!("Multi-factor optimized path: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create servers
+    servers := make(map[string]string)
+    serverNames := []string{"S1", "S2", "S3", "S4", "S5"}
+
+    for _, name := range serverNames {
+        var result map[string]any
+        if err := client.Query("CreateServer", helix.WithData(map[string]any{
+            "name": name,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateServer failed: %s", err)
+        }
+        servers[name] = result["server"].(map[string]any)["id"].(string)
+    }
+
+    // Create connections with different characteristics
+    connections := []struct {
+        from, to    string
+        latency     float64
+        bandwidth   float64
+        reliability float64
+    }{
+        {"S1", "S2", 10.0, 10.0, 0.99},
+        {"S1", "S3", 5.0, 5.0, 0.85},
+        {"S2", "S5", 20.0, 20.0, 0.98},
+        {"S3", "S4", 15.0, 8.0, 0.90},
+        {"S4", "S5", 8.0, 12.0, 0.95},
+    }
+
+    for _, conn := range connections {
+        var c map[string]any
+        if err := client.Query("CreateConnection", helix.WithData(map[string]any{
+            "from_id":     servers[conn.from],
+            "to_id":       servers[conn.to],
+            "latency":     conn.latency,
+            "bandwidth":   conn.bandwidth,
+            "reliability": conn.reliability,
+        })).Scan(&c); err != nil {
+            log.Fatalf("CreateConnection failed: %s", err)
+        }
+    }
+
+    // Find optimal path balancing all factors
+    var result map[string]any
+    if err := client.Query("FindOptimalPath", helix.WithData(map[string]any{
+        "start_id": servers["S1"],
+        "end_id":   servers["S5"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindOptimalPath failed: %s", err)
+    }
+
+    fmt.Printf("Multi-factor optimized path: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create servers
+    const servers: Record<string, string> = {};
+    const serverNames = ["S1", "S2", "S3", "S4", "S5"];
+
+    for (const name of serverNames) {
+        const result = await client.query("CreateServer", { name });
+        servers[name] = result.server.id;
+    }
+
+    // Create connections with different characteristics
+    const connections = [
+        { from: "S1", to: "S2", latency: 10.0, bandwidth: 10.0, reliability: 0.99 },
+        { from: "S1", to: "S3", latency: 5.0, bandwidth: 5.0, reliability: 0.85 },
+        { from: "S2", to: "S5", latency: 20.0, bandwidth: 20.0, reliability: 0.98 },
+        { from: "S3", to: "S4", latency: 15.0, bandwidth: 8.0, reliability: 0.90 },
+        { from: "S4", to: "S5", latency: 8.0, bandwidth: 12.0, reliability: 0.95 },
+    ];
+
+    for (const conn of connections) {
+        await client.query("CreateConnection", {
+            from_id: servers[conn.from],
+            to_id: servers[conn.to],
+            latency: conn.latency,
+            bandwidth: conn.bandwidth,
+            reliability: conn.reliability,
+        });
+    }
+
+    // Find optimal path balancing all factors
+    const result = await client.query("FindOptimalPath", {
+        start_id: servers["S1"],
+        end_id: servers["S5"],
+    });
+
+    console.log("Multi-factor optimized path:");
+    console.log("Route:", result.result.path.map((n: any) => n.name).join(" -> "));
+    console.log("Composite score:", result.result.total_weight.toFixed(3));
+    console.log("(40% latency + 30% inv_bandwidth + 30% unreliability)");
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create servers
+S1_ID=$(curl -X POST http://localhost:6969/CreateServer \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"S1"}' | jq -r '.server.id')
+
+S2_ID=$(curl -X POST http://localhost:6969/CreateServer \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"S2"}' | jq -r '.server.id')
+
+S3_ID=$(curl -X POST http://localhost:6969/CreateServer \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"S3"}' | jq -r '.server.id')
+
+S4_ID=$(curl -X POST http://localhost:6969/CreateServer \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"S4"}' | jq -r '.server.id')
+
+S5_ID=$(curl -X POST http://localhost:6969/CreateServer \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"S5"}' | jq -r '.server.id')
+
+# Create connections with different characteristics
+curl -X POST http://localhost:6969/CreateConnection \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$S1_ID\",\"to_id\":\"$S2_ID\",\"latency\":10.0,\"bandwidth\":10.0,\"reliability\":0.99}"
+
+curl -X POST http://localhost:6969/CreateConnection \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$S1_ID\",\"to_id\":\"$S3_ID\",\"latency\":5.0,\"bandwidth\":5.0,\"reliability\":0.85}"
+
+curl -X POST http://localhost:6969/CreateConnection \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$S2_ID\",\"to_id\":\"$S5_ID\",\"latency\":20.0,\"bandwidth\":20.0,\"reliability\":0.98}"
+
+curl -X POST http://localhost:6969/CreateConnection \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$S3_ID\",\"to_id\":\"$S4_ID\",\"latency\":15.0,\"bandwidth\":8.0,\"reliability\":0.90}"
+
+curl -X POST http://localhost:6969/CreateConnection \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$S4_ID\",\"to_id\":\"$S5_ID\",\"latency\":8.0,\"bandwidth\":12.0,\"reliability\":0.95}"
+
+# Find optimal path balancing all factors
+curl -X POST http://localhost:6969/FindOptimalPath \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$S1_ID\",\"end_id\":\"$S5_ID\"}"
+```
+</CodeGroup>
+
+**Weight breakdown:**
+- **40% latency**: Direct contribution (lower is better)
+- **30% reciprocal bandwidth**: 1/bandwidth (lower bandwidth → higher cost)
+- **30% unreliability**: (1 - reliability) (less reliable → higher cost)
+
+---
+
+## Example 3: Conditional weights with thresholds
+
+<CodeGroup>
+```rust Query focus={1-11}
+QUERY FindConditionalPath(start_id: ID, end_id: ID, threshold: F64) =>
+    result <- N<Router>(start_id)
+        ::ShortestPathDijkstras<Cable>(
+            MUL(
+                _::{length},
+                ADD(
+                    1,
+                    MUL(CEIL(DIV(SUB(_::{capacity_used}, threshold), 10)), 0.5)
+                )
+            )
+        )
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateRouter(name: String) =>
+    router <- CREATE V<Router> { name: name }
+    RETURN router
+
+QUERY CreateCable(from_id: ID, to_id: ID, length: F64, capacity_used: F64) =>
+    cable <- CREATE E<Cable>(from_id, to_id) {
+        length: length,
+        capacity_used: capacity_used
+    }
+    RETURN cable
+```
+
+```rust Schema
+V::Router {
+    name: String
+}
+
+E::Cable {
+    length: F64,
+    capacity_used: F64  // Percentage of capacity used (0-100)
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Conditional weight: Adds penalty when capacity exceeds threshold
+# Weight = length * (1 + ceil((capacity_used - threshold) / 10) * 0.5)
+# Penalizes overcapacity cables progressively
+
+# Create routers
+routers = {}
+for name in ["R1", "R2", "R3", "R4", "R5"]:
+    result = client.query("CreateRouter", {"name": name})
+    routers[name] = result["router"]["id"]
+
+# Create cables with varying capacity usage
+# Format: (from, to, length_km, capacity_percent)
+cables = [
+    ("R1", "R2", 100.0, 45.0),   # Below threshold
+    ("R1", "R3", 90.0, 85.0),    # Above threshold
+    ("R2", "R4", 110.0, 50.0),   # Below threshold
+    ("R3", "R4", 95.0, 95.0),    # Way above threshold
+    ("R4", "R5", 105.0, 60.0),   # Slightly above threshold
+]
+
+for from_r, to_r, length, capacity in cables:
+    client.query("CreateCable", {
+        "from_id": routers[from_r],
+        "to_id": routers[to_r],
+        "length": length,
+        "capacity_used": capacity
+    })
+
+# Find path with 70% capacity threshold
+# Cables above 70% get progressive penalties
+result = client.query("FindConditionalPath", {
+    "start_id": routers["R1"],
+    "end_id": routers["R5"],
+    "threshold": 70.0
+})
+
+print(f"Path avoiding overcapacity cables (>70%):")
+print(f"Route: {' -> '.join([node['name'] for node in result['result']['path']])}")
+print(f"Penalty-adjusted weight: {result['result']['total_weight']:.2f}")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create routers
+    let mut routers: HashMap<String, String> = HashMap::new();
+    for name in ["R1", "R2", "R3", "R4", "R5"] {
+        let result: serde_json::Value = client.query("CreateRouter", &json!({
+            "name": name,
+        })).await?;
+        routers.insert(name.to_string(), result["router"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create cables with varying capacity usage
+    let cables = vec![
+        ("R1", "R2", 100.0, 45.0),
+        ("R1", "R3", 90.0, 85.0),
+        ("R2", "R4", 110.0, 50.0),
+        ("R3", "R4", 95.0, 95.0),
+        ("R4", "R5", 105.0, 60.0),
+    ];
+
+    for (from_r, to_r, length, capacity) in &cables {
+        let _cable: serde_json::Value = client.query("CreateCable", &json!({
+            "from_id": routers[*from_r],
+            "to_id": routers[*to_r],
+            "length": length,
+            "capacity_used": capacity,
+        })).await?;
+    }
+
+    // Find path with 70% capacity threshold
+    let result: serde_json::Value = client.query("FindConditionalPath", &json!({
+        "start_id": routers["R1"],
+        "end_id": routers["R5"],
+        "threshold": 70.0,
+    })).await?;
+
+    println!("Path avoiding overcapacity cables: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create routers
+    routers := make(map[string]string)
+    routerNames := []string{"R1", "R2", "R3", "R4", "R5"}
+
+    for _, name := range routerNames {
+        var result map[string]any
+        if err := client.Query("CreateRouter", helix.WithData(map[string]any{
+            "name": name,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateRouter failed: %s", err)
+        }
+        routers[name] = result["router"].(map[string]any)["id"].(string)
+    }
+
+    // Create cables with varying capacity usage
+    cables := []struct {
+        from, to     string
+        length       float64
+        capacityUsed float64
+    }{
+        {"R1", "R2", 100.0, 45.0},
+        {"R1", "R3", 90.0, 85.0},
+        {"R2", "R4", 110.0, 50.0},
+        {"R3", "R4", 95.0, 95.0},
+        {"R4", "R5", 105.0, 60.0},
+    }
+
+    for _, cable := range cables {
+        var c map[string]any
+        if err := client.Query("CreateCable", helix.WithData(map[string]any{
+            "from_id":       routers[cable.from],
+            "to_id":         routers[cable.to],
+            "length":        cable.length,
+            "capacity_used": cable.capacityUsed,
+        })).Scan(&c); err != nil {
+            log.Fatalf("CreateCable failed: %s", err)
+        }
+    }
+
+    // Find path with 70% capacity threshold
+    var result map[string]any
+    if err := client.Query("FindConditionalPath", helix.WithData(map[string]any{
+        "start_id": routers["R1"],
+        "end_id":   routers["R5"],
+        "threshold": 70.0,
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindConditionalPath failed: %s", err)
+    }
+
+    fmt.Printf("Path avoiding overcapacity cables: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create routers
+    const routers: Record<string, string> = {};
+    const routerNames = ["R1", "R2", "R3", "R4", "R5"];
+
+    for (const name of routerNames) {
+        const result = await client.query("CreateRouter", { name });
+        routers[name] = result.router.id;
+    }
+
+    // Create cables with varying capacity usage
+    const cables = [
+        { from: "R1", to: "R2", length: 100.0, capacity_used: 45.0 },
+        { from: "R1", to: "R3", length: 90.0, capacity_used: 85.0 },
+        { from: "R2", to: "R4", length: 110.0, capacity_used: 50.0 },
+        { from: "R3", to: "R4", length: 95.0, capacity_used: 95.0 },
+        { from: "R4", to: "R5", length: 105.0, capacity_used: 60.0 },
+    ];
+
+    for (const cable of cables) {
+        await client.query("CreateCable", {
+            from_id: routers[cable.from],
+            to_id: routers[cable.to],
+            length: cable.length,
+            capacity_used: cable.capacity_used,
+        });
+    }
+
+    // Find path with 70% capacity threshold
+    const result = await client.query("FindConditionalPath", {
+        start_id: routers["R1"],
+        end_id: routers["R5"],
+        threshold: 70.0,
+    });
+
+    console.log("Path avoiding overcapacity cables (>70%):");
+    console.log("Route:", result.result.path.map((n: any) => n.name).join(" -> "));
+    console.log("Penalty-adjusted weight:", result.result.total_weight.toFixed(2));
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create routers
+R1_ID=$(curl -X POST http://localhost:6969/CreateRouter \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"R1"}' | jq -r '.router.id')
+
+R2_ID=$(curl -X POST http://localhost:6969/CreateRouter \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"R2"}' | jq -r '.router.id')
+
+R3_ID=$(curl -X POST http://localhost:6969/CreateRouter \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"R3"}' | jq -r '.router.id')
+
+R4_ID=$(curl -X POST http://localhost:6969/CreateRouter \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"R4"}' | jq -r '.router.id')
+
+R5_ID=$(curl -X POST http://localhost:6969/CreateRouter \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"R5"}' | jq -r '.router.id')
+
+# Create cables with varying capacity usage
+curl -X POST http://localhost:6969/CreateCable \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$R1_ID\",\"to_id\":\"$R2_ID\",\"length\":100.0,\"capacity_used\":45.0}"
+
+curl -X POST http://localhost:6969/CreateCable \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$R1_ID\",\"to_id\":\"$R3_ID\",\"length\":90.0,\"capacity_used\":85.0}"
+
+curl -X POST http://localhost:6969/CreateCable \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$R2_ID\",\"to_id\":\"$R4_ID\",\"length\":110.0,\"capacity_used\":50.0}"
+
+curl -X POST http://localhost:6969/CreateCable \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$R3_ID\",\"to_id\":\"$R4_ID\",\"length\":95.0,\"capacity_used\":95.0}"
+
+curl -X POST http://localhost:6969/CreateCable \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$R4_ID\",\"to_id\":\"$R5_ID\",\"length\":105.0,\"capacity_used\":60.0}"
+
+# Find path with 70% capacity threshold
+curl -X POST http://localhost:6969/FindConditionalPath \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$R1_ID\",\"end_id\":\"$R5_ID\",\"threshold\":70.0}"
+```
+</CodeGroup>
+
+**How conditional weighting works:**
+- Below threshold: No penalty (multiplier = 1)
+- Above threshold: Progressive penalty based on excess
+- Uses CEIL to create step-function penalties
+- Every 10% over threshold adds 0.5x multiplier
+
+---
+
+## Complex Expression Patterns
+
+### Vector Distance with Property Weighting
+```rust
+// Euclidean-style distance combining two properties
+SQRT(ADD(POW(_::{distance}, 2), POW(MUL(1000, SUB(1, _::{reliability})), 2)))
+```
+
+### Logarithmic Scaling for Large Values
+```rust
+// Compress large bandwidth values logarithmically
+MUL(_::{distance}, LN(ADD(_::{bandwidth}, 1)))
+```
+
+### Periodic Patterns with Trigonometry
+```rust
+// Prefer routes updated on certain days (weekly cycle)
+MUL(_::{distance}, ADD(1, MUL(SIN(DIV(_::{days_since_update}, 7)), 0.2)))
+```
+
+### Quantized Weights
+```rust
+// Round to nearest 10 for simplified routing
+MUL(ROUND(DIV(_::{distance}, 10)), 10)
+```
+
+## Performance Considerations
+
+### Expression Complexity Impact
+
+| Complexity | Operations | Performance Impact |
+|------------|-----------|-------------------|
+| **Simple** | Single property | Minimal (<1% overhead) |
+| **Moderate** | 2-5 operations | Low (1-5% overhead) |
+| **Complex** | 6-15 operations | Moderate (5-15% overhead) |
+| **Very Complex** | 15+ operations | Higher (15-30% overhead) |
+
+### Optimization Tips
+
+1. **Pre-calculate when possible**: Store derived values as properties
+   ```rust
+   // Instead of: POW(0.95, DIV(days, 30))
+   // Pre-calculate: decay_factor property
+   ```
+
+2. **Simplify expressions**: Combine constants
+   ```rust
+   // Instead of: MUL(MUL(_::{x}, 0.3), 0.4)
+   // Use: MUL(_::{x}, 0.12)
+   ```
+
+3. **Avoid expensive operations in hot paths**:
+   - Trigonometric functions (SIN, COS, TAN) are slower
+   - Multiple POW operations add up
+   - Consider lookup tables for complex functions
+
+4. **Profile your queries**: Test with realistic data volumes
+
+## Common Patterns Library
+
+### Time-based Decay
+```rust
+// Exponential: POW(0.95, DIV(age, period))
+// Linear: MUL(distance, ADD(1, DIV(age, 100)))
+// Step: MUL(distance, ADD(1, FLOOR(DIV(age, 30))))
+```
+
+### Multi-factor Scoring
+```rust
+// Weighted sum: ADD(MUL(factor1, w1), MUL(factor2, w2))
+// Geometric mean: SQRT(MUL(factor1, factor2))
+// Harmonic mean: DIV(2, ADD(DIV(1, f1), DIV(1, f2)))
+```
+
+### Threshold-based Penalties
+```rust
+// Hard threshold: IF(GT(value, thresh), penalty, 1)
+// Soft threshold: ADD(1, MUL(MAX(0, SUB(value, thresh)), rate))
+// Step function: CEIL(DIV(MAX(0, SUB(value, thresh)), step))
+```
+
+### Normalization
+```rust
+// Min-max: DIV(SUB(value, min), SUB(max, min))
+// Z-score: DIV(SUB(value, mean), stddev)
+// Log scale: LN(ADD(value, 1))
+```
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Custom Weights" icon="scale-balanced" href="/documentation/hql/traversals/shortest-paths/custom-weights">
+    Property contexts and basic weight patterns
+  </Card>
+  <Card title="Mathematical Functions" icon="calculator" href="/documentation/hql/functions">
+    Complete reference of all math functions
+  </Card>
+  <Card title="ShortestPathDijkstras" icon="route" href="/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra">
+    Dijkstra's algorithm documentation
+  </Card>
+  <Card title="Overview" icon="route" href="/documentation/hql/traversals/shortest-paths/overview">
+    Compare all shortest path algorithms
+  </Card>
+</CardGroup>

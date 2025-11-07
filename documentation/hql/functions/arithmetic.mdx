@@ -1,0 +1,622 @@
+---
+title: "Arithmetic Functions"
+description: "Perform basic arithmetic operations like addition, subtraction, multiplication, division, power, and modulo."
+icon: "plus-minus"
+---
+
+## Arithmetic Operations
+
+HelixQL provides six fundamental arithmetic functions for performing basic mathematical calculations in your queries.
+
+## Available Functions
+
+### ADD - Addition
+
+```rust
+ADD(a, b)  // Returns a + b
+```
+
+### SUB - Subtraction
+
+```rust
+SUB(a, b)  // Returns a - b
+```
+
+### MUL - Multiplication
+
+```rust
+MUL(a, b)  // Returns a * b
+```
+
+### DIV - Division
+
+```rust
+DIV(a, b)  // Returns a / b
+```
+
+### POW - Power
+
+```rust
+POW(base, exponent)  // Returns base^exponent
+```
+
+### MOD - Modulo
+
+```rust
+MOD(a, b)  // Returns a % b (remainder)
+```
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## Example 1: Basic arithmetic in property calculations
+
+Calculate discounted prices and tax for products:
+
+<CodeGroup>
+```rust Query focus={2-8}
+QUERY CalculateProductPricing(discount_percent: F64, tax_rate: F64) =>
+    products <- N::Product
+        ::{
+            name,
+            original_price: price,
+            discount: MUL(_::{price}, DIV(discount_percent, 100.0)),
+            final_price: SUB(_::{price}, MUL(_::{price}, DIV(discount_percent, 100.0))),
+            with_tax: MUL(SUB(_::{price}, MUL(_::{price}, DIV(discount_percent, 100.0))), ADD(1.0, tax_rate))
+        }
+    RETURN products
+
+QUERY InsertProduct(name: String, price: F64) =>
+    product <- AddN<Product>({ name: name, price: price })
+    RETURN product
+```
+
+```rust Schema
+N::Product {
+    name: String,
+    price: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Insert sample products
+products = [
+    {"name": "Laptop", "price": 999.99},
+    {"name": "Mouse", "price": 29.99},
+    {"name": "Keyboard", "price": 79.99},
+]
+
+for product in products:
+    client.query("InsertProduct", product)
+
+# Calculate pricing with 15% discount and 8.5% tax
+result = client.query("CalculateProductPricing", {
+    "discount_percent": 15.0,
+    "tax_rate": 0.085
+})
+
+print("Product pricing:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let products = vec![
+        ("Laptop", 999.99),
+        ("Mouse", 29.99),
+        ("Keyboard", 79.99),
+    ];
+
+    for (name, price) in &products {
+        let _inserted: serde_json::Value = client.query("InsertProduct", &json!({
+            "name": name,
+            "price": price,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("CalculateProductPricing", &json!({
+        "discount_percent": 15.0,
+        "tax_rate": 0.085,
+    })).await?;
+
+    println!("Product pricing: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    products := []map[string]any{
+        {"name": "Laptop", "price": 999.99},
+        {"name": "Mouse", "price": 29.99},
+        {"name": "Keyboard", "price": 79.99},
+    }
+
+    for _, product := range products {
+        var inserted map[string]any
+        if err := client.Query("InsertProduct", helix.WithData(product)).Scan(&inserted); err != nil {
+            log.Fatalf("InsertProduct failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("CalculateProductPricing", helix.WithData(map[string]any{
+        "discount_percent": 15.0,
+        "tax_rate":         0.085,
+    })).Scan(&result); err != nil {
+        log.Fatalf("CalculateProductPricing failed: %s", err)
+    }
+
+    fmt.Printf("Product pricing: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const products = [
+        { name: "Laptop", price: 999.99 },
+        { name: "Mouse", price: 29.99 },
+        { name: "Keyboard", price: 79.99 },
+    ];
+
+    for (const product of products) {
+        await client.query("InsertProduct", product);
+    }
+
+    const result = await client.query("CalculateProductPricing", {
+        discount_percent: 15.0,
+        tax_rate: 0.085,
+    });
+
+    console.log("Product pricing:", result);
+}
+
+main().catch((err) => {
+    console.error("CalculateProductPricing query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/InsertProduct \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Laptop","price":999.99}'
+
+curl -X POST \
+  http://localhost:6969/InsertProduct \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Mouse","price":29.99}'
+
+curl -X POST \
+  http://localhost:6969/InsertProduct \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Keyboard","price":79.99}'
+
+curl -X POST \
+  http://localhost:6969/CalculateProductPricing \
+  -H 'Content-Type: application/json' \
+  -d '{"discount_percent":15.0,"tax_rate":0.085}'
+```
+</CodeGroup>
+
+---
+
+## Example 2: Using POW for exponential calculations
+
+Calculate compound interest over time:
+
+<CodeGroup>
+```rust Query focus={2-6}
+QUERY CalculateInvestmentGrowth(years: I32, rate: F64) =>
+    accounts <- N::Account
+        ::{
+            account_id,
+            initial_amount,
+            final_amount: MUL(_::{initial_amount}, POW(ADD(1.0, rate), years))
+        }
+    RETURN accounts
+
+QUERY CreateAccount(account_id: String, initial_amount: F64) =>
+    account <- AddN<Account>({ account_id: account_id, initial_amount: initial_amount })
+    RETURN account
+```
+
+```rust Schema
+N::Account {
+    account_id: String,
+    initial_amount: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create accounts
+accounts = [
+    {"account_id": "ACC001", "initial_amount": 10000.0},
+    {"account_id": "ACC002", "initial_amount": 25000.0},
+    {"account_id": "ACC003", "initial_amount": 50000.0},
+]
+
+for account in accounts:
+    client.query("CreateAccount", account)
+
+# Calculate growth over 10 years at 7% annual rate
+result = client.query("CalculateInvestmentGrowth", {
+    "years": 10,
+    "rate": 0.07
+})
+
+print("Investment growth:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let accounts = vec![
+        ("ACC001", 10000.0),
+        ("ACC002", 25000.0),
+        ("ACC003", 50000.0),
+    ];
+
+    for (account_id, initial_amount) in &accounts {
+        let _inserted: serde_json::Value = client.query("CreateAccount", &json!({
+            "account_id": account_id,
+            "initial_amount": initial_amount,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("CalculateInvestmentGrowth", &json!({
+        "years": 10,
+        "rate": 0.07,
+    })).await?;
+
+    println!("Investment growth: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    accounts := []map[string]any{
+        {"account_id": "ACC001", "initial_amount": 10000.0},
+        {"account_id": "ACC002", "initial_amount": 25000.0},
+        {"account_id": "ACC003", "initial_amount": 50000.0},
+    }
+
+    for _, account := range accounts {
+        var inserted map[string]any
+        if err := client.Query("CreateAccount", helix.WithData(account)).Scan(&inserted); err != nil {
+            log.Fatalf("CreateAccount failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("CalculateInvestmentGrowth", helix.WithData(map[string]any{
+        "years": int32(10),
+        "rate":  0.07,
+    })).Scan(&result); err != nil {
+        log.Fatalf("CalculateInvestmentGrowth failed: %s", err)
+    }
+
+    fmt.Printf("Investment growth: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const accounts = [
+        { account_id: "ACC001", initial_amount: 10000.0 },
+        { account_id: "ACC002", initial_amount: 25000.0 },
+        { account_id: "ACC003", initial_amount: 50000.0 },
+    ];
+
+    for (const account of accounts) {
+        await client.query("CreateAccount", account);
+    }
+
+    const result = await client.query("CalculateInvestmentGrowth", {
+        years: 10,
+        rate: 0.07,
+    });
+
+    console.log("Investment growth:", result);
+}
+
+main().catch((err) => {
+    console.error("CalculateInvestmentGrowth query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateAccount \
+  -H 'Content-Type: application/json' \
+  -d '{"account_id":"ACC001","initial_amount":10000.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateAccount \
+  -H 'Content-Type: application/json' \
+  -d '{"account_id":"ACC002","initial_amount":25000.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateAccount \
+  -H 'Content-Type: application/json' \
+  -d '{"account_id":"ACC003","initial_amount":50000.0}'
+
+curl -X POST \
+  http://localhost:6969/CalculateInvestmentGrowth \
+  -H 'Content-Type: application/json' \
+  -d '{"years":10,"rate":0.07}'
+```
+</CodeGroup>
+
+---
+
+## Example 3: Using MOD for cyclic patterns
+
+Use modulo to determine recurring patterns or groupings:
+
+<CodeGroup>
+```rust Query focus={2-7}
+QUERY CategorizeByRotation(group_size: I64) =>
+    items <- N::Item
+        ::{
+            item_id,
+            position,
+            group: MOD(_::{position}, group_size),
+            is_first_in_group: MOD(_::{position}, group_size)::EQ(0)
+        }
+    RETURN items
+
+QUERY CreateItem(item_id: String, position: I64) =>
+    item <- AddN<Item>({ item_id: item_id, position: position })
+    RETURN item
+```
+
+```rust Schema
+N::Item {
+    item_id: String,
+    position: I64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create items with positions
+for i in range(15):
+    client.query("CreateItem", {
+        "item_id": f"ITEM{i:03d}",
+        "position": i
+    })
+
+# Categorize into groups of 5
+result = client.query("CategorizeByRotation", {
+    "group_size": 5
+})
+
+print("Categorized items:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create items with positions
+    for i in 0..15 {
+        let _inserted: serde_json::Value = client.query("CreateItem", &json!({
+            "item_id": format!("ITEM{:03}", i),
+            "position": i,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("CategorizeByRotation", &json!({
+        "group_size": 5,
+    })).await?;
+
+    println!("Categorized items: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create items with positions
+    for i := 0; i < 15; i++ {
+        var inserted map[string]any
+        if err := client.Query("CreateItem", helix.WithData(map[string]any{
+            "item_id":  fmt.Sprintf("ITEM%03d", i),
+            "position": int64(i),
+        })).Scan(&inserted); err != nil {
+            log.Fatalf("CreateItem failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("CategorizeByRotation", helix.WithData(map[string]any{
+        "group_size": int64(5),
+    })).Scan(&result); err != nil {
+        log.Fatalf("CategorizeByRotation failed: %s", err)
+    }
+
+    fmt.Printf("Categorized items: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create items with positions
+    for (let i = 0; i < 15; i++) {
+        await client.query("CreateItem", {
+            item_id: `ITEM${i.toString().padStart(3, '0')}`,
+            position: i,
+        });
+    }
+
+    const result = await client.query("CategorizeByRotation", {
+        group_size: 5,
+    });
+
+    console.log("Categorized items:", result);
+}
+
+main().catch((err) => {
+    console.error("CategorizeByRotation query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create items
+for i in {0..14}; do
+  curl -X POST \
+    http://localhost:6969/CreateItem \
+    -H 'Content-Type: application/json' \
+    -d "{\"item_id\":\"ITEM$(printf %03d $i)\",\"position\":$i}"
+done
+
+curl -X POST \
+  http://localhost:6969/CategorizeByRotation \
+  -H 'Content-Type: application/json' \
+  -d '{"group_size":5}'
+```
+</CodeGroup>
+
+---
+
+## Function Composition
+
+Arithmetic functions can be nested to create complex calculations:
+
+```rust
+// Multi-factor scoring
+ADD(
+    MUL(_::{base_score}, 0.6),
+    MUL(_::{bonus_score}, 0.4)
+)
+
+// Percentage calculation
+MUL(DIV(_::{partial}, _::{total}), 100.0)
+
+// Exponential decay
+MUL(_::{initial_value}, POW(0.9, _::{time_elapsed}))
+```
+
+## Use in Shortest Path Weights
+
+Arithmetic functions are commonly used in custom weight calculations:
+
+```rust
+// Distance-based weight with decay
+::ShortestPathDijkstras<Route>(
+    MUL(_::{distance}, POW(0.95, DIV(_::{days_old}, 30)))
+)
+
+// Multi-factor routing cost
+::ShortestPathDijkstras<Road>(
+    ADD(
+        MUL(_::{distance}, 0.7),
+        MUL(_::{toll_cost}, 0.3)
+    )
+)
+```
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Unary Math Functions" href="./unary-math">
+    SQRT, ABS, LOG, and other single-argument functions
+  </Card>
+  <Card title="Custom Weight Calculations" href="../traversals/shortest-paths/custom-weights">
+    Use arithmetic in shortest path weights
+  </Card>
+  <Card title="Math Overview" href="./math-overview">
+    Overview of all mathematical functions
+  </Card>
+  <Card title="Aggregate Functions" href="./aggregate-functions">
+    MIN, MAX, SUM, AVG for collections
+  </Card>
+</CardGroup>

@@ -1,0 +1,623 @@
+---
+title: "FOR Loop Destructuring"
+description: "Extract multiple properties directly in loop variable binding."
+icon: "code-branch"
+---
+
+## Destructure collection elements in FOR loops &nbsp;
+
+Use destructuring syntax to extract specific properties from collection elements directly in the loop variable declaration. This eliminates the need for property access syntax within the loop body.
+
+```rust
+FOR {field1, field2, field3} IN collection {
+    // Use field1, field2, field3 directly
+}
+
+FOR {object.field1, object.field2} IN collection {
+    // Access nested properties
+}
+```
+
+<Note>
+Destructuring makes your queries more readable and explicit about which properties are being used in the loop body.
+</Note>
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+### Example 1: Basic destructuring
+
+<CodeGroup>
+
+```rust Query focus={1-9} [expandable]
+QUERY CreateUsersFromData (user_data: [{name: String, age: U8, email: String}]) =>
+    FOR {name, age, email} IN user_data {
+        user <- AddN<User>({
+            name: name,
+            age: age,
+            email: email
+        })
+    }
+    RETURN "Users created successfully"
+```
+
+```rust Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create users using destructuring
+user_data = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com"},
+]
+
+result = client.query("CreateUsersFromData", {"user_data": user_data})
+print("Create result:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create users using destructuring
+    let user_data = vec![
+        json!({"name": "Alice", "age": 25, "email": "alice@example.com"}),
+        json!({"name": "Bob", "age": 30, "email": "bob@example.com"}),
+        json!({"name": "Charlie", "age": 28, "email": "charlie@example.com"}),
+        json!({"name": "Diana", "age": 22, "email": "diana@example.com"}),
+    ];
+
+    let result: serde_json::Value = client.query("CreateUsersFromData", &json!({
+        "user_data": user_data
+    })).await?;
+    println!("Create result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create users using destructuring
+    userData := []map[string]any{
+        {"name": "Alice", "age": uint8(25), "email": "alice@example.com"},
+        {"name": "Bob", "age": uint8(30), "email": "bob@example.com"},
+        {"name": "Charlie", "age": uint8(28), "email": "charlie@example.com"},
+        {"name": "Diana", "age": uint8(22), "email": "diana@example.com"},
+    }
+
+    var result map[string]any
+    if err := client.Query("CreateUsersFromData", helix.WithData(map[string]any{
+        "user_data": userData,
+    })).Scan(&result); err != nil {
+        log.Fatalf("CreateUsersFromData failed: %s", err)
+    }
+
+    fmt.Printf("Create result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create users using destructuring
+    const userData = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+        { name: "Diana", age: 22, email: "diana@example.com" },
+    ];
+
+    const result = await client.query("CreateUsersFromData", { user_data: userData });
+    console.log("Create result:", result);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateUsersFromData \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "user_data": [
+      {"name": "Alice", "age": 25, "email": "alice@example.com"},
+      {"name": "Bob", "age": 30, "email": "bob@example.com"},
+      {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+      {"name": "Diana", "age": 22, "email": "diana@example.com"}
+    ]
+  }'
+```
+</CodeGroup>
+
+### Example 2: Nested property access with destructuring
+
+<CodeGroup>
+
+```rust Query focus={1-14} [expandable]
+QUERY LoadOrdersWithItems (
+    order_data: [{
+        customer: {name: String, email: String},
+        items: [{product: String, quantity: I32, price: F64}]
+    }]
+) =>
+    FOR {customer, items} IN order_data {
+        order_node <- AddN<Order>({
+            customer_name: customer.name,
+            customer_email: customer.email,
+            total_items: 0
+        })
+        FOR {product, quantity, price} IN items {
+            item_node <- AddN<OrderItem>({
+                product_name: product,
+                quantity: quantity,
+                unit_price: price
+            })
+            AddE<Contains>::From(order_node)::To(item_node)
+        }
+    }
+    RETURN "Orders loaded successfully"
+```
+
+```rust Schema
+N::Order {
+    customer_name: String,
+    customer_email: String,
+    total_items: I32
+}
+
+N::OrderItem {
+    product_name: String,
+    quantity: I32,
+    unit_price: F64
+}
+
+E::Contains {
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Load orders with nested destructuring
+order_data = [
+    {
+        "customer": {"name": "Alice", "email": "alice@example.com"},
+        "items": [
+            {"product": "Laptop", "quantity": 1, "price": 999.99},
+            {"product": "Mouse", "quantity": 2, "price": 29.99},
+        ]
+    },
+    {
+        "customer": {"name": "Bob", "email": "bob@example.com"},
+        "items": [
+            {"product": "Keyboard", "quantity": 1, "price": 79.99},
+            {"product": "Monitor", "quantity": 2, "price": 299.99},
+        ]
+    },
+]
+
+result = client.query("LoadOrdersWithItems", {"order_data": order_data})
+print("Load result:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Load orders with nested destructuring
+    let order_data = vec![
+        json!({
+            "customer": {"name": "Alice", "email": "alice@example.com"},
+            "items": [
+                {"product": "Laptop", "quantity": 1, "price": 999.99},
+                {"product": "Mouse", "quantity": 2, "price": 29.99},
+            ]
+        }),
+        json!({
+            "customer": {"name": "Bob", "email": "bob@example.com"},
+            "items": [
+                {"product": "Keyboard", "quantity": 1, "price": 79.99},
+                {"product": "Monitor", "quantity": 2, "price": 299.99},
+            ]
+        }),
+    ];
+
+    let result: serde_json::Value = client.query("LoadOrdersWithItems", &json!({
+        "order_data": order_data
+    })).await?;
+    println!("Load result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Load orders with nested destructuring
+    orderData := []map[string]any{
+        {
+            "customer": map[string]any{"name": "Alice", "email": "alice@example.com"},
+            "items": []map[string]any{
+                {"product": "Laptop", "quantity": 1, "price": 999.99},
+                {"product": "Mouse", "quantity": 2, "price": 29.99},
+            },
+        },
+        {
+            "customer": map[string]any{"name": "Bob", "email": "bob@example.com"},
+            "items": []map[string]any{
+                {"product": "Keyboard", "quantity": 1, "price": 79.99},
+                {"product": "Monitor", "quantity": 2, "price": 299.99},
+            },
+        },
+    }
+
+    var result map[string]any
+    if err := client.Query("LoadOrdersWithItems", helix.WithData(map[string]any{
+        "order_data": orderData,
+    })).Scan(&result); err != nil {
+        log.Fatalf("LoadOrdersWithItems failed: %s", err)
+    }
+
+    fmt.Printf("Load result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Load orders with nested destructuring
+    const orderData = [
+        {
+            customer: { name: "Alice", email: "alice@example.com" },
+            items: [
+                { product: "Laptop", quantity: 1, price: 999.99 },
+                { product: "Mouse", quantity: 2, price: 29.99 },
+            ]
+        },
+        {
+            customer: { name: "Bob", email: "bob@example.com" },
+            items: [
+                { product: "Keyboard", quantity: 1, price: 79.99 },
+                { product: "Monitor", quantity: 2, price: 299.99 },
+            ]
+        },
+    ];
+
+    const result = await client.query("LoadOrdersWithItems", { order_data: orderData });
+    console.log("Load result:", result);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/LoadOrdersWithItems \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "order_data": [
+      {
+        "customer": {"name": "Alice", "email": "alice@example.com"},
+        "items": [
+          {"product": "Laptop", "quantity": 1, "price": 999.99},
+          {"product": "Mouse", "quantity": 2, "price": 29.99}
+        ]
+      },
+      {
+        "customer": {"name": "Bob", "email": "bob@example.com"},
+        "items": [
+          {"product": "Keyboard", "quantity": 1, "price": 79.99},
+          {"product": "Monitor", "quantity": 2, "price": 299.99}
+        ]
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+### Example 3: Selective field extraction
+
+<CodeGroup>
+
+```rust Query focus={1-12} [expandable]
+QUERY CreateProductsFromCatalog (
+    catalog: [{
+        id: String,
+        name: String,
+        price: F64,
+        internal_code: String,
+        warehouse_location: String
+    }]
+) =>
+    FOR {name, price} IN catalog {
+        product <- AddN<Product>({
+            name: name,
+            price: price,
+            stock: 100
+        })
+    }
+    RETURN "Products created from catalog"
+```
+
+```rust Schema
+N::Product {
+    name: String,
+    price: F64,
+    stock: I32
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create products extracting only needed fields
+catalog = [
+    {
+        "id": "P001",
+        "name": "Laptop",
+        "price": 999.99,
+        "internal_code": "WH-A-001",
+        "warehouse_location": "Building A, Aisle 3"
+    },
+    {
+        "id": "P002",
+        "name": "Mouse",
+        "price": 29.99,
+        "internal_code": "WH-B-042",
+        "warehouse_location": "Building B, Aisle 1"
+    },
+    {
+        "id": "P003",
+        "name": "Keyboard",
+        "price": 79.99,
+        "internal_code": "WH-A-015",
+        "warehouse_location": "Building A, Aisle 5"
+    },
+]
+
+result = client.query("CreateProductsFromCatalog", {"catalog": catalog})
+print("Create result:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create products extracting only needed fields
+    let catalog = vec![
+        json!({
+            "id": "P001",
+            "name": "Laptop",
+            "price": 999.99,
+            "internal_code": "WH-A-001",
+            "warehouse_location": "Building A, Aisle 3"
+        }),
+        json!({
+            "id": "P002",
+            "name": "Mouse",
+            "price": 29.99,
+            "internal_code": "WH-B-042",
+            "warehouse_location": "Building B, Aisle 1"
+        }),
+        json!({
+            "id": "P003",
+            "name": "Keyboard",
+            "price": 79.99,
+            "internal_code": "WH-A-015",
+            "warehouse_location": "Building A, Aisle 5"
+        }),
+    ];
+
+    let result: serde_json::Value = client.query("CreateProductsFromCatalog", &json!({
+        "catalog": catalog
+    })).await?;
+    println!("Create result: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create products extracting only needed fields
+    catalog := []map[string]any{
+        {
+            "id":                 "P001",
+            "name":               "Laptop",
+            "price":              999.99,
+            "internal_code":      "WH-A-001",
+            "warehouse_location": "Building A, Aisle 3",
+        },
+        {
+            "id":                 "P002",
+            "name":               "Mouse",
+            "price":              29.99,
+            "internal_code":      "WH-B-042",
+            "warehouse_location": "Building B, Aisle 1",
+        },
+        {
+            "id":                 "P003",
+            "name":               "Keyboard",
+            "price":              79.99,
+            "internal_code":      "WH-A-015",
+            "warehouse_location": "Building A, Aisle 5",
+        },
+    }
+
+    var result map[string]any
+    if err := client.Query("CreateProductsFromCatalog", helix.WithData(map[string]any{
+        "catalog": catalog,
+    })).Scan(&result); err != nil {
+        log.Fatalf("CreateProductsFromCatalog failed: %s", err)
+    }
+
+    fmt.Printf("Create result: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create products extracting only needed fields
+    const catalog = [
+        {
+            id: "P001",
+            name: "Laptop",
+            price: 999.99,
+            internal_code: "WH-A-001",
+            warehouse_location: "Building A, Aisle 3"
+        },
+        {
+            id: "P002",
+            name: "Mouse",
+            price: 29.99,
+            internal_code: "WH-B-042",
+            warehouse_location: "Building B, Aisle 1"
+        },
+        {
+            id: "P003",
+            name: "Keyboard",
+            price: 79.99,
+            internal_code: "WH-A-015",
+            warehouse_location: "Building A, Aisle 5"
+        },
+    ];
+
+    const result = await client.query("CreateProductsFromCatalog", { catalog });
+    console.log("Create result:", result);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateProductsFromCatalog \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "catalog": [
+      {
+        "id": "P001",
+        "name": "Laptop",
+        "price": 999.99,
+        "internal_code": "WH-A-001",
+        "warehouse_location": "Building A, Aisle 3"
+      },
+      {
+        "id": "P002",
+        "name": "Mouse",
+        "price": 29.99,
+        "internal_code": "WH-B-042",
+        "warehouse_location": "Building B, Aisle 1"
+      },
+      {
+        "id": "P003",
+        "name": "Keyboard",
+        "price": 79.99,
+        "internal_code": "WH-A-015",
+        "warehouse_location": "Building A, Aisle 5"
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+## Related topics
+
+<CardGroup cols={2}>
+  <Card title="Basic FOR Loops" icon="arrows-rotate" href="/hql/control-flow/for-basic">
+    Iterate over collections with simple variable binding
+  </Card>
+  <Card title="Nested FOR Loops" icon="diagram-nested" href="/hql/control-flow/for-nested">
+    Use multiple levels of iteration for complex operations
+  </Card>
+</CardGroup>

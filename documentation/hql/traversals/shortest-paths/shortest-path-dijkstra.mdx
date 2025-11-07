@@ -1,0 +1,1033 @@
+---
+title: "ShortestPathDijkstras"
+description: "Find weighted shortest paths with custom weight calculations."
+icon: "route"
+---
+
+## Find Weighted Shortest Paths with Dijkstra's Algorithm &nbsp;
+
+ShortestPathDijkstras finds the optimal shortest path in weighted graphs using Dijkstra's algorithm. It supports sophisticated weight calculations that can reference edge properties, source node properties, and destination node properties, making it incredibly flexible for real-world routing scenarios.
+
+```rust
+::ShortestPathDijkstras<EdgeType>(weight_expression)
+::To(target_id)
+```
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## How It Works
+
+Dijkstra's algorithm:
+1. Starts at the source node with distance 0
+2. Explores neighbors, calculating cumulative path weights
+3. Always processes the node with the smallest known distance next
+4. Guarantees finding the optimal shortest path for non-negative weights
+
+<Note>
+All weights must be non-negative. Negative weights can produce incorrect results or infinite loops.
+</Note>
+
+## When to Use ShortestPathDijkstras
+
+Use Dijkstra when you need:
+
+- **Weighted paths**: Edges have different costs (distance, time, bandwidth)
+- **Custom calculations**: Combine multiple properties into path weights
+- **Multi-factor routing**: Consider traffic, reliability, cost simultaneously
+- **Property-based weights**: Use node or edge properties in calculations
+- **Flexibility**: Maximum control over what defines "shortest"
+
+## Weight Expressions
+
+Weight expressions can reference:
+
+- `_::{property}` - Edge property
+- `_::FromN::{property}` - Source node property
+- `_::ToN::{property}` - Destination node property
+- Mathematical functions: ADD, MUL, DIV, SUB, POW, SQRT, etc.
+
+## Example 1: Simple property-based weight
+
+<CodeGroup>
+```rust Query focus={1-4}
+QUERY FindShortestRoute(start_id: ID, end_id: ID) =>
+    result <- N<City>(start_id)
+        ::ShortestPathDijkstras<Road>(_::{distance})
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateCity(name: String, population: I64) =>
+    city <- CREATE V<City> { name: name, population: population }
+    RETURN city
+
+QUERY CreateRoad(from_id: ID, to_id: ID, distance: F64, traffic_level: F64) =>
+    road <- CREATE E<Road>(from_id, to_id) {
+        distance: distance,
+        traffic_level: traffic_level
+    }
+    RETURN road
+```
+
+```rust Schema
+V::City {
+    name: String,
+    population: I64
+}
+
+E::Road {
+    distance: F64,
+    traffic_level: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create cities
+cities = {}
+city_data = [
+    ("Los Angeles", 4000000),
+    ("San Diego", 1400000),
+    ("Phoenix", 1600000),
+    ("Las Vegas", 650000),
+]
+
+for name, population in city_data:
+    result = client.query("CreateCity", {"name": name, "population": population})
+    cities[name] = result["city"]["id"]
+
+# Create road network with distances
+roads = [
+    ("Los Angeles", "San Diego", 120.0, 0.7),
+    ("Los Angeles", "Las Vegas", 270.0, 0.5),
+    ("San Diego", "Phoenix", 355.0, 0.4),
+    ("Las Vegas", "Phoenix", 297.0, 0.6),
+]
+
+for from_city, to_city, distance, traffic in roads:
+    client.query("CreateRoad", {
+        "from_id": cities[from_city],
+        "to_id": cities[to_city],
+        "distance": distance,
+        "traffic_level": traffic
+    })
+
+# Find shortest route by distance
+result = client.query("FindShortestRoute", {
+    "start_id": cities["Los Angeles"],
+    "end_id": cities["Phoenix"]
+})
+
+print(f"Shortest route from LA to Phoenix:")
+print(f"Path: {' -> '.join([node['name'] for node in result['result']['path']])}")
+print(f"Total distance: {result['result']['total_weight']:.1f} miles")
+print(f"Hops: {result['result']['hop_count']}")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create cities
+    let mut cities: HashMap<String, String> = HashMap::new();
+    let city_data = vec![
+        ("Los Angeles", 4000000),
+        ("San Diego", 1400000),
+        ("Phoenix", 1600000),
+        ("Las Vegas", 650000),
+    ];
+
+    for (name, population) in &city_data {
+        let result: serde_json::Value = client.query("CreateCity", &json!({
+            "name": name,
+            "population": population,
+        })).await?;
+        cities.insert(name.to_string(), result["city"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create road network with distances
+    let roads = vec![
+        ("Los Angeles", "San Diego", 120.0, 0.7),
+        ("Los Angeles", "Las Vegas", 270.0, 0.5),
+        ("San Diego", "Phoenix", 355.0, 0.4),
+        ("Las Vegas", "Phoenix", 297.0, 0.6),
+    ];
+
+    for (from_city, to_city, distance, traffic) in &roads {
+        let _road: serde_json::Value = client.query("CreateRoad", &json!({
+            "from_id": cities[*from_city],
+            "to_id": cities[*to_city],
+            "distance": distance,
+            "traffic_level": traffic,
+        })).await?;
+    }
+
+    // Find shortest route by distance
+    let result: serde_json::Value = client.query("FindShortestRoute", &json!({
+        "start_id": cities["Los Angeles"],
+        "end_id": cities["Phoenix"],
+    })).await?;
+
+    println!("Shortest route from LA to Phoenix: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create cities
+    cities := make(map[string]string)
+    cityData := []struct {
+        name       string
+        population int64
+    }{
+        {"Los Angeles", 4000000},
+        {"San Diego", 1400000},
+        {"Phoenix", 1600000},
+        {"Las Vegas", 650000},
+    }
+
+    for _, city := range cityData {
+        var result map[string]any
+        if err := client.Query("CreateCity", helix.WithData(map[string]any{
+            "name":       city.name,
+            "population": city.population,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateCity failed: %s", err)
+        }
+        cities[city.name] = result["city"].(map[string]any)["id"].(string)
+    }
+
+    // Create road network with distances
+    roads := []struct {
+        from, to    string
+        distance    float64
+        trafficLevel float64
+    }{
+        {"Los Angeles", "San Diego", 120.0, 0.7},
+        {"Los Angeles", "Las Vegas", 270.0, 0.5},
+        {"San Diego", "Phoenix", 355.0, 0.4},
+        {"Las Vegas", "Phoenix", 297.0, 0.6},
+    }
+
+    for _, road := range roads {
+        var r map[string]any
+        if err := client.Query("CreateRoad", helix.WithData(map[string]any{
+            "from_id":       cities[road.from],
+            "to_id":         cities[road.to],
+            "distance":      road.distance,
+            "traffic_level": road.trafficLevel,
+        })).Scan(&r); err != nil {
+            log.Fatalf("CreateRoad failed: %s", err)
+        }
+    }
+
+    // Find shortest route by distance
+    var result map[string]any
+    if err := client.Query("FindShortestRoute", helix.WithData(map[string]any{
+        "start_id": cities["Los Angeles"],
+        "end_id":   cities["Phoenix"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindShortestRoute failed: %s", err)
+    }
+
+    fmt.Printf("Shortest route from LA to Phoenix: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create cities
+    const cities: Record<string, string> = {};
+    const cityData = [
+        { name: "Los Angeles", population: 4000000 },
+        { name: "San Diego", population: 1400000 },
+        { name: "Phoenix", population: 1600000 },
+        { name: "Las Vegas", population: 650000 },
+    ];
+
+    for (const city of cityData) {
+        const result = await client.query("CreateCity", city);
+        cities[city.name] = result.city.id;
+    }
+
+    // Create road network with distances
+    const roads = [
+        { from: "Los Angeles", to: "San Diego", distance: 120.0, traffic: 0.7 },
+        { from: "Los Angeles", to: "Las Vegas", distance: 270.0, traffic: 0.5 },
+        { from: "San Diego", to: "Phoenix", distance: 355.0, traffic: 0.4 },
+        { from: "Las Vegas", to: "Phoenix", distance: 297.0, traffic: 0.6 },
+    ];
+
+    for (const road of roads) {
+        await client.query("CreateRoad", {
+            from_id: cities[road.from],
+            to_id: cities[road.to],
+            distance: road.distance,
+            traffic_level: road.traffic,
+        });
+    }
+
+    // Find shortest route by distance
+    const result = await client.query("FindShortestRoute", {
+        start_id: cities["Los Angeles"],
+        end_id: cities["Phoenix"],
+    });
+
+    console.log("Shortest route from LA to Phoenix:");
+    console.log("Path:", result.result.path.map((n: any) => n.name).join(" -> "));
+    console.log("Total distance:", result.result.total_weight.toFixed(1), "miles");
+    console.log("Hops:", result.result.hop_count);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create cities
+LA_ID=$(curl -X POST http://localhost:6969/CreateCity \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Los Angeles","population":4000000}' | jq -r '.city.id')
+
+SD_ID=$(curl -X POST http://localhost:6969/CreateCity \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"San Diego","population":1400000}' | jq -r '.city.id')
+
+PHX_ID=$(curl -X POST http://localhost:6969/CreateCity \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Phoenix","population":1600000}' | jq -r '.city.id')
+
+LV_ID=$(curl -X POST http://localhost:6969/CreateCity \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Las Vegas","population":650000}' | jq -r '.city.id')
+
+# Create roads
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$LA_ID\",\"to_id\":\"$SD_ID\",\"distance\":120.0,\"traffic_level\":0.7}"
+
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$LA_ID\",\"to_id\":\"$LV_ID\",\"distance\":270.0,\"traffic_level\":0.5}"
+
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$SD_ID\",\"to_id\":\"$PHX_ID\",\"distance\":355.0,\"traffic_level\":0.4}"
+
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$LV_ID\",\"to_id\":\"$PHX_ID\",\"distance\":297.0,\"traffic_level\":0.6}"
+
+# Find shortest route
+curl -X POST http://localhost:6969/FindShortestRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$LA_ID\",\"end_id\":\"$PHX_ID\"}"
+```
+</CodeGroup>
+
+---
+
+## Example 2: Traffic-aware routing with multi-context weights
+
+<CodeGroup>
+```rust Query focus={1-4}
+QUERY FindTrafficAwareRoute(start_id: ID, end_id: ID) =>
+    result <- N<City>(start_id)
+        ::ShortestPathDijkstras<Road>(MUL(_::{distance}, _::FromN::{traffic_factor}))
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateCityWithTraffic(name: String, traffic_factor: F64) =>
+    city <- CREATE V<City> { name: name, traffic_factor: traffic_factor }
+    RETURN city
+
+QUERY CreateRoad(from_id: ID, to_id: ID, distance: F64) =>
+    road <- CREATE E<Road>(from_id, to_id) { distance: distance }
+    RETURN road
+```
+
+```rust Schema
+V::City {
+    name: String,
+    traffic_factor: F64  // Multiplier: 1.0 = normal, 2.0 = heavy traffic
+}
+
+E::Road {
+    distance: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create cities with traffic factors
+cities = {}
+city_data = [
+    ("Downtown", 2.5),      # Heavy traffic
+    ("Suburbs", 1.0),       # Normal traffic
+    ("Industrial", 1.2),    # Light traffic
+    ("Airport", 1.8),       # Moderate traffic
+]
+
+for name, traffic_factor in city_data:
+    result = client.query("CreateCityWithTraffic", {
+        "name": name,
+        "traffic_factor": traffic_factor
+    })
+    cities[name] = result["city"]["id"]
+
+# Create roads (base distances)
+roads = [
+    ("Downtown", "Suburbs", 10.0),
+    ("Downtown", "Industrial", 8.0),
+    ("Suburbs", "Airport", 15.0),
+    ("Industrial", "Airport", 12.0),
+]
+
+for from_city, to_city, distance in roads:
+    client.query("CreateRoad", {
+        "from_id": cities[from_city],
+        "to_id": cities[to_city],
+        "distance": distance
+    })
+
+# Find traffic-aware route
+# Weight = distance * source_traffic_factor
+# Avoids routes starting from high-traffic areas
+result = client.query("FindTrafficAwareRoute", {
+    "start_id": cities["Downtown"],
+    "end_id": cities["Airport"]
+})
+
+print(f"Traffic-aware route from Downtown to Airport:")
+print(f"Path: {' -> '.join([node['name'] for node in result['result']['path']])}")
+print(f"Effective distance: {result['result']['total_weight']:.1f}")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create cities with traffic factors
+    let mut cities: HashMap<String, String> = HashMap::new();
+    let city_data = vec![
+        ("Downtown", 2.5),
+        ("Suburbs", 1.0),
+        ("Industrial", 1.2),
+        ("Airport", 1.8),
+    ];
+
+    for (name, traffic_factor) in &city_data {
+        let result: serde_json::Value = client.query("CreateCityWithTraffic", &json!({
+            "name": name,
+            "traffic_factor": traffic_factor,
+        })).await?;
+        cities.insert(name.to_string(), result["city"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create roads
+    let roads = vec![
+        ("Downtown", "Suburbs", 10.0),
+        ("Downtown", "Industrial", 8.0),
+        ("Suburbs", "Airport", 15.0),
+        ("Industrial", "Airport", 12.0),
+    ];
+
+    for (from_city, to_city, distance) in &roads {
+        let _road: serde_json::Value = client.query("CreateRoad", &json!({
+            "from_id": cities[*from_city],
+            "to_id": cities[*to_city],
+            "distance": distance,
+        })).await?;
+    }
+
+    // Find traffic-aware route
+    let result: serde_json::Value = client.query("FindTrafficAwareRoute", &json!({
+        "start_id": cities["Downtown"],
+        "end_id": cities["Airport"],
+    })).await?;
+
+    println!("Traffic-aware route: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create cities with traffic factors
+    cities := make(map[string]string)
+    cityData := []struct {
+        name          string
+        trafficFactor float64
+    }{
+        {"Downtown", 2.5},
+        {"Suburbs", 1.0},
+        {"Industrial", 1.2},
+        {"Airport", 1.8},
+    }
+
+    for _, city := range cityData {
+        var result map[string]any
+        if err := client.Query("CreateCityWithTraffic", helix.WithData(map[string]any{
+            "name":           city.name,
+            "traffic_factor": city.trafficFactor,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateCityWithTraffic failed: %s", err)
+        }
+        cities[city.name] = result["city"].(map[string]any)["id"].(string)
+    }
+
+    // Create roads
+    roads := []struct {
+        from, to string
+        distance float64
+    }{
+        {"Downtown", "Suburbs", 10.0},
+        {"Downtown", "Industrial", 8.0},
+        {"Suburbs", "Airport", 15.0},
+        {"Industrial", "Airport", 12.0},
+    }
+
+    for _, road := range roads {
+        var r map[string]any
+        if err := client.Query("CreateRoad", helix.WithData(map[string]any{
+            "from_id":  cities[road.from],
+            "to_id":    cities[road.to],
+            "distance": road.distance,
+        })).Scan(&r); err != nil {
+            log.Fatalf("CreateRoad failed: %s", err)
+        }
+    }
+
+    // Find traffic-aware route
+    var result map[string]any
+    if err := client.Query("FindTrafficAwareRoute", helix.WithData(map[string]any{
+        "start_id": cities["Downtown"],
+        "end_id":   cities["Airport"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindTrafficAwareRoute failed: %s", err)
+    }
+
+    fmt.Printf("Traffic-aware route: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create cities with traffic factors
+    const cities: Record<string, string> = {};
+    const cityData = [
+        { name: "Downtown", traffic_factor: 2.5 },
+        { name: "Suburbs", traffic_factor: 1.0 },
+        { name: "Industrial", traffic_factor: 1.2 },
+        { name: "Airport", traffic_factor: 1.8 },
+    ];
+
+    for (const city of cityData) {
+        const result = await client.query("CreateCityWithTraffic", city);
+        cities[city.name] = result.city.id;
+    }
+
+    // Create roads
+    const roads = [
+        { from: "Downtown", to: "Suburbs", distance: 10.0 },
+        { from: "Downtown", to: "Industrial", distance: 8.0 },
+        { from: "Suburbs", to: "Airport", distance: 15.0 },
+        { from: "Industrial", to: "Airport", distance: 12.0 },
+    ];
+
+    for (const road of roads) {
+        await client.query("CreateRoad", {
+            from_id: cities[road.from],
+            to_id: cities[road.to],
+            distance: road.distance,
+        });
+    }
+
+    // Find traffic-aware route
+    const result = await client.query("FindTrafficAwareRoute", {
+        start_id: cities["Downtown"],
+        end_id: cities["Airport"],
+    });
+
+    console.log("Traffic-aware route from Downtown to Airport:");
+    console.log("Path:", result.result.path.map((n: any) => n.name).join(" -> "));
+    console.log("Effective distance:", result.result.total_weight.toFixed(1));
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create cities with traffic factors
+DOWNTOWN_ID=$(curl -X POST http://localhost:6969/CreateCityWithTraffic \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Downtown","traffic_factor":2.5}' | jq -r '.city.id')
+
+SUBURBS_ID=$(curl -X POST http://localhost:6969/CreateCityWithTraffic \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Suburbs","traffic_factor":1.0}' | jq -r '.city.id')
+
+INDUSTRIAL_ID=$(curl -X POST http://localhost:6969/CreateCityWithTraffic \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Industrial","traffic_factor":1.2}' | jq -r '.city.id')
+
+AIRPORT_ID=$(curl -X POST http://localhost:6969/CreateCityWithTraffic \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Airport","traffic_factor":1.8}' | jq -r '.city.id')
+
+# Create roads
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$DOWNTOWN_ID\",\"to_id\":\"$SUBURBS_ID\",\"distance\":10.0}"
+
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$DOWNTOWN_ID\",\"to_id\":\"$INDUSTRIAL_ID\",\"distance\":8.0}"
+
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$SUBURBS_ID\",\"to_id\":\"$AIRPORT_ID\",\"distance\":15.0}"
+
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$INDUSTRIAL_ID\",\"to_id\":\"$AIRPORT_ID\",\"distance\":12.0}"
+
+# Find traffic-aware route
+curl -X POST http://localhost:6969/FindTrafficAwareRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$DOWNTOWN_ID\",\"end_id\":\"$AIRPORT_ID\"}"
+```
+</CodeGroup>
+
+---
+
+## Example 3: Complex multi-factor weight calculation
+
+<CodeGroup>
+```rust Query focus={1-11}
+QUERY FindOptimalRoute(start_id: ID, end_id: ID) =>
+    result <- N<Location>(start_id)
+        ::ShortestPathDijkstras<Route>(
+            ADD(
+                MUL(_::{distance}, 0.4),
+                ADD(
+                    MUL(_::FromN::{traffic_factor}, 0.3),
+                    MUL(SUB(1, _::{reliability}), 0.3)
+                )
+            )
+        )
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateLocation(name: String, traffic_factor: F64) =>
+    location <- CREATE V<Location> { name: name, traffic_factor: traffic_factor }
+    RETURN location
+
+QUERY CreateRoute(from_id: ID, to_id: ID, distance: F64, reliability: F64) =>
+    route <- CREATE E<Route>(from_id, to_id) {
+        distance: distance,
+        reliability: reliability
+    }
+    RETURN route
+```
+
+```rust Schema
+V::Location {
+    name: String,
+    traffic_factor: F64  // Current traffic multiplier
+}
+
+E::Route {
+    distance: F64,
+    reliability: F64     // 0.0 to 1.0 (1.0 = perfectly reliable)
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create locations with traffic factors
+locations = {}
+location_data = [
+    ("Station A", 1.2),
+    ("Station B", 0.8),
+    ("Station C", 1.5),
+    ("Station D", 1.0),
+]
+
+for name, traffic_factor in location_data:
+    result = client.query("CreateLocation", {
+        "name": name,
+        "traffic_factor": traffic_factor
+    })
+    locations[name] = result["location"]["id"]
+
+# Create routes with distance and reliability
+# Weight = 0.4*distance + 0.3*traffic + 0.3*(1-reliability)
+routes = [
+    ("Station A", "Station B", 100.0, 0.95),
+    ("Station A", "Station C", 80.0, 0.70),
+    ("Station B", "Station D", 120.0, 0.90),
+    ("Station C", "Station D", 90.0, 0.85),
+]
+
+for from_loc, to_loc, distance, reliability in routes:
+    client.query("CreateRoute", {
+        "from_id": locations[from_loc],
+        "to_id": locations[to_loc],
+        "distance": distance,
+        "reliability": reliability
+    })
+
+# Find optimal route considering distance, traffic, and reliability
+result = client.query("FindOptimalRoute", {
+    "start_id": locations["Station A"],
+    "end_id": locations["Station D"]
+})
+
+print(f"Optimal route from Station A to Station D:")
+print(f"Path: {' -> '.join([node['name'] for node in result['result']['path']])}")
+print(f"Composite weight: {result['result']['total_weight']:.2f}")
+print(f"(40% distance + 30% traffic + 30% unreliability)")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create locations with traffic factors
+    let mut locations: HashMap<String, String> = HashMap::new();
+    let location_data = vec![
+        ("Station A", 1.2),
+        ("Station B", 0.8),
+        ("Station C", 1.5),
+        ("Station D", 1.0),
+    ];
+
+    for (name, traffic_factor) in &location_data {
+        let result: serde_json::Value = client.query("CreateLocation", &json!({
+            "name": name,
+            "traffic_factor": traffic_factor,
+        })).await?;
+        locations.insert(name.to_string(), result["location"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create routes with distance and reliability
+    let routes = vec![
+        ("Station A", "Station B", 100.0, 0.95),
+        ("Station A", "Station C", 80.0, 0.70),
+        ("Station B", "Station D", 120.0, 0.90),
+        ("Station C", "Station D", 90.0, 0.85),
+    ];
+
+    for (from_loc, to_loc, distance, reliability) in &routes {
+        let _route: serde_json::Value = client.query("CreateRoute", &json!({
+            "from_id": locations[*from_loc],
+            "to_id": locations[*to_loc],
+            "distance": distance,
+            "reliability": reliability,
+        })).await?;
+    }
+
+    // Find optimal route
+    let result: serde_json::Value = client.query("FindOptimalRoute", &json!({
+        "start_id": locations["Station A"],
+        "end_id": locations["Station D"],
+    })).await?;
+
+    println!("Optimal route: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create locations with traffic factors
+    locations := make(map[string]string)
+    locationData := []struct {
+        name          string
+        trafficFactor float64
+    }{
+        {"Station A", 1.2},
+        {"Station B", 0.8},
+        {"Station C", 1.5},
+        {"Station D", 1.0},
+    }
+
+    for _, loc := range locationData {
+        var result map[string]any
+        if err := client.Query("CreateLocation", helix.WithData(map[string]any{
+            "name":           loc.name,
+            "traffic_factor": loc.trafficFactor,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateLocation failed: %s", err)
+        }
+        locations[loc.name] = result["location"].(map[string]any)["id"].(string)
+    }
+
+    // Create routes with distance and reliability
+    routes := []struct {
+        from, to    string
+        distance    float64
+        reliability float64
+    }{
+        {"Station A", "Station B", 100.0, 0.95},
+        {"Station A", "Station C", 80.0, 0.70},
+        {"Station B", "Station D", 120.0, 0.90},
+        {"Station C", "Station D", 90.0, 0.85},
+    }
+
+    for _, route := range routes {
+        var r map[string]any
+        if err := client.Query("CreateRoute", helix.WithData(map[string]any{
+            "from_id":     locations[route.from],
+            "to_id":       locations[route.to],
+            "distance":    route.distance,
+            "reliability": route.reliability,
+        })).Scan(&r); err != nil {
+            log.Fatalf("CreateRoute failed: %s", err)
+        }
+    }
+
+    // Find optimal route
+    var result map[string]any
+    if err := client.Query("FindOptimalRoute", helix.WithData(map[string]any{
+        "start_id": locations["Station A"],
+        "end_id":   locations["Station D"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindOptimalRoute failed: %s", err)
+    }
+
+    fmt.Printf("Optimal route: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create locations with traffic factors
+    const locations: Record<string, string> = {};
+    const locationData = [
+        { name: "Station A", traffic_factor: 1.2 },
+        { name: "Station B", traffic_factor: 0.8 },
+        { name: "Station C", traffic_factor: 1.5 },
+        { name: "Station D", traffic_factor: 1.0 },
+    ];
+
+    for (const loc of locationData) {
+        const result = await client.query("CreateLocation", loc);
+        locations[loc.name] = result.location.id;
+    }
+
+    // Create routes with distance and reliability
+    const routes = [
+        { from: "Station A", to: "Station B", distance: 100.0, reliability: 0.95 },
+        { from: "Station A", to: "Station C", distance: 80.0, reliability: 0.70 },
+        { from: "Station B", to: "Station D", distance: 120.0, reliability: 0.90 },
+        { from: "Station C", to: "Station D", distance: 90.0, reliability: 0.85 },
+    ];
+
+    for (const route of routes) {
+        await client.query("CreateRoute", {
+            from_id: locations[route.from],
+            to_id: locations[route.to],
+            distance: route.distance,
+            reliability: route.reliability,
+        });
+    }
+
+    // Find optimal route
+    const result = await client.query("FindOptimalRoute", {
+        start_id: locations["Station A"],
+        end_id: locations["Station D"],
+    });
+
+    console.log("Optimal route from Station A to Station D:");
+    console.log("Path:", result.result.path.map((n: any) => n.name).join(" -> "));
+    console.log("Composite weight:", result.result.total_weight.toFixed(2));
+    console.log("(40% distance + 30% traffic + 30% unreliability)");
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create locations
+STATION_A_ID=$(curl -X POST http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Station A","traffic_factor":1.2}' | jq -r '.location.id')
+
+STATION_B_ID=$(curl -X POST http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Station B","traffic_factor":0.8}' | jq -r '.location.id')
+
+STATION_C_ID=$(curl -X POST http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Station C","traffic_factor":1.5}' | jq -r '.location.id')
+
+STATION_D_ID=$(curl -X POST http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Station D","traffic_factor":1.0}' | jq -r '.location.id')
+
+# Create routes
+curl -X POST http://localhost:6969/CreateRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$STATION_A_ID\",\"to_id\":\"$STATION_B_ID\",\"distance\":100.0,\"reliability\":0.95}"
+
+curl -X POST http://localhost:6969/CreateRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$STATION_A_ID\",\"to_id\":\"$STATION_C_ID\",\"distance\":80.0,\"reliability\":0.70}"
+
+curl -X POST http://localhost:6969/CreateRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$STATION_B_ID\",\"to_id\":\"$STATION_D_ID\",\"distance\":120.0,\"reliability\":0.90}"
+
+curl -X POST http://localhost:6969/CreateRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$STATION_C_ID\",\"to_id\":\"$STATION_D_ID\",\"distance\":90.0,\"reliability\":0.85}"
+
+# Find optimal route
+curl -X POST http://localhost:6969/FindOptimalRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$STATION_A_ID\",\"end_id\":\"$STATION_D_ID\"}"
+```
+</CodeGroup>
+
+---
+
+## Property Context Reference
+
+| Context | Description | Example |
+|---------|-------------|---------|
+| `_::{property}` | Edge property | `_::{distance}` |
+| `_::FromN::{property}` | Source node property | `_::FromN::{traffic_factor}` |
+| `_::ToN::{property}` | Destination node property | `_::ToN::{popularity}` |
+
+## Available Mathematical Functions
+
+Use these functions in weight expressions:
+
+- **Arithmetic**: ADD, SUB, MUL, DIV, MOD
+- **Power**: POW, SQRT, EXP, LN, LOG
+- **Rounding**: CEIL, FLOOR, ROUND, ABS
+- **Trigonometric**: SIN, COS, TAN
+- **Constants**: PI()
+
+See [Advanced Weight Expressions](/documentation/hql/traversals/shortest-paths/weight-expressions) for more details.
+
+## Performance Considerations
+
+- **Time Complexity**: O((V + E) log V) using binary heap
+- **Space Complexity**: O(V) for distance tracking
+- **Weight Calculation**: Evaluated once per edge during exploration
+- **Indexing**: Index properties used in weight calculations for best performance
+
+<Note>
+Complex weight expressions may impact query performance. Profile your queries and consider caching frequently-accessed property values.
+</Note>
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Custom Weights" icon="scale-balanced" href="/documentation/hql/traversals/shortest-paths/custom-weights">
+    Deep dive into property contexts and weight patterns
+  </Card>
+  <Card title="Weight Expressions" icon="function" href="/documentation/hql/traversals/shortest-paths/weight-expressions">
+    Advanced mathematical weight calculations
+  </Card>
+  <Card title="ShortestPathAStar" icon="star" href="/documentation/hql/traversals/shortest-paths/shortest-path-astar">
+    Faster pathfinding with heuristics
+  </Card>
+  <Card title="Mathematical Functions" icon="calculator" href="/documentation/hql/functions">
+    All available math functions
+  </Card>
+</CardGroup>

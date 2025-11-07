@@ -1,0 +1,650 @@
+---
+title: "Trigonometric Functions"
+description: "Trigonometric and inverse trigonometric functions for angular calculations."
+icon: "wave-sine"
+---
+
+## Trigonometric Functions
+
+HelixQL provides a comprehensive set of trigonometric functions for angular calculations, including standard trigonometric functions (sine, cosine, tangent) and their inverse counterparts, essential for geospatial calculations, physics simulations, and angular measurements.
+
+## Available Functions
+
+### SIN - Sine
+
+```rust
+SIN(x)  // Returns sin(x)
+```
+
+Returns the sine of an angle in radians.
+
+### COS - Cosine
+
+```rust
+COS(x)  // Returns cos(x)
+```
+
+Returns the cosine of an angle in radians.
+
+### TAN - Tangent
+
+```rust
+TAN(x)  // Returns tan(x)
+```
+
+Returns the tangent of an angle in radians.
+
+### ASIN - Arcsine
+
+```rust
+ASIN(x)  // Returns arcsin(x)
+```
+
+Returns the arcsine (inverse sine) of x in radians. Domain: [-1, 1].
+
+### ACOS - Arccosine
+
+```rust
+ACOS(x)  // Returns arccos(x)
+```
+
+Returns the arccosine (inverse cosine) of x in radians. Domain: [-1, 1].
+
+### ATAN - Arctangent
+
+```rust
+ATAN(x)  // Returns arctan(x)
+```
+
+Returns the arctangent (inverse tangent) of x in radians.
+
+### ATAN2 - Two-Argument Arctangent
+
+```rust
+ATAN2(y, x)  // Returns atan2(y, x)
+```
+
+Returns the angle in radians between the positive x-axis and the point (x, y). This function handles all quadrants correctly and is commonly used for angle calculations.
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## Example 1: Geospatial bearing calculations
+
+Calculate the bearing (direction) between geographic coordinates:
+
+<CodeGroup>
+```rust Query focus={2-10}
+QUERY CalculateBearings() =>
+    locations <- N::Location
+        ::{
+            name, latitude, longitude,
+            radians_lat: MUL(_::{latitude}, DIV(PI(), 180.0)),
+            radians_lon: MUL(_::{longitude}, DIV(PI(), 180.0)),
+            sin_lat: SIN(MUL(_::{latitude}, DIV(PI(), 180.0))),
+            cos_lat: COS(MUL(_::{latitude}, DIV(PI(), 180.0))),
+            tan_lat: TAN(MUL(_::{latitude}, DIV(PI(), 180.0)))
+        }
+    RETURN locations
+
+QUERY CreateLocation(name: String, latitude: F64, longitude: F64) =>
+    location <- AddN<Location>({ name: name, latitude: latitude, longitude: longitude })
+    RETURN location
+```
+
+```rust Schema
+N::Location {
+    name: String,
+    latitude: F64,
+    longitude: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create locations with geographic coordinates
+locations = [
+    {"name": "New York", "latitude": 40.7128, "longitude": -74.0060},
+    {"name": "London", "latitude": 51.5074, "longitude": -0.1278},
+    {"name": "Tokyo", "latitude": 35.6762, "longitude": 139.6503},
+]
+
+for location in locations:
+    client.query("CreateLocation", location)
+
+result = client.query("CalculateBearings", {})
+print("Location bearings:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let locations = vec![
+        ("New York", 40.7128, -74.0060),
+        ("London", 51.5074, -0.1278),
+        ("Tokyo", 35.6762, 139.6503),
+    ];
+
+    for (name, latitude, longitude) in &locations {
+        let _inserted: serde_json::Value = client.query("CreateLocation", &json!({
+            "name": name,
+            "latitude": latitude,
+            "longitude": longitude,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("CalculateBearings", &json!({})).await?;
+
+    println!("Location bearings: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    locations := []map[string]any{
+        {"name": "New York", "latitude": 40.7128, "longitude": -74.0060},
+        {"name": "London", "latitude": 51.5074, "longitude": -0.1278},
+        {"name": "Tokyo", "latitude": 35.6762, "longitude": 139.6503},
+    }
+
+    for _, location := range locations {
+        var inserted map[string]any
+        if err := client.Query("CreateLocation", helix.WithData(location)).Scan(&inserted); err != nil {
+            log.Fatalf("CreateLocation failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("CalculateBearings", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("CalculateBearings failed: %s", err)
+    }
+
+    fmt.Printf("Location bearings: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const locations = [
+        { name: "New York", latitude: 40.7128, longitude: -74.0060 },
+        { name: "London", latitude: 51.5074, longitude: -0.1278 },
+        { name: "Tokyo", latitude: 35.6762, longitude: 139.6503 },
+    ];
+
+    for (const location of locations) {
+        await client.query("CreateLocation", location);
+    }
+
+    const result = await client.query("CalculateBearings", {});
+
+    console.log("Location bearings:", result);
+}
+
+main().catch((err) => {
+    console.error("CalculateBearings query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"New York","latitude":40.7128,"longitude":-74.0060}'
+
+curl -X POST \
+  http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"London","latitude":51.5074,"longitude":-0.1278}'
+
+curl -X POST \
+  http://localhost:6969/CreateLocation \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Tokyo","latitude":35.6762,"longitude":139.6503}'
+
+curl -X POST \
+  http://localhost:6969/CalculateBearings \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+---
+
+## Example 2: Angle calculations with ATAN2
+
+Use ATAN2 to calculate angles between vectors and points:
+
+<CodeGroup>
+```rust Query focus={2-7}
+QUERY CalculateAngles() =>
+    vectors <- N::Vector
+        ::{
+            x, y,
+            angle_radians: ATAN2(_::{y}, _::{x}),
+            angle_degrees: MUL(ATAN2(_::{y}, _::{x}), DIV(180.0, PI()))
+        }
+    RETURN vectors
+
+QUERY CreateVector(x: F64, y: F64) =>
+    vector <- AddN<Vector>({ x: x, y: y })
+    RETURN vector
+```
+
+```rust Schema
+N::Vector {
+    x: F64,
+    y: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create vectors in different quadrants
+vectors = [
+    {"x": 1.0, "y": 1.0},      # 45 degrees
+    {"x": -1.0, "y": 1.0},     # 135 degrees
+    {"x": -1.0, "y": -1.0},    # -135 degrees
+    {"x": 1.0, "y": -1.0},     # -45 degrees
+]
+
+for vector in vectors:
+    client.query("CreateVector", vector)
+
+result = client.query("CalculateAngles", {})
+print("Vector angles:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let vectors = vec![
+        (1.0, 1.0),      // 45 degrees
+        (-1.0, 1.0),     // 135 degrees
+        (-1.0, -1.0),    // -135 degrees
+        (1.0, -1.0),     // -45 degrees
+    ];
+
+    for (x, y) in &vectors {
+        let _inserted: serde_json::Value = client.query("CreateVector", &json!({
+            "x": x,
+            "y": y,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("CalculateAngles", &json!({})).await?;
+
+    println!("Vector angles: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    vectors := []map[string]any{
+        {"x": 1.0, "y": 1.0},      // 45 degrees
+        {"x": -1.0, "y": 1.0},     // 135 degrees
+        {"x": -1.0, "y": -1.0},    // -135 degrees
+        {"x": 1.0, "y": -1.0},     // -45 degrees
+    }
+
+    for _, vector := range vectors {
+        var inserted map[string]any
+        if err := client.Query("CreateVector", helix.WithData(vector)).Scan(&inserted); err != nil {
+            log.Fatalf("CreateVector failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("CalculateAngles", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("CalculateAngles failed: %s", err)
+    }
+
+    fmt.Printf("Vector angles: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const vectors = [
+        { x: 1.0, y: 1.0 },      // 45 degrees
+        { x: -1.0, y: 1.0 },     // 135 degrees
+        { x: -1.0, y: -1.0 },    // -135 degrees
+        { x: 1.0, y: -1.0 },     // -45 degrees
+    ];
+
+    for (const vector of vectors) {
+        await client.query("CreateVector", vector);
+    }
+
+    const result = await client.query("CalculateAngles", {});
+
+    console.log("Vector angles:", result);
+}
+
+main().catch((err) => {
+    console.error("CalculateAngles query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateVector \
+  -H 'Content-Type: application/json' \
+  -d '{"x":1.0,"y":1.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateVector \
+  -H 'Content-Type: application/json' \
+  -d '{"x":-1.0,"y":1.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateVector \
+  -H 'Content-Type: application/json' \
+  -d '{"x":-1.0,"y":-1.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateVector \
+  -H 'Content-Type: application/json' \
+  -d '{"x":1.0,"y":-1.0}'
+
+curl -X POST \
+  http://localhost:6969/CalculateAngles \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+---
+
+## Example 3: Inverse trigonometric functions
+
+Use inverse trigonometric functions to recover angles from ratios:
+
+<CodeGroup>
+```rust Query focus={2-8}
+QUERY RecoverAngles() =>
+    measurements <- N::Measurement
+        ::{
+            ratio,
+            angle_from_sin: ASIN(_::{ratio}),
+            angle_from_cos: ACOS(_::{ratio}),
+            angle_from_tan: ATAN(_::{ratio})
+        }
+    RETURN measurements
+
+QUERY CreateMeasurement(ratio: F64) =>
+    measurement <- AddN<Measurement>({ ratio: ratio })
+    RETURN measurement
+```
+
+```rust Schema
+N::Measurement {
+    ratio: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create measurements with various ratios
+ratios = [0.0, 0.5, 0.707, 0.866, 1.0]
+
+for ratio in ratios:
+    client.query("CreateMeasurement", {"ratio": ratio})
+
+result = client.query("RecoverAngles", {})
+print("Recovered angles:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let ratios = vec![0.0, 0.5, 0.707, 0.866, 1.0];
+
+    for ratio in &ratios {
+        let _inserted: serde_json::Value = client.query("CreateMeasurement", &json!({
+            "ratio": ratio,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("RecoverAngles", &json!({})).await?;
+
+    println!("Recovered angles: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    ratios := []float64{0.0, 0.5, 0.707, 0.866, 1.0}
+
+    for _, ratio := range ratios {
+        var inserted map[string]any
+        if err := client.Query("CreateMeasurement", helix.WithData(map[string]any{
+            "ratio": ratio,
+        })).Scan(&inserted); err != nil {
+            log.Fatalf("CreateMeasurement failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("RecoverAngles", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("RecoverAngles failed: %s", err)
+    }
+
+    fmt.Printf("Recovered angles: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const ratios = [0.0, 0.5, 0.707, 0.866, 1.0];
+
+    for (const ratio of ratios) {
+        await client.query("CreateMeasurement", { ratio });
+    }
+
+    const result = await client.query("RecoverAngles", {});
+
+    console.log("Recovered angles:", result);
+}
+
+main().catch((err) => {
+    console.error("RecoverAngles query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateMeasurement \
+  -H 'Content-Type: application/json' \
+  -d '{"ratio":0.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateMeasurement \
+  -H 'Content-Type: application/json' \
+  -d '{"ratio":0.5}'
+
+curl -X POST \
+  http://localhost:6969/CreateMeasurement \
+  -H 'Content-Type: application/json' \
+  -d '{"ratio":0.707}'
+
+curl -X POST \
+  http://localhost:6969/CreateMeasurement \
+  -H 'Content-Type: application/json' \
+  -d '{"ratio":0.866}'
+
+curl -X POST \
+  http://localhost:6969/CreateMeasurement \
+  -H 'Content-Type: application/json' \
+  -d '{"ratio":1.0}'
+
+curl -X POST \
+  http://localhost:6969/RecoverAngles \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+---
+
+## Radians vs Degrees
+
+All trigonometric functions in HelixQL work with radians. To convert between degrees and radians:
+
+```rust
+// Degrees to radians
+radians = MUL(degrees, DIV(PI(), 180.0))
+
+// Radians to degrees
+degrees = MUL(radians, DIV(180.0, PI()))
+```
+
+<Tip>
+Use the PI() constant function for accurate conversion between degrees and radians.
+</Tip>
+
+## Domain Restrictions
+
+<Note>
+Inverse trigonometric functions have domain restrictions:
+- **ASIN(x), ACOS(x)**: x must be in [-1, 1]
+- **ATAN(x)**: accepts all real numbers
+- **ATAN2(y, x)**: accepts all real numbers for both arguments
+</Note>
+
+## ATAN2 vs ATAN
+
+ATAN2 is preferred over ATAN for angle calculations because:
+- It handles all four quadrants correctly
+- It avoids division by zero when x = 0
+- It returns values in the full range [-π, π]
+
+```rust
+// ATAN2 correctly handles all quadrants
+ATAN2(1.0, 1.0)    // π/4 (first quadrant)
+ATAN2(1.0, -1.0)   // 3π/4 (second quadrant)
+ATAN2(-1.0, -1.0)  // -3π/4 (third quadrant)
+ATAN2(-1.0, 1.0)   // -π/4 (fourth quadrant)
+```
+
+## Use in Geospatial Calculations
+
+Trigonometric functions are essential for geospatial calculations:
+
+```rust
+// Calculate great circle distance (Haversine formula)
+QUERY CalculateDistance(lat1: F64, lon1: F64, lat2: F64, lon2: F64) =>
+    dlat <- SUB(lat2, lat1)
+    dlon <- SUB(lon2, lon1)
+    a <- ADD(
+        POW(SIN(DIV(dlat, 2.0)), 2.0),
+        MUL(MUL(COS(lat1), COS(lat2)), POW(SIN(DIV(dlon, 2.0)), 2.0))
+    )
+    c <- MUL(2.0, ATAN2(SQRT(a), SQRT(SUB(1.0, a))))
+    distance <- MUL(6371.0, c)  // Earth radius in km
+    RETURN distance
+```
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Unary Math Functions" href="./unary-math">
+    SQRT, ABS, LN, LOG10, EXP, CEIL, FLOOR, ROUND
+  </Card>
+  <Card title="Constants" href="./constants">
+    PI and E constants
+  </Card>
+  <Card title="Arithmetic Functions" href="./arithmetic">
+    ADD, SUB, MUL, DIV, POW, MOD
+  </Card>
+  <Card title="Math Overview" href="./math-overview">
+    Overview of all math functions
+  </Card>
+</CardGroup>

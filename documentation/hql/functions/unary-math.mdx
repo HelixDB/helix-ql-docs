@@ -1,0 +1,640 @@
+---
+title: "Unary Math Functions"
+description: "Single-argument mathematical functions for transformations and calculations."
+icon: "square-root-variable"
+---
+
+## Unary Mathematical Functions
+
+HelixQL provides a rich set of single-argument mathematical functions for transforming numeric values, including absolute values, roots, logarithms, exponentials, and rounding operations.
+
+## Available Functions
+
+### ABS - Absolute Value
+
+```rust
+ABS(x)  // Returns |x|
+```
+
+Returns the absolute value of a number.
+
+### SQRT - Square Root
+
+```rust
+SQRT(x)  // Returns √x
+```
+
+Returns the square root of a non-negative number.
+
+### LN - Natural Logarithm
+
+```rust
+LN(x)  // Returns ln(x)
+```
+
+Returns the natural logarithm (base e) of a positive number.
+
+### LOG10 - Base-10 Logarithm
+
+```rust
+LOG10(x)  // Returns log₁₀(x)
+```
+
+Returns the base-10 logarithm of a positive number.
+
+### LOG - Custom Base Logarithm
+
+```rust
+LOG(x, base)  // Returns log_base(x)
+```
+
+Returns the logarithm of x with a custom base.
+
+### EXP - Exponential
+
+```rust
+EXP(x)  // Returns e^x
+```
+
+Returns e raised to the power of x.
+
+### CEIL - Ceiling
+
+```rust
+CEIL(x)  // Returns ⌈x⌉
+```
+
+Rounds up to the nearest integer.
+
+### FLOOR - Floor
+
+```rust
+FLOOR(x)  // Returns ⌊x⌋
+```
+
+Rounds down to the nearest integer.
+
+### ROUND - Round
+
+```rust
+ROUND(x)  // Returns round(x)
+```
+
+Rounds to the nearest integer.
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## Example 1: Distance calculations with SQRT
+
+Calculate Euclidean distances between points:
+
+<CodeGroup>
+```rust Query focus={2-6}
+QUERY CalculateDistances() =>
+    points <- N::Point
+        ::{
+            x, y,
+            distance_from_origin: SQRT(ADD(POW(_::{x}, 2.0), POW(_::{y}, 2.0))),
+            rounded_distance: ROUND(SQRT(ADD(POW(_::{x}, 2.0), POW(_::{y}, 2.0))))
+        }
+    RETURN points
+
+QUERY CreatePoint(x: F64, y: F64) =>
+    point <- AddN<Point>({ x: x, y: y })
+    RETURN point
+```
+
+```rust Schema
+N::Point {
+    x: F64,
+    y: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create points
+points = [
+    {"x": 3.0, "y": 4.0},
+    {"x": 5.0, "y": 12.0},
+    {"x": 8.0, "y": 15.0},
+]
+
+for point in points:
+    client.query("CreatePoint", point)
+
+result = client.query("CalculateDistances", {})
+print("Point distances:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let points = vec![(3.0, 4.0), (5.0, 12.0), (8.0, 15.0)];
+
+    for (x, y) in &points {
+        let _inserted: serde_json::Value = client.query("CreatePoint", &json!({
+            "x": x,
+            "y": y,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("CalculateDistances", &json!({})).await?;
+
+    println!("Point distances: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    points := []map[string]any{
+        {"x": 3.0, "y": 4.0},
+        {"x": 5.0, "y": 12.0},
+        {"x": 8.0, "y": 15.0},
+    }
+
+    for _, point := range points {
+        var inserted map[string]any
+        if err := client.Query("CreatePoint", helix.WithData(point)).Scan(&inserted); err != nil {
+            log.Fatalf("CreatePoint failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("CalculateDistances", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("CalculateDistances failed: %s", err)
+    }
+
+    fmt.Printf("Point distances: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const points = [
+        { x: 3.0, y: 4.0 },
+        { x: 5.0, y: 12.0 },
+        { x: 8.0, y: 15.0 },
+    ];
+
+    for (const point of points) {
+        await client.query("CreatePoint", point);
+    }
+
+    const result = await client.query("CalculateDistances", {});
+
+    console.log("Point distances:", result);
+}
+
+main().catch((err) => {
+    console.error("CalculateDistances query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreatePoint \
+  -H 'Content-Type: application/json' \
+  -d '{"x":3.0,"y":4.0}'
+
+curl -X POST \
+  http://localhost:6969/CreatePoint \
+  -H 'Content-Type: application/json' \
+  -d '{"x":5.0,"y":12.0}'
+
+curl -X POST \
+  http://localhost:6969/CreatePoint \
+  -H 'Content-Type: application/json' \
+  -d '{"x":8.0,"y":15.0}'
+
+curl -X POST \
+  http://localhost:6969/CalculateDistances \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+---
+
+## Example 2: Logarithmic scaling with LN and LOG10
+
+Use logarithms for normalization and scaling:
+
+<CodeGroup>
+```rust Query focus={2-7}
+QUERY NormalizeMetrics() =>
+    metrics <- N::Metric
+        ::{
+            value,
+            log_scale: LN(_::{value}),
+            log10_scale: LOG10(_::{value}),
+            custom_log: LOG(_::{value}, 2.0)
+        }
+    RETURN metrics
+
+QUERY CreateMetric(value: F64) =>
+    metric <- AddN<Metric>({ value: value })
+    RETURN metric
+```
+
+```rust Schema
+N::Metric {
+    value: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create metrics with various scales
+values = [1.0, 10.0, 100.0, 1000.0, 10000.0]
+
+for value in values:
+    client.query("CreateMetric", {"value": value})
+
+result = client.query("NormalizeMetrics", {})
+print("Normalized metrics:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let values = vec![1.0, 10.0, 100.0, 1000.0, 10000.0];
+
+    for value in &values {
+        let _inserted: serde_json::Value = client.query("CreateMetric", &json!({
+            "value": value,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("NormalizeMetrics", &json!({})).await?;
+
+    println!("Normalized metrics: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    values := []float64{1.0, 10.0, 100.0, 1000.0, 10000.0}
+
+    for _, value := range values {
+        var inserted map[string]any
+        if err := client.Query("CreateMetric", helix.WithData(map[string]any{
+            "value": value,
+        })).Scan(&inserted); err != nil {
+            log.Fatalf("CreateMetric failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("NormalizeMetrics", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("NormalizeMetrics failed: %s", err)
+    }
+
+    fmt.Printf("Normalized metrics: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const values = [1.0, 10.0, 100.0, 1000.0, 10000.0];
+
+    for (const value of values) {
+        await client.query("CreateMetric", { value });
+    }
+
+    const result = await client.query("NormalizeMetrics", {});
+
+    console.log("Normalized metrics:", result);
+}
+
+main().catch((err) => {
+    console.error("NormalizeMetrics query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateMetric \
+  -H 'Content-Type: application/json' \
+  -d '{"value":1.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateMetric \
+  -H 'Content-Type: application/json' \
+  -d '{"value":10.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateMetric \
+  -H 'Content-Type: application/json' \
+  -d '{"value":100.0}'
+
+curl -X POST \
+  http://localhost:6969/NormalizeMetrics \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+---
+
+## Example 3: Exponential decay with EXP
+
+Model time-based decay using exponential functions:
+
+<CodeGroup>
+```rust Query focus={2-6}
+QUERY CalculateDecayFactors(decay_rate: F64) =>
+    items <- N::Item
+        ::{
+            name, age_days,
+            decay_factor: EXP(MUL(decay_rate, _::{age_days})),
+            relevance_score: MUL(_::{base_score}, EXP(MUL(decay_rate, _::{age_days})))
+        }
+    RETURN items
+
+QUERY CreateItem(name: String, age_days: F64, base_score: F64) =>
+    item <- AddN<Item>({ name: name, age_days: age_days, base_score: base_score })
+    RETURN item
+```
+
+```rust Schema
+N::Item {
+    name: String,
+    age_days: F64,
+    base_score: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create items with different ages
+items = [
+    {"name": "Recent Post", "age_days": 1.0, "base_score": 100.0},
+    {"name": "Week Old Post", "age_days": 7.0, "base_score": 100.0},
+    {"name": "Month Old Post", "age_days": 30.0, "base_score": 100.0},
+]
+
+for item in items:
+    client.query("CreateItem", item)
+
+# Apply decay rate of -0.1 per day
+result = client.query("CalculateDecayFactors", {
+    "decay_rate": -0.1
+})
+
+print("Decay factors:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let items = vec![
+        ("Recent Post", 1.0, 100.0),
+        ("Week Old Post", 7.0, 100.0),
+        ("Month Old Post", 30.0, 100.0),
+    ];
+
+    for (name, age_days, base_score) in &items {
+        let _inserted: serde_json::Value = client.query("CreateItem", &json!({
+            "name": name,
+            "age_days": age_days,
+            "base_score": base_score,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("CalculateDecayFactors", &json!({
+        "decay_rate": -0.1,
+    })).await?;
+
+    println!("Decay factors: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    items := []map[string]any{
+        {"name": "Recent Post", "age_days": 1.0, "base_score": 100.0},
+        {"name": "Week Old Post", "age_days": 7.0, "base_score": 100.0},
+        {"name": "Month Old Post", "age_days": 30.0, "base_score": 100.0},
+    }
+
+    for _, item := range items {
+        var inserted map[string]any
+        if err := client.Query("CreateItem", helix.WithData(item)).Scan(&inserted); err != nil {
+            log.Fatalf("CreateItem failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("CalculateDecayFactors", helix.WithData(map[string]any{
+        "decay_rate": -0.1,
+    })).Scan(&result); err != nil {
+        log.Fatalf("CalculateDecayFactors failed: %s", err)
+    }
+
+    fmt.Printf("Decay factors: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const items = [
+        { name: "Recent Post", age_days: 1.0, base_score: 100.0 },
+        { name: "Week Old Post", age_days: 7.0, base_score: 100.0 },
+        { name: "Month Old Post", age_days: 30.0, base_score: 100.0 },
+    ];
+
+    for (const item of items) {
+        await client.query("CreateItem", item);
+    }
+
+    const result = await client.query("CalculateDecayFactors", {
+        decay_rate: -0.1,
+    });
+
+    console.log("Decay factors:", result);
+}
+
+main().catch((err) => {
+    console.error("CalculateDecayFactors query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateItem \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Recent Post","age_days":1.0,"base_score":100.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateItem \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Week Old Post","age_days":7.0,"base_score":100.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateItem \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Month Old Post","age_days":30.0,"base_score":100.0}'
+
+curl -X POST \
+  http://localhost:6969/CalculateDecayFactors \
+  -H 'Content-Type: application/json' \
+  -d '{"decay_rate":-0.1}'
+```
+</CodeGroup>
+
+---
+
+## Rounding Functions
+
+CEIL, FLOOR, and ROUND provide different rounding behaviors:
+
+```rust
+CEIL(3.2)   // Returns 4.0
+FLOOR(3.8)  // Returns 3.0
+ROUND(3.5)  // Returns 4.0
+ROUND(3.4)  // Returns 3.0
+```
+
+Use rounding for display formatting or bucketing:
+
+```rust
+QUERY BucketScores() =>
+    items <- N::Item
+        ::{
+            raw_score,
+            bucket: MUL(FLOOR(DIV(_::{raw_score}, 10.0)), 10.0)
+        }
+    RETURN items
+```
+
+## Domain Restrictions
+
+<Note>
+Some functions have domain restrictions:
+- **SQRT(x)**: x must be non-negative
+- **LN(x), LOG10(x), LOG(x, base)**: x must be positive
+- **LOG(x, base)**: base must be positive and not equal to 1
+</Note>
+
+## Use in Weight Calculations
+
+Unary math functions are powerful in shortest path weight calculations:
+
+```rust
+// Exponential time decay
+::ShortestPathDijkstras<Route>(
+    MUL(_::{distance}, EXP(MUL(-0.05, _::{days_old})))
+)
+
+// Logarithmic scaling for large values
+::ShortestPathDijkstras<Connection>(
+    LOG10(ADD(_::{traffic}, 1.0))
+)
+```
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Arithmetic Functions" href="./arithmetic">
+    ADD, SUB, MUL, DIV, POW, MOD
+  </Card>
+  <Card title="Constants" href="./constants">
+    PI and E constants
+  </Card>
+  <Card title="Custom Weights" href="../traversals/shortest-paths/custom-weights">
+    Use in shortest path calculations
+  </Card>
+  <Card title="Math Overview" href="./math-overview">
+    Overview of all math functions
+  </Card>
+</CardGroup>

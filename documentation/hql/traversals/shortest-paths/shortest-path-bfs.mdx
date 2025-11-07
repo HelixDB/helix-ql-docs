@@ -1,0 +1,640 @@
+---
+title: "ShortestPathBFS"
+description: "Find unweighted shortest paths using breadth-first search."
+icon: "diagram-project"
+---
+
+## Find Unweighted Shortest Paths with BFS &nbsp;
+
+ShortestPathBFS uses breadth-first search to find the shortest path between nodes when all edges have equal weight. It's the fastest algorithm for unweighted graphs and is ideal when you care about minimizing the number of hops rather than total distance or cost.
+
+```rust
+::ShortestPathBFS<EdgeType>
+::To(target_id)
+```
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## How It Works
+
+BFS explores the graph level by level:
+1. Start from the source node
+2. Visit all neighbors at distance 1
+3. Then visit all neighbors at distance 2
+4. Continue until the target is found
+
+This guarantees finding the path with the minimum number of edges (hops).
+
+## When to Use ShortestPathBFS
+
+Use BFS when you want to:
+
+- **Minimize hop count**: Find paths with the fewest edges
+- **Equal edge importance**: All edges are equally significant
+- **Social network analysis**: Find degrees of separation
+- **Network routing**: Minimize number of router hops
+- **Fast performance**: Need the fastest shortest path algorithm
+
+<Note>
+If edges have different weights (distance, cost, time), use [ShortestPathDijkstras](/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra) instead.
+</Note>
+
+## Example 1: Basic shortest path by hop count
+
+<CodeGroup>
+```rust Query focus={1-4}
+QUERY FindShortestPath(start_id: ID, end_id: ID) =>
+    result <- N<City>(start_id)
+        ::ShortestPathBFS<Road>
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateNetwork(city_name: String) =>
+    city <- CREATE V<City> { name: city_name }
+    RETURN city
+
+QUERY ConnectCities(from_id: ID, to_id: ID) =>
+    road <- CREATE E<Road>(from_id, to_id) {}
+    RETURN road
+```
+
+```rust Schema
+V::City {
+    name: String
+}
+
+E::Road {}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create cities
+cities = {}
+for city_name in ["New York", "Boston", "Philadelphia", "Washington DC", "Baltimore"]:
+    result = client.query("CreateNetwork", {"city_name": city_name})
+    cities[city_name] = result["city"]["id"]
+
+# Create road network
+connections = [
+    ("New York", "Boston"),
+    ("New York", "Philadelphia"),
+    ("Philadelphia", "Washington DC"),
+    ("Philadelphia", "Baltimore"),
+    ("Baltimore", "Washington DC"),
+]
+
+for from_city, to_city in connections:
+    client.query("ConnectCities", {
+        "from_id": cities[from_city],
+        "to_id": cities[to_city]
+    })
+
+# Find shortest path
+result = client.query("FindShortestPath", {
+    "start_id": cities["New York"],
+    "end_id": cities["Washington DC"]
+})
+
+print(f"Path from New York to Washington DC:")
+print(f"Cities: {[node['name'] for node in result['path']]}")
+print(f"Hop count: {result['hop_count']}")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create cities
+    let mut cities: HashMap<String, String> = HashMap::new();
+    for city_name in ["New York", "Boston", "Philadelphia", "Washington DC", "Baltimore"] {
+        let result: serde_json::Value = client.query("CreateNetwork", &json!({
+            "city_name": city_name,
+        })).await?;
+        cities.insert(city_name.to_string(), result["city"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create road network
+    let connections = vec![
+        ("New York", "Boston"),
+        ("New York", "Philadelphia"),
+        ("Philadelphia", "Washington DC"),
+        ("Philadelphia", "Baltimore"),
+        ("Baltimore", "Washington DC"),
+    ];
+
+    for (from_city, to_city) in &connections {
+        let _road: serde_json::Value = client.query("ConnectCities", &json!({
+            "from_id": cities[*from_city],
+            "to_id": cities[*to_city],
+        })).await?;
+    }
+
+    // Find shortest path
+    let result: serde_json::Value = client.query("FindShortestPath", &json!({
+        "start_id": cities["New York"],
+        "end_id": cities["Washington DC"],
+    })).await?;
+
+    println!("Path from New York to Washington DC: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create cities
+    cities := make(map[string]string)
+    cityNames := []string{"New York", "Boston", "Philadelphia", "Washington DC", "Baltimore"}
+
+    for _, cityName := range cityNames {
+        var result map[string]any
+        if err := client.Query("CreateNetwork", helix.WithData(map[string]any{
+            "city_name": cityName,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateNetwork failed: %s", err)
+        }
+        cities[cityName] = result["city"].(map[string]any)["id"].(string)
+    }
+
+    // Create road network
+    connections := [][2]string{
+        {"New York", "Boston"},
+        {"New York", "Philadelphia"},
+        {"Philadelphia", "Washington DC"},
+        {"Philadelphia", "Baltimore"},
+        {"Baltimore", "Washington DC"},
+    }
+
+    for _, conn := range connections {
+        var road map[string]any
+        if err := client.Query("ConnectCities", helix.WithData(map[string]any{
+            "from_id": cities[conn[0]],
+            "to_id":   cities[conn[1]],
+        })).Scan(&road); err != nil {
+            log.Fatalf("ConnectCities failed: %s", err)
+        }
+    }
+
+    // Find shortest path
+    var result map[string]any
+    if err := client.Query("FindShortestPath", helix.WithData(map[string]any{
+        "start_id": cities["New York"],
+        "end_id":   cities["Washington DC"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindShortestPath failed: %s", err)
+    }
+
+    fmt.Printf("Path from New York to Washington DC: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create cities
+    const cities: Record<string, string> = {};
+    const cityNames = ["New York", "Boston", "Philadelphia", "Washington DC", "Baltimore"];
+
+    for (const cityName of cityNames) {
+        const result = await client.query("CreateNetwork", { city_name: cityName });
+        cities[cityName] = result.city.id;
+    }
+
+    // Create road network
+    const connections = [
+        ["New York", "Boston"],
+        ["New York", "Philadelphia"],
+        ["Philadelphia", "Washington DC"],
+        ["Philadelphia", "Baltimore"],
+        ["Baltimore", "Washington DC"],
+    ];
+
+    for (const [fromCity, toCity] of connections) {
+        await client.query("ConnectCities", {
+            from_id: cities[fromCity],
+            to_id: cities[toCity],
+        });
+    }
+
+    // Find shortest path
+    const result = await client.query("FindShortestPath", {
+        start_id: cities["New York"],
+        end_id: cities["Washington DC"],
+    });
+
+    console.log("Path from New York to Washington DC:");
+    console.log("Cities:", result.path.map((node: any) => node.name));
+    console.log("Hop count:", result.hop_count);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create cities and store IDs
+NY_ID=$(curl -X POST http://localhost:6969/CreateNetwork \
+  -H 'Content-Type: application/json' \
+  -d '{"city_name":"New York"}' | jq -r '.city.id')
+
+BOSTON_ID=$(curl -X POST http://localhost:6969/CreateNetwork \
+  -H 'Content-Type: application/json' \
+  -d '{"city_name":"Boston"}' | jq -r '.city.id')
+
+PHILLY_ID=$(curl -X POST http://localhost:6969/CreateNetwork \
+  -H 'Content-Type: application/json' \
+  -d '{"city_name":"Philadelphia"}' | jq -r '.city.id')
+
+DC_ID=$(curl -X POST http://localhost:6969/CreateNetwork \
+  -H 'Content-Type: application/json' \
+  -d '{"city_name":"Washington DC"}' | jq -r '.city.id')
+
+BALTIMORE_ID=$(curl -X POST http://localhost:6969/CreateNetwork \
+  -H 'Content-Type: application/json' \
+  -d '{"city_name":"Baltimore"}' | jq -r '.city.id')
+
+# Create road network
+curl -X POST http://localhost:6969/ConnectCities \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$NY_ID\",\"to_id\":\"$BOSTON_ID\"}"
+
+curl -X POST http://localhost:6969/ConnectCities \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$NY_ID\",\"to_id\":\"$PHILLY_ID\"}"
+
+curl -X POST http://localhost:6969/ConnectCities \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$PHILLY_ID\",\"to_id\":\"$DC_ID\"}"
+
+curl -X POST http://localhost:6969/ConnectCities \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$PHILLY_ID\",\"to_id\":\"$BALTIMORE_ID\"}"
+
+curl -X POST http://localhost:6969/ConnectCities \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$BALTIMORE_ID\",\"to_id\":\"$DC_ID\"}"
+
+# Find shortest path
+curl -X POST http://localhost:6969/FindShortestPath \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$NY_ID\",\"end_id\":\"$DC_ID\"}"
+```
+</CodeGroup>
+
+---
+
+## Example 2: Social network degree of separation
+
+<CodeGroup>
+```rust Query focus={1-4}
+QUERY FindConnection(person1_id: ID, person2_id: ID) =>
+    connection <- N<Person>(person1_id)
+        ::ShortestPathBFS<Knows>
+        ::To(person2_id)
+    RETURN connection
+
+QUERY CreatePerson(name: String) =>
+    person <- CREATE V<Person> { name: name }
+    RETURN person
+
+QUERY CreateFriendship(from_id: ID, to_id: ID) =>
+    knows <- CREATE E<Knows>(from_id, to_id) {}
+    RETURN knows
+```
+
+```rust Schema
+V::Person {
+    name: String
+}
+
+E::Knows {}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create people
+people = {}
+for name in ["Alice", "Bob", "Carol", "Dave", "Eve", "Frank"]:
+    result = client.query("CreatePerson", {"name": name})
+    people[name] = result["person"]["id"]
+
+# Create friendship network
+friendships = [
+    ("Alice", "Bob"),
+    ("Bob", "Carol"),
+    ("Carol", "Dave"),
+    ("Alice", "Eve"),
+    ("Eve", "Frank"),
+    ("Frank", "Dave"),
+]
+
+for person1, person2 in friendships:
+    client.query("CreateFriendship", {
+        "from_id": people[person1],
+        "to_id": people[person2]
+    })
+
+# Find shortest connection
+result = client.query("FindConnection", {
+    "person1_id": people["Alice"],
+    "person2_id": people["Dave"]
+})
+
+print(f"Connection from Alice to Dave:")
+print(f"Path: {' -> '.join([node['name'] for node in result['connection']['path']])}")
+print(f"Degrees of separation: {result['connection']['hop_count']}")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create people
+    let mut people: HashMap<String, String> = HashMap::new();
+    for name in ["Alice", "Bob", "Carol", "Dave", "Eve", "Frank"] {
+        let result: serde_json::Value = client.query("CreatePerson", &json!({
+            "name": name,
+        })).await?;
+        people.insert(name.to_string(), result["person"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create friendship network
+    let friendships = vec![
+        ("Alice", "Bob"),
+        ("Bob", "Carol"),
+        ("Carol", "Dave"),
+        ("Alice", "Eve"),
+        ("Eve", "Frank"),
+        ("Frank", "Dave"),
+    ];
+
+    for (person1, person2) in &friendships {
+        let _knows: serde_json::Value = client.query("CreateFriendship", &json!({
+            "from_id": people[*person1],
+            "to_id": people[*person2],
+        })).await?;
+    }
+
+    // Find shortest connection
+    let result: serde_json::Value = client.query("FindConnection", &json!({
+        "person1_id": people["Alice"],
+        "person2_id": people["Dave"],
+    })).await?;
+
+    println!("Connection from Alice to Dave: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create people
+    people := make(map[string]string)
+    names := []string{"Alice", "Bob", "Carol", "Dave", "Eve", "Frank"}
+
+    for _, name := range names {
+        var result map[string]any
+        if err := client.Query("CreatePerson", helix.WithData(map[string]any{
+            "name": name,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreatePerson failed: %s", err)
+        }
+        people[name] = result["person"].(map[string]any)["id"].(string)
+    }
+
+    // Create friendship network
+    friendships := [][2]string{
+        {"Alice", "Bob"},
+        {"Bob", "Carol"},
+        {"Carol", "Dave"},
+        {"Alice", "Eve"},
+        {"Eve", "Frank"},
+        {"Frank", "Dave"},
+    }
+
+    for _, friendship := range friendships {
+        var knows map[string]any
+        if err := client.Query("CreateFriendship", helix.WithData(map[string]any{
+            "from_id": people[friendship[0]],
+            "to_id":   people[friendship[1]],
+        })).Scan(&knows); err != nil {
+            log.Fatalf("CreateFriendship failed: %s", err)
+        }
+    }
+
+    // Find shortest connection
+    var result map[string]any
+    if err := client.Query("FindConnection", helix.WithData(map[string]any{
+        "person1_id": people["Alice"],
+        "person2_id": people["Dave"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindConnection failed: %s", err)
+    }
+
+    fmt.Printf("Connection from Alice to Dave: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create people
+    const people: Record<string, string> = {};
+    const names = ["Alice", "Bob", "Carol", "Dave", "Eve", "Frank"];
+
+    for (const name of names) {
+        const result = await client.query("CreatePerson", { name });
+        people[name] = result.person.id;
+    }
+
+    // Create friendship network
+    const friendships = [
+        ["Alice", "Bob"],
+        ["Bob", "Carol"],
+        ["Carol", "Dave"],
+        ["Alice", "Eve"],
+        ["Eve", "Frank"],
+        ["Frank", "Dave"],
+    ];
+
+    for (const [person1, person2] of friendships) {
+        await client.query("CreateFriendship", {
+            from_id: people[person1],
+            to_id: people[person2],
+        });
+    }
+
+    // Find shortest connection
+    const result = await client.query("FindConnection", {
+        person1_id: people["Alice"],
+        person2_id: people["Dave"],
+    });
+
+    console.log("Connection from Alice to Dave:");
+    console.log("Path:", result.connection.path.map((n: any) => n.name).join(" -> "));
+    console.log("Degrees of separation:", result.connection.hop_count);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create people and store IDs
+ALICE_ID=$(curl -X POST http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice"}' | jq -r '.person.id')
+
+BOB_ID=$(curl -X POST http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob"}' | jq -r '.person.id')
+
+CAROL_ID=$(curl -X POST http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Carol"}' | jq -r '.person.id')
+
+DAVE_ID=$(curl -X POST http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Dave"}' | jq -r '.person.id')
+
+EVE_ID=$(curl -X POST http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve"}' | jq -r '.person.id')
+
+FRANK_ID=$(curl -X POST http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Frank"}' | jq -r '.person.id')
+
+# Create friendship network
+curl -X POST http://localhost:6969/CreateFriendship \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$ALICE_ID\",\"to_id\":\"$BOB_ID\"}"
+
+curl -X POST http://localhost:6969/CreateFriendship \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$BOB_ID\",\"to_id\":\"$CAROL_ID\"}"
+
+curl -X POST http://localhost:6969/CreateFriendship \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$CAROL_ID\",\"to_id\":\"$DAVE_ID\"}"
+
+curl -X POST http://localhost:6969/CreateFriendship \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$ALICE_ID\",\"to_id\":\"$EVE_ID\"}"
+
+curl -X POST http://localhost:6969/CreateFriendship \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$EVE_ID\",\"to_id\":\"$FRANK_ID\"}"
+
+curl -X POST http://localhost:6969/CreateFriendship \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$FRANK_ID\",\"to_id\":\"$DAVE_ID\"}"
+
+# Find shortest connection
+curl -X POST http://localhost:6969/FindConnection \
+  -H 'Content-Type: application/json' \
+  -d "{\"person1_id\":\"$ALICE_ID\",\"person2_id\":\"$DAVE_ID\"}"
+```
+</CodeGroup>
+
+---
+
+## Result Structure
+
+ShortestPathBFS returns a result containing:
+
+```rust
+{
+    path: [Node],           // Ordered list of nodes from start to end
+    edges: [Edge],          // Ordered list of edges connecting the nodes
+    total_weight: F64,      // Always equals hop_count for BFS
+    hop_count: I64          // Number of edges in the path
+}
+```
+
+## Performance Characteristics
+
+- **Time Complexity**: O(V + E) where V is vertices and E is edges
+- **Space Complexity**: O(V) for tracking visited nodes
+- **Guarantee**: Always finds the shortest path by hop count
+- **Best Case**: Target is a direct neighbor (1 hop)
+- **Worst Case**: Target requires exploring entire graph
+
+<Note>
+BFS is the fastest shortest path algorithm for unweighted graphs. For weighted graphs, it may not find the optimal path.
+</Note>
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="ShortestPathDijkstras" icon="route" href="/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra">
+    Find weighted shortest paths with custom calculations
+  </Card>
+  <Card title="ShortestPathAStar" icon="star" href="/documentation/hql/traversals/shortest-paths/shortest-path-astar">
+    Heuristic-guided pathfinding
+  </Card>
+  <Card title="Overview" icon="route" href="/documentation/hql/traversals/shortest-paths/overview">
+    Compare all shortest path algorithms
+  </Card>
+  <Card title="Graph Traversals" icon="project-diagram" href="/documentation/hql/traversals/steps_edges">
+    Other traversal operations
+  </Card>
+</CardGroup>

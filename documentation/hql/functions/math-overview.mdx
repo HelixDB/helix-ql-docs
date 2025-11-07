@@ -1,0 +1,139 @@
+---
+title: "Math Functions"
+description: "Perform mathematical operations and calculations in your queries."
+icon: "calculator"
+---
+
+## Mathematical Functions in HelixQL
+
+HelixQL provides a comprehensive set of mathematical functions for performing calculations, transformations, and aggregations within your queries. These functions can be used anywhere expressions are allowed, including custom weight calculations for shortest paths, property transformations, and conditional logic.
+
+## Function Categories
+
+<CardGroup cols={2}>
+  <Card title="Arithmetic" icon="plus-minus" href="./arithmetic">
+    Basic math operations: ADD, SUB, MUL, DIV, POW, MOD
+  </Card>
+  <Card title="Unary Math" icon="square-root-variable" href="./unary-math">
+    Single-argument functions: ABS, SQRT, LN, LOG, EXP, CEIL, FLOOR, ROUND
+  </Card>
+  <Card title="Trigonometry" icon="wave-sine" href="./trigonometry">
+    Trig functions: SIN, COS, TAN, ASIN, ACOS, ATAN, ATAN2
+  </Card>
+  <Card title="Constants" icon="pi" href="./constants">
+    Mathematical constants: PI, E
+  </Card>
+  <Card title="Aggregates" icon="chart-line" href="./aggregate-functions">
+    Collection operations: MIN, MAX, SUM, AVG, COUNT
+  </Card>
+</CardGroup>
+
+## Common Use Cases
+
+### 1. Custom Weight Calculations
+
+Use math functions to calculate dynamic weights for shortest path algorithms:
+
+```rust
+::ShortestPathDijkstras<Route>(
+    MUL(_::{distance}, POW(0.95, DIV(_::{days_old}, 30)))
+)
+```
+
+### 2. Property Transformations
+
+Transform property values during queries:
+
+```rust
+QUERY NormalizeScores(threshold: F64) =>
+    items <- N::Item
+        ::{
+            raw_score,
+            normalized: DIV(_::{raw_score}, 100.0),
+            above_threshold: _::{raw_score}::GT(threshold)
+        }
+    RETURN items
+```
+
+### 3. Distance Calculations
+
+Calculate distances using mathematical formulas:
+
+```rust
+QUERY CalculateDistance(x1: F64, y1: F64, x2: F64, y2: F64) =>
+    dx <- SUB(x2, x1)
+    dy <- SUB(y2, y1)
+    distance <- SQRT(ADD(POW(dx, 2.0), POW(dy, 2.0)))
+    RETURN distance
+```
+
+### 4. Aggregation and Statistics
+
+Perform statistical calculations on collections:
+
+```rust
+QUERY GetProductStats() =>
+    products <- N::Product
+    stats <- {
+        total: COUNT(products),
+        min_price: MIN(products::{price}),
+        max_price: MAX(products::{price}),
+        avg_price: AVG(products::{price}),
+        total_revenue: SUM(products::{revenue})
+    }
+    RETURN stats
+```
+
+## Function Composition
+
+Math functions can be nested and composed to create complex expressions:
+
+```rust
+// Exponential decay with normalization
+MUL(
+    DIV(_::{score}, 100.0),
+    EXP(MUL(-0.1, _::{age_days}))
+)
+
+// Weighted scoring with multiple factors
+ADD(
+    MUL(_::{relevance}, 0.6),
+    MUL(_::{popularity}, 0.3),
+    MUL(_::{recency}, 0.1)
+)
+```
+
+## Type Handling
+
+Mathematical functions in HelixQL handle numeric types appropriately:
+
+- **Integer types**: I8, I16, I32, I64, U8, U16, U32, U64
+- **Floating-point types**: F32, F64
+
+<Note>
+Functions that produce fractional results (like DIV, SQRT) will return floating-point values. Ensure your type annotations match the expected output types.
+</Note>
+
+## Performance Considerations
+
+- **Simple operations** (ADD, SUB, MUL) are highly optimized and add negligible overhead
+- **Complex functions** (trigonometry, logarithms) have more computational cost
+- **Aggregate functions** process entire collections and scale with collection size
+- Use math functions in weight calculations for shortest paths to enable dynamic routing
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Shortest Paths" href="../traversals/shortest-paths/overview">
+    Use math functions in custom weight calculations
+  </Card>
+  <Card title="Conditionals" href="../conditionals/conditions">
+    Combine math with conditional logic
+  </Card>
+  <Card title="Properties" href="../properties/property-access">
+    Access properties in mathematical expressions
+  </Card>
+  <Card title="Result Operations" href="../result_ops">
+    Combine math with result filtering
+  </Card>
+</CardGroup>

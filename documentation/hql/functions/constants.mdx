@@ -1,0 +1,470 @@
+---
+title: "Mathematical Constants"
+description: "Mathematical constants PI and E for use in calculations."
+icon: "pi"
+---
+
+## Mathematical Constants
+
+HelixQL provides built-in mathematical constants PI and E for use in calculations. These constants are provided as functions that return their respective values with high precision.
+
+## Available Constants
+
+### PI - Pi Constant
+
+```rust
+PI()  // Returns π ≈ 3.14159265358979323846
+```
+
+Returns the mathematical constant π (pi), the ratio of a circle's circumference to its diameter.
+
+### E - Euler's Number
+
+```rust
+E()  // Returns e ≈ 2.71828182845904523536
+```
+
+Returns the mathematical constant e (Euler's number), the base of natural logarithms.
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## Example 1: Circle calculations with PI
+
+Calculate circle properties using the PI constant:
+
+<CodeGroup>
+```rust Query focus={2-7}
+QUERY CalculateCircleProperties() =>
+    circles <- N::Circle
+        ::{
+            radius,
+            circumference: MUL(MUL(2.0, PI()), _::{radius}),
+            area: MUL(PI(), POW(_::{radius}, 2.0))
+        }
+    RETURN circles
+
+QUERY CreateCircle(radius: F64) =>
+    circle <- AddN<Circle>({ radius: radius })
+    RETURN circle
+```
+
+```rust Schema
+N::Circle {
+    radius: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create circles with different radii
+radii = [1.0, 5.0, 10.0, 15.0, 20.0]
+
+for radius in radii:
+    client.query("CreateCircle", {"radius": radius})
+
+result = client.query("CalculateCircleProperties", {})
+print("Circle properties:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let radii = vec![1.0, 5.0, 10.0, 15.0, 20.0];
+
+    for radius in &radii {
+        let _inserted: serde_json::Value = client.query("CreateCircle", &json!({
+            "radius": radius,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("CalculateCircleProperties", &json!({})).await?;
+
+    println!("Circle properties: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    radii := []float64{1.0, 5.0, 10.0, 15.0, 20.0}
+
+    for _, radius := range radii {
+        var inserted map[string]any
+        if err := client.Query("CreateCircle", helix.WithData(map[string]any{
+            "radius": radius,
+        })).Scan(&inserted); err != nil {
+            log.Fatalf("CreateCircle failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("CalculateCircleProperties", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("CalculateCircleProperties failed: %s", err)
+    }
+
+    fmt.Printf("Circle properties: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const radii = [1.0, 5.0, 10.0, 15.0, 20.0];
+
+    for (const radius of radii) {
+        await client.query("CreateCircle", { radius });
+    }
+
+    const result = await client.query("CalculateCircleProperties", {});
+
+    console.log("Circle properties:", result);
+}
+
+main().catch((err) => {
+    console.error("CalculateCircleProperties query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateCircle \
+  -H 'Content-Type: application/json' \
+  -d '{"radius":1.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateCircle \
+  -H 'Content-Type: application/json' \
+  -d '{"radius":5.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateCircle \
+  -H 'Content-Type: application/json' \
+  -d '{"radius":10.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateCircle \
+  -H 'Content-Type: application/json' \
+  -d '{"radius":15.0}'
+
+curl -X POST \
+  http://localhost:6969/CreateCircle \
+  -H 'Content-Type: application/json' \
+  -d '{"radius":20.0}'
+
+curl -X POST \
+  http://localhost:6969/CalculateCircleProperties \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+---
+
+## Example 2: Exponential growth with E
+
+Model exponential growth and decay using Euler's number:
+
+<CodeGroup>
+```rust Query focus={2-7}
+QUERY CalculateExponentialGrowth(time: F64, rate: F64) =>
+    populations <- N::Population
+        ::{
+            initial_size,
+            time_elapsed: time,
+            final_size: MUL(_::{initial_size}, POW(E(), MUL(rate, time)))
+        }
+    RETURN populations
+
+QUERY CreatePopulation(initial_size: F64) =>
+    population <- AddN<Population>({ initial_size: initial_size })
+    RETURN population
+```
+
+```rust Schema
+N::Population {
+    initial_size: F64
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create populations with different initial sizes
+initial_sizes = [100.0, 500.0, 1000.0, 5000.0]
+
+for size in initial_sizes:
+    client.query("CreatePopulation", {"initial_size": size})
+
+# Calculate growth after 10 time units with 5% growth rate
+result = client.query("CalculateExponentialGrowth", {
+    "time": 10.0,
+    "rate": 0.05
+})
+
+print("Population growth:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let initial_sizes = vec![100.0, 500.0, 1000.0, 5000.0];
+
+    for size in &initial_sizes {
+        let _inserted: serde_json::Value = client.query("CreatePopulation", &json!({
+            "initial_size": size,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("CalculateExponentialGrowth", &json!({
+        "time": 10.0,
+        "rate": 0.05,
+    })).await?;
+
+    println!("Population growth: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    initialSizes := []float64{100.0, 500.0, 1000.0, 5000.0}
+
+    for _, size := range initialSizes {
+        var inserted map[string]any
+        if err := client.Query("CreatePopulation", helix.WithData(map[string]any{
+            "initial_size": size,
+        })).Scan(&inserted); err != nil {
+            log.Fatalf("CreatePopulation failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("CalculateExponentialGrowth", helix.WithData(map[string]any{
+        "time": 10.0,
+        "rate": 0.05,
+    })).Scan(&result); err != nil {
+        log.Fatalf("CalculateExponentialGrowth failed: %s", err)
+    }
+
+    fmt.Printf("Population growth: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const initialSizes = [100.0, 500.0, 1000.0, 5000.0];
+
+    for (const size of initialSizes) {
+        await client.query("CreatePopulation", { initial_size: size });
+    }
+
+    const result = await client.query("CalculateExponentialGrowth", {
+        time: 10.0,
+        rate: 0.05,
+    });
+
+    console.log("Population growth:", result);
+}
+
+main().catch((err) => {
+    console.error("CalculateExponentialGrowth query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreatePopulation \
+  -H 'Content-Type: application/json' \
+  -d '{"initial_size":100.0}'
+
+curl -X POST \
+  http://localhost:6969/CreatePopulation \
+  -H 'Content-Type: application/json' \
+  -d '{"initial_size":500.0}'
+
+curl -X POST \
+  http://localhost:6969/CreatePopulation \
+  -H 'Content-Type: application/json' \
+  -d '{"initial_size":1000.0}'
+
+curl -X POST \
+  http://localhost:6969/CreatePopulation \
+  -H 'Content-Type: application/json' \
+  -d '{"initial_size":5000.0}'
+
+curl -X POST \
+  http://localhost:6969/CalculateExponentialGrowth \
+  -H 'Content-Type: application/json' \
+  -d '{"time":10.0,"rate":0.05}'
+```
+</CodeGroup>
+
+---
+
+## Common Use Cases
+
+### Degree-Radian Conversion
+
+Use PI for converting between degrees and radians:
+
+```rust
+// Degrees to radians
+radians = MUL(degrees, DIV(PI(), 180.0))
+
+// Radians to degrees
+degrees = MUL(radians, DIV(180.0, PI()))
+```
+
+### Circular Motion
+
+Calculate properties of circular motion:
+
+```rust
+QUERY CalculateAngularVelocity() =>
+    objects <- N::RotatingObject
+        ::{
+            rpm,
+            angular_velocity: MUL(MUL(2.0, PI()), DIV(_::{rpm}, 60.0))
+        }
+    RETURN objects
+```
+
+### Compound Interest
+
+Use E for continuous compound interest calculations:
+
+```rust
+QUERY CalculateCompoundInterest(principal: F64, rate: F64, time: F64) =>
+    amount <- MUL(principal, POW(E(), MUL(rate, time)))
+    RETURN amount
+```
+
+### Natural Decay
+
+Model radioactive decay or other natural decay processes:
+
+```rust
+QUERY CalculateDecay() =>
+    samples <- N::Sample
+        ::{
+            initial_amount,
+            half_life,
+            time_elapsed,
+            remaining: MUL(
+                _::{initial_amount},
+                POW(E(), MUL(DIV(LN(0.5), _::{half_life}), _::{time_elapsed}))
+            )
+        }
+    RETURN samples
+```
+
+<Tip>
+Constants are particularly useful when combined with trigonometric functions (SIN, COS, TAN) and exponential functions (EXP, LN).
+</Tip>
+
+## Precision
+
+Both PI() and E() return high-precision values suitable for scientific and engineering calculations:
+
+- PI() returns π to approximately 20 decimal places
+- E() returns e to approximately 20 decimal places
+
+<Note>
+The constants are implemented as functions rather than literals to maintain consistency with HelixQL's function-based syntax.
+</Note>
+
+## Use in Complex Formulas
+
+Constants are often used in complex mathematical formulas:
+
+```rust
+// Gaussian distribution
+QUERY CalculateGaussian(x: F64, mean: F64, std_dev: F64) =>
+    coefficient <- DIV(1.0, MUL(std_dev, SQRT(MUL(2.0, PI()))))
+    exponent <- DIV(POW(SUB(x, mean), 2.0), MUL(2.0, POW(std_dev, 2.0)))
+    probability <- MUL(coefficient, POW(E(), MUL(-1.0, exponent)))
+    RETURN probability
+
+// Euler's formula: e^(iθ) = cos(θ) + i*sin(θ)
+QUERY EulerFormula(theta: F64) =>
+    result <- N::ComplexNumber
+        ::{
+            real: COS(theta),
+            imaginary: SIN(theta),
+            magnitude: POW(E(), 0.0)  // Always 1 for pure imaginary exponent
+        }
+    RETURN result
+```
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Trigonometric Functions" href="./trigonometry">
+    SIN, COS, TAN, ASIN, ACOS, ATAN, ATAN2
+  </Card>
+  <Card title="Unary Math Functions" href="./unary-math">
+    SQRT, ABS, LN, LOG10, EXP, CEIL, FLOOR, ROUND
+  </Card>
+  <Card title="Arithmetic Functions" href="./arithmetic">
+    ADD, SUB, MUL, DIV, POW, MOD
+  </Card>
+  <Card title="Math Overview" href="./math-overview">
+    Overview of all math functions
+  </Card>
+</CardGroup>

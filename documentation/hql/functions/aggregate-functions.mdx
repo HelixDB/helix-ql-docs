@@ -1,0 +1,714 @@
+---
+title: "Aggregate Functions"
+description: "Aggregate operations on collections: MIN, MAX, SUM, AVG, COUNT."
+icon: "chart-line"
+---
+
+## Aggregate Functions
+
+HelixQL provides a comprehensive set of aggregate functions for performing statistical operations and summarizing collections of values. These functions operate on arrays or collections to produce single summary values.
+
+## Available Functions
+
+### MIN - Minimum Value
+
+```rust
+MIN(collection)  // Returns the smallest value
+```
+
+Returns the minimum value from a collection of numbers.
+
+### MAX - Maximum Value
+
+```rust
+MAX(collection)  // Returns the largest value
+```
+
+Returns the maximum value from a collection of numbers.
+
+### SUM - Sum of Values
+
+```rust
+SUM(collection)  // Returns the total sum
+```
+
+Returns the sum of all values in a collection.
+
+### AVG - Average Value
+
+```rust
+AVG(collection)  // Returns the mean
+```
+
+Returns the arithmetic mean (average) of all values in a collection.
+
+### COUNT - Count Elements
+
+```rust
+COUNT(collection)  // Returns the number of elements
+```
+
+Returns the number of elements in a collection.
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## Example 1: Statistical analysis of sales data
+
+Analyze sales performance using aggregate functions:
+
+<CodeGroup>
+```rust Query focus={2-9}
+QUERY AnalyzeSalesStatistics() =>
+    stats <- {
+        total_sales: SUM(N::Sale::{amount}),
+        average_sale: AVG(N::Sale::{amount}),
+        max_sale: MAX(N::Sale::{amount}),
+        min_sale: MIN(N::Sale::{amount}),
+        sale_count: COUNT(N::Sale::{amount})
+    }
+    RETURN stats
+
+QUERY CreateSale(amount: F64, product: String) =>
+    sale <- AddN<Sale>({ amount: amount, product: product })
+    RETURN sale
+```
+
+```rust Schema
+N::Sale {
+    amount: F64,
+    product: String
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create sales records
+sales = [
+    {"amount": 150.0, "product": "Laptop"},
+    {"amount": 75.0, "product": "Mouse"},
+    {"amount": 300.0, "product": "Monitor"},
+    {"amount": 50.0, "product": "Keyboard"},
+    {"amount": 200.0, "product": "Headphones"},
+    {"amount": 125.0, "product": "Webcam"},
+]
+
+for sale in sales:
+    client.query("CreateSale", sale)
+
+result = client.query("AnalyzeSalesStatistics", {})
+print("Sales statistics:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let sales = vec![
+        (150.0, "Laptop"),
+        (75.0, "Mouse"),
+        (300.0, "Monitor"),
+        (50.0, "Keyboard"),
+        (200.0, "Headphones"),
+        (125.0, "Webcam"),
+    ];
+
+    for (amount, product) in &sales {
+        let _inserted: serde_json::Value = client.query("CreateSale", &json!({
+            "amount": amount,
+            "product": product,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("AnalyzeSalesStatistics", &json!({})).await?;
+
+    println!("Sales statistics: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    sales := []map[string]any{
+        {"amount": 150.0, "product": "Laptop"},
+        {"amount": 75.0, "product": "Mouse"},
+        {"amount": 300.0, "product": "Monitor"},
+        {"amount": 50.0, "product": "Keyboard"},
+        {"amount": 200.0, "product": "Headphones"},
+        {"amount": 125.0, "product": "Webcam"},
+    }
+
+    for _, sale := range sales {
+        var inserted map[string]any
+        if err := client.Query("CreateSale", helix.WithData(sale)).Scan(&inserted); err != nil {
+            log.Fatalf("CreateSale failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("AnalyzeSalesStatistics", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("AnalyzeSalesStatistics failed: %s", err)
+    }
+
+    fmt.Printf("Sales statistics: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const sales = [
+        { amount: 150.0, product: "Laptop" },
+        { amount: 75.0, product: "Mouse" },
+        { amount: 300.0, product: "Monitor" },
+        { amount: 50.0, product: "Keyboard" },
+        { amount: 200.0, product: "Headphones" },
+        { amount: 125.0, product: "Webcam" },
+    ];
+
+    for (const sale of sales) {
+        await client.query("CreateSale", sale);
+    }
+
+    const result = await client.query("AnalyzeSalesStatistics", {});
+
+    console.log("Sales statistics:", result);
+}
+
+main().catch((err) => {
+    console.error("AnalyzeSalesStatistics query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateSale \
+  -H 'Content-Type: application/json' \
+  -d '{"amount":150.0,"product":"Laptop"}'
+
+curl -X POST \
+  http://localhost:6969/CreateSale \
+  -H 'Content-Type: application/json' \
+  -d '{"amount":75.0,"product":"Mouse"}'
+
+curl -X POST \
+  http://localhost:6969/CreateSale \
+  -H 'Content-Type: application/json' \
+  -d '{"amount":300.0,"product":"Monitor"}'
+
+curl -X POST \
+  http://localhost:6969/CreateSale \
+  -H 'Content-Type: application/json' \
+  -d '{"amount":50.0,"product":"Keyboard"}'
+
+curl -X POST \
+  http://localhost:6969/CreateSale \
+  -H 'Content-Type: application/json' \
+  -d '{"amount":200.0,"product":"Headphones"}'
+
+curl -X POST \
+  http://localhost:6969/CreateSale \
+  -H 'Content-Type: application/json' \
+  -d '{"amount":125.0,"product":"Webcam"}'
+
+curl -X POST \
+  http://localhost:6969/AnalyzeSalesStatistics \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+---
+
+## Example 2: Student grade analysis
+
+Calculate grade statistics for students:
+
+<CodeGroup>
+```rust Query focus={2-10}
+QUERY AnalyzeStudentGrades() =>
+    students <- N::Student
+        ::{
+            name,
+            grades,
+            highest_grade: MAX(_::{grades}),
+            lowest_grade: MIN(_::{grades}),
+            average_grade: AVG(_::{grades}),
+            total_assessments: COUNT(_::{grades})
+        }
+    RETURN students
+
+QUERY CreateStudent(name: String, grades: [F64]) =>
+    student <- AddN<Student>({ name: name, grades: grades })
+    RETURN student
+```
+
+```rust Schema
+N::Student {
+    name: String,
+    grades: [F64]
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create student records with their grades
+students = [
+    {"name": "Alice", "grades": [85.0, 92.0, 88.0, 95.0, 90.0]},
+    {"name": "Bob", "grades": [78.0, 82.0, 75.0, 88.0, 80.0]},
+    {"name": "Charlie", "grades": [95.0, 98.0, 92.0, 96.0, 94.0]},
+    {"name": "Diana", "grades": [70.0, 75.0, 72.0, 78.0, 74.0]},
+]
+
+for student in students:
+    client.query("CreateStudent", student)
+
+result = client.query("AnalyzeStudentGrades", {})
+print("Student grade analysis:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let students = vec![
+        ("Alice", vec![85.0, 92.0, 88.0, 95.0, 90.0]),
+        ("Bob", vec![78.0, 82.0, 75.0, 88.0, 80.0]),
+        ("Charlie", vec![95.0, 98.0, 92.0, 96.0, 94.0]),
+        ("Diana", vec![70.0, 75.0, 72.0, 78.0, 74.0]),
+    ];
+
+    for (name, grades) in &students {
+        let _inserted: serde_json::Value = client.query("CreateStudent", &json!({
+            "name": name,
+            "grades": grades,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("AnalyzeStudentGrades", &json!({})).await?;
+
+    println!("Student grade analysis: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    students := []map[string]any{
+        {"name": "Alice", "grades": []float64{85.0, 92.0, 88.0, 95.0, 90.0}},
+        {"name": "Bob", "grades": []float64{78.0, 82.0, 75.0, 88.0, 80.0}},
+        {"name": "Charlie", "grades": []float64{95.0, 98.0, 92.0, 96.0, 94.0}},
+        {"name": "Diana", "grades": []float64{70.0, 75.0, 72.0, 78.0, 74.0}},
+    }
+
+    for _, student := range students {
+        var inserted map[string]any
+        if err := client.Query("CreateStudent", helix.WithData(student)).Scan(&inserted); err != nil {
+            log.Fatalf("CreateStudent failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("AnalyzeStudentGrades", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("AnalyzeStudentGrades failed: %s", err)
+    }
+
+    fmt.Printf("Student grade analysis: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const students = [
+        { name: "Alice", grades: [85.0, 92.0, 88.0, 95.0, 90.0] },
+        { name: "Bob", grades: [78.0, 82.0, 75.0, 88.0, 80.0] },
+        { name: "Charlie", grades: [95.0, 98.0, 92.0, 96.0, 94.0] },
+        { name: "Diana", grades: [70.0, 75.0, 72.0, 78.0, 74.0] },
+    ];
+
+    for (const student of students) {
+        await client.query("CreateStudent", student);
+    }
+
+    const result = await client.query("AnalyzeStudentGrades", {});
+
+    console.log("Student grade analysis:", result);
+}
+
+main().catch((err) => {
+    console.error("AnalyzeStudentGrades query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateStudent \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","grades":[85.0,92.0,88.0,95.0,90.0]}'
+
+curl -X POST \
+  http://localhost:6969/CreateStudent \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","grades":[78.0,82.0,75.0,88.0,80.0]}'
+
+curl -X POST \
+  http://localhost:6969/CreateStudent \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","grades":[95.0,98.0,92.0,96.0,94.0]}'
+
+curl -X POST \
+  http://localhost:6969/CreateStudent \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","grades":[70.0,75.0,72.0,78.0,74.0]}'
+
+curl -X POST \
+  http://localhost:6969/AnalyzeStudentGrades \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+---
+
+## Example 3: Sensor data monitoring
+
+Monitor and summarize IoT sensor readings:
+
+<CodeGroup>
+```rust Query focus={2-11}
+QUERY MonitorSensorReadings() =>
+    sensors <- N::Sensor
+        ::{
+            sensor_id,
+            readings,
+            max_reading: MAX(_::{readings}),
+            min_reading: MIN(_::{readings}),
+            avg_reading: AVG(_::{readings}),
+            total_readings: COUNT(_::{readings}),
+            reading_sum: SUM(_::{readings})
+        }
+    RETURN sensors
+
+QUERY CreateSensor(sensor_id: String, readings: [F64]) =>
+    sensor <- AddN<Sensor>({ sensor_id: sensor_id, readings: readings })
+    RETURN sensor
+```
+
+```rust Schema
+N::Sensor {
+    sensor_id: String,
+    readings: [F64]
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create sensor records with readings
+sensors = [
+    {"sensor_id": "TEMP-001", "readings": [22.5, 23.1, 22.8, 23.5, 22.9]},
+    {"sensor_id": "TEMP-002", "readings": [25.0, 25.5, 24.8, 26.0, 25.2]},
+    {"sensor_id": "HUMID-001", "readings": [45.0, 47.0, 46.5, 48.0, 46.0]},
+    {"sensor_id": "PRESS-001", "readings": [1013.0, 1012.5, 1014.0, 1013.5, 1013.0]},
+]
+
+for sensor in sensors:
+    client.query("CreateSensor", sensor)
+
+result = client.query("MonitorSensorReadings", {})
+print("Sensor monitoring:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let sensors = vec![
+        ("TEMP-001", vec![22.5, 23.1, 22.8, 23.5, 22.9]),
+        ("TEMP-002", vec![25.0, 25.5, 24.8, 26.0, 25.2]),
+        ("HUMID-001", vec![45.0, 47.0, 46.5, 48.0, 46.0]),
+        ("PRESS-001", vec![1013.0, 1012.5, 1014.0, 1013.5, 1013.0]),
+    ];
+
+    for (sensor_id, readings) in &sensors {
+        let _inserted: serde_json::Value = client.query("CreateSensor", &json!({
+            "sensor_id": sensor_id,
+            "readings": readings,
+        })).await?;
+    }
+
+    let result: serde_json::Value = client.query("MonitorSensorReadings", &json!({})).await?;
+
+    println!("Sensor monitoring: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    sensors := []map[string]any{
+        {"sensor_id": "TEMP-001", "readings": []float64{22.5, 23.1, 22.8, 23.5, 22.9}},
+        {"sensor_id": "TEMP-002", "readings": []float64{25.0, 25.5, 24.8, 26.0, 25.2}},
+        {"sensor_id": "HUMID-001", "readings": []float64{45.0, 47.0, 46.5, 48.0, 46.0}},
+        {"sensor_id": "PRESS-001", "readings": []float64{1013.0, 1012.5, 1014.0, 1013.5, 1013.0}},
+    }
+
+    for _, sensor := range sensors {
+        var inserted map[string]any
+        if err := client.Query("CreateSensor", helix.WithData(sensor)).Scan(&inserted); err != nil {
+            log.Fatalf("CreateSensor failed: %s", err)
+        }
+    }
+
+    var result map[string]any
+    if err := client.Query("MonitorSensorReadings", helix.WithData(map[string]any{})).Scan(&result); err != nil {
+        log.Fatalf("MonitorSensorReadings failed: %s", err)
+    }
+
+    fmt.Printf("Sensor monitoring: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const sensors = [
+        { sensor_id: "TEMP-001", readings: [22.5, 23.1, 22.8, 23.5, 22.9] },
+        { sensor_id: "TEMP-002", readings: [25.0, 25.5, 24.8, 26.0, 25.2] },
+        { sensor_id: "HUMID-001", readings: [45.0, 47.0, 46.5, 48.0, 46.0] },
+        { sensor_id: "PRESS-001", readings: [1013.0, 1012.5, 1014.0, 1013.5, 1013.0] },
+    ];
+
+    for (const sensor of sensors) {
+        await client.query("CreateSensor", sensor);
+    }
+
+    const result = await client.query("MonitorSensorReadings", {});
+
+    console.log("Sensor monitoring:", result);
+}
+
+main().catch((err) => {
+    console.error("MonitorSensorReadings query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+curl -X POST \
+  http://localhost:6969/CreateSensor \
+  -H 'Content-Type: application/json' \
+  -d '{"sensor_id":"TEMP-001","readings":[22.5,23.1,22.8,23.5,22.9]}'
+
+curl -X POST \
+  http://localhost:6969/CreateSensor \
+  -H 'Content-Type: application/json' \
+  -d '{"sensor_id":"TEMP-002","readings":[25.0,25.5,24.8,26.0,25.2]}'
+
+curl -X POST \
+  http://localhost:6969/CreateSensor \
+  -H 'Content-Type: application/json' \
+  -d '{"sensor_id":"HUMID-001","readings":[45.0,47.0,46.5,48.0,46.0]}'
+
+curl -X POST \
+  http://localhost:6969/CreateSensor \
+  -H 'Content-Type: application/json' \
+  -d '{"sensor_id":"PRESS-001","readings":[1013.0,1012.5,1014.0,1013.5,1013.0]}'
+
+curl -X POST \
+  http://localhost:6969/MonitorSensorReadings \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+---
+
+## Common Aggregate Patterns
+
+### Combining Aggregates
+
+Aggregate functions are often used together for comprehensive analysis:
+
+```rust
+QUERY ComprehensiveStats() =>
+    stats <- {
+        count: COUNT(N::DataPoint::{value}),
+        sum: SUM(N::DataPoint::{value}),
+        avg: AVG(N::DataPoint::{value}),
+        min: MIN(N::DataPoint::{value}),
+        max: MAX(N::DataPoint::{value}),
+        range: SUB(MAX(N::DataPoint::{value}), MIN(N::DataPoint::{value}))
+    }
+    RETURN stats
+```
+
+### Filtered Aggregates
+
+Combine aggregates with filtering for conditional statistics:
+
+```rust
+QUERY FilteredStats(threshold: F64) =>
+    filtered <- N::DataPoint WHERE _::{value} > threshold
+    stats <- {
+        count: COUNT(filtered::{value}),
+        average: AVG(filtered::{value}),
+        maximum: MAX(filtered::{value})
+    }
+    RETURN stats
+```
+
+### Nested Aggregates
+
+Calculate aggregates on aggregate results:
+
+```rust
+QUERY NestedAggregates() =>
+    groups <- N::Group
+        ::{
+            name,
+            member_count: COUNT(_::{members}),
+            avg_age: AVG(_::{members}::age),
+            max_score: MAX(_::{members}::score)
+        }
+    overall_stats <- {
+        total_groups: COUNT(groups),
+        avg_group_size: AVG(groups::{member_count})
+    }
+    RETURN overall_stats
+```
+
+<Tip>
+Aggregate functions are particularly useful for data analysis, reporting, and creating dashboards.
+</Tip>
+
+## Empty Collections
+
+<Note>
+When aggregate functions are applied to empty collections:
+- **COUNT** returns 0
+- **SUM** returns 0
+- **AVG**, **MIN**, **MAX** return null or error depending on implementation
+</Note>
+
+## Statistical Variance
+
+To calculate variance and standard deviation, combine aggregate functions:
+
+```rust
+// Calculate variance
+QUERY CalculateVariance() =>
+    values <- N::Value::{amount}
+    mean <- AVG(values)
+    squared_diffs <- values
+        ::{
+            diff_squared: POW(SUB(_::{amount}, mean), 2.0)
+        }
+    variance <- AVG(squared_diffs::{diff_squared})
+    std_dev <- SQRT(variance)
+    RETURN { variance: variance, std_dev: std_dev }
+```
+
+## Performance Considerations
+
+<Note>
+Aggregate functions scan entire collections, so consider:
+- Adding appropriate indexes for frequently aggregated fields
+- Using filters before aggregation to reduce data volume
+- Caching aggregate results for frequently accessed statistics
+</Note>
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Unary Math Functions" href="./unary-math">
+    SQRT, ABS, LN, LOG10, EXP, CEIL, FLOOR, ROUND
+  </Card>
+  <Card title="Arithmetic Functions" href="./arithmetic">
+    ADD, SUB, MUL, DIV, POW, MOD
+  </Card>
+  <Card title="Filtering" href="../queries/filtering">
+    Filter data before aggregation
+  </Card>
+  <Card title="Math Overview" href="./math-overview">
+    Overview of all math functions
+  </Card>
+</CardGroup>

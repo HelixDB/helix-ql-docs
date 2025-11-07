@@ -1,0 +1,614 @@
+---
+title: "Grouping and Aggregation Guide"
+description: "Understand when to use GROUP_BY vs AGGREGATE_BY."
+icon: "book"
+---
+
+## Understanding Grouping Operations &nbsp;
+
+HelixDB provides two powerful operations for organizing and summarizing data: `GROUP_BY` and `AGGREGATE_BY`. While they may seem similar, they serve different purposes and return different results.
+
+## Key Differences
+
+| Feature | GROUP_BY | AGGREGATE_BY |
+|---------|----------|--------------|
+| **Returns** | Count summaries only | Full data objects + counts |
+| **Memory Usage** | Low - only stores counts | Higher - stores all objects |
+| **Use Case** | Analytics, distributions | Detailed reports, processing |
+| **Output Size** | Small, compact | Large, comprehensive |
+| **Best For** | Dashboards, statistics | Data analysis, transformations |
+
+## Syntax Comparison
+
+Both operations support single or multiple properties:
+
+```rust
+// GROUP_BY - Returns counts only
+::GROUP_BY(property)
+::GROUP_BY(property1, property2, ...)
+
+// AGGREGATE_BY - Returns full data
+::AGGREGATE_BY(property)
+::AGGREGATE_BY(property1, property2, ...)
+```
+
+## Output Format Comparison
+
+### GROUP_BY Output
+```rust
+[
+    {'country': 'USA', 'count': 3},
+    {'country': 'Canada', 'count': 2},
+    {'country': 'UK', 'count': 1}
+]
+```
+
+### AGGREGATE_BY Output
+```rust [expandable]
+[
+    {
+        'count': 3,
+        'data': [
+            {'name': 'Alice', 'country': 'USA', 'age': 28},
+            {'name': 'Charlie', 'country': 'USA', 'age': 25},
+            {'name': 'Frank', 'country': 'USA', 'age': 35}
+        ]
+    },
+    {
+        'count': 2,
+        'data': [
+            {'name': 'Bob', 'country': 'Canada', 'age': 32},
+            {'name': 'Eve', 'country': 'Canada', 'age': 27}
+        ]
+    }
+]
+```
+
+## Performance Characteristics
+
+### GROUP_BY Performance
+- **Memory**: O(n) where n = number of unique groups
+- **Speed**: Fast - only counts are stored
+- **Bandwidth**: Minimal - small response size
+- **Scalability**: Excellent for large datasets
+
+### AGGREGATE_BY Performance
+- **Memory**: O(m) where m = total number of items
+- **Speed**: Moderate - full objects stored
+- **Bandwidth**: Higher - complete data returned
+- **Scalability**: Good for moderate datasets
+
+<Note>
+For large datasets where you only need counts, GROUP_BY can be orders of magnitude more efficient in terms of memory and bandwidth usage.
+</Note>
+
+## Use Case Decision Tree
+
+```
+Do you need the actual data objects?
+│
+├─ YES → Do you need to process/transform them?
+│         │
+│         ├─ YES → Use AGGREGATE_BY
+│         │        (You need the full objects)
+│         │
+│         └─ NO  → Do you need to display them?
+│                  │
+│                  ├─ YES → Use AGGREGATE_BY
+│                  │        (You need to show details)
+│                  │
+│                  └─ NO  → Use GROUP_BY
+│                           (You only need counts)
+│
+└─ NO  → Use GROUP_BY
+          (Counts are sufficient)
+```
+
+## Best Practices
+
+### Use GROUP_BY When:
+1. Building analytics dashboards
+2. Showing data distributions
+3. Generating summary reports
+4. Optimizing for memory/bandwidth
+5. Working with large datasets (millions of records)
+6. Creating charts or graphs
+
+### Use AGGREGATE_BY When:
+1. Need to process grouped data further
+2. Building detailed reports with examples
+3. Need to display sample records per group
+4. Performing transformations on grouped items
+5. Working with moderate datasets (thousands of records)
+6. Building data exploration interfaces
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## Example 1: Side-by-Side Comparison - User Distribution
+
+<CodeGroup>
+```rust Query focus={1-8} [expandable]
+QUERY GroupUsersByCountry () =>
+    users <- N<User>
+    RETURN users::GROUP_BY(country)
+
+QUERY AggregateUsersByCountry () =>
+    users <- N<User>
+    RETURN users::AGGREGATE_BY(country)
+
+QUERY CreateUser (name: String, country: String, age: U8) =>
+    user <- AddN<User>({
+        name: name,
+        country: country,
+        age: age
+    })
+    RETURN user
+```
+
+```rust Schema
+N::User {
+    name: String,
+    country: String,
+    age: U8
+}
+```
+</CodeGroup>
+
+Here's how to run both queries using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "country": "USA", "age": 28},
+    {"name": "Bob", "country": "Canada", "age": 32},
+    {"name": "Charlie", "country": "USA", "age": 25},
+    {"name": "Diana", "country": "UK", "age": 30},
+    {"name": "Eve", "country": "Canada", "age": 27},
+    {"name": "Frank", "country": "USA", "age": 35},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+# GROUP_BY - Returns only counts
+group_result = client.query("GroupUsersByCountry", {})
+print("GROUP_BY result:", group_result)
+# Output: [{'country': 'USA', 'count': 3}, {'country': 'Canada', 'count': 2}, ...]
+
+# AGGREGATE_BY - Returns full data
+aggregate_result = client.query("AggregateUsersByCountry", {})
+print("AGGREGATE_BY result:", aggregate_result)
+# Output: [{'count': 3, 'data': [{'name': 'Alice', ...}, ...]}, ...]
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let users = vec![
+        ("Alice", "USA", 28),
+        ("Bob", "Canada", 32),
+        ("Charlie", "USA", 25),
+        ("Diana", "UK", 30),
+        ("Eve", "Canada", 27),
+        ("Frank", "USA", 35),
+    ];
+
+    for (name, country, age) in &users {
+        let _created: serde_json::Value = client.query("CreateUser", &json!({
+            "name": name,
+            "country": country,
+            "age": age,
+        })).await?;
+    }
+
+    // GROUP_BY - Returns only counts
+    let group_result: serde_json::Value = client.query("GroupUsersByCountry", &json!({})).await?;
+    println!("GROUP_BY result: {group_result:#?}");
+
+    // AGGREGATE_BY - Returns full data
+    let aggregate_result: serde_json::Value = client.query("AggregateUsersByCountry", &json!({})).await?;
+    println!("AGGREGATE_BY result: {aggregate_result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    users := []map[string]any{
+        {"name": "Alice", "country": "USA", "age": uint8(28)},
+        {"name": "Bob", "country": "Canada", "age": uint8(32)},
+        {"name": "Charlie", "country": "USA", "age": uint8(25)},
+        {"name": "Diana", "country": "UK", "age": uint8(30)},
+        {"name": "Eve", "country": "Canada", "age": uint8(27)},
+        {"name": "Frank", "country": "USA", "age": uint8(35)},
+    }
+
+    for _, user := range users {
+        var created map[string]any
+        if err := client.Query("CreateUser", helix.WithData(user)).Scan(&created); err != nil {
+            log.Fatalf("CreateUser failed: %s", err)
+        }
+    }
+
+    // GROUP_BY - Returns only counts
+    var groupResult map[string]any
+    if err := client.Query("GroupUsersByCountry", helix.WithData(map[string]any{})).Scan(&groupResult); err != nil {
+        log.Fatalf("GroupUsersByCountry failed: %s", err)
+    }
+    fmt.Printf("GROUP_BY result: %#v\n", groupResult)
+
+    // AGGREGATE_BY - Returns full data
+    var aggregateResult map[string]any
+    if err := client.Query("AggregateUsersByCountry", helix.WithData(map[string]any{})).Scan(&aggregateResult); err != nil {
+        log.Fatalf("AggregateUsersByCountry failed: %s", err)
+    }
+    fmt.Printf("AGGREGATE_BY result: %#v\n", aggregateResult)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", country: "USA", age: 28 },
+        { name: "Bob", country: "Canada", age: 32 },
+        { name: "Charlie", country: "USA", age: 25 },
+        { name: "Diana", country: "UK", age: 30 },
+        { name: "Eve", country: "Canada", age: 27 },
+        { name: "Frank", country: "USA", age: 35 },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    // GROUP_BY - Returns only counts
+    const groupResult = await client.query("GroupUsersByCountry", {});
+    console.log("GROUP_BY result:", groupResult);
+
+    // AGGREGATE_BY - Returns full data
+    const aggregateResult = await client.query("AggregateUsersByCountry", {});
+    console.log("AGGREGATE_BY result:", aggregateResult);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create users
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","country":"USA","age":28}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","country":"Canada","age":32}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","country":"USA","age":25}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","country":"UK","age":30}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve","country":"Canada","age":27}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Frank","country":"USA","age":35}'
+
+# GROUP_BY - Returns only counts
+curl -X POST \
+  http://localhost:6969/GroupUsersByCountry \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+
+# AGGREGATE_BY - Returns full data
+curl -X POST \
+  http://localhost:6969/AggregateUsersByCountry \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+## Example 2: Using COUNT with Both Operations
+
+<CodeGroup>
+```rust Query focus={1-8} [expandable]
+QUERY CountWithGroupBy () =>
+    orders <- N<Order>
+    RETURN orders::COUNT::GROUP_BY(status)
+
+QUERY CountWithAggregateBy () =>
+    orders <- N<Order>
+    RETURN orders::COUNT::AGGREGATE_BY(status)
+
+QUERY CreateOrder (customer_name: String, status: String, total: F64) =>
+    order <- AddN<Order>({
+        customer_name: customer_name,
+        status: status,
+        total: total
+    })
+    RETURN order
+```
+
+```rust Schema
+N::Order {
+    customer_name: String,
+    status: String,
+    total: F64
+}
+```
+</CodeGroup>
+
+Here's how to run both queries using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+orders = [
+    {"customer_name": "Alice", "status": "pending", "total": 99.99},
+    {"customer_name": "Bob", "status": "shipped", "total": 149.99},
+    {"customer_name": "Charlie", "status": "pending", "total": 75.50},
+    {"customer_name": "Diana", "status": "delivered", "total": 200.00},
+    {"customer_name": "Eve", "status": "shipped", "total": 89.99},
+]
+
+for order in orders:
+    client.query("CreateOrder", order)
+
+# COUNT with GROUP_BY - Compact counts
+group_count = client.query("CountWithGroupBy", {})
+print("COUNT::GROUP_BY result:", group_count)
+# Output: [{'status': 'pending', 'count': 2}, {'status': 'shipped', 'count': 2}, ...]
+
+# COUNT with AGGREGATE_BY - Counts with data
+aggregate_count = client.query("CountWithAggregateBy", {})
+print("COUNT::AGGREGATE_BY result:", aggregate_count)
+# Output: [{'count': 2, 'data': [{'customer_name': 'Alice', ...}, ...]}, ...]
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let orders = vec![
+        ("Alice", "pending", 99.99),
+        ("Bob", "shipped", 149.99),
+        ("Charlie", "pending", 75.50),
+        ("Diana", "delivered", 200.00),
+        ("Eve", "shipped", 89.99),
+    ];
+
+    for (customer_name, status, total) in &orders {
+        let _created: serde_json::Value = client.query("CreateOrder", &json!({
+            "customer_name": customer_name,
+            "status": status,
+            "total": total,
+        })).await?;
+    }
+
+    // COUNT with GROUP_BY - Compact counts
+    let group_count: serde_json::Value = client.query("CountWithGroupBy", &json!({})).await?;
+    println!("COUNT::GROUP_BY result: {group_count:#?}");
+
+    // COUNT with AGGREGATE_BY - Counts with data
+    let aggregate_count: serde_json::Value = client.query("CountWithAggregateBy", &json!({})).await?;
+    println!("COUNT::AGGREGATE_BY result: {aggregate_count:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    orders := []map[string]any{
+        {"customer_name": "Alice", "status": "pending", "total": 99.99},
+        {"customer_name": "Bob", "status": "shipped", "total": 149.99},
+        {"customer_name": "Charlie", "status": "pending", "total": 75.50},
+        {"customer_name": "Diana", "status": "delivered", "total": 200.00},
+        {"customer_name": "Eve", "status": "shipped", "total": 89.99},
+    }
+
+    for _, order := range orders {
+        var created map[string]any
+        if err := client.Query("CreateOrder", helix.WithData(order)).Scan(&created); err != nil {
+            log.Fatalf("CreateOrder failed: %s", err)
+        }
+    }
+
+    // COUNT with GROUP_BY - Compact counts
+    var groupCount map[string]any
+    if err := client.Query("CountWithGroupBy", helix.WithData(map[string]any{})).Scan(&groupCount); err != nil {
+        log.Fatalf("CountWithGroupBy failed: %s", err)
+    }
+    fmt.Printf("COUNT::GROUP_BY result: %#v\n", groupCount)
+
+    // COUNT with AGGREGATE_BY - Counts with data
+    var aggregateCount map[string]any
+    if err := client.Query("CountWithAggregateBy", helix.WithData(map[string]any{})).Scan(&aggregateCount); err != nil {
+        log.Fatalf("CountWithAggregateBy failed: %s", err)
+    }
+    fmt.Printf("COUNT::AGGREGATE_BY result: %#v\n", aggregateCount)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const orders = [
+        { customer_name: "Alice", status: "pending", total: 99.99 },
+        { customer_name: "Bob", status: "shipped", total: 149.99 },
+        { customer_name: "Charlie", status: "pending", total: 75.50 },
+        { customer_name: "Diana", status: "delivered", total: 200.00 },
+        { customer_name: "Eve", status: "shipped", total: 89.99 },
+    ];
+
+    for (const order of orders) {
+        await client.query("CreateOrder", order);
+    }
+
+    // COUNT with GROUP_BY - Compact counts
+    const groupCount = await client.query("CountWithGroupBy", {});
+    console.log("COUNT::GROUP_BY result:", groupCount);
+
+    // COUNT with AGGREGATE_BY - Counts with data
+    const aggregateCount = await client.query("CountWithAggregateBy", {});
+    console.log("COUNT::AGGREGATE_BY result:", aggregateCount);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create orders
+curl -X POST \
+  http://localhost:6969/CreateOrder \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Alice","status":"pending","total":99.99}'
+
+curl -X POST \
+  http://localhost:6969/CreateOrder \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Bob","status":"shipped","total":149.99}'
+
+curl -X POST \
+  http://localhost:6969/CreateOrder \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Charlie","status":"pending","total":75.50}'
+
+curl -X POST \
+  http://localhost:6969/CreateOrder \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Diana","status":"delivered","total":200.00}'
+
+curl -X POST \
+  http://localhost:6969/CreateOrder \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Eve","status":"shipped","total":89.99}'
+
+# COUNT with GROUP_BY - Compact counts
+curl -X POST \
+  http://localhost:6969/CountWithGroupBy \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+
+# COUNT with AGGREGATE_BY - Counts with data
+curl -X POST \
+  http://localhost:6969/CountWithAggregateBy \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+</CodeGroup>
+
+## Common Pitfalls
+
+### Memory Issues with AGGREGATE_BY
+```rust
+// ❌ Bad: AGGREGATE_BY on millions of records
+users <- N<User>
+RETURN users::AGGREGATE_BY(country)
+
+// ✅ Good: Use GROUP_BY for large datasets
+users <- N<User>
+RETURN users::GROUP_BY(country)
+```
+
+### Using GROUP_BY When You Need Data
+```rust
+// ❌ Bad: GROUP_BY when you need to process items
+items <- N<Item>
+grouped <- items::GROUP_BY(category)
+// Can't access individual items here!
+
+// ✅ Good: Use AGGREGATE_BY to access data
+items <- N<Item>
+grouped <- items::AGGREGATE_BY(category)
+// Now you have access to full item data
+```
+
+## Summary
+
+Choose the right operation for your use case:
+
+- **GROUP_BY**: Lightweight, fast, perfect for counts and distributions
+- **AGGREGATE_BY**: Comprehensive, detailed, ideal for data processing
+
+Both operations are powerful tools in your HelixDB toolkit. Understanding when to use each will help you build efficient and effective queries.
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="GROUP_BY" icon="layer-group" href="/documentation/hql/operations/group-by">
+    Group results with count summaries
+  </Card>
+  <Card title="AGGREGATE_BY" icon="chart-column" href="/documentation/hql/operations/aggregate-by">
+    Aggregate results with full data objects
+  </Card>
+  <Card title="COUNT Operation" icon="hashtag" href="/documentation/hql/result_ops">
+    Count operation and other result operations
+  </Card>
+  <Card title="Property Access" icon="tag" href="/documentation/hql/properties/property-access">
+    Property filtering and access patterns
+  </Card>
+</CardGroup>

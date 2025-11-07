@@ -1,0 +1,838 @@
+---
+title: "ShortestPathAStar"
+description: "Find weighted shortest paths with heuristic optimization."
+icon: "star"
+---
+
+## Find Shortest Paths with A* Algorithm &nbsp;
+
+ShortestPathAStar uses the A* (A-star) algorithm to find optimal shortest paths in weighted graphs. It combines the precision of Dijkstra's algorithm with heuristic guidance to dramatically improve performance, especially for long-distance pathfinding in spatial graphs.
+
+```rust
+::ShortestPathAStar<EdgeType>(weight_expression, "heuristic_property")
+::To(target_id)
+```
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+## How It Works
+
+A* combines two costs:
+1. **g(n)**: Actual cost from start to current node (like Dijkstra)
+2. **h(n)**: Heuristic estimate from current node to goal
+
+The algorithm prioritizes nodes with the lowest f(n) = g(n) + h(n), guiding search toward the target.
+
+<Note>
+The heuristic must be **admissible** (never overestimate the true cost) to guarantee finding the optimal path. Common admissibles include straight-line distance for geographic routing.
+</Note>
+
+## When to Use A*
+
+A* is ideal when:
+
+- **Spatial graphs**: Nodes have geographic or coordinate-based positions
+- **Long paths**: Target is far from source (A* excels here)
+- **Goal-directed**: You know the general direction to the target
+- **Performance critical**: Need faster results than Dijkstra
+- **Admissible heuristic available**: You have a property that estimates remaining cost
+
+## When A* Outperforms Dijkstra
+
+A* can be **significantly faster** than Dijkstra when:
+- The heuristic effectively guides search toward the target
+- The graph is large and sparse
+- The path length is substantial
+- Node coordinates or positions are available
+
+In these scenarios, A* can be **10-100x faster** by avoiding exploration of irrelevant areas.
+
+## Heuristic Requirements
+
+The heuristic property must:
+1. Be stored on each node
+2. Estimate cost to reach the target
+3. Never overestimate (admissible)
+4. Be consistent across the graph
+
+Common heuristics:
+- **Straight-line distance**: For geographic graphs
+- **Manhattan distance**: For grid-based graphs
+- **Euclidean distance**: For coordinate-based graphs
+
+## Example 1: Geographic routing with straight-line distance heuristic
+
+<CodeGroup>
+```rust Query focus={1-4}
+QUERY FindFastestRoute(start_id: ID, end_id: ID) =>
+    result <- N<City>(start_id)
+        ::ShortestPathAStar<Highway>(_::{distance}, "straight_line_distance")
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateCity(name: String, latitude: F64, longitude: F64, straight_line_dist: F64) =>
+    city <- CREATE V<City> {
+        name: name,
+        latitude: latitude,
+        longitude: longitude,
+        straight_line_distance: straight_line_dist
+    }
+    RETURN city
+
+QUERY CreateHighway(from_id: ID, to_id: ID, distance: F64) =>
+    highway <- CREATE E<Highway>(from_id, to_id) { distance: distance }
+    RETURN highway
+```
+
+```rust Schema
+V::City {
+    name: String,
+    latitude: F64,
+    longitude: F64,
+    straight_line_distance: F64  // Pre-calculated to target
+}
+
+E::Highway {
+    distance: F64  // Actual road distance
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+import math
+
+client = Client(local=True, port=6969)
+
+# City coordinates (simplified for example)
+city_coords = {
+    "Seattle": (47.6, -122.3),
+    "Portland": (45.5, -122.7),
+    "San Francisco": (37.8, -122.4),
+    "Los Angeles": (34.0, -118.2),
+}
+
+# Target city for heuristic calculation
+target = "Los Angeles"
+target_lat, target_lon = city_coords[target]
+
+# Calculate straight-line distance heuristic
+def calc_heuristic(lat1, lon1, lat2, lon2):
+    # Simplified distance calculation (in practice, use haversine)
+    return math.sqrt((lat2 - lat1)**2 + (lon2 - lon1)**2) * 69.0  # ~69 miles per degree
+
+# Create cities with heuristic values
+cities = {}
+for name, (lat, lon) in city_coords.items():
+    heuristic = calc_heuristic(lat, lon, target_lat, target_lon)
+    result = client.query("CreateCity", {
+        "name": name,
+        "latitude": lat,
+        "longitude": lon,
+        "straight_line_dist": heuristic
+    })
+    cities[name] = result["city"]["id"]
+
+# Create highway network with actual distances
+highways = [
+    ("Seattle", "Portland", 174.0),
+    ("Portland", "San Francisco", 635.0),
+    ("San Francisco", "Los Angeles", 383.0),
+    ("Seattle", "San Francisco", 808.0),  # Alternative route
+]
+
+for from_city, to_city, distance in highways:
+    client.query("CreateHighway", {
+        "from_id": cities[from_city],
+        "to_id": cities[to_city],
+        "distance": distance
+    })
+
+# Find fastest route using A*
+result = client.query("FindFastestRoute", {
+    "start_id": cities["Seattle"],
+    "end_id": cities["Los Angeles"]
+})
+
+print(f"A* route from Seattle to Los Angeles:")
+print(f"Path: {' -> '.join([node['name'] for node in result['result']['path']])}")
+print(f"Total distance: {result['result']['total_weight']:.1f} miles")
+print(f"Hops: {result['result']['hop_count']}")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // City coordinates
+    let city_coords = vec![
+        ("Seattle", 47.6, -122.3),
+        ("Portland", 45.5, -122.7),
+        ("San Francisco", 37.8, -122.4),
+        ("Los Angeles", 34.0, -118.2),
+    ];
+
+    let target_lat = 34.0;
+    let target_lon = -118.2;
+
+    // Calculate straight-line distance heuristic
+    let calc_heuristic = |lat1: f64, lon1: f64, lat2: f64, lon2: f64| -> f64 {
+        ((lat2 - lat1).powi(2) + (lon2 - lon1).powi(2)).sqrt() * 69.0
+    };
+
+    // Create cities with heuristic values
+    let mut cities: HashMap<String, String> = HashMap::new();
+    for (name, lat, lon) in &city_coords {
+        let heuristic = calc_heuristic(*lat, *lon, target_lat, target_lon);
+        let result: serde_json::Value = client.query("CreateCity", &json!({
+            "name": name,
+            "latitude": lat,
+            "longitude": lon,
+            "straight_line_dist": heuristic,
+        })).await?;
+        cities.insert(name.to_string(), result["city"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create highway network
+    let highways = vec![
+        ("Seattle", "Portland", 174.0),
+        ("Portland", "San Francisco", 635.0),
+        ("San Francisco", "Los Angeles", 383.0),
+        ("Seattle", "San Francisco", 808.0),
+    ];
+
+    for (from_city, to_city, distance) in &highways {
+        let _highway: serde_json::Value = client.query("CreateHighway", &json!({
+            "from_id": cities[*from_city],
+            "to_id": cities[*to_city],
+            "distance": distance,
+        })).await?;
+    }
+
+    // Find fastest route using A*
+    let result: serde_json::Value = client.query("FindFastestRoute", &json!({
+        "start_id": cities["Seattle"],
+        "end_id": cities["Los Angeles"],
+    })).await?;
+
+    println!("A* route from Seattle to Los Angeles: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+    "math"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // City coordinates
+    cityCoords := map[string][2]float64{
+        "Seattle":       {47.6, -122.3},
+        "Portland":      {45.5, -122.7},
+        "San Francisco": {37.8, -122.4},
+        "Los Angeles":   {34.0, -118.2},
+    }
+
+    targetLat, targetLon := 34.0, -118.2
+
+    // Calculate straight-line distance heuristic
+    calcHeuristic := func(lat1, lon1, lat2, lon2 float64) float64 {
+        return math.Sqrt(math.Pow(lat2-lat1, 2)+math.Pow(lon2-lon1, 2)) * 69.0
+    }
+
+    // Create cities with heuristic values
+    cities := make(map[string]string)
+    for name, coords := range cityCoords {
+        lat, lon := coords[0], coords[1]
+        heuristic := calcHeuristic(lat, lon, targetLat, targetLon)
+
+        var result map[string]any
+        if err := client.Query("CreateCity", helix.WithData(map[string]any{
+            "name":                  name,
+            "latitude":              lat,
+            "longitude":             lon,
+            "straight_line_dist":    heuristic,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateCity failed: %s", err)
+        }
+        cities[name] = result["city"].(map[string]any)["id"].(string)
+    }
+
+    // Create highway network
+    highways := []struct {
+        from, to string
+        distance float64
+    }{
+        {"Seattle", "Portland", 174.0},
+        {"Portland", "San Francisco", 635.0},
+        {"San Francisco", "Los Angeles", 383.0},
+        {"Seattle", "San Francisco", 808.0},
+    }
+
+    for _, highway := range highways {
+        var h map[string]any
+        if err := client.Query("CreateHighway", helix.WithData(map[string]any{
+            "from_id":  cities[highway.from],
+            "to_id":    cities[highway.to],
+            "distance": highway.distance,
+        })).Scan(&h); err != nil {
+            log.Fatalf("CreateHighway failed: %s", err)
+        }
+    }
+
+    // Find fastest route using A*
+    var result map[string]any
+    if err := client.Query("FindFastestRoute", helix.WithData(map[string]any{
+        "start_id": cities["Seattle"],
+        "end_id":   cities["Los Angeles"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindFastestRoute failed: %s", err)
+    }
+
+    fmt.Printf("A* route from Seattle to Los Angeles: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // City coordinates
+    const cityCoords: Record<string, [number, number]> = {
+        "Seattle": [47.6, -122.3],
+        "Portland": [45.5, -122.7],
+        "San Francisco": [37.8, -122.4],
+        "Los Angeles": [34.0, -118.2],
+    };
+
+    const [targetLat, targetLon] = cityCoords["Los Angeles"];
+
+    // Calculate straight-line distance heuristic
+    const calcHeuristic = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        return Math.sqrt(Math.pow(lat2 - lat1, 2) + Math.pow(lon2 - lon1, 2)) * 69.0;
+    };
+
+    // Create cities with heuristic values
+    const cities: Record<string, string> = {};
+    for (const [name, [lat, lon]] of Object.entries(cityCoords)) {
+        const heuristic = calcHeuristic(lat, lon, targetLat, targetLon);
+        const result = await client.query("CreateCity", {
+            name,
+            latitude: lat,
+            longitude: lon,
+            straight_line_dist: heuristic,
+        });
+        cities[name] = result.city.id;
+    }
+
+    // Create highway network
+    const highways = [
+        { from: "Seattle", to: "Portland", distance: 174.0 },
+        { from: "Portland", to: "San Francisco", distance: 635.0 },
+        { from: "San Francisco", to: "Los Angeles", distance: 383.0 },
+        { from: "Seattle", to: "San Francisco", distance: 808.0 },
+    ];
+
+    for (const highway of highways) {
+        await client.query("CreateHighway", {
+            from_id: cities[highway.from],
+            to_id: cities[highway.to],
+            distance: highway.distance,
+        });
+    }
+
+    // Find fastest route using A*
+    const result = await client.query("FindFastestRoute", {
+        start_id: cities["Seattle"],
+        end_id: cities["Los Angeles"],
+    });
+
+    console.log("A* route from Seattle to Los Angeles:");
+    console.log("Path:", result.result.path.map((n: any) => n.name).join(" -> "));
+    console.log("Total distance:", result.result.total_weight.toFixed(1), "miles");
+    console.log("Hops:", result.result.hop_count);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create cities with heuristic values
+SEATTLE_ID=$(curl -X POST http://localhost:6969/CreateCity \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Seattle","latitude":47.6,"longitude":-122.3,"straight_line_dist":950.0}' | jq -r '.city.id')
+
+PORTLAND_ID=$(curl -X POST http://localhost:6969/CreateCity \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Portland","latitude":45.5,"longitude":-122.7,"straight_line_dist":850.0}' | jq -r '.city.id')
+
+SF_ID=$(curl -X POST http://localhost:6969/CreateCity \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"San Francisco","latitude":37.8,"longitude":-122.4,"straight_line_dist":380.0}' | jq -r '.city.id')
+
+LA_ID=$(curl -X POST http://localhost:6969/CreateCity \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Los Angeles","latitude":34.0,"longitude":-118.2,"straight_line_dist":0.0}' | jq -r '.city.id')
+
+# Create highways
+curl -X POST http://localhost:6969/CreateHighway \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$SEATTLE_ID\",\"to_id\":\"$PORTLAND_ID\",\"distance\":174.0}"
+
+curl -X POST http://localhost:6969/CreateHighway \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$PORTLAND_ID\",\"to_id\":\"$SF_ID\",\"distance\":635.0}"
+
+curl -X POST http://localhost:6969/CreateHighway \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$SF_ID\",\"to_id\":\"$LA_ID\",\"distance\":383.0}"
+
+curl -X POST http://localhost:6969/CreateHighway \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$SEATTLE_ID\",\"to_id\":\"$SF_ID\",\"distance\":808.0}"
+
+# Find fastest route using A*
+curl -X POST http://localhost:6969/FindFastestRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$SEATTLE_ID\",\"end_id\":\"$LA_ID\"}"
+```
+</CodeGroup>
+
+---
+
+## Example 2: Time-optimized routing with traffic-aware weights
+
+<CodeGroup>
+```rust Query focus={1-4}
+QUERY FindQuickestRoute(start_id: ID, end_id: ID) =>
+    result <- N<Junction>(start_id)
+        ::ShortestPathAStar<Road>(MUL(_::{distance}, _::{traffic_multiplier}), "estimated_time_remaining")
+        ::To(end_id)
+    RETURN result
+
+QUERY CreateJunction(name: String, est_time: F64) =>
+    junction <- CREATE V<Junction> {
+        name: name,
+        estimated_time_remaining: est_time
+    }
+    RETURN junction
+
+QUERY CreateRoad(from_id: ID, to_id: ID, distance: F64, traffic_mult: F64) =>
+    road <- CREATE E<Road>(from_id, to_id) {
+        distance: distance,
+        traffic_multiplier: traffic_mult
+    }
+    RETURN road
+```
+
+```rust Schema
+V::Junction {
+    name: String,
+    estimated_time_remaining: F64  // Heuristic: est. minutes to destination
+}
+
+E::Road {
+    distance: F64,
+    traffic_multiplier: F64  // 1.0 = normal, 2.0 = heavy traffic
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create junctions with time-to-destination heuristic
+junctions = {}
+junction_data = [
+    ("J1", 45.0),  # 45 min estimated to destination
+    ("J2", 30.0),
+    ("J3", 20.0),
+    ("J4", 10.0),
+    ("Destination", 0.0),
+]
+
+for name, est_time in junction_data:
+    result = client.query("CreateJunction", {
+        "name": name,
+        "est_time": est_time
+    })
+    junctions[name] = result["junction"]["id"]
+
+# Create roads with distance and current traffic
+# Weight = distance * traffic_multiplier (estimates time)
+roads = [
+    ("J1", "J2", 10.0, 1.5),  # Heavy traffic
+    ("J1", "J3", 15.0, 1.0),  # Normal traffic
+    ("J2", "J4", 12.0, 1.2),
+    ("J3", "J4", 8.0, 1.0),
+    ("J4", "Destination", 5.0, 1.0),
+]
+
+for from_junc, to_junc, distance, traffic in roads:
+    client.query("CreateRoad", {
+        "from_id": junctions[from_junc],
+        "to_id": junctions[to_junc],
+        "distance": distance,
+        "traffic_mult": traffic
+    })
+
+# Find quickest route considering traffic
+result = client.query("FindQuickestRoute", {
+    "start_id": junctions["J1"],
+    "end_id": junctions["Destination"]
+})
+
+print(f"Quickest route from J1 to Destination:")
+print(f"Path: {' -> '.join([node['name'] for node in result['result']['path']])}")
+print(f"Estimated time: {result['result']['total_weight']:.1f} minutes")
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create junctions with time-to-destination heuristic
+    let mut junctions: HashMap<String, String> = HashMap::new();
+    let junction_data = vec![
+        ("J1", 45.0),
+        ("J2", 30.0),
+        ("J3", 20.0),
+        ("J4", 10.0),
+        ("Destination", 0.0),
+    ];
+
+    for (name, est_time) in &junction_data {
+        let result: serde_json::Value = client.query("CreateJunction", &json!({
+            "name": name,
+            "est_time": est_time,
+        })).await?;
+        junctions.insert(name.to_string(), result["junction"]["id"].as_str().unwrap().to_string());
+    }
+
+    // Create roads with distance and traffic
+    let roads = vec![
+        ("J1", "J2", 10.0, 1.5),
+        ("J1", "J3", 15.0, 1.0),
+        ("J2", "J4", 12.0, 1.2),
+        ("J3", "J4", 8.0, 1.0),
+        ("J4", "Destination", 5.0, 1.0),
+    ];
+
+    for (from_junc, to_junc, distance, traffic) in &roads {
+        let _road: serde_json::Value = client.query("CreateRoad", &json!({
+            "from_id": junctions[*from_junc],
+            "to_id": junctions[*to_junc],
+            "distance": distance,
+            "traffic_mult": traffic,
+        })).await?;
+    }
+
+    // Find quickest route
+    let result: serde_json::Value = client.query("FindQuickestRoute", &json!({
+        "start_id": junctions["J1"],
+        "end_id": junctions["Destination"],
+    })).await?;
+
+    println!("Quickest route: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create junctions with time-to-destination heuristic
+    junctions := make(map[string]string)
+    junctionData := []struct {
+        name    string
+        estTime float64
+    }{
+        {"J1", 45.0},
+        {"J2", 30.0},
+        {"J3", 20.0},
+        {"J4", 10.0},
+        {"Destination", 0.0},
+    }
+
+    for _, junction := range junctionData {
+        var result map[string]any
+        if err := client.Query("CreateJunction", helix.WithData(map[string]any{
+            "name":     junction.name,
+            "est_time": junction.estTime,
+        })).Scan(&result); err != nil {
+            log.Fatalf("CreateJunction failed: %s", err)
+        }
+        junctions[junction.name] = result["junction"].(map[string]any)["id"].(string)
+    }
+
+    // Create roads with distance and traffic
+    roads := []struct {
+        from, to      string
+        distance      float64
+        trafficMult   float64
+    }{
+        {"J1", "J2", 10.0, 1.5},
+        {"J1", "J3", 15.0, 1.0},
+        {"J2", "J4", 12.0, 1.2},
+        {"J3", "J4", 8.0, 1.0},
+        {"J4", "Destination", 5.0, 1.0},
+    }
+
+    for _, road := range roads {
+        var r map[string]any
+        if err := client.Query("CreateRoad", helix.WithData(map[string]any{
+            "from_id":      junctions[road.from],
+            "to_id":        junctions[road.to],
+            "distance":     road.distance,
+            "traffic_mult": road.trafficMult,
+        })).Scan(&r); err != nil {
+            log.Fatalf("CreateRoad failed: %s", err)
+        }
+    }
+
+    // Find quickest route
+    var result map[string]any
+    if err := client.Query("FindQuickestRoute", helix.WithData(map[string]any{
+        "start_id": junctions["J1"],
+        "end_id":   junctions["Destination"],
+    })).Scan(&result); err != nil {
+        log.Fatalf("FindQuickestRoute failed: %s", err)
+    }
+
+    fmt.Printf("Quickest route: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create junctions with time-to-destination heuristic
+    const junctions: Record<string, string> = {};
+    const junctionData = [
+        { name: "J1", est_time: 45.0 },
+        { name: "J2", est_time: 30.0 },
+        { name: "J3", est_time: 20.0 },
+        { name: "J4", est_time: 10.0 },
+        { name: "Destination", est_time: 0.0 },
+    ];
+
+    for (const junction of junctionData) {
+        const result = await client.query("CreateJunction", junction);
+        junctions[junction.name] = result.junction.id;
+    }
+
+    // Create roads with distance and traffic
+    const roads = [
+        { from: "J1", to: "J2", distance: 10.0, traffic_mult: 1.5 },
+        { from: "J1", to: "J3", distance: 15.0, traffic_mult: 1.0 },
+        { from: "J2", to: "J4", distance: 12.0, traffic_mult: 1.2 },
+        { from: "J3", to: "J4", distance: 8.0, traffic_mult: 1.0 },
+        { from: "J4", to: "Destination", distance: 5.0, traffic_mult: 1.0 },
+    ];
+
+    for (const road of roads) {
+        await client.query("CreateRoad", {
+            from_id: junctions[road.from],
+            to_id: junctions[road.to],
+            distance: road.distance,
+            traffic_mult: road.traffic_mult,
+        });
+    }
+
+    // Find quickest route
+    const result = await client.query("FindQuickestRoute", {
+        start_id: junctions["J1"],
+        end_id: junctions["Destination"],
+    });
+
+    console.log("Quickest route from J1 to Destination:");
+    console.log("Path:", result.result.path.map((n: any) => n.name).join(" -> "));
+    console.log("Estimated time:", result.result.total_weight.toFixed(1), "minutes");
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create junctions
+J1_ID=$(curl -X POST http://localhost:6969/CreateJunction \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"J1","est_time":45.0}' | jq -r '.junction.id')
+
+J2_ID=$(curl -X POST http://localhost:6969/CreateJunction \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"J2","est_time":30.0}' | jq -r '.junction.id')
+
+J3_ID=$(curl -X POST http://localhost:6969/CreateJunction \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"J3","est_time":20.0}' | jq -r '.junction.id')
+
+J4_ID=$(curl -X POST http://localhost:6969/CreateJunction \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"J4","est_time":10.0}' | jq -r '.junction.id')
+
+DEST_ID=$(curl -X POST http://localhost:6969/CreateJunction \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Destination","est_time":0.0}' | jq -r '.junction.id')
+
+# Create roads
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$J1_ID\",\"to_id\":\"$J2_ID\",\"distance\":10.0,\"traffic_mult\":1.5}"
+
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$J1_ID\",\"to_id\":\"$J3_ID\",\"distance\":15.0,\"traffic_mult\":1.0}"
+
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$J2_ID\",\"to_id\":\"$J4_ID\",\"distance\":12.0,\"traffic_mult\":1.2}"
+
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$J3_ID\",\"to_id\":\"$J4_ID\",\"distance\":8.0,\"traffic_mult\":1.0}"
+
+curl -X POST http://localhost:6969/CreateRoad \
+  -H 'Content-Type: application/json' \
+  -d "{\"from_id\":\"$J4_ID\",\"to_id\":\"$DEST_ID\",\"distance\":5.0,\"traffic_mult\":1.0}"
+
+# Find quickest route
+curl -X POST http://localhost:6969/FindQuickestRoute \
+  -H 'Content-Type: application/json' \
+  -d "{\"start_id\":\"$J1_ID\",\"end_id\":\"$DEST_ID\"}"
+```
+</CodeGroup>
+
+---
+
+## Admissible Heuristics
+
+For A* to guarantee optimal results, the heuristic must be **admissible**:
+
+### Good Heuristics (Admissible)
+- **Straight-line distance**: Always ≤ actual road distance
+- **Manhattan distance**: For grid-based movement
+- **Minimum theoretical time**: Based on maximum speed limits
+
+### Bad Heuristics (Inadmissible)
+- **Overestimated distances**: May miss optimal path
+- **Random values**: No guarantee of optimality
+- **Negative values**: Breaks the algorithm
+
+<Warning>
+Using an inadmissible heuristic may cause A* to return suboptimal paths. Always ensure your heuristic never overestimates the true remaining cost.
+</Warning>
+
+## Performance Comparison
+
+| Scenario | Dijkstra | A* with Good Heuristic |
+|----------|----------|------------------------|
+| Small graph (< 100 nodes) | Fast | Similar |
+| Large graph (> 10,000 nodes) | Slow | 10-100x faster |
+| Short paths | Fast | Similar |
+| Long paths | Slow | Much faster |
+| No spatial info | Only option | Not applicable |
+| Spatial graph | Explores everything | Explores targeted area |
+
+## Result Structure
+
+A* returns the same structure as Dijkstra:
+
+```rust
+{
+    path: [Node],           // Ordered list of nodes from start to end
+    edges: [Edge],          // Ordered list of edges connecting nodes
+    total_weight: F64,      // Total actual weight (not heuristic)
+    hop_count: I64          // Number of edges in path
+}
+```
+
+## Best Practices
+
+### Pre-calculate Heuristics
+For static targets, pre-calculate and store heuristic values:
+```rust
+// Pre-calculate straight-line distance to common destinations
+V::City {
+    distance_to_hub: F64,
+    distance_to_airport: F64
+}
+```
+
+### Choose the Right Heuristic
+- Geographic graphs: Use haversine or Euclidean distance
+- Grid graphs: Use Manhattan distance
+- Time-based: Use minimum theoretical time
+
+### Verify Admissibility
+Test that your heuristic never overestimates:
+```
+For all nodes n: h(n) ≤ actual_cost(n, target)
+```
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="ShortestPathDijkstras" icon="route" href="/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra">
+    Learn about Dijkstra's algorithm (A* without heuristic)
+  </Card>
+  <Card title="Custom Weights" icon="scale-balanced" href="/documentation/hql/traversals/shortest-paths/custom-weights">
+    Property contexts for weight calculations
+  </Card>
+  <Card title="Weight Expressions" icon="function" href="/documentation/hql/traversals/shortest-paths/weight-expressions">
+    Advanced mathematical weight expressions
+  </Card>
+  <Card title="Overview" icon="route" href="/documentation/hql/traversals/shortest-paths/overview">
+    Compare all shortest path algorithms
+  </Card>
+</CardGroup>
