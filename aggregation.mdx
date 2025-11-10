@@ -1,0 +1,284 @@
+---
+title: "Aggregation"
+---
+@tags: aggregation, group-by, count, statistics, analytics, grouping, distribution
+
+### Group by Properties
+
+`GROUP_BY` returns count summaries for each unique combination of the specified properties, useful for analytics and data distribution analysis.
+
+#### Syntax
+```query.hx
+::GROUP_BY(property1, property2, ...)
+```
+
+- Output:
+```json
+[
+    {"property": 25, "count": 3}, 
+    {"property": 30, "count": 2},
+    {"property": 35, "count": 1},
+    ...
+]
+```
+
+#### Example 1: Group users by age
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GroupUsersByAge () =>
+    users <- N<User>
+    RETURN users::GROUP_BY(age)
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":25,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":30,"email":"diana@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve","age":35,"email":"eve@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Frank","age":25,"email":"frank@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GroupUsersByAge \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 25, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 30, "email": "diana@example.com"},
+    {"name": "Eve", "age": 35, "email": "eve@example.com"},
+    {"name": "Frank", "age": 25, "email": "frank@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GroupUsersByAge", {})
+print("Users grouped by age:", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 25, email: "charlie@example.com" },
+        { name: "Diana", age: 30, email: "diana@example.com" },
+        { name: "Eve", age: 35, email: "eve@example.com" },
+        { name: "Frank", age: 25, email: "frank@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GroupUsersByAge", {});
+    console.log("Users grouped by age:", result);
+}
+
+main().catch((err) => {
+    console.error("GroupUsersByAge query failed:", err);
+});
+```
+
+### Aggregate by Properties
+
+`AGGREGATE_BY` returns the full data objects grouped by the specified properties, providing both count and the actual grouped elements for detailed analysis.
+
+#### Syntax
+```query.hx
+::AGGREGATE_BY(property1, property2, ...)
+```
+
+- Output:
+```json
+[
+    {
+        "count": 3,
+        "data": [
+            {"property1": 25, "property2": "Alice", ...},
+            {"property1": 25, "property2": "Charlie", ...},
+            {"property1": 25, "property2": "Frank", ...}
+        ]
+    },
+    {
+        "count": 2,
+        "data": [
+            {"property1": 30, "property2": "Bob", ...},
+            {"property1": 30, "property2": "Diana", ...}
+        ]
+    },
+    ...
+]
+```
+
+#### Example 1: Aggregate users by age and email domain
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY AggregateUsersByAge () =>
+    users <- N<User>
+    RETURN users::AGGREGATE_BY(age)
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice Johnson","age":25,"email":"alice@company.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob Smith","age":30,"email":"bob@startup.io"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie Brown","age":25,"email":"charlie@company.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana Prince","age":30,"email":"diana@enterprise.org"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve Wilson","age":35,"email":"eve@freelance.net"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Frank Miller","age":25,"email":"frank@startup.io"}'
+
+curl -X POST \
+  http://localhost:6969/AggregateUsersByAge \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice Johnson", "age": 25, "email": "alice@company.com"},
+    {"name": "Bob Smith", "age": 30, "email": "bob@startup.io"},
+    {"name": "Charlie Brown", "age": 25, "email": "charlie@company.com"},
+    {"name": "Diana Prince", "age": 30, "email": "diana@enterprise.org"},
+    {"name": "Eve Wilson", "age": 35, "email": "eve@freelance.net"},
+    {"name": "Frank Miller", "age": 25, "email": "frank@startup.io"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("AggregateUsersByAge", {})
+print("Users aggregated by age:", result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice Johnson", age: 25, email: "alice@company.com" },
+        { name: "Bob Smith", age: 30, email: "bob@startup.io" },
+        { name: "Charlie Brown", age: 25, email: "charlie@company.com" },
+        { name: "Diana Prince", age: 30, email: "diana@enterprise.org" },
+        { name: "Eve Wilson", age: 35, email: "eve@freelance.net" },
+        { name: "Frank Miller", age: 25, email: "frank@startup.io" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("AggregateUsersByAge", {});
+    console.log("Users aggregated by age:", result);
+}
+
+main().catch((err) => {
+    console.error("AggregateUsersByAge query failed:", err);
+});
+```

@@ -1,0 +1,1006 @@
+---
+title: "Conditionals"
+---
+@tags: conditionals, where, filter, eq, neq, gt, gte, lt, lte, contains, startswith, endswith, and, or, not, logic
+
+### Anonymous Traversal
+
+#### Syntax
+```query.hx
+_::<traversal>::<operation>
+```
+
+#### Example 1: Filter by relationship count
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+
+E::Follows {
+    From: User,
+    To: User
+}
+```
+
+- Query:
+```query.hx
+QUERY GetInfluentialUsers () =>
+    users <- N<User>::WHERE(_::In<Follows>::COUNT::GT(100))
+    RETURN users
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+
+QUERY CreateFollow (follower_id: ID, following_id: ID) =>
+    follower <- N<User>(follower_id)
+    following <- N<User>(following_id)
+    AddE<Follows>::From(follower)::To(following)
+    RETURN "Success"
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Follower1","age":20,"email":"follower1@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateFollow \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"<follower_id>","following_id":"<alice_id>"}'
+
+curl -X POST \
+  http://localhost:6969/GetInfluentialUsers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+]
+
+user_ids = []
+for user in users:
+    result = client.query("CreateUser", user)
+    user_ids.append(result[0]["user"]["id"])
+
+for j in range(150):
+    fake_user = client.query("CreateUser", {
+        "name": f"Follower{j}",
+        "age": 20,
+        "email": f"follower{j}@example.com"
+    })
+    fake_id = fake_user[0]["user"]["id"]
+    client.query("CreateFollow", {"follower_id": fake_id, "following_id": user_ids[0]})
+
+result = client.query("GetInfluentialUsers", {})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+    ];
+
+    const userIds: string[] = [];
+    for (const user of users) {
+        const result = await client.query("CreateUser", user);
+        userIds.push(result.user.id);
+    }
+
+    for (let j = 0; j < 150; j++) {
+        const fakeUser = await client.query("CreateUser", {
+            name: `Follower${j}`,
+            age: 20,
+            email: `follower${j}@example.com`,
+        });
+        const fakeId: string = fakeUser.user.id;
+        
+        await client.query("CreateFollow", {
+            follower_id: fakeId,
+            following_id: userIds[0]
+        });
+    }
+
+    const result = await client.query("GetInfluentialUsers", {});
+    console.log("Influential users:", result);
+}
+
+main().catch((err) => {
+    console.error("GetInfluentialUsers query failed:", err);
+});
+```
+
+#### Example 2: Property-based filtering with anonymous traversal
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+    status: String
+}
+
+N::Post {
+    title: String,
+    content: String
+}
+
+E::HasPost {
+    From: User,
+    To: Post
+}
+```
+
+- Query:
+```query.hx
+QUERY GetActiveUsersWithPosts () =>
+    users <- N<User>::WHERE(AND(_::{status}::EQ("active"), _::Out<HasPost>::COUNT::GT(0)))
+    RETURN users
+
+QUERY CreateUser (name: String, age: U8, email: String, status: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email,
+        status: status
+    })
+    RETURN user
+
+QUERY CreatePost (user_id: ID, title: String, content: String) =>
+    user <- N<User>(user_id)
+    post <- AddN<Post>({
+        title: title,
+        content: content
+    })
+    AddE<HasPost>::From(user)::To(post)
+    RETURN post
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com","status":"active"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com","status":"active"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com","status":"inactive"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22,"email":"diana@example.com","status":"active"}'
+
+curl -X POST \
+  http://localhost:6969/CreatePost \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<alice_id>","title":"My First Post","content":"This is Alice'"'"'s first post"}'
+
+curl -X POST \
+  http://localhost:6969/CreatePost \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<bob_id>","title":"Bob'"'"'s Thoughts","content":"This is Bob'"'"'s post"}'
+
+curl -X POST \
+  http://localhost:6969/GetActiveUsersWithPosts \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com", "status": "active"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com", "status": "active"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com", "status": "inactive"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com", "status": "active"},
+]
+
+user_ids = []
+for user in users:
+    result = client.query("CreateUser", user)
+    user_ids.append(result[0]["user"]["id"])
+
+client.query("CreatePost", {
+    "user_id": user_ids[0],
+    "title": "My First Post",
+    "content": "This is Alice's first post"
+})
+
+client.query("CreatePost", {
+    "user_id": user_ids[1],
+    "title": "Bob's Thoughts",
+    "content": "This is Bob's post"
+})
+
+result = client.query("GetActiveUsersWithPosts", {})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com", status: "active" },
+        { name: "Bob", age: 30, email: "bob@example.com", status: "active" },
+        { name: "Charlie", age: 28, email: "charlie@example.com", status: "inactive" },
+        { name: "Diana", age: 22, email: "diana@example.com", status: "active" },
+    ];
+
+    const userIds: string[] = [];
+    for (const user of users) {
+        const result = await client.query("CreateUser", user);
+        userIds.push(result.user.id);
+    }
+
+    await client.query("CreatePost", {
+        user_id: userIds[0],
+        title: "My First Post",
+        content: "This is Alice's first post"
+    });
+
+    await client.query("CreatePost", {
+        user_id: userIds[1],
+        title: "Bob's Thoughts",
+        content: "This is Bob's post"
+    });
+
+    const result = await client.query("GetActiveUsersWithPosts", {});
+    console.log("Active users with posts:", result);
+}
+
+main().catch((err) => {
+    console.error("GetActiveUsersWithPosts query failed:", err);
+});
+```
+
+### Conditional Steps
+
+Note: For multiple conditions, see [Multiple Conditions Steps](#multiple-conditions-steps).
+
+#### Filtering using `WHERE`
+
+##### Syntax
+```query.hx
+::WHERE(<condition>)
+::WHERE(_::{property}::COMPARISON(value))
+```
+
+Notes:
+- The condition in the `WHERE` step must evaluate to a boolean value. 
+- If the condition is not met, the element will be filtered out from the results.
+
+##### Comparison Operators
+
+###### String, Boolean, Date, and Number Comparisons
+- `::EQ(value)`: Equals (e.g. `::WHERE(_::{status}::EQ("active"))`)
+- `::NEQ(value)`: Not equals (e.g. `::WHERE(_::{age}::NEQ(25))`)
+
+###### Number and Date Comparisons
+- `::GT(value)`: Greater than (e.g. `::WHERE(_::{age}::GT(25))`)
+- `::LT(value)`: Less than (e.g. `::WHERE(_::{age}::LT(30))`)
+- `::GTE(value)`: Greater than or equal (e.g. `::WHERE(_::{rating}::GTE(4.5))`)
+- `::LTE(value)`: Less than or equal (e.g. `::WHERE(_::{priority}::LTE(2))`)
+
+##### Example 1: Basic filtering with WHERE
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetAdultUsers () =>
+    adult_users <- N<User>::WHERE(_::{age}::GT(18))
+    RETURN adult_users
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":16,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":30,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":17,"email":"diana@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetAdultUsers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 16, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 30, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 17, "email": "diana@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetAdultUsers", {})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 16, email: "bob@example.com" },
+        { name: "Charlie", age: 30, email: "charlie@example.com" },
+        { name: "Diana", age: 17, email: "diana@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetAdultUsers", {});
+    console.log("Adult users:", result);
+}
+
+main().catch((err) => {
+    console.error("GetAdultUsers query failed:", err);
+});
+```
+
+##### Example 2: String and equality filtering
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+    status: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetActiveUsers (status: String) =>
+    active_users <- N<User>::WHERE(_::{status}::EQ(status))
+    RETURN active_users
+
+QUERY CreateUser (name: String, age: U8, email: String, status: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email,
+        status: status
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com","status":"active"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com","status":"inactive"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com","status":"active"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22,"email":"diana@example.com","status":"pending"}'
+
+curl -X POST \
+  http://localhost:6969/GetActiveUsers \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"active"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com", "status": "active"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com", "status": "inactive"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com", "status": "active"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com", "status": "pending"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetActiveUsers", {"status": "active"})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com", status: "active" },
+        { name: "Bob", age: 30, email: "bob@example.com", status: "inactive" },
+        { name: "Charlie", age: 28, email: "charlie@example.com", status: "active" },
+        { name: "Diana", age: 22, email: "diana@example.com", status: "pending" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetActiveUsers", { status: "active" });
+    console.log("Active users:", result);
+}
+
+main().catch((err) => {
+    console.error("GetActiveUsers query failed:", err);
+});
+```
+
+#### Filter by Relationship using `EXISTS`
+
+##### Syntax
+```query.hx
+EXISTS(<traversal>)
+```
+
+##### Example 1: Using EXISTS for relationship filtering
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+
+E::Follows {
+    From: User,
+    To: User
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUsersWithFollowers () =>
+    users <- N<User>::WHERE(EXISTS(_::In<Follows>))
+    RETURN users
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+
+QUERY CreateFollow (follower_id: ID, following_id: ID) =>
+    follower <- N<User>(follower_id)
+    following <- N<User>(following_id)
+    AddE<Follows>::From(follower)::To(following)
+    RETURN "Success"
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateFollow \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"<bob_id>","following_id":"<alice_id>"}'
+
+curl -X POST \
+  http://localhost:6969/CreateFollow \
+  -H 'Content-Type: application/json' \
+  -d '{"follower_id":"<charlie_id>","following_id":"<alice_id>"}'
+
+curl -X POST \
+  http://localhost:6969/GetUsersWithFollowers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+]
+
+user_ids = []
+for user in users:
+    result = client.query("CreateUser", user)
+    user_ids.append(result[0]["user"]["id"])
+
+client.query("CreateFollow", {"follower_id": user_ids[1], "following_id": user_ids[0]})
+client.query("CreateFollow", {"follower_id": user_ids[2], "following_id": user_ids[0]})
+
+result = client.query("GetUsersWithFollowers", {})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+    ];
+
+    const userIds: string[] = [];
+    for (const user of users) {
+        const result = await client.query("CreateUser", user);
+        userIds.push(result.user.id);
+    }
+
+    await client.query("CreateFollow", {
+        follower_id: userIds[1],
+        following_id: userIds[0]
+    });
+
+    await client.query("CreateFollow", {
+        follower_id: userIds[2],
+        following_id: userIds[0]
+    });
+
+    const result = await client.query("GetUsersWithFollowers", {});
+    console.log("Users with followers:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUsersWithFollowers query failed:", err);
+});
+```
+
+### Multiple Conditions Steps
+
+Filter by multiple conditions using `AND` and/or `OR`.
+
+#### Syntax
+```query.hx
+::WHERE(AND(<condition1>, <condition2>, ...))
+::WHERE(OR(<condition1>, <condition2>, ...))
+```
+
+#### Example 1: Using AND for range filtering
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetYoungAdults () =>
+    users <- N<User>::WHERE(AND(_::{age}::GT(18), _::{age}::LT(30)))
+    RETURN users
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":16,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":35,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22,"email":"diana@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve","age":17,"email":"eve@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetYoungAdults \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 16, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 35, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com"},
+    {"name": "Eve", "age": 17, "email": "eve@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetYoungAdults", {})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 16, email: "bob@example.com" },
+        { name: "Charlie", age: 35, email: "charlie@example.com" },
+        { name: "Diana", age: 22, email: "diana@example.com" },
+        { name: "Eve", age: 17, email: "eve@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetYoungAdults", {});
+    console.log("Young adults:", result);
+}
+
+main().catch((err) => {
+    console.error("GetYoungAdults query failed:", err);
+});
+```
+
+#### Example 2: Using OR for multiple valid options
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetSpecificUsers () =>
+    users <- N<User>::WHERE(OR(_::{name}::EQ("Alice"), _::{name}::EQ("Bob")))
+    RETURN users
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":30,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":28,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Diana","age":22,"email":"diana@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetSpecificUsers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 30, "email": "bob@example.com"},
+    {"name": "Charlie", "age": 28, "email": "charlie@example.com"},
+    {"name": "Diana", "age": 22, "email": "diana@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetSpecificUsers", {})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 30, email: "bob@example.com" },
+        { name: "Charlie", age: 28, email: "charlie@example.com" },
+        { name: "Diana", age: 22, email: "diana@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetSpecificUsers", {});
+    console.log("Specific users:", result);
+}
+
+main().catch((err) => {
+    console.error("GetSpecificUsers query failed:", err);
+});
+```
+
+#### Example 3: Complex nested AND and OR conditions
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+
+- Query:
+```query.hx
+QUERY GetFilteredUsers () =>
+    users <- N<User>::WHERE(
+        AND(
+            _::{age}::GT(18),
+            OR(_::{name}::EQ("Alice"), _::{name}::EQ("Bob"))
+        )
+    )
+    RETURN users
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":16,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":17,"email":"alice2@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":30,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":22,"email":"bob2@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetFilteredUsers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+users = [
+    {"name": "Alice", "age": 25, "email": "alice@example.com"},
+    {"name": "Bob", "age": 16, "email": "bob@example.com"},
+    {"name": "Alice", "age": 17, "email": "alice2@example.com"},
+    {"name": "Charlie", "age": 30, "email": "charlie@example.com"},
+    {"name": "Bob", "age": 22, "email": "bob2@example.com"},
+]
+
+for user in users:
+    client.query("CreateUser", user)
+
+result = client.query("GetFilteredUsers", {})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const users = [
+        { name: "Alice", age: 25, email: "alice@example.com" },
+        { name: "Bob", age: 16, email: "bob@example.com" },
+        { name: "Alice", age: 17, email: "alice2@example.com" },
+        { name: "Charlie", age: 30, email: "charlie@example.com" },
+        { name: "Bob", age: 22, email: "bob2@example.com" },
+    ];
+
+    for (const user of users) {
+        await client.query("CreateUser", user);
+    }
+
+    const result = await client.query("GetFilteredUsers", {});
+    console.log("Filtered users:", result);
+}
+
+main().catch((err) => {
+    console.error("GetFilteredUsers query failed:", err);
+});
+```

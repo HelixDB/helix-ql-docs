@@ -1,0 +1,1924 @@
+---
+title: "CRUD Operations"
+---
+@tags: crud, create, read, update, delete, operations, nodes, edges, vectors
+
+### Create
+
+#### Create Nodes using `AddN`
+
+##### Syntax
+```query.hx
+AddN<Type>
+AddN<Type>({properties})
+```
+
+##### Example 1: Adding an empty user node
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+
+- Query:
+```query.hx
+QUERY CreateUsers () =>
+    empty_user <- AddN<User>
+    RETURN empty_user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUsers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+client = Client(local=True, port=6969)
+print(client.query("CreateUsers"))
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("CreateUsers", {});
+    console.log("Created empty user:", result);
+}
+
+main().catch((err) => {
+    console.error("CreateUsers query failed:", err);
+});
+```
+
+##### Example 2: Adding a user with parameters
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+
+- Query:
+```query.hx
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+client = Client(local=True, port=6969)
+
+params = {
+    "name": "Alice",
+    "age": 25,
+    "email": "alice@example.com",
+}
+
+print(client.query("CreateUser", params))
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("CreateUser", {
+        name: "Alice",
+        age: 25,
+        email: "alice@example.com",
+    });
+
+    console.log("Created user:", result);
+}
+
+main().catch((err) => {
+    console.error("CreateUser query failed:", err);
+});
+```
+
+##### Example 3: Adding a user with predefined properties
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+
+- Query:
+```query.hx
+QUERY CreateUser () =>
+    predefined_user <- AddN<User>({
+        name: "Alice Johnson",
+        age: 30,
+        email: "alice@example.com"
+    })
+
+    RETURN predefined_user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+client = Client(local=True, port=6969)
+print(client.query("CreateUser"))
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("CreateUser", {});
+    console.log("Created predefined user:", result);
+}
+
+main().catch((err) => {
+    console.error("CreateUser query failed:", err);
+});
+```
+
+#### Create Edges using `AddE`
+
+##### Syntax
+```query.hx
+AddE<Type>::From(v1)::To(v2)
+AddE<Type>({properties})::From(v1)::To(v2)
+```
+
+##### Example 1: Creating a simple follows relationship
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+- Query:
+```query.hx
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
+    follows <- AddE<Follows>::From(user1_id)::To(user2_id)
+    RETURN follows
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":28,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{"user1_id":"<alice_id>","user2_id":"<bob_id>"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice_id = client.query("CreateUser", {
+    "name": "Alice",
+    "age": 25,
+    "email": "alice@example.com",
+})[0]["user"]["id"]
+
+bob_id = client.query("CreateUser", {
+    "name": "Bob",
+    "age": 28,
+    "email": "bob@example.com",
+})[0]["user"]["id"]
+
+print(client.query("CreateRelationships", {
+    "user1_id": alice_id,
+    "user2_id": bob_id,
+}))
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        age: 25,
+        email: "alice@example.com",
+    });
+    const aliceId: string = alice.user.id;
+
+    const bob = await client.query("CreateUser", {
+        name: "Bob",
+        age: 28,
+        email: "bob@example.com",
+    });
+    const bobId: string = bob.user.id;
+
+    const follows = await client.query("CreateRelationships", {
+        user1_id: aliceId,
+        user2_id: bobId,
+    });
+
+    console.log("Created follows edge:", follows);
+}
+
+main().catch((err) => {
+    console.error("CreateRelationships query failed:", err);
+});
+```
+
+##### Example 2: Creating a detailed friendship with properties
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Friends {
+    From: User,
+    To: User,
+    Properties: {
+        since: Date,
+        strength: F64
+    }
+}
+```
+
+- Query:
+```query.hx
+QUERY CreateFriendship (user1_id: ID, user2_id: ID) =>
+    friendship <- AddE<Friends>({
+        since: "2024-01-15",
+        strength: 0.85
+    })::From(user1_id)::To(user2_id)
+    RETURN friendship
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Charlie","age":31,"email":"charlie@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Dana","age":29,"email":"dana@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateFriendship \
+  -H 'Content-Type: application/json' \
+  -d '{"user1_id":"<charlie_id>","user2_id":"<dana_id>"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+user1_id = client.query("CreateUser", {
+    "name": "Charlie",
+    "age": 31,
+    "email": "charlie@example.com",
+})[0]["user"]["id"]
+
+user2_id = client.query("CreateUser", {
+    "name": "Dana",
+    "age": 29,
+    "email": "dana@example.com",
+})[0]["user"]["id"]
+
+print(client.query("CreateFriendship", {
+    "user1_id": user1_id,
+    "user2_id": user2_id,
+}))
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const charlie = await client.query("CreateUser", {
+        name: "Charlie",
+        age: 31,
+        email: "charlie@example.com",
+    });
+    const charlieId: string = charlie.user.id;
+
+    const dana = await client.query("CreateUser", {
+        name: "Dana",
+        age: 29,
+        email: "dana@example.com",
+    });
+    const danaId: string = dana.user.id;
+
+    const friendship = await client.query("CreateFriendship", {
+        user1_id: charlieId,
+        user2_id: danaId,
+    });
+
+    console.log("Created friendship edge:", friendship);
+}
+
+main().catch((err) => {
+    console.error("CreateFriendship query failed:", err);
+});
+```
+
+##### Example 3: Traversal Example
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+- Query:
+```query.hx
+QUERY CreateRelationships (user1_id: ID, user2_name: String) =>
+    user2 <- N<User>::WHERE(_::{name}::EQ(user2_name))
+    follows <- AddE<Follows>::From(user1_id)::To(user2)
+    RETURN follows
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Eve","age":33,"email":"eve@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Frank","age":35,"email":"frank@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{"user1_id":"<eve_id>","user2_name":"Frank"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+user1 = client.query("CreateUser", {
+    "name": "Eve",
+    "age": 33,
+    "email": "eve@example.com",
+})
+user1_id = user1[0]["user"]["id"]
+
+client.query("CreateUser", {
+    "name": "Frank",
+    "age": 35,
+    "email": "frank@example.com",
+})
+
+print(client.query("CreateRelationships", {
+    "user1_id": user1_id,
+    "user2_name": "Frank",
+}))
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const eve = await client.query("CreateUser", {
+        name: "Eve",
+        age: 33,
+        email: "eve@example.com",
+    });
+    const eveId: string = eve.user.id;
+
+    await client.query("CreateUser", {
+        name: "Frank",
+        age: 35,
+        email: "frank@example.com",
+    });
+
+    const follows = await client.query("CreateRelationships", {
+        user1_id: eveId,
+        user2_name: "Frank",
+    });
+
+    console.log("Created follows edge via traversal:", follows);
+}
+
+main().catch((err) => {
+    console.error("CreateRelationships traversal failed:", err);
+});
+```
+
+#### Create Vectors using `AddV`
+
+##### Syntax
+```query.hx
+AddV<Type>
+AddV<Type>(vector, {properties})
+```
+
+Note: Currently only supports `[F64]` to represent the vector. Support for `[F32]` and binary vectors added in the future.
+
+##### Example 1: Creating a vector with no properties
+
+- Schema:
+```schema.hx
+// Uses [F64] by default.
+// Properties are optional.
+V::Document {}
+```
+
+- Query:
+```query.hx
+QUERY InsertVector (vector: [F64]) =>
+    vector_node <- AddV<Document>(vector)
+    RETURN vector_node
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/InsertVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.1,0.2,0.3,0.4]}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+print(client.query("InsertVector", {
+    "vector": [0.1, 0.2, 0.3, 0.4],
+}))
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("InsertVector", {
+        vector: [0.1, 0.2, 0.3, 0.4],
+    });
+
+    console.log("Created vector node:", result);
+}
+
+main().catch((err) => {
+    console.error("InsertVector query failed:", err);
+});
+```
+
+##### Example 2: Creating a vector with properties
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+- Query:
+```query.hx
+QUERY InsertVector (vector: [F64], content: String, created_at: Date) =>
+    vector_node <- AddV<Document>(vector, { content: content, created_at: created_at })
+    RETURN vector_node
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/InsertVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.12,0.34,0.56,0.78],"content":"Quick brown fox","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+
+- Python SDK:
+```python
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+payload = {
+    "vector": [0.12, 0.34, 0.56, 0.78],
+    "content": "Quick brown fox",
+    "created_at": datetime.now(timezone.utc).isoformat(),
+}
+
+print(client.query("InsertVector", payload))
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("InsertVector", {
+        vector: [0.12, 0.34, 0.56, 0.78],
+        content: "Quick brown fox",
+        created_at: new Date().toISOString(),
+    });
+
+    console.log("Created vector node:", result);
+}
+
+main().catch((err) => {
+    console.error("InsertVector query failed:", err);
+});
+```
+
+##### Example 3: Creating a vector and connecting it to a node
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+V::Document {
+    content: String,
+    created_at: Date
+}
+
+E::User_to_Document_Embedding {
+    From: User,
+    To: Document,
+}
+```
+
+- Query:
+```query.hx
+QUERY InsertVector (user_id: ID, vector: [F64], content: String, created_at: Date) =>
+    vector_node <- AddV<Document>(vector, { content: content, created_at: created_at })
+    edge <- AddE<User_to_Document_Embedding>::From(user_id)::To(vector_node)
+    RETURN "Success"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/InsertVector \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","vector":[0.05,0.25,0.5,0.75],"content":"Favorite quotes","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+
+- Python SDK:
+```python
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+user = client.query("CreateUser", {
+    "name": "Alice",
+    "age": 25,
+    "email": "alice@example.com",
+})
+user_id = user[0]["user"]["id"]
+
+payload = {
+    "user_id": user_id,
+    "vector": [0.05, 0.25, 0.5, 0.75],
+    "content": "Favorite quotes",
+    "created_at": datetime.now(timezone.utc).isoformat(),
+}
+
+print(client.query("InsertVector", payload))
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const user = await client.query("CreateUser", {
+        name: "Alice",
+        age: 25,
+        email: "alice@example.com",
+    });
+    const userId: string = user.user.id;
+
+    const result = await client.query("InsertVector", {
+        user_id: userId,
+        vector: [0.05, 0.25, 0.5, 0.75],
+        content: "Favorite quotes",
+        created_at: new Date().toISOString(),
+    });
+
+    console.log("InsertVector result:", result);
+}
+
+main().catch((err) => {
+    console.error("InsertVector query failed:", err);
+});
+```
+
+##### Example 4: Using the built-in [`Embed` function](https://helix-llms-txt.mintlify.app/vector.md#embedding-vectors-using-embed)
+
+- Built-in `Embed` function: don't need to send array of floats, just send the text.
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+    created_at: Date
+}
+```
+
+- Query:
+```query.hx
+QUERY InsertVector (content: String, created_at: Date) =>
+    vector_node <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
+    RETURN vector_node
+```
+
+- Environment variables (OpenAI example):
+```.env
+OPENAI_API_KEY=your_api_key
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/InsertVector \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Quick summary of a meeting","created_at":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"}'
+```
+
+- Python SDK:
+```python
+from datetime import datetime, timezone
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+payload = {
+    "content": "Quick summary of a meeting",
+    "created_at": datetime.now(timezone.utc).isoformat(),
+}
+
+print(client.query("InsertVector", payload))
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("InsertVector", {
+        content: "Quick summary of a meeting",
+        created_at: new Date().toISOString(),
+    });
+
+    console.log("InsertVector result:", result);
+}
+
+main().catch((err) => {
+    console.error("InsertVector query failed:", err);
+});
+```
+
+### Select
+
+#### Select Nodes using `N`
+
+##### Syntax
+```query.hx
+N<Type>
+N<Type>(node_id)
+N<User>({secondary_index: index_field})
+```
+
+##### Example 1: Selecting a user by ID
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+
+- Query:
+```query.hx
+QUERY GetUser (user_id: ID) =>
+    user <- N<User>(user_id)
+    RETURN user
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/GetUser \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+user = client.query("CreateUser", {
+    "name": "Alice",
+    "age": 25,
+    "email": "alice@example.com",
+})
+user_id = user[0]["user"]["id"]
+
+result = client.query("GetUser", {"user_id": user_id})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const created = await client.query("CreateUser", {
+        name: "Alice",
+        age: 25,
+        email: "alice@example.com",
+    });
+    const userId: string = created.user.id;
+
+    const result = await client.query("GetUser", {
+        user_id: userId,
+    });
+
+    console.log("GetUser result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetUser query failed:", err);
+});
+```
+
+##### Example 2: Selecting all users
+
+Notes:
+- You can do [property filtering](https://helix-llms-txt.mintlify.app/properties.md)
+- You can do [conditional filtering](https://helix-llms-txt.mintlify.app/conditionals.md)
+- You can do [aggregation](https://helix-llms-txt.mintlify.app/aggregation.md)
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+
+- Query:
+```query.hx
+QUERY GetAllUsers () =>
+    users <- N<User>
+    RETURN users
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/GetAllUsers \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+result = client.query("GetAllUsers")
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("GetAllUsers", {});
+    console.log("GetAllUsers result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetAllUsers query failed:", err);
+});
+```
+
+#### Select Edges using `E`
+
+##### Syntax
+```query.hx
+E<Type>
+E<Type>(edge_id)
+```
+
+##### Example 1: Selecting a follows edge by ID
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+- Query:
+```query.hx
+QUERY GetFollowEdge (edge_id: ID) =>
+    follow_edge <- E<Follows>(edge_id)
+    RETURN follow_edge
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({
+        name: name,
+        age: age,
+        email: email
+    })
+    RETURN user
+
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
+    follows <- AddE<Follows>::From(user1_id)::To(user2_id)
+    RETURN follows
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25,"email":"alice@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":28,"email":"bob@example.com"}'
+
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{"user1_id":"<alice_id>","user2_id":"<bob_id>"}'
+
+curl -X POST \
+  http://localhost:6969/GetFollowEdge \
+  -H 'Content-Type: application/json' \
+  -d '{"edge_id":"<edge_id>"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreateUser", {
+    "name": "Alice",
+    "age": 25,
+    "email": "alice@example.com",
+})
+alice_id = alice[0]["user"]["id"]
+
+bob = client.query("CreateUser", {
+    "name": "Bob",
+    "age": 28,
+    "email": "bob@example.com",
+})
+bob_id = bob[0]["user"]["id"]
+
+follows = client.query("CreateRelationships", {
+    "user1_id": alice_id,
+    "user2_id": bob_id,
+})
+edge_id = follows[0]["follows"]["id"]
+
+result = client.query("GetFollowEdge", {"edge_id": edge_id})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const alice = await client.query("CreateUser", {
+        name: "Alice",
+        age: 25,
+        email: "alice@example.com",
+    });
+    const aliceId: string = alice.user.id;
+
+    const bob = await client.query("CreateUser", {
+        name: "Bob",
+        age: 28,
+        email: "bob@example.com",
+    });
+    const bobId: string = bob.user.id;
+
+    const follows = await client.query("CreateRelationships", {
+        user1_id: aliceId,
+        user2_id: bobId,
+    });
+    const edgeId: string = follows.follows.id;
+
+    const result = await client.query("GetFollowEdge", {
+        edge_id: edgeId,
+    });
+
+    console.log("GetFollowEdge result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetFollowEdge query failed:", err);
+});
+```
+
+##### Example 2: Selecting all follows edges
+
+- Schema:
+```schema.hx
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+- Query:
+```query.hx
+QUERY GetAllFollows () =>
+    follows <- E<Follows>
+    RETURN follows
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/GetAllFollows \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+result = client.query("GetAllFollows")
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("GetAllFollows", {});
+    console.log("GetAllFollows result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetAllFollows query failed:", err);
+});
+```
+
+#### Select Vectors using `V`
+
+##### Syntax
+```query.hx
+V<Type>
+V<Type>(vector_id)
+```
+
+##### Example 1: Selecting a vector by ID
+
+- Schema:
+```schema.hx
+V::Document {
+    content: String,
+}
+```
+
+- Query:
+```query.hx
+QUERY GetDocumentVector (vector_id: ID) =>
+    doc_vector <- V<Document>(vector_id)
+    RETURN doc_vector
+
+QUERY CreateDocumentVector (vector: [F64], content: String) =>
+    doc_vector <- AddV<Document>(vector, {
+        content: content
+    })
+    RETURN doc_vector
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateDocumentVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.12,0.34,0.56,0.78],"content":"Chunk about vector queries."}'
+
+curl -X POST \
+  http://localhost:6969/GetDocumentVector \
+  -H 'Content-Type: application/json' \
+  -d '{"vector_id":"<vector_id>"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+vector_payload = [0.12, 0.34, 0.56, 0.78]
+
+created = client.query("CreateDocumentVector", {
+    "vector": vector_payload,
+    "content": "Chunk about vector queries.",
+})
+vector_id = created[0]["doc_vector"]["id"]
+
+result = client.query("GetDocumentVector", {"vector_id": vector_id})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const created = await client.query("CreateDocumentVector", {
+        vector: [0.12, 0.34, 0.56, 0.78],
+        content: "Chunk about vector queries.",
+    });
+    const vectorId: string = created.doc_vector.id;
+
+    const result = await client.query("GetDocumentVector", {
+        vector_id: vectorId,
+    });
+
+    console.log("GetDocumentVector result:", result);
+}
+
+main().catch((err) => {
+    console.error("GetDocumentVector query failed:", err);
+});
+```
+
+### Update using `UPDATE`
+
+#### Syntax
+```query.hx
+::UPDATE({<properties_list>})
+```
+
+Note: Usually you will want to have a separate query to create items and another query to update them.
+
+#### Example 1: Updating a person's profile
+
+Note: You only need to include fields you want to change. Any omitted properties stay the same.
+
+- Schema:
+```schema.hx
+N::Person {
+    name: String,
+    age: U32,
+}
+```
+
+- Query:
+```query.hx
+QUERY UpdateUser(user_id: ID, new_name: String, new_age: U32) =>
+    updated <- N<Person>(user_id)::UPDATE({
+        name: new_name,
+        age: new_age
+    })
+    RETURN updated
+
+QUERY CreatePerson(name: String, age: U32) =>
+    person <- AddN<Person>({
+        name: name,
+        age: age,
+    })
+    RETURN person
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25}'
+
+curl -X POST \
+  http://localhost:6969/UpdateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<person_id>","new_name":"Alice Johnson","new_age":26}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreatePerson", {
+    "name": "Alice",
+    "age": 25,
+})[0]["person"]
+
+updated = client.query("UpdateUser", {
+    "user_id": alice["id"],
+    "new_name": "Alice Johnson",
+    "new_age": 26,
+})[0]["updated"]
+
+print("Updated user:", updated)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const createResp = await client.query("CreatePerson", {
+        name: "Alice",
+        age: 25,
+    });
+
+    const updated = await client.query("UpdateUser", {
+        user_id: createResp.person.id,
+        new_name: "Alice Johnson",
+        new_age: 26,
+    });
+
+    console.log("Updated user:", updated);
+}
+
+main().catch((err) => {
+    console.error("UpdateUser failed:", err);
+});
+```
+
+#### Error Examples: 
+- Schema:
+```schema.hx
+N::Person {
+    name: String,
+    age: U32,
+}
+```
+
+- Query:
+```query.hx
+QUERY UpdateUser(user_id: ID) =>
+    // No email field in Person node (invalid field error)
+    updatedUsers <- N<Person>(user_id)::UPDATE({ email: "john@example.com" })
+
+    // Age as string instead of U32 (invalid type error)
+    updatedUsers <- N<Person>(user_id)::UPDATE({ age: "Hello" })
+
+    RETURN updatedUsers
+```
+
+### DELETE using `DROP`
+
+- Drops any traversal that returns elements (nodes, edges, or vectors).
+- If empty traversal, it will not drop anything.
+- Dropping a node or vector will also drop all its edges.
+
+#### Syntax
+```query.hx
+DROP <traversal>
+```
+
+#### Example 1: Removing a user node by ID
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+- Query:
+```query.hx
+QUERY DeleteUserNode (user_id: ID) =>
+    DROP N<User>(user_id)
+    RETURN "Removed user node"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({ name: name, age: age, email: email })
+    RETURN user
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Yara","age":24,"email":"yara@example.com"}'
+curl -X POST \
+  http://localhost:6969/DeleteUserNode \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<yara_id>"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+yara = client.query("CreateUser", {
+    "name": "Yara",
+    "age": 24,
+    "email": "yara@example.com",
+})
+yara_id = yara[0]["user"]["id"]
+
+result = client.query("DeleteUserNode", {"user_id": yara_id})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const yara = await client.query("CreateUser", {
+        name: "Yara",
+        age: 24,
+        email: "yara@example.com",
+    });
+    const yaraId: string = yara.user.id;
+
+    const result = await client.query("DeleteUserNode", {
+        user_id: yaraId,
+    });
+
+    console.log("DeleteUserNode result:", result);
+}
+
+main().catch((err) => {
+    console.error("DeleteUserNode query failed:", err);
+});
+```
+
+#### Example 2: Removing outgoing neighbors
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+- Query:
+```query.hx
+QUERY DeleteOutgoingNeighbors (user_id: ID) =>
+    DROP N<User>(user_id)::Out<Follows>
+    RETURN "Removed outgoing neighbors"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({ name: name, age: age, email: email })
+    RETURN user
+
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
+    follows <- AddE<Follows>::From(user1_id)::To(user2_id)
+    RETURN follows
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Lena","age":30,"email":"lena@example.com"}'
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Mason","age":29,"email":"mason@example.com"}'
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{"user1_id":"<lena_id>","user2_id":"<mason_id>"}'
+
+curl -X POST \
+  http://localhost:6969/DeleteOutgoingNeighbors \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<lena_id>"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+lena = client.query("CreateUser", {
+    "name": "Lena",
+    "age": 30,
+    "email": "lena@example.com",
+})
+lena_id = lena[0]["user"]["id"]
+
+mason = client.query("CreateUser", {
+    "name": "Mason",
+    "age": 29,
+    "email": "mason@example.com",
+})
+mason_id = mason[0]["user"]["id"]
+
+client.query("CreateRelationships", {
+    "user1_id": lena_id,
+    "user2_id": mason_id,
+})
+
+result = client.query("DeleteOutgoingNeighbors", {"user_id": lena_id})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const lena = await client.query("CreateUser", {
+        name: "Lena",
+        age: 30,
+        email: "lena@example.com",
+    });
+    const lenaId: string = lena.user.id;
+
+    const mason = await client.query("CreateUser", {
+        name: "Mason",
+        age: 29,
+        email: "mason@example.com",
+    });
+    const masonId: string = mason.user.id;
+
+    await client.query("CreateRelationships", {
+        user1_id: lenaId,
+        user2_id: masonId,
+    });
+
+    const result = await client.query("DeleteOutgoingNeighbors", {
+        user_id: lenaId,
+    });
+
+    console.log("DeleteOutgoingNeighbors result:", result);
+}
+
+main().catch((err) => {
+    console.error("DeleteOutgoingNeighbors query failed:", err);
+});
+```
+
+#### Example 3: Removing incoming neighbors
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+- Query:
+```query.hx
+QUERY DeleteIncomingNeighbors (user_id: ID) =>
+    DROP N<User>(user_id)::In<Follows>
+    RETURN "Removed incoming neighbors"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({ name: name, age: age, email: email })
+    RETURN user
+
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
+    follows <- AddE<Follows>::From(user1_id)::To(user2_id)
+    RETURN follows
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Ophelia","age":32,"email":"ophelia@example.com"}'
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Paul","age":31,"email":"paul@example.com"}'
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{"user1_id":"<paul_id>","user2_id":"<ophelia_id>"}'
+
+curl -X POST \
+  http://localhost:6969/DeleteIncomingNeighbors \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<ophelia_id>"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+ophelia = client.query("CreateUser", {
+    "name": "Ophelia",
+    "age": 32,
+    "email": "ophelia@example.com",
+})
+ophelia_id = ophelia[0]["user"]["id"]
+
+paul = client.query("CreateUser", {
+    "name": "Paul",
+    "age": 31,
+    "email": "paul@example.com",
+})
+paul_id = paul[0]["user"]["id"]
+
+client.query("CreateRelationships", {
+    "user1_id": paul_id,
+    "user2_id": ophelia_id,
+})
+
+result = client.query("DeleteIncomingNeighbors", {"user_id": ophelia_id})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const ophelia = await client.query("CreateUser", {
+        name: "Ophelia",
+        age: 32,
+        email: "ophelia@example.com",
+    });
+    const opheliaId: string = ophelia.user.id;
+
+    const paul = await client.query("CreateUser", {
+        name: "Paul",
+        age: 31,
+        email: "paul@example.com",
+    });
+    const paulId: string = paul.user.id;
+
+    await client.query("CreateRelationships", {
+        user1_id: paulId,
+        user2_id: opheliaId,
+    });
+
+    const result = await client.query("DeleteIncomingNeighbors", {
+        user_id: opheliaId,
+    });
+
+    console.log("DeleteIncomingNeighbors result:", result);
+}
+
+main().catch((err) => {
+    console.error("DeleteIncomingNeighbors query failed:", err);
+});
+```
+
+#### Example 4: Removing outgoing edges only
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+- Query:
+```query.hx
+QUERY DeleteOutgoingEdges (user_id: ID) =>
+    DROP N<User>(user_id)::OutE<Follows>
+    RETURN "Removed outgoing edges"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({ name: name, age: age, email: email })
+    RETURN user
+
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
+    follows <- AddE<Follows>::From(user1_id)::To(user2_id)
+    RETURN follows
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Riley","age":26,"email":"riley@example.com"}'
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Sam","age":25,"email":"sam@example.com"}'
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{"user1_id":"<riley_id>","user2_id":"<sam_id>"}'
+
+curl -X POST \
+  http://localhost:6969/DeleteOutgoingEdges \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<riley_id>"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+riley = client.query("CreateUser", {
+    "name": "Riley",
+    "age": 26,
+    "email": "riley@example.com",
+})
+riley_id = riley[0]["user"]["id"]
+
+sam = client.query("CreateUser", {
+    "name": "Sam",
+    "age": 25,
+    "email": "sam@example.com",
+})
+sam_id = sam[0]["user"]["id"]
+
+client.query("CreateRelationships", {
+    "user1_id": riley_id,
+    "user2_id": sam_id,
+})
+
+result = client.query("DeleteOutgoingEdges", {"user_id": riley_id})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const riley = await client.query("CreateUser", {
+        name: "Riley",
+        age: 26,
+        email: "riley@example.com",
+    });
+    const rileyId: string = riley.user.id;
+
+    const sam = await client.query("CreateUser", {
+        name: "Sam",
+        age: 25,
+        email: "sam@example.com",
+    });
+    const samId: string = sam.user.id;
+
+    await client.query("CreateRelationships", {
+        user1_id: rileyId,
+        user2_id: samId,
+    });
+
+    const result = await client.query("DeleteOutgoingEdges", {
+        user_id: rileyId,
+    });
+
+    console.log("DeleteOutgoingEdges result:", result);
+}
+
+main().catch((err) => {
+    console.error("DeleteOutgoingEdges query failed:", err);
+});
+```
+
+#### Example 5: Removing incoming edges only
+
+- Schema:
+```schema.hx
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+- Query:
+```query.hx
+QUERY DeleteIncomingEdges (user_id: ID) =>
+    DROP N<User>(user_id)::InE<Follows>
+    RETURN "Removed incoming edges"
+
+QUERY CreateUser (name: String, age: U8, email: String) =>
+    user <- AddN<User>({ name: name, age: age, email: email })
+    RETURN user
+
+QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
+    follows <- AddE<Follows>::From(user1_id)::To(user2_id)
+    RETURN follows
+```
+
+- cURL:
+```bash
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Uma","age":28,"email":"uma@example.com"}'
+curl -X POST \
+  http://localhost:6969/CreateUser \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Vince","age":29,"email":"vince@example.com"}'
+curl -X POST \
+  http://localhost:6969/CreateRelationships \
+  -H 'Content-Type: application/json' \
+  -d '{"user1_id":"<vince_id>","user2_id":"<uma_id>"}'
+
+curl -X POST \
+  http://localhost:6969/DeleteIncomingEdges \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<uma_id>"}'
+```
+
+- Python SDK:
+```python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+uma = client.query("CreateUser", {
+    "name": "Uma",
+    "age": 28,
+    "email": "uma@example.com",
+})
+uma_id = uma[0]["user"]["id"]
+
+vince = client.query("CreateUser", {
+    "name": "Vince",
+    "age": 29,
+    "email": "vince@example.com",
+})
+vince_id = vince[0]["user"]["id"]
+
+client.query("CreateRelationships", {
+    "user1_id": vince_id,
+    "user2_id": uma_id,
+})
+
+result = client.query("DeleteIncomingEdges", {"user_id": uma_id})
+print(result)
+```
+
+- TypeScript SDK:
+```typescript
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const uma = await client.query("CreateUser", {
+        name: "Uma",
+        age: 28,
+        email: "uma@example.com",
+    });
+    const umaId: string = uma.user.id;
+
+    const vince = await client.query("CreateUser", {
+        name: "Vince",
+        age: 29,
+        email: "vince@example.com",
+    });
+    const vinceId: string = vince.user.id;
+
+    await client.query("CreateRelationships", {
+        user1_id: vinceId,
+        user2_id: umaId,
+    });
+
+    const result = await client.query("DeleteIncomingEdges", {
+        user_id: umaId,
+    });
+
+    console.log("DeleteIncomingEdges result:", result);
+}
+
+main().catch((err) => {
+    console.error("DeleteIncomingEdges query failed:", err);
+});
+```

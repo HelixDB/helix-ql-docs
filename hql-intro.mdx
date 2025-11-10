@@ -1,0 +1,138 @@
+---
+title: "Helix Query Language"
+---
+@tags: query, language, syntax, cypher, graph, vector, knowledge-graph, search, helixql, query.hx, schema.hx
+
+### TL;DR
+- Strongly typed: All queries are type-checked at compile time
+- Compiled: Queries are compiled to efficient bytecode for execution
+- Graph & Vector: Native support for both graph and vector operations
+- Inspired by Gremlin, Cypher and Rust
+
+### Example Query Syntax:
+
+```query.hx
+// This is a query for ...
+QUERY QueryName(param1: Type, param2: Type) =>
+    result <- traversal_expression
+    RETURN result
+```
+
+### Query Components
+
+- `QUERY`: Keyword to start a query definition
+- `QueryName`: Identifier for the query
+- `parameters`: Input parameters in parentheses
+- `Type`: Type of the parameter (e.g. `String`, `I32`, `F64`, `Boolean`, `[Type]` or schema Node/Edge)
+- `=>`: Separates query header from body
+- `<-`: Assignment operator
+- `RETURN`: Specifies output values
+- `//`: Comments
+
+#### Rule
+- Query names are case-sensitive. SDK/cURL must match the query name in `query.hx` exactly.
+
+## HelixQL Types
+@tags: types, id, date, string, boolean, i8, i16, i32, i64, f32, f64, u8, u16, u32, u64, u128, array
+
+- `ID`: UUID for nodes, edges and vectors
+- `Date`: Timestamp or RFC3339 string
+- `String`: Text data
+- `Boolean`: True/false value
+- `I8`: 8-bit signed integer
+- `I16`: 16-bit signed integer
+- `I32`: 32-bit signed integer
+- `I64`: 64-bit signed integer
+- `F32`: 32-bit floating point
+- `F64`: 64-bit floating point
+- `U8`: 8-bit unsigned integer
+- `U16`: 16-bit unsigned integer
+- `U32`: 32-bit unsigned integer
+- `U64`: 64-bit unsigned integer
+- `U128`: 128-bit unsigned integer
+- `[T]`: Array of any type
+
+## Schema Definition (schema.hx)
+@tags: schema, definition, nodes, edges, vectors, indexing, helixql, schema.hx, query.hx
+
+### TL;DR
+- Schema defines graph structure: nodes, edges, vectors
+- Every entity has implicit `ID` field (not defined in schema)
+- Default values supported with `DEFAULT` keyword
+- Secondary indexing available for nodes only
+- Use `INDEX` keyword for global secondary indexes
+- Use `//` for comments
+
+### Node
+Defines node types and their properties in the graph.
+
+```schema.hx
+N::NodeType {
+  field1: String,
+  field2: U32
+}
+```
+
+### Edge
+Defines relationships between nodes and their properties.
+
+```schema.hx
+E::EdgeType {
+  From: Node/Vector,
+  To: Node/Vector,
+  Properties: {
+    field1: String,
+    field2: U32
+  }
+}
+```
+
+### Vector
+Defines the vector type.
+
+```schema.hx
+V::VectorType {
+  field1: String
+}
+```
+
+### Default Values
+Set default values for item fields using `DEFAULT` keyword.
+
+```schema.hx
+N::NodeType {
+  field1: String DEFAULT "default",
+  field2: U32 DEFAULT 0
+}
+```
+
+Helix uses the default value if a value is not provided when inserting the item.
+
+#### Example
+The `age` field uses default value `0` when not provided:
+
+```query.hx
+QUERY CreateUser(name: String) =>
+    user <- AddN<User>({name}) 
+    RETURN user
+```
+
+### Secondary Indexing
+Index node fields as global secondary indexes using `INDEX` keyword.
+
+```schema.hx
+N::NodeType {
+  INDEX field1: String,
+  field2: U32
+}
+```
+
+This creates an internal table for the indexed field. Query indexed nodes using object syntax:
+
+```query.hx
+QUERY GetByIndex(index_field: String) =>
+    node <- N<User>({field1: index_field})
+    RETURN node
+```
+
+Note: Indexing currently only supported for nodes. Indexing for edges and vectors is not supported yet.
