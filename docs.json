@@ -15,6 +15,28 @@
     "content": "🚀 CLI v2 is now live! See [Getting Started](/documentation/cli-v2/getting-started) for details.",
     "dismissible": true
   },
+  "contextual": {
+    "options": [
+      "copy",
+      "chatgpt",
+      "claude",
+      {
+        "title": "Open in T3 Chat",
+        "description": "Ask questions about this page",
+        "icon": "https://t3.chat/favicon.ico",
+        "href": {
+          "base": "https://t3.chat/new",
+          "query": [
+            {
+              "key": "q",
+              "value": "Read from https://docs.helix-db.com/$path so I can ask questions about it."
+            }
+          ]
+        }
+      },
+      "mcp"
+    ]
+  },
   "navigation": {
     "tabs": [
       {
