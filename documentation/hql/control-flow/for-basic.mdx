@@ -29,9 +29,9 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 
 ```rust Query focus={1-8} [expandable]
 QUERY UpdateUserStatus (user_updates: [{id: ID, status: String}]) =>
-    FOR update IN user_updates {
-        user <- N<User>(update.id)::UPDATE({
-            status: update.status,
+    FOR {id, status} IN user_updates {
+        user <- N<User>(id)::UPDATE({
+            status: status,
             last_updated: "2024-11-04"
         })
     }
