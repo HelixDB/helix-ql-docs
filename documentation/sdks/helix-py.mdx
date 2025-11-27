@@ -1,15 +1,14 @@
 ---
 title: 'Python SDK'
-description: 'Getting started with HelixDBs Python SDK.'
+description: 'Complete guide to using the HelixDB Python SDK for graph and vector operations with code examples'
 icon: 'python'
 ---
 
-[**helix-py**](https://github.com/HelixDB/helix-py) is a Python library for interacting with [helix-db](https://github.com/HelixDB/helix-db),
-a powerful graph-vector database written in Rust. It provides both a simple query interface and a PyTorch-like
-front-end for defining and executing custom graph queries and vector-based operations. This makes it
-well-suited for use cases such as similarity search, knowledge graph construction, and machine learning pipelines.
+Use the [helix-py](https://github.com/HelixDB/helix-py) Python SDK to interact with HelixDB, a high-performance graph-vector database. The SDK provides a simple query interface and PyTorch-like API for defining custom graph queries and vector operations, making it ideal for similarity search, knowledge graphs, and machine learning pipelines.
 
-## Installation
+## How do I install the Python SDK?
+
+Install helix-py using your preferred Python package manager:
 
 <CodeGroup>
 
@@ -23,8 +22,9 @@ pip install helix-py
 
 </CodeGroup>
 
-## Client
-To setup a simple `Client` to interface with a running helix instance:
+## How do I connect to HelixDB with Python?
+
+Set up a `Client` to connect to your HelixDB instance:
 
 ```python Python
 import helix
@@ -38,14 +38,13 @@ db.query('add_user', {"name": "John", "age": 20})
 The default port is `6969`, but you can change it by passing in the `port` parameter.
 For cloud instances, you can pass in the `api_endpoint` parameter.
 
-## Queries
-[**helix-py**](https://github.com/HelixDB/helix-py) allows users to define a PyTorch-like manner, similar to how
-you would define a neural network's forward pass. You can use built-in queries in `helix/client.py`
-to get started with inserting and search vectors, or you can define your own queries for more complex workflows.
+## How do I execute queries with the Python SDK?
 
-**Pytorch-like Query**
+Define queries in a PyTorch-like manner, similar to neural network forward passes. Use built-in queries for common operations or define custom queries for complex workflows.
 
-Given a HelixQL query like this:
+### PyTorch-like query definition
+
+Match your HelixQL queries with Python classes:
 ```rust query.hx
 QUERY add_user(name: String, age: I64) =>
   usr <- AddV<User>({name: name, age: age})
@@ -74,9 +73,9 @@ db.query(add_user("John", 20))
 
 Make sure that the `Query.query` method returns a list of objects.
 
-## Instance
-To setup a simple `Instance` that manages and automatically starts and stops a helix instance with respect
-to the lifetime of the script:
+## How do I manage HelixDB instances with Python?
+
+Use the `Instance` class to manage HelixDB lifecycle automatically within your Python scripts:
 
 ```python Python
 from helix.instance import Instance
@@ -103,8 +102,9 @@ and from there you can interact with the instance using `Client`.
 
 The instance will be automatically stopped when the script exits.
 
-## Providers
-Helix has LLM interfaces for popular LLM providers. 
+## How do I use LLM providers with HelixDB?
+
+Integrate popular LLM providers directly with HelixDB using built-in provider interfaces. 
 
 **Available providers**:
 - `OpenAIProvider`
@@ -159,8 +159,9 @@ anthropic_llm.enable_mcps("helix-mcp", url="https://your-remote-mcp/...")
 - Anthropic local streamable MCP is not supported; use a URL-based MCP.
 </Note>
 
-## Embedders
-Helix has embedder interfaces for popular embedding providers.
+## How do I generate embeddings with HelixDB?
+
+Use built-in embedder interfaces to generate vector embeddings from popular providers.
 
 Available embedders:
 - `OpenAIEmbedder`
@@ -187,9 +188,9 @@ voyage_embedder = VoyageAIEmbedder()
 vec = voyage_embedder.embed("query text", input_type="query")
 ```
 
-## Chunking
+## How do I chunk text for embeddings?
 
-Helix uses [Chonkie](https://chonkie.ai/) chunking methods to split text into manageable pieces for processing and embedding:
+Split text into manageable pieces using [Chonkie](https://chonkie.ai/) chunking methods:
 
 ```python
 from helix import Chunk
@@ -208,10 +209,9 @@ batch_chunks = Chunk.sentence_chunk(texts)
 
 You can find all the different chunking examples inside of [Chunking Feature](../../features/chunking/helix-chunking).
 
-## Loader
-The loader (`helix/loader.py`) currently supports `.parquet`, `.fvecs`, and `.csv` data. Simply pass in the path to your
-file or files and the columns you want to process and the loader does the rest for you and is easy to integrate with
-your queries
+## How do I load data into HelixDB?
+
+The loader supports `.parquet`, `.fvecs`, and `.csv` files. Pass your file path and column names to automatically load data into your queries.
 
 ## More Information
 For more information, check out our [examples](https://github.com/HelixDB/helix-py/tree/main/examples)!

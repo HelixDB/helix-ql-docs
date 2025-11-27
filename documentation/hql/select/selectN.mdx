@@ -1,12 +1,12 @@
 ---
-title: "Nodes"
-description: "Learn how to select nodes in your graph."
+title: "Select nodes"
+description: "How to select and query nodes in your HelixDB graph by ID or type with code examples"
 icon: "draw-circle"
 ---
 
-## `N` &nbsp; Nodes
+## How do I select nodes in HelixDB?
 
-Select nodes from your graph to begin traversal.
+Use `N` to select nodes from your graph by ID or type to begin traversals.
 
 ```rust
 N<Type>(node_id)
@@ -245,3 +245,10 @@ curl -X POST \
 </CodeGroup>
 
 <Note>You can also do specific property-based filtering, e.g., returning only ID, see the [Property Filtering](../properties/property-access). You can also do aggregation steps, e.g., returning the count of nodes, see the [Aggregations](../aggregation).</Note>
+
+## Related operations
+
+- [Create nodes](/documentation/hql/create/addN) - Add new nodes to your graph
+- [Traversals](/documentation/hql/traversals/steps_nodes) - Navigate between connected nodes
+- [Conditionals](/documentation/hql/conditionals/conditions) - Filter nodes by properties
+- [Property access](/documentation/hql/properties/property-access) - Work with node properties

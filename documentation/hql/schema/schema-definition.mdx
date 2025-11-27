@@ -1,16 +1,15 @@
 ---
-title: "Schema Definition"
-description: "Text, title, and styling in standard markdown"
+title: "Schema definition"
+description: "How to define schemas for nodes, edges, and vectors in HelixDB with type-safe property definitions"
 ---
 
-## Schema Definition
+## How do I define schemas in HelixDB?
 
-HelixQL uses a schema definition to define the structure of the graph.
-Note that every node, edge and vector has an implicit `ID` field. that is not in the schema definition.
+Define the structure of your graph using HelixQL schema definitions. Every node, edge, and vector automatically includes an implicit `ID` field.
 
-### Node Schema
+### Node schemas
 
-Defines node types and their properties in the graph.
+Define node types and their properties:
 
 ```rust
 N::NodeType {
@@ -21,9 +20,9 @@ N::NodeType {
 
 ---
 
-### Edge Schema
+### Edge schemas
 
-Defines relationships between nodes and their properties.
+Define relationships between nodes with properties:
 
 ```rust
 E::EdgeType {
@@ -38,9 +37,9 @@ E::EdgeType {
 
 ---
 
-### Vector Schema
+### Vector schemas
 
-Defines the vector type.
+Define vector types with metadata properties:
 
 ```rust
 V::VectorType {

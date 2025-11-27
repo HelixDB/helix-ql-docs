@@ -1,12 +1,12 @@
 ---
-title: "Nodes"
-description: "Learn how to create nodes in your graph."
+title: "Create nodes"
+description: "How to create nodes in your HelixDB graph with AddN including examples for empty nodes, parameterized nodes, and predefined properties"
 icon: "draw-circle"
 ---
 
-## Create Nodes using `AddN` &nbsp;
+## How do I create nodes in HelixDB?
 
-Create new nodes in your graph.
+Use `AddN` to create new nodes in your graph with optional properties.
 
 ```rust
 AddN<Type>
@@ -312,3 +312,10 @@ curl -X POST \
   -d '{}'
 ```
 </CodeGroup>
+
+## Related operations
+
+- [Select nodes](/documentation/hql/select/selectN) - Query existing nodes
+- [Create edges](/documentation/hql/create/addE) - Connect nodes with relationships
+- [Update nodes](/documentation/hql/updating) - Modify node properties
+- [Schema definitions](/documentation/hql/schema/schema-definition) - Define node types

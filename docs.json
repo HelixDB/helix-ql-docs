@@ -327,6 +327,7 @@
     }
   },
   "seo": {
+    "indexing": "all",
     "metatags": {
       "description": "HelixDB Documentation to get you started with HelixDB",
       "keywords": "HelixDB, Documentation, Getting Started, CLI, SDK, Guides, Features, Blogs, RAG, Database, Database, Graph Database, Vector Database, AI, Agents, LLMs, Knowledge Graphs, Retrieval Augmented Generation, Knowledge Graphs, AI Agents, Document databases",
@@ -336,7 +337,6 @@
       "og:description": "HelixDB Documentation",
       "og:type": "website",
       "og:site_name": "HelixDB Documentation",
-      "indexing": "all",
       "category": "Technology",
       "language": "en",
       "author": "HelixDB"
