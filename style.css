@@ -1,0 +1,248 @@
+.card {
+    border-radius: 0px;
+    --corner-size: 8px;
+    --corner-thickness: 1px;
+    background-color: var(--background);
+    background-image:
+        /* top-left */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* top-right */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* bottom-left */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* bottom-right */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419);
+    background-position:
+        calc(-1px) calc(-1px), calc(-1px) calc(-1px),
+        calc(100% + 1px) calc(-1px), calc(100% + 1px) calc(-1px),
+        calc(-1px) calc(100% + 1px), calc(-1px) calc(100% + 1px),
+        calc(100% + 1px) calc(100% + 1px), calc(100% + 1px) calc(100% + 1px);
+    background-size:
+        /* top-left: vertical, horizontal */
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        /* top-right: vertical, horizontal */
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        /* bottom-left: vertical, horizontal */
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        /* bottom-right: vertical, horizontal */
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness);
+    background-repeat: no-repeat;
+}
+
+
+.card:hover {
+    background-color: rgba(242, 100, 25, 0.05);
+}
+
+
+.callout {
+    border-radius: 0px;
+    gap: 24px;
+}
+
+.dark .callout,
+[data-theme="dark"] .callout {
+    border: 0px;
+}
+
+.prose {
+    border-radius: 0px;
+    border-color: #000;
+}
+
+.header {
+    background-color: #000;
+    color: #fff;
+}
+
+/* Make header border wider */
+.flex.items-center.gap-x-4.border-b {
+    border-bottom-width: 0px !important;
+    border-color:  rgba(242, 100, 25, 0.05) !important;
+}
+
+#navbar-transition {
+    border-color:  rgba(242, 100, 25, 0.05) !important;
+    border-bottom-width: 0px !important;
+}
+
+.h-\[1\.5px\] {
+    border-color:  rgba(242, 100, 25, 0.05) !important;
+    border-bottom-width: 4px !important;
+}
+
+/* Add 5% primary background to entire tab section */
+.hidden.lg\:flex.px-12.h-12 {
+}
+
+#search-bar-entry {
+    border-radius: 0px;
+    background-color: transparent;
+    border: 2px solid;
+    box-shadow: none;
+}
+
+#search-bar-entry:focus {
+    box-shadow: none;
+}
+
+#search-bar-entry:hover {
+    background-color: #fff;
+}
+
+.dark #search-bar-entry:hover,
+[data-theme="dark"] #search-bar-entry:hover {
+    background-color: #1C1106;
+}
+
+
+.codeblock-dark {
+    padding: 1px;
+    border-radius: 0px;
+    position: relative;
+    box-shadow: -4px 5px 0 0 rgb(87, 87, 87);
+}
+
+#navbar {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.dark .codeblock-dark {
+    box-shadow: none;
+    --corner-size: 8px;
+    --corner-thickness: 1px;
+    background-image:
+        /* top-left */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* top-right */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* bottom-left */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* bottom-right */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419);
+    background-position:
+    top left, top left,
+    top right, top right,
+    bottom left, bottom left,
+    bottom right, bottom right;
+    background-size:
+        /* top-left: vertical, horizontal */
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        /* top-right: vertical, horizontal */
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        /* bottom-left: vertical, horizontal */
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        /* bottom-right: vertical, horizontal */
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness);
+    background-repeat: no-repeat;
+}
+
+.eyebrow {
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+span:not(pre span):not(code span):not(.codeblock-dark span):not(h1 span):not(h2 span):not(h3 span):not(h4 span):not(h5 span):not(h6 span) {
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+h5 {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+#navigation-items {
+    border-radius: 0px;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 130%;
+}
+
+
+/* Add corners to selected navigation item */
+a.text-primary.font-semibold {
+    position: relative;
+    --corner-size: 8px;
+    --corner-thickness: 1px;
+    background-image:
+        /* top-left */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* top-right */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* bottom-left */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* bottom-right */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419);
+    background-position:
+        top left, top left,
+        top right, top right,
+        bottom left, bottom left,
+        bottom right, bottom right;
+    background-size:
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness);
+    background-repeat: no-repeat;
+}
+
+#sidebar-content {
+    border: 2px 2px 2px 2px solid;
+}
+
+.rounded-2xl {
+    border-radius: 0px !important;
+}
+.rounded-t-2xl {
+    border-top-left-radius: 0px !important;
+    border-top-right-radius: 0px !important;
+}
+.rounded-b-2xl {
+    border-bottom-left-radius: 0px !important;
+    border-bottom-right-radius: 0px !important;
+}
+
+.rounded-xl {
+    border-radius: 0px !important;
+}
+
+.rounded-t-xl {
+    border-top-left-radius: 0px !important;
+    border-top-right-radius: 0px !important;
+}
+
+.rounded-b-xl {
+    border-bottom-left-radius: 0px !important;
+    border-bottom-right-radius: 0px !important;
+}
+
+.rounded-lg {
+    border-radius: 0px !important;
+}
+
+
+ 

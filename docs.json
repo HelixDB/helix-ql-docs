@@ -8,7 +8,13 @@
     "dark": "#F26419"
   },
   "background": {
-    "decoration": "gradient"
+    "decoration": "grid",
+    "color": {
+      "light": "#FDFBF0",
+      "dark": "#1E1715"
+    }
+  },
+  "fonts": {
   },
   "favicon": "/favicon.svg",
   "banner": {
