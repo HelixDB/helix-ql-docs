@@ -175,8 +175,8 @@ h5 {
 }
 
 
-/* Add corners to selected navigation item */
-a.text-primary.font-semibold {
+/* Add corners to selected navigation item - exclude first ul with mb-12 class */
+#navigation-items ul:not(.mb-12) a.text-primary.font-semibold {
     position: relative;
     --corner-size: 8px;
     --corner-thickness: 1px;
@@ -244,5 +244,16 @@ a.text-primary.font-semibold {
     border-radius: 0px !important;
 }
 
+.rounded-3xl {
+    border-radius: 0px !important;
+}
 
- 
+.rounded-t-3xl {
+    border-top-left-radius: 0px !important;
+    border-top-right-radius: 0px !important;
+}
+
+.rounded-b-3xl {
+    border-bottom-left-radius: 0px !important;
+    border-bottom-right-radius: 0px !important;
+}
