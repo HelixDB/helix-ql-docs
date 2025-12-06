@@ -281,7 +281,40 @@ Show the status of all instances in the project.
 
 
 
-## Cleanup & Maintenance
+## Backup & Maintenance
+
+### `helix backup`
+
+Create a backup of an instance's database files.
+
+<Note>
+**What it does:**
+
+1. Creates an atomic snapshot of the LMDB database
+2. Copies `data.mdb` and `lock.mdb` to the backup directory
+3. Warns if backup size exceeds 10GB and prompts for confirmation
+</Note>
+
+<ResponseField name="helix backup [INSTANCE] [OPTIONS]">
+  The instance to backup.
+  <Expandable title="options">
+    <ResponseField name="--output, -o [PATH]" type="String">
+      Output directory for the backup. If omitted, creates `./backups/backup-<timestamp>/`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+**Examples:**
+
+```bash
+# Backup the 'dev' instance to default location
+helix backup dev
+
+# Backup to a specific directory
+helix backup dev --output /path/to/backup
+```
+
+---
 
 ### `helix prune`
 
