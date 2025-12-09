@@ -27,7 +27,47 @@ The dashboard works best when your queries follow this naming convention:
 
 ## Setup
 
-### Local Development
+### Launch via CLI (Recommended)
+
+The easiest way to launch the dashboard is using the Helix CLI:
+
+<Note>
+You must have `build_mode` set to `"dev"` in your `helix.toml` for the dashboard to work.
+</Note>
+
+```bash
+# Start the dashboard
+helix dashboard start
+
+# Start on a custom port
+helix dashboard start --port 8080
+
+# Connect to a specific host
+helix dashboard start --host localhost --helix-port 6969
+
+# Check dashboard status
+helix dashboard status
+
+# Stop the dashboard
+helix dashboard stop
+```
+
+The CLI will automatically:
+- Pull the dashboard Docker image
+- Start the container with the correct configuration
+- Open the dashboard in your default browser
+
+#### CLI Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--port` | Port to run dashboard on | `3000` |
+| `--host` | Helix host to connect to (bypasses project config) | - |
+| `--helix-port` | Helix port to connect to (used with `--host`) | `6969` |
+| `--attach` | Run dashboard in foreground with logs | `false` |
+| `--restart` | Restart if dashboard is already running | `false` |
+
+### Local Development (Manual)
 
 1. Ensure your HelixDB instance is running (default port: 6969)
 2. Navigate to the `frontend` directory and run `npm install` to install dependencies
