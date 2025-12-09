@@ -428,6 +428,75 @@ Update the Helix CLI to the latest version.
   </Expandable>
 </ResponseField>
 
+## Dashboard
+
+### `helix dashboard`
+
+Launch the Helix Dashboard in a container to visualize and interact with your database.
+
+<Note>
+**Requirements:**
+- Docker or Podman must be installed and running
+- `build_mode` must be set to `dev` in your `helix.toml` configuration
+</Note>
+
+<ResponseField name="helix dashboard [SUBCOMMAND]">
+  The subcommand to run.
+
+  <Expandable title="subcommands">
+    <ResponseField name="start [INSTANCE] [OPTIONS]">
+      Start the dashboard.
+      <Expandable title="options">
+        <ResponseField name="--port, -p [PORT]" type="Number">
+          Port to run dashboard on. Default: 3000
+        </ResponseField>
+        <ResponseField name="--host [HOST]" type="String">
+          Helix host to connect to (e.g., localhost). Bypasses project config.
+        </ResponseField>
+        <ResponseField name="--helix-port [PORT]" type="Number">
+          Helix port to connect to. Used with --host. Default: 6969
+        </ResponseField>
+        <ResponseField name="--attach" type="Boolean">
+          Run dashboard in foreground with logs.
+        </ResponseField>
+        <ResponseField name="--restart" type="Boolean">
+          Restart if dashboard is already running.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="stop">
+      Stop the running dashboard.
+    </ResponseField>
+
+    <ResponseField name="status">
+      Show dashboard status and connection info.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+**Examples:**
+
+```bash
+# Start dashboard for default instance
+helix dashboard start
+
+# Start dashboard on a specific port
+helix dashboard start --port 8080
+
+# Start dashboard for a specific instance
+helix dashboard start my-instance
+
+# Connect to a specific host directly
+helix dashboard start --host localhost --helix-port 6969
+
+# Check dashboard status
+helix dashboard status
+
+# Stop the dashboard
+helix dashboard stop
+```
+
 For issues or questions:
 
 - GitHub Issues: [https://github.com/HelixDB/helix-db/issues](https://github.com/HelixDB/helix-db/issues)
