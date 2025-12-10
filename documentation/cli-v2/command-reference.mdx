@@ -244,9 +244,24 @@ Deploy or update a running instance.
 
 </Note>
 
-<ResponseField name="helix push [INSTANCE]">
+<ResponseField name="helix push [INSTANCE] [OPTIONS]">
   The instance to deploy.
+  <Expandable title="options">
+    <ResponseField name="--dev" type="Boolean">
+      Use development profile for faster builds (Helix Cloud only). When set, this flag takes precedence over the `build_mode` setting in your `helix.toml` configuration.
+    </ResponseField>
+  </Expandable>
 </ResponseField>
+
+**Examples:**
+
+```bash
+# Deploy instance with default settings
+helix push my-instance
+
+# Deploy with dev profile for faster builds (Helix Cloud)
+helix push my-instance --dev
+```
 
 
 
