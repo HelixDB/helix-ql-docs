@@ -1,0 +1,62 @@
+---
+title: "Introduction"
+description: "A high-performance graph-vector database with its own query language"
+mode: "custom"
+---
+
+export const HeroCard = ({ icon, title, description, href }) => {
+  return (
+    <a className="group flex flex-col h-full rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-zinc-800 hover:border-[#F26419]/30 dark:hover:border-[#F26419]/30 bg-white dark:bg-zinc-900/50" href={href}>
+      <div className="p-6">
+        <div className="w-12 h-12 rounded-lg bg-[#F26419]/10 flex items-center justify-center mb-4 group-hover:bg-[#F26419]/20 transition-colors">
+          <span className="text-2xl">{icon}</span>
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-zinc-50">{title}</h3>
+        <p className="mt-3 text-gray-600 dark:text-zinc-400">{description}</p>
+      </div>
+    </a>
+  )
+}
+
+<div className="relative pb-12">
+
+  <div className="px-4 py-16 lg:py-32 max-w-4xl mx-auto">
+    <h1 className="text-5xl font-bold text-center text-gray-900 dark:text-zinc-50 tracking-tight">
+      Build with <span className="text-primary font-medium">HelixDB</span>
+    </h1>
+
+    <p className="max-w-2xl mx-auto px-4 mt-6 text-xl text-center text-gray-600 dark:text-zinc-400 leading-relaxed">
+      A high-performance graph-vector database — <span className="font-medium">fast</span>, <span className="font-medium">flexible</span>, and <span className="font-medium">built for AI</span>.
+    </p>
+
+    <div className="mt-16 lg:mt-20 grid sm:grid-cols-2 gap-6">
+      <HeroCard
+        icon="⚡"
+        title="Getting Started"
+        description="Jump-start your HelixDB project with the CLI and deploy in minutes"
+        href="/documentation/intro"
+      />
+
+      <HeroCard
+        icon="📖"
+        title="Helix Query Language"
+        description="Master HelixQL — a powerful query language for graph and vector data"
+        href="/documentation/hql/hql"
+      />
+
+      <HeroCard
+        icon="🔧"
+        title="SDKs"
+        description="Interact with HelixDB through Python, Rust, TypeScript, and Go SDKs"
+        href="/documentation/sdks/helix-py"
+      />
+
+      <HeroCard
+        icon="📚"
+        title="Guides"
+        description="Hands-on tutorials and real-world examples to build with HelixDB"
+        href="/guides/overview"
+      />
+    </div>
+  </div>
+</div>

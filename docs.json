@@ -24,6 +24,10 @@
   "navigation": {
     "tabs": [
       {
+				"pages": ["welcome"],
+				"tab": "Welcome"
+			},
+      {
         "tab": "Database",
         "groups": [
           {
