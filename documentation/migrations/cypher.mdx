@@ -1,0 +1,143 @@
+---
+title: "Migrating from Cypher to HelixDB"
+description: "Overview of how to migrate from Cypher to HelixDB"
+sidebarTitle: "Migrating from Cypher to HelixDB"
+icon: 'circle-nodes'
+---
+
+## Conceptual differences between Cypher and HelixQL
+
+Cypher is a query language for graph databases that is similar to SQL. HelixQL is a query language for graph and vector databases that takes inspiration from Gremlin in a more procedural way.
+
+## Select statements
+
+In this section we cover the differences between selecting nodes, edges and vectors in Cypher and HelixQL.
+
+### Selecting Nodes
+<CodeGroup>
+
+```cypher Cypher
+MATCH (n:User) RETURN n as users
+```
+
+```rust HelixQL
+QUERY GetUsers () =>
+    users <- N<User>
+    RETURN users
+```
+</CodeGroup>
+
+### Vector Search
+
+<CodeGroup>
+
+```cypher Cypher
+MATCH (n:Document)
+WHERE n.embedding IS NOT NULL
+WITH n, vector.similarity.cosine(n.embedding, $queryVector) AS score
+RETURN n, score
+ORDER BY score DESC
+LIMIT 10
+```
+
+```rust HelixQL
+QUERY SearchDocuments (vector: [F64]) =>
+    documents <- SearchV<Document>(vector)::Range(0,10)
+    RETURN documents
+```
+</CodeGroup>
+
+### Traversals
+
+<CodeGroup>
+
+```cypher Cypher
+MATCH (n:User)-[:FOLLOWS]->(m:User) 
+WHERE id(n) = $user_id
+RETURN m
+```
+
+```rust HelixQL
+QUERY GetFollowers (user_id: ID) =>
+    followers <- N<User>(user_id)::Out<Follows>
+    RETURN followers
+```
+</CodeGroup>
+
+### Conditionals
+
+<CodeGroup>
+
+```cypher Cypher
+MATCH (n:User)-[:FOLLOWS]->(m:User)-[:POSTED]->(p:Post)
+WHERE id(n) = $user_id
+    AND p.created_at > datetime($since)
+RETURN DISTINCT m
+LIMIT 20
+```
+
+```rust HelixQL
+QUERY GetFollowers (user_id: ID, since: Date) =>
+    followers <- N<User>(user_id)::Out<Follows>
+                    ::WHERE(_::Out<Posted>::{created_at}::GT(since))
+                    ::Range(0, 20)
+    RETURN followers
+```
+</CodeGroup>
+
+---
+
+## Creating
+
+Here we cover the differences between creating nodes, edges and vectors in Cypher and HelixQL.
+
+### Creating Nodes
+
+<CodeGroup>
+
+```cypher Cypher
+CREATE (user:User { name: "Alice", age: 30 })
+```
+
+```rust HelixQL
+QUERY CreateUser (name: String, age: U8) =>
+    user <- AddN<User>({ name: name, age: age })
+    RETURN user
+```
+</CodeGroup>
+
+### Creating Edges
+
+<CodeGroup>
+
+```cypher Cypher
+MATCH (user1:User), (user2:User { name: "Bob" })
+WHERE elementId(a) = $user1_id
+CREATE (user1)-[:FOLLOWS]->(user2)
+```
+
+```rust HelixQL
+QUERY CreateFollow (user1_id: ID) =>
+    user2 <- N<User>({name: "Bob"})
+    follows <- AddE<Follows>::From(user1_id)::To(user2)
+    RETURN follows
+```
+</CodeGroup>
+
+### Creating Vectors
+
+<CodeGroup>
+
+```cypher Cypher
+CREATE (n:Document {
+  title: 'My Doc',
+  embedding: $vector
+})
+```
+
+```rust HelixQL
+QUERY CreateVector (vector: [F64]) =>
+    document <- AddV<Document>(vector, {title: "My Doc"})
+    RETURN document
+```
+</CodeGroup>

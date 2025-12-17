@@ -58,6 +58,14 @@
             ]
           },
           {
+            "group": "Migrating",
+            "pages": [
+              "documentation/migrations/sql",
+              "documentation/migrations/cypher",
+              "documentation/migrations/gremlin"
+            ]
+          },
+          {
             "group": "CLI",
             "pages": [
               "documentation/cli-v2/migration",

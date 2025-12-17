@@ -1,0 +1,149 @@
+---
+title: "Migrating from SQL to HelixDB"
+description: "Overview of how to migrate from SQL to HelixDB"
+sidebarTitle: "Migrating from SQL to HelixDB"
+icon: "database"
+---
+
+## Conceptual differences between SQL and HelixQL
+
+SQL is a declarative, set-based query language designed for relational databases. HelixQL is a procedural, traversal-based query language designed for graph and vector databases. While SQL expresses relationships through JOINs on foreign keys, HelixQL traverses edges directly. HelixQL also has native support for vector similarity search, which requires extensions like pgvector in PostgreSQL.
+
+## Select statements
+
+In this section we cover the differences between selecting nodes, edges and vectors in SQL and HelixQL.
+
+### Selecting Nodes
+<CodeGroup>
+
+```sql SQL
+SELECT * FROM users;
+```
+
+```rust HelixQL
+QUERY GetUsers () =>
+    users <- N<User>
+    RETURN users
+```
+</CodeGroup>
+
+### Vector Search
+
+<CodeGroup>
+
+```sql SQL (PostgreSQL + pgvector)
+SELECT *, embedding <-> $1 AS distance
+FROM documents
+ORDER BY embedding <-> $1
+LIMIT 10;
+```
+
+```rust HelixQL
+QUERY SearchDocuments (vector: [F64]) =>
+    documents <- SearchV<Document>(vector)::Range(0,10)
+    RETURN documents
+```
+</CodeGroup>
+
+### Traversals
+
+<CodeGroup>
+
+```sql SQL
+SELECT u2.*
+FROM users u1
+JOIN follows f ON u1.id = f.follower_id
+JOIN users u2 ON f.followed_id = u2.id
+WHERE u1.id = $user_id;
+```
+
+```rust HelixQL
+QUERY GetFollowers (user_id: ID) =>
+    followers <- N<User>(user_id)::Out<Follows>
+    RETURN followers
+```
+</CodeGroup>
+
+### Conditionals
+
+<CodeGroup>
+
+```sql SQL
+SELECT DISTINCT u2.*
+FROM users u1
+JOIN follows f ON u1.id = f.follower_id
+JOIN users u2 ON f.followed_id = u2.id
+JOIN posts p ON u2.id = p.author_id
+WHERE u1.id = $user_id
+  AND p.created_at > $since
+LIMIT 20;
+```
+
+```rust HelixQL
+QUERY GetFollowers (user_id: ID, since: Date) =>
+    followers <- N<User>(user_id)::Out<Follows>
+                    ::WHERE(_::Out<Posted>::{created_at}::GT(since))
+                    ::Range(0, 20)
+    RETURN followers
+```
+</CodeGroup>
+
+---
+
+## Creating
+
+Here we cover the differences between creating nodes, edges and vectors in SQL and HelixQL.
+
+### Creating Nodes
+
+<CodeGroup>
+
+```sql SQL
+INSERT INTO users (name, age)
+VALUES ('Alice', 30)
+RETURNING *;
+```
+
+```rust HelixQL
+QUERY CreateUser (name: String, age: U8) =>
+    user <- AddN<User>({ name: name, age: age })
+    RETURN user
+```
+</CodeGroup>
+
+### Creating Edges
+
+<CodeGroup>
+
+```sql SQL
+INSERT INTO follows (follower_id, followed_id)
+SELECT $user1_id, id
+FROM users
+WHERE name = 'Bob'
+RETURNING *;
+```
+
+```rust HelixQL
+QUERY CreateFollow (user1_id: ID) =>
+    user2 <- N<User>({name: "Bob"})
+    follows <- AddE<Follows>::From(user1_id)::To(user2)
+    RETURN follows
+```
+</CodeGroup>
+
+### Creating Vectors
+
+<CodeGroup>
+
+```sql SQL (PostgreSQL + pgvector)
+INSERT INTO documents (title, embedding)
+VALUES ('My Doc', $vector)
+RETURNING *;
+```
+
+```rust HelixQL
+QUERY CreateVector (vector: [F64]) =>
+    document <- AddV<Document>(vector, {title: "My Doc"})
+    RETURN document
+```
+</CodeGroup>

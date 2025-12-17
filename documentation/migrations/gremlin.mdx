@@ -1,0 +1,146 @@
+---
+title: "Migrating from Gremlin to HelixDB"
+description: "Overview of how to migrate from Gremlin to HelixDB"
+sidebarTitle: "Migrating from Gremlin to HelixDB"
+icon: 'hexagon-nodes'
+---
+
+## Conceptual differences between Gremlin and HelixQL
+
+Gremlin and HelixQL share a similar procedural, traversal-based approach to querying graph data. HelixQL takes inspiration from Gremlin but provides a more concise syntax with native support for vector operations. While Gremlin uses method chaining (`.out().has()`), HelixQL uses a double-colon syntax (`::Out<>`) for traversals.
+
+## Select statements
+
+In this section we cover the differences between selecting nodes, edges and vectors in Gremlin and HelixQL.
+
+### Selecting Nodes
+<CodeGroup>
+
+```groovy Gremlin
+g.V().hasLabel('User')
+```
+
+```rust HelixQL
+QUERY GetUsers () =>
+    users <- N<User>
+    RETURN users
+```
+</CodeGroup>
+
+### Vector Search
+
+<CodeGroup>
+
+```groovy Gremlin
+// TinkerPop doesn't have native vector support
+// Typically requires external indexing solution
+g.V().hasLabel('Document')
+  .has('embedding')
+  .order()
+  .by(__.values('embedding').map(cosineSimilarity(queryVector)))
+  .limit(10)
+```
+
+```rust HelixQL
+QUERY SearchDocuments (vector: [F64]) =>
+    documents <- SearchV<Document>(vector)::Range(0,10)
+    RETURN documents
+```
+</CodeGroup>
+
+### Traversals
+
+<CodeGroup>
+
+```groovy Gremlin
+g.V(userId).out('follows')
+```
+
+```rust HelixQL
+QUERY GetFollowers (user_id: ID) =>
+    followers <- N<User>(user_id)::Out<Follows>
+    RETURN followers
+```
+</CodeGroup>
+
+### Conditionals
+
+<CodeGroup>
+
+```groovy Gremlin
+g.V(userId)
+  .out('follows')
+  .out('posted')
+  .has('created_at', gt(since))
+  .in('posted')
+  .dedup()
+  .limit(20)
+```
+
+```rust HelixQL
+QUERY GetFollowers (user_id: ID, since: Date) =>
+    followers <- N<User>(user_id)::Out<Follows>
+                    ::WHERE(_::Out<Posted>::{created_at}::GT(since))
+                    ::Range(0, 20)
+    RETURN followers
+```
+</CodeGroup>
+
+---
+
+## Creating
+
+Here we cover the differences between creating nodes, edges and vectors in Gremlin and HelixQL.
+
+### Creating Nodes
+
+<CodeGroup>
+
+```groovy Gremlin
+g.addV('User')
+  .property('name', 'Alice')
+  .property('age', 30)
+```
+
+```rust HelixQL
+QUERY CreateUser (name: String, age: U8) =>
+    user <- AddN<User>({ name: name, age: age })
+    RETURN user
+```
+</CodeGroup>
+
+### Creating Edges
+
+<CodeGroup>
+
+```groovy Gremlin
+g.V(user1Id)
+  .addE('follows')
+  .to(V().has('User', 'name', 'Bob'))
+```
+
+```rust HelixQL
+QUERY CreateFollow (user1_id: ID) =>
+    user2 <- N<User>({name: "Bob"})
+    follows <- AddE<Follows>::From(user1_id)::To(user2)
+    RETURN follows
+```
+</CodeGroup>
+
+### Creating Vectors
+
+<CodeGroup>
+
+```groovy Gremlin
+// TinkerPop stores vectors as properties
+g.addV('Document')
+  .property('title', 'My Doc')
+  .property('embedding', vector)
+```
+
+```rust HelixQL
+QUERY CreateVector (vector: [F64]) =>
+    document <- AddV<Document>(vector, {title: "My Doc"})
+    RETURN document
+```
+</CodeGroup>
