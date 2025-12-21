@@ -37,6 +37,10 @@
     background-repeat: no-repeat;
 }
 
+.card span {
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+}
 
 .card:hover {
     background-color: rgba(242, 100, 25, 0.05);
@@ -103,19 +107,15 @@
     background-color: #1C1106;
 }
 
-
-.codeblock-dark {
-    padding: 1px;
-    border-radius: 0px;
-    position: relative;
-    box-shadow: -4px 5px 0 0 rgb(87, 87, 87);
-}
-
 #navbar {
     font-family: 'JetBrains Mono', monospace;
 }
 
-.dark .codeblock-dark {
+.code-block .rounded-xt{
+    border-radius: 0px !important;
+}
+.code-block {
+    padding: 0px !important;
     box-shadow: none;
     --corner-size: 8px;
     --corner-thickness: 1px;
@@ -133,10 +133,10 @@
         linear-gradient(#F26419, #F26419),
         linear-gradient(#F26419, #F26419);
     background-position:
-    top left, top left,
-    top right, top right,
-    bottom left, bottom left,
-    bottom right, bottom right;
+    calc(-1px) calc(-1px), calc(-1px) calc(-1px),
+    calc(100% + 1px) calc(-1px), calc(100% + 1px) calc(-1px),
+    calc(-1px) calc(100% + 1px), calc(-1px) calc(100% + 1px),
+    calc(100% + 1px) calc(100% + 1px), calc(100% + 1px) calc(100% + 1px);
     background-size:
         /* top-left: vertical, horizontal */
         var(--corner-thickness) var(--corner-size),
@@ -158,7 +158,7 @@
     font-family: 'JetBrains Mono', monospace;
 }
 
-span:not(pre span):not(code span):not(.codeblock-dark span):not(h1 span):not(h2 span):not(h3 span):not(h4 span):not(h5 span):not(h6 span) {
+span:not(pre span):not(code span):not(.codeblock-dark span):not(h1 span):not(h2 span):not(h3 span):not(h4 span):not(h5 span):not(h6 span):not(.mdx-content span) {
     text-transform: uppercase;
     font-family: 'JetBrains Mono', monospace;
 }
@@ -176,7 +176,7 @@ h5 {
 
 
 /* Add corners to selected navigation item - exclude first ul with mb-12 class */
-#navigation-items ul:not(.mb-12) a.text-primary.font-semibold {
+#navigation-items a.text-primary {
     position: relative;
     --corner-size: 8px;
     --corner-thickness: 1px;
@@ -256,4 +256,84 @@ h5 {
 .rounded-b-3xl {
     border-bottom-left-radius: 0px !important;
     border-bottom-right-radius: 0px !important;
+}
+
+/* Remove rounded corners from code groups */
+.code-group .rounded-xt,
+.code-group [class*="rounded-"] {
+    border-radius: 0px !important;
+}
+
+/* Specifically target the code block inside code groups */
+.code-group {
+    border-radius: 0px !important;
+    padding: 0px !important;
+}
+
+/* Remove rounded corners from tab buttons in code groups */
+.code-group [data-component-part="code-group-tab-bar"] .rounded-lg {
+    border-radius: 0px !important;
+}
+
+/* Add top border to the main code block area */
+.code-group [data-component-part="code-block-root"] {
+    border-top: 1px solid #E2DDDB;
+}
+.code-block [data-component-part="code-block-header"] {
+    border-bottom: 1px solid #E2DDDB;
+}
+
+.dark .code-group [data-component-part="code-block-root"],
+[data-theme="dark"] .code-group [data-component-part="code-block-root"] {
+    border-top: 1px solid #403A38;
+}
+.dark .code-block [data-component-part="code-block-header"],
+[data-theme="dark"] .code-block [data-component-part="code-block-header"] {
+    border-bottom: 1px solid #403A38;
+}
+
+.code-group {
+    --corner-size: 8px;
+    --corner-thickness: 1px;
+    background-image:
+        /* top-left */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* top-right */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* bottom-left */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419),
+        /* bottom-right */
+        linear-gradient(#F26419, #F26419),
+        linear-gradient(#F26419, #F26419);
+    background-position:
+    calc(-1px) calc(-1px), calc(-1px) calc(-1px),
+    calc(100% + 1px) calc(-1px), calc(100% + 1px) calc(-1px),
+    calc(-1px) calc(100% + 1px), calc(-1px) calc(100% + 1px),
+    calc(100% + 1px) calc(100% + 1px), calc(100% + 1px) calc(100% + 1px);
+    background-size:
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness),
+        var(--corner-thickness) var(--corner-size),
+        var(--corner-size) var(--corner-thickness);
+    background-repeat: no-repeat;
+}
+
+.dark .accordion {
+    background-color: transparent;
+}
+
+.dark .accordion-group {
+    background-color: transparent;
+    border: 1px solid #403A38;
+}
+
+.accordion-group {
+    border: 1px solid #E2DDDB;
 }
