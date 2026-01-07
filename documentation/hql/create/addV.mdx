@@ -422,6 +422,10 @@ curl -X POST \
 
 You can also use the built in [Embed](../vectors/embedding) function to embed the text without sending in the array of floats. It uses the embedding model defined in your `config.hx.json` file.
 
+<Warning>
+All vectors in a vector type must have the same dimensions. If you change your embedding model (e.g., switching from `text-embedding-ada-002` to a different model), the new vectors will have different dimensions and will cause an error. Ensure you use the same embedding model consistently for all vectors.
+</Warning>
+
 <CodeGroup>
 ```rust Query focus={2}
 QUERY InsertVector (content: String, created_at: Date) =>
