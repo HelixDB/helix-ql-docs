@@ -17,10 +17,6 @@
   "fonts": {
   },
   "favicon": "/favicon.svg",
-  "banner": {
-    "content": "🚀 CLI v2 is now live! See [Getting Started](/documentation/cli-v2/getting-started) for details.",
-    "dismissible": true
-  },
   "contextual": {
     "options": [
       "copy",
@@ -315,7 +311,14 @@
       {
         "tab": "Benchmarks",
         "pages": ["benchmarks/v1"]
+      },
+      {
+        "tab": "Changelog",
+        "pages": [
+          "change-log/helixdb"
+        ]
       }
+
     ]
   },
   "logo": {
