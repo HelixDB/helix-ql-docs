@@ -97,6 +97,7 @@
                 "pages": [
                   "documentation/hql/schema/schema-definition",
                   "documentation/hql/schema/indexing",
+                  "documentation/hql/schema/unique-index",
                   "documentation/hql/schema/default"
                 ]
               },
@@ -114,6 +115,16 @@
                       "documentation/hql/create/addV"
                     ],
                     "icon": "plus"
+                  },
+                  {
+                    "group": "Upsert Operations",
+                    "expanded": false,
+                    "pages": [
+                      "documentation/hql/create/upsertN",
+                      "documentation/hql/create/upsertE",
+                      "documentation/hql/create/upsertV"
+                    ],
+                    "icon": "rotate"
                   },
                   {
                     "group": "Select Operations",

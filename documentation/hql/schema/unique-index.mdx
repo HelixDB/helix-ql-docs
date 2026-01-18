@@ -1,0 +1,198 @@
+---
+title: "Unique Indexes"
+description: "Enforcing uniqueness constraints on node fields and edges."
+---
+
+Unique indexes allow you to enforce uniqueness constraints on your data, ensuring that no two records share the same value for a given field or edge relationship.
+
+## Unique Index on Node Fields
+
+To enforce uniqueness on a node field, use the `UNIQUE INDEX` keywords before the field name:
+
+```rust
+N::User {
+    UNIQUE INDEX email: String,
+    name: String,
+    age: U8
+}
+```
+
+This creates a unique secondary index on the `email` field, preventing duplicate email addresses across all `User` nodes.
+
+### Syntax
+
+```rust
+N::NodeType {
+    UNIQUE INDEX field_name: Type,
+    UNIQUE INDEX field_name: Type DEFAULT default_value,
+}
+```
+
+### Combining with Default Values
+
+You can combine unique indexes with default values:
+
+```rust
+N::Document {
+    UNIQUE INDEX slug: String,
+    INDEX view_count: I32 DEFAULT 0,
+    content: String,
+}
+```
+
+### Querying by Unique Index
+
+Nodes with unique indexes can be queried using object syntax, just like regular indexes:
+
+```rust
+QUERY getUserByEmail(email: String) =>
+    user <- N<User>({email: email})
+    RETURN user
+```
+
+---
+
+## Unique Edges
+
+Unique edges ensure that only one edge of a given type can exist between two specific nodes. This is useful for relationships that should be singular, such as "best friend" or "primary contact".
+
+### Syntax
+
+```rust
+E::EdgeType UNIQUE {
+    From: NodeType,
+    To: NodeType,
+}
+```
+
+The `UNIQUE` modifier is placed between the edge name and the edge body.
+
+### Example
+
+```rust
+N::User {
+    UNIQUE INDEX username: String,
+    name: String,
+}
+
+E::BestFriend UNIQUE {
+    From: User,
+    To: User,
+}
+```
+
+With this schema, each user can only have one `BestFriend` edge pointing to another user. Attempting to create a second `BestFriend` edge from the same user will enforce the uniqueness constraint.
+
+### Unique Edges with Properties
+
+Unique edges can also have properties:
+
+```rust
+E::PrimaryContact UNIQUE {
+    From: Company,
+    To: Person,
+    Properties: {
+        assigned_date: String,
+        priority: I32
+    }
+}
+```
+
+---
+
+## Complete Example
+
+<CodeGroup>
+```rust Schema
+N::Employee {
+    UNIQUE INDEX employee_id: String,
+    UNIQUE INDEX email: String,
+    name: String,
+    department: String,
+}
+
+N::Project {
+    UNIQUE INDEX project_code: String,
+    name: String,
+}
+
+E::LeadOf UNIQUE {
+    From: Employee,
+    To: Project,
+}
+
+E::WorksOn {
+    From: Employee,
+    To: Project,
+}
+```
+
+```rust Queries
+QUERY createEmployee(employee_id: String, email: String, name: String, department: String) =>
+    emp <- AddN<Employee>({
+        employee_id: employee_id,
+        email: email,
+        name: name,
+        department: department
+    })
+    RETURN emp
+
+QUERY getEmployeeByEmail(email: String) =>
+    emp <- N<Employee>({email: email})
+    RETURN emp
+
+QUERY assignProjectLead(employee_id: ID, project_id: ID) =>
+    lead <- AddE<LeadOf>::From(employee_id)::To(project_id)
+    RETURN lead
+```
+</CodeGroup>
+
+In this example:
+- Each employee has a unique `employee_id` and `email`
+- Each project has a unique `project_code`
+- Each project can only have one lead (via the `UNIQUE` edge constraint)
+- Employees can work on multiple projects (non-unique `WorksOn` edge)
+
+---
+
+## Constraint Violations
+
+When inserting data that violates a unique constraint, HelixDB will return an error. This applies to both unique node field indexes and unique edges.
+
+### Node Field Violations
+
+If you attempt to insert a node with a value that already exists for a unique indexed field, the operation will fail:
+
+```rust
+// First insert succeeds
+emp1 <- AddN<Employee>({
+    employee_id: "EMP001",
+    email: "alice@company.com",
+    name: "Alice"
+})
+
+// Second insert with same email fails with an error
+emp2 <- AddN<Employee>({
+    employee_id: "EMP002",
+    email: "alice@company.com",  // Duplicate - constraint violation
+    name: "Bob"
+})
+```
+
+The second operation will return an error indicating that a node with that email already exists.
+
+### Edge Violations
+
+Similarly, attempting to create a duplicate unique edge will fail:
+
+```rust
+// First edge succeeds
+lead1 <- AddE<LeadOf>::From(alice_id)::To(project_id)
+
+// Second edge from the same node fails
+lead2 <- AddE<LeadOf>::From(alice_id)::To(other_project_id)  // Constraint violation
+```
+
+<Tip>
+Use unique constraints to enforce data integrity at the database level. Handle the returned errors in your application to provide appropriate feedback to users, such as "This email is already registered."
+</Tip>

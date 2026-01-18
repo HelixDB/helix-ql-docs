@@ -3,7 +3,9 @@ title: "Secondary Indexing"
 description: "Indexing a field of a node as a global secondary index."
 ---
 
-To do this, you can use the `INDEX` keyword.
+You can create secondary indexes on node fields using the `INDEX` keyword. For enforcing uniqueness constraints, see [Unique Indexes](/documentation/hql/schema/unique-index).
+
+To create a secondary index, use the `INDEX` keyword:
 
 ```rust
 N::NodeType {
@@ -23,4 +25,4 @@ QUERY getByIndex(index_field: String) =>
 
 ---
 
-**Note:** You can currectly only use indexing with nodes. Indexing for edges and vectors is not supported yet.
+**Note:** You can currently only use indexing with nodes. Indexing for vectors is not supported yet.

@@ -1,0 +1,525 @@
+---
+title: "Upsert Vectors"
+description: "Learn how to upsert vectors in your graph using UpsertV for insert-or-update semantics."
+icon: "rotate"
+---
+
+## Upsert Vectors using `UpsertV` &nbsp;
+
+Create new vector embeddings or update existing ones with insert-or-update semantics.
+
+```rust
+UpsertV<Type>(vector)
+UpsertV<Type>(vector, {properties})
+```
+
+<Info>
+`UpsertV` differs from `AddV` in that it will update an existing vector if one is found in the traversal context, rather than always creating a new one. If no existing vector is found, it creates a new vector just like `AddV`.
+</Info>
+
+<Warning>
+Vector data is **required** for `UpsertV`. You can provide vector data as:
+- A literal array of floats (e.g., `[0.1, 0.2, 0.3]`)
+- The `Embed()` function to generate embeddings from text
+- A variable containing vector data
+</Warning>
+
+### Example 1: Basic vector upsert with properties
+
+<CodeGroup>
+```rust Query focus={2}
+QUERY UpsertDoc(vector: [F32], content: String) =>
+    doc <- UpsertV<Document>(vector, {content: content})
+    RETURN doc
+```
+
+```rust Schema
+V::Document {
+    content: String,
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First call creates a new document
+doc = client.query("UpsertDoc", {
+    "vector": [0.1, 0.2, 0.3, 0.4],
+    "content": "Introduction to machine learning",
+})
+
+print("Created document:", doc)
+
+# Subsequent calls with same vector update the existing document
+updated = client.query("UpsertDoc", {
+    "vector": [0.1, 0.2, 0.3, 0.4],
+    "content": "Updated introduction to machine learning",
+})
+
+print("Updated document:", updated)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First call creates a new document
+    let doc: serde_json::Value = client.query("UpsertDoc", &json!({
+        "vector": [0.1, 0.2, 0.3, 0.4],
+        "content": "Introduction to machine learning",
+    })).await?;
+
+    println!("Created document: {doc:#?}");
+
+    // Subsequent calls update the existing document
+    let updated: serde_json::Value = client.query("UpsertDoc", &json!({
+        "vector": [0.1, 0.2, 0.3, 0.4],
+        "content": "Updated introduction to machine learning",
+    })).await?;
+
+    println!("Updated document: {updated:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First call creates a new document
+    payload := map[string]any{
+        "vector":  []float32{0.1, 0.2, 0.3, 0.4},
+        "content": "Introduction to machine learning",
+    }
+
+    var doc map[string]any
+    if err := client.Query("UpsertDoc", helix.WithData(payload)).Scan(&doc); err != nil {
+        log.Fatalf("UpsertDoc failed: %s", err)
+    }
+
+    fmt.Printf("Created document: %#v\n", doc)
+
+    // Subsequent calls update the existing document
+    payload["content"] = "Updated introduction to machine learning"
+
+    var updated map[string]any
+    if err := client.Query("UpsertDoc", helix.WithData(payload)).Scan(&updated); err != nil {
+        log.Fatalf("UpsertDoc failed: %s", err)
+    }
+
+    fmt.Printf("Updated document: %#v\n", updated)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First call creates a new document
+    const doc = await client.query("UpsertDoc", {
+        vector: [0.1, 0.2, 0.3, 0.4],
+        content: "Introduction to machine learning",
+    });
+
+    console.log("Created document:", doc);
+
+    // Subsequent calls update the existing document
+    const updated = await client.query("UpsertDoc", {
+        vector: [0.1, 0.2, 0.3, 0.4],
+        content: "Updated introduction to machine learning",
+    });
+
+    console.log("Updated document:", updated);
+}
+
+main().catch((err) => {
+    console.error("UpsertDoc query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# First call creates a new document
+curl -X POST \
+  http://localhost:6969/UpsertDoc \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.1,0.2,0.3,0.4],"content":"Introduction to machine learning"}'
+
+# Subsequent calls update the existing document
+curl -X POST \
+  http://localhost:6969/UpsertDoc \
+  -H 'Content-Type: application/json' \
+  -d '{"vector":[0.1,0.2,0.3,0.4],"content":"Updated introduction to machine learning"}'
+```
+</CodeGroup>
+
+
+### Example 2: Upsert vector using the Embed function
+
+You can use the built-in `Embed` function to generate embeddings from text.
+
+<Warning>
+All vectors in a vector type must have the same dimensions. If you change your embedding model, the new vectors will have different dimensions and will cause an error. Ensure you use the same embedding model consistently for all vectors.
+</Warning>
+
+<CodeGroup>
+```rust Query focus={2}
+QUERY UpsertDocEmbed(text: String) =>
+    doc <- UpsertV<Document>(Embed(text), {content: text})
+    RETURN doc
+```
+
+```rust Schema
+V::Document {
+    content: String,
+}
+```
+
+```.env Environment Variables (.env)
+OPENAI_API_KEY=your_api_key
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Upsert with automatic embedding generation
+doc = client.query("UpsertDocEmbed", {
+    "text": "Introduction to machine learning",
+})
+
+print("Upserted document:", doc)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Upsert with automatic embedding generation
+    let doc: serde_json::Value = client.query("UpsertDocEmbed", &json!({
+        "text": "Introduction to machine learning",
+    })).await?;
+
+    println!("Upserted document: {doc:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Upsert with automatic embedding generation
+    payload := map[string]any{
+        "text": "Introduction to machine learning",
+    }
+
+    var doc map[string]any
+    if err := client.Query("UpsertDocEmbed", helix.WithData(payload)).Scan(&doc); err != nil {
+        log.Fatalf("UpsertDocEmbed failed: %s", err)
+    }
+
+    fmt.Printf("Upserted document: %#v\n", doc)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Upsert with automatic embedding generation
+    const doc = await client.query("UpsertDocEmbed", {
+        text: "Introduction to machine learning",
+    });
+
+    console.log("Upserted document:", doc);
+}
+
+main().catch((err) => {
+    console.error("UpsertDocEmbed query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/UpsertDocEmbed \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"Introduction to machine learning"}'
+```
+</CodeGroup>
+
+
+### Example 3: Complex operation with nodes, edges, and vectors
+
+<CodeGroup>
+```rust Query focus={1-8}
+QUERY ComplexUpsertOperation(
+    person_name: String,
+    person_age: U32,
+    company_name: String,
+    position: String,
+    resume_content: String
+) =>
+    person <- UpsertN<Person>({name: person_name, age: person_age})
+    company <- UpsertN<Company>({name: company_name})
+    UpsertE<WorksAt>({position: position})::From(person)::To(company)
+    resume <- UpsertV<Resume>(Embed(resume_content), {content: resume_content})
+    RETURN person
+
+QUERY GetPerson(name: String) =>
+    person <- N<Person>::WHERE(_::{name}::EQ(name))
+    RETURN person
+```
+
+```rust Schema
+N::Person {
+    name: String,
+    age: U32,
+}
+
+N::Company {
+    name: String,
+}
+
+V::Resume {
+    content: String,
+}
+
+E::WorksAt {
+    From: Person,
+    To: Company,
+    Properties: {
+        position: String,
+    }
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create or update person, company, employment, and resume all at once
+result = client.query("ComplexUpsertOperation", {
+    "person_name": "Alice",
+    "person_age": 30,
+    "company_name": "TechCorp",
+    "position": "Software Engineer",
+    "resume_content": "Experienced software engineer with 5 years...",
+})
+
+print("Upserted person:", result)
+
+# Running again will update existing records instead of creating duplicates
+result = client.query("ComplexUpsertOperation", {
+    "person_name": "Alice",
+    "person_age": 31,  # Updated age
+    "company_name": "TechCorp",
+    "position": "Senior Software Engineer",  # Updated position
+    "resume_content": "Experienced senior software engineer with 6 years...",
+})
+
+print("Updated person:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create or update person, company, employment, and resume all at once
+    let result: serde_json::Value = client.query("ComplexUpsertOperation", &json!({
+        "person_name": "Alice",
+        "person_age": 30,
+        "company_name": "TechCorp",
+        "position": "Software Engineer",
+        "resume_content": "Experienced software engineer with 5 years...",
+    })).await?;
+
+    println!("Upserted person: {result:#?}");
+
+    // Running again will update existing records instead of creating duplicates
+    let result: serde_json::Value = client.query("ComplexUpsertOperation", &json!({
+        "person_name": "Alice",
+        "person_age": 31,
+        "company_name": "TechCorp",
+        "position": "Senior Software Engineer",
+        "resume_content": "Experienced senior software engineer with 6 years...",
+    })).await?;
+
+    println!("Updated person: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create or update person, company, employment, and resume all at once
+    payload := map[string]any{
+        "person_name":    "Alice",
+        "person_age":     uint32(30),
+        "company_name":   "TechCorp",
+        "position":       "Software Engineer",
+        "resume_content": "Experienced software engineer with 5 years...",
+    }
+
+    var result map[string]any
+    if err := client.Query("ComplexUpsertOperation", helix.WithData(payload)).Scan(&result); err != nil {
+        log.Fatalf("ComplexUpsertOperation failed: %s", err)
+    }
+
+    fmt.Printf("Upserted person: %#v\n", result)
+
+    // Running again will update existing records instead of creating duplicates
+    payload["person_age"] = uint32(31)
+    payload["position"] = "Senior Software Engineer"
+    payload["resume_content"] = "Experienced senior software engineer with 6 years..."
+
+    if err := client.Query("ComplexUpsertOperation", helix.WithData(payload)).Scan(&result); err != nil {
+        log.Fatalf("ComplexUpsertOperation failed: %s", err)
+    }
+
+    fmt.Printf("Updated person: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create or update person, company, employment, and resume all at once
+    let result = await client.query("ComplexUpsertOperation", {
+        person_name: "Alice",
+        person_age: 30,
+        company_name: "TechCorp",
+        position: "Software Engineer",
+        resume_content: "Experienced software engineer with 5 years...",
+    });
+
+    console.log("Upserted person:", result);
+
+    // Running again will update existing records instead of creating duplicates
+    result = await client.query("ComplexUpsertOperation", {
+        person_name: "Alice",
+        person_age: 31,
+        company_name: "TechCorp",
+        position: "Senior Software Engineer",
+        resume_content: "Experienced senior software engineer with 6 years...",
+    });
+
+    console.log("Updated person:", result);
+}
+
+main().catch((err) => {
+    console.error("ComplexUpsertOperation query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create or update person, company, employment, and resume all at once
+curl -X POST \
+  http://localhost:6969/ComplexUpsertOperation \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "person_name": "Alice",
+    "person_age": 30,
+    "company_name": "TechCorp",
+    "position": "Software Engineer",
+    "resume_content": "Experienced software engineer with 5 years..."
+  }'
+
+# Running again will update existing records
+curl -X POST \
+  http://localhost:6969/ComplexUpsertOperation \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "person_name": "Alice",
+    "person_age": 31,
+    "company_name": "TechCorp",
+    "position": "Senior Software Engineer",
+    "resume_content": "Experienced senior software engineer with 6 years..."
+  }'
+```
+</CodeGroup>
+
+
+## How Upsert differs from Add
+
+| Operation | Behavior |
+|-----------|----------|
+| `AddV` | Always creates a new vector |
+| `UpsertV` | Creates if not exists, updates if exists |
+
+<Tip>
+When updating, `UpsertV` merges properties: it updates specified properties while preserving any existing properties that aren't included in the upsert. The vector data itself is also updated.
+</Tip>
+
+## Related operations
+
+- [Create vectors](/documentation/hql/create/addV) - Always create new vectors with AddV
+- [Vector search](/documentation/hql/vectors/searching) - Search for similar vectors
+- [Upsert nodes](/documentation/hql/create/upsertN) - Insert-or-update nodes
+- [Upsert edges](/documentation/hql/create/upsertE) - Insert-or-update edges

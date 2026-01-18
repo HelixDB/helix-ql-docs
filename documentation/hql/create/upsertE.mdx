@@ -1,0 +1,533 @@
+---
+title: "Upsert Edges"
+description: "Learn how to upsert edges in your graph using UpsertE for insert-or-update semantics."
+icon: "rotate"
+---
+
+## Upsert Edges using `UpsertE` &nbsp;
+
+Create new edges or update existing ones with insert-or-update semantics.
+
+```rust
+UpsertE<Type>::From(node1)::To(node2)
+UpsertE<Type>({properties})::From(node1)::To(node2)
+```
+
+<Info>
+`UpsertE` differs from `AddE` in that it will update an existing edge if one is found between the specified nodes, rather than always creating a new one. If no existing edge is found, it creates a new edge just like `AddE`.
+</Info>
+
+<Warning>
+Edge connections (`::From()` and `::To()`) are **required** for `UpsertE`. The order of `From` and `To` is flexible.
+</Warning>
+
+### Example 1: Basic edge upsert without properties
+
+<CodeGroup>
+```rust Query focus={1-5}
+QUERY UpsertFriendship(id1: ID, id2: ID) =>
+    person1 <- N<Person>(id1)
+    person2 <- N<Person>(id2)
+    UpsertE<Knows>::From(person1)::To(person2)
+    RETURN "done"
+
+QUERY CreatePerson(name: String, age: U32) =>
+    person <- AddN<Person>({name: name, age: age})
+    RETURN person
+```
+
+```rust Schema
+N::Person {
+    name: String,
+    age: U32,
+}
+
+E::Knows {
+    From: Person,
+    To: Person,
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Create two people
+alice = client.query("CreatePerson", {
+    "name": "Alice",
+    "age": 25,
+})[0]["person"]
+
+bob = client.query("CreatePerson", {
+    "name": "Bob",
+    "age": 28,
+})[0]["person"]
+
+# First call creates the edge
+result = client.query("UpsertFriendship", {
+    "id1": alice["id"],
+    "id2": bob["id"],
+})
+
+print("Created edge:", result)
+
+# Subsequent calls update the existing edge (no duplicate created)
+result = client.query("UpsertFriendship", {
+    "id1": alice["id"],
+    "id2": bob["id"],
+})
+
+print("Upserted edge:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Create two people
+    let alice: serde_json::Value = client.query("CreatePerson", &json!({
+        "name": "Alice",
+        "age": 25,
+    })).await?;
+    let alice_id = alice["person"]["id"].as_str().unwrap().to_string();
+
+    let bob: serde_json::Value = client.query("CreatePerson", &json!({
+        "name": "Bob",
+        "age": 28,
+    })).await?;
+    let bob_id = bob["person"]["id"].as_str().unwrap().to_string();
+
+    // First call creates the edge
+    let result: serde_json::Value = client.query("UpsertFriendship", &json!({
+        "id1": alice_id,
+        "id2": bob_id,
+    })).await?;
+
+    println!("Created edge: {result:#?}");
+
+    // Subsequent calls update the existing edge
+    let result: serde_json::Value = client.query("UpsertFriendship", &json!({
+        "id1": alice_id,
+        "id2": bob_id,
+    })).await?;
+
+    println!("Upserted edge: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Create two people
+    var alice map[string]any
+    if err := client.Query("CreatePerson", helix.WithData(map[string]any{
+        "name": "Alice",
+        "age":  uint32(25),
+    })).Scan(&alice); err != nil {
+        log.Fatalf("CreatePerson (Alice) failed: %s", err)
+    }
+    aliceID := alice["person"].(map[string]any)["id"].(string)
+
+    var bob map[string]any
+    if err := client.Query("CreatePerson", helix.WithData(map[string]any{
+        "name": "Bob",
+        "age":  uint32(28),
+    })).Scan(&bob); err != nil {
+        log.Fatalf("CreatePerson (Bob) failed: %s", err)
+    }
+    bobID := bob["person"].(map[string]any)["id"].(string)
+
+    // First call creates the edge
+    var result map[string]any
+    if err := client.Query("UpsertFriendship", helix.WithData(map[string]any{
+        "id1": aliceID,
+        "id2": bobID,
+    })).Scan(&result); err != nil {
+        log.Fatalf("UpsertFriendship failed: %s", err)
+    }
+
+    fmt.Printf("Created edge: %#v\n", result)
+
+    // Subsequent calls update the existing edge
+    if err := client.Query("UpsertFriendship", helix.WithData(map[string]any{
+        "id1": aliceID,
+        "id2": bobID,
+    })).Scan(&result); err != nil {
+        log.Fatalf("UpsertFriendship failed: %s", err)
+    }
+
+    fmt.Printf("Upserted edge: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Create two people
+    const alice = await client.query("CreatePerson", {
+        name: "Alice",
+        age: 25,
+    });
+    const aliceId: string = alice.person.id;
+
+    const bob = await client.query("CreatePerson", {
+        name: "Bob",
+        age: 28,
+    });
+    const bobId: string = bob.person.id;
+
+    // First call creates the edge
+    let result = await client.query("UpsertFriendship", {
+        id1: aliceId,
+        id2: bobId,
+    });
+
+    console.log("Created edge:", result);
+
+    // Subsequent calls update the existing edge
+    result = await client.query("UpsertFriendship", {
+        id1: aliceId,
+        id2: bobId,
+    });
+
+    console.log("Upserted edge:", result);
+}
+
+main().catch((err) => {
+    console.error("UpsertFriendship query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create two people first
+curl -X POST \
+  http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25}'
+
+curl -X POST \
+  http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":28}'
+
+# Create or update the edge
+curl -X POST \
+  http://localhost:6969/UpsertFriendship \
+  -H 'Content-Type: application/json' \
+  -d '{"id1":"<alice_id>","id2":"<bob_id>"}'
+```
+</CodeGroup>
+
+
+### Example 2: Upsert edge with properties
+
+<CodeGroup>
+```rust Query focus={1-5}
+QUERY UpsertFriendshipWithProps(id1: ID, id2: ID, since: String, strength: F32) =>
+    person1 <- N<Person>(id1)
+    person2 <- N<Person>(id2)
+    UpsertE<Friendship>({since: since, strength: strength})::From(person1)::To(person2)
+    RETURN "done"
+
+QUERY CreatePerson(name: String, age: U32) =>
+    person <- AddN<Person>({name: name, age: age})
+    RETURN person
+```
+
+```rust Schema
+N::Person {
+    name: String,
+    age: U32,
+}
+
+E::Friendship {
+    From: Person,
+    To: Person,
+    Properties: {
+        since: String,
+        strength: F32,
+    }
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+alice = client.query("CreatePerson", {
+    "name": "Alice",
+    "age": 25,
+})[0]["person"]
+
+bob = client.query("CreatePerson", {
+    "name": "Bob",
+    "age": 28,
+})[0]["person"]
+
+# Create friendship with properties
+result = client.query("UpsertFriendshipWithProps", {
+    "id1": alice["id"],
+    "id2": bob["id"],
+    "since": "2024-01-15",
+    "strength": 0.85,
+})
+
+print("Created friendship:", result)
+
+# Update the friendship strength
+result = client.query("UpsertFriendshipWithProps", {
+    "id1": alice["id"],
+    "id2": bob["id"],
+    "since": "2024-01-15",
+    "strength": 0.95,
+})
+
+print("Updated friendship:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let alice: serde_json::Value = client.query("CreatePerson", &json!({
+        "name": "Alice",
+        "age": 25,
+    })).await?;
+    let alice_id = alice["person"]["id"].as_str().unwrap().to_string();
+
+    let bob: serde_json::Value = client.query("CreatePerson", &json!({
+        "name": "Bob",
+        "age": 28,
+    })).await?;
+    let bob_id = bob["person"]["id"].as_str().unwrap().to_string();
+
+    // Create friendship with properties
+    let result: serde_json::Value = client.query("UpsertFriendshipWithProps", &json!({
+        "id1": alice_id,
+        "id2": bob_id,
+        "since": "2024-01-15",
+        "strength": 0.85,
+    })).await?;
+
+    println!("Created friendship: {result:#?}");
+
+    // Update the friendship strength
+    let result: serde_json::Value = client.query("UpsertFriendshipWithProps", &json!({
+        "id1": alice_id,
+        "id2": bob_id,
+        "since": "2024-01-15",
+        "strength": 0.95,
+    })).await?;
+
+    println!("Updated friendship: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    var alice map[string]any
+    if err := client.Query("CreatePerson", helix.WithData(map[string]any{
+        "name": "Alice",
+        "age":  uint32(25),
+    })).Scan(&alice); err != nil {
+        log.Fatalf("CreatePerson (Alice) failed: %s", err)
+    }
+    aliceID := alice["person"].(map[string]any)["id"].(string)
+
+    var bob map[string]any
+    if err := client.Query("CreatePerson", helix.WithData(map[string]any{
+        "name": "Bob",
+        "age":  uint32(28),
+    })).Scan(&bob); err != nil {
+        log.Fatalf("CreatePerson (Bob) failed: %s", err)
+    }
+    bobID := bob["person"].(map[string]any)["id"].(string)
+
+    // Create friendship with properties
+    var result map[string]any
+    if err := client.Query("UpsertFriendshipWithProps", helix.WithData(map[string]any{
+        "id1":      aliceID,
+        "id2":      bobID,
+        "since":    "2024-01-15",
+        "strength": float32(0.85),
+    })).Scan(&result); err != nil {
+        log.Fatalf("UpsertFriendshipWithProps failed: %s", err)
+    }
+
+    fmt.Printf("Created friendship: %#v\n", result)
+
+    // Update the friendship strength
+    if err := client.Query("UpsertFriendshipWithProps", helix.WithData(map[string]any{
+        "id1":      aliceID,
+        "id2":      bobID,
+        "since":    "2024-01-15",
+        "strength": float32(0.95),
+    })).Scan(&result); err != nil {
+        log.Fatalf("UpsertFriendshipWithProps failed: %s", err)
+    }
+
+    fmt.Printf("Updated friendship: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const alice = await client.query("CreatePerson", {
+        name: "Alice",
+        age: 25,
+    });
+    const aliceId: string = alice.person.id;
+
+    const bob = await client.query("CreatePerson", {
+        name: "Bob",
+        age: 28,
+    });
+    const bobId: string = bob.person.id;
+
+    // Create friendship with properties
+    let result = await client.query("UpsertFriendshipWithProps", {
+        id1: aliceId,
+        id2: bobId,
+        since: "2024-01-15",
+        strength: 0.85,
+    });
+
+    console.log("Created friendship:", result);
+
+    // Update the friendship strength
+    result = await client.query("UpsertFriendshipWithProps", {
+        id1: aliceId,
+        id2: bobId,
+        since: "2024-01-15",
+        strength: 0.95,
+    });
+
+    console.log("Updated friendship:", result);
+}
+
+main().catch((err) => {
+    console.error("UpsertFriendshipWithProps query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# Create two people first
+curl -X POST \
+  http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25}'
+
+curl -X POST \
+  http://localhost:6969/CreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bob","age":28}'
+
+# Create friendship with properties
+curl -X POST \
+  http://localhost:6969/UpsertFriendshipWithProps \
+  -H 'Content-Type: application/json' \
+  -d '{"id1":"<alice_id>","id2":"<bob_id>","since":"2024-01-15","strength":0.85}'
+
+# Update the friendship strength
+curl -X POST \
+  http://localhost:6969/UpsertFriendshipWithProps \
+  -H 'Content-Type: application/json' \
+  -d '{"id1":"<alice_id>","id2":"<bob_id>","since":"2024-01-15","strength":0.95}'
+```
+</CodeGroup>
+
+
+### Example 3: Flexible From/To ordering
+
+The `::From()` and `::To()` can be specified in either order.
+
+<CodeGroup>
+```rust Query
+QUERY UpsertEdgeToFrom(id1: ID, id2: ID) =>
+    person1 <- N<Person>(id1)
+    person2 <- N<Person>(id2)
+    // To and From can be in either order
+    UpsertE<Knows>::To(person2)::From(person1)
+    RETURN "done"
+```
+
+```rust Schema
+N::Person {
+    name: String,
+    age: U32,
+}
+
+E::Knows {
+    From: Person,
+    To: Person,
+}
+```
+</CodeGroup>
+
+
+## How Upsert differs from Add
+
+| Operation | Behavior |
+|-----------|----------|
+| `AddE` | Always creates a new edge (can create duplicates) |
+| `UpsertE` | Creates if not exists, updates if exists (no duplicates) |
+
+<Tip>
+When updating, `UpsertE` merges properties: it updates specified properties while preserving any existing properties that aren't included in the upsert.
+</Tip>
+
+## Related operations
+
+- [Create edges](/documentation/hql/create/addE) - Always create new edges with AddE
+- [Upsert nodes](/documentation/hql/create/upsertN) - Insert-or-update nodes
+- [Upsert vectors](/documentation/hql/create/upsertV) - Insert-or-update vectors
