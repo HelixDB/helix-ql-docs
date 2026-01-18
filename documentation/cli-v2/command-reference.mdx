@@ -428,6 +428,91 @@ Update the Helix CLI to the latest version.
   </Expandable>
 </ResponseField>
 
+## Logs
+
+### `helix logs`
+
+View logs for a running instance. Opens an interactive terminal UI by default, or use flags for non-interactive modes.
+
+<Note>
+**Requirements:**
+- For local instances: Docker or Podman must be running
+- For cloud instances: Must be authenticated via `helix auth login`
+</Note>
+
+<ResponseField name="helix logs [INSTANCE] [OPTIONS]">
+  The instance to view logs for. If omitted, an interactive selection prompt will appear.
+
+  <Expandable title="options">
+    <ResponseField name="--live, -l" type="Boolean">
+      Stream live logs non-interactively to stdout. Useful for scripts and CI/CD pipelines. Press Ctrl+C to stop.
+    </ResponseField>
+    <ResponseField name="--range, -r" type="Boolean">
+      Query historical logs within a time range. Requires `--start` and/or `--end`.
+    </ResponseField>
+    <ResponseField name="--start [DATETIME]" type="String">
+      Start time for range query. Format: ISO 8601 (e.g., `2024-01-15T10:00:00Z`). Defaults to 15 minutes before end time.
+    </ResponseField>
+    <ResponseField name="--end [DATETIME]" type="String">
+      End time for range query. Format: ISO 8601 (e.g., `2024-01-15T11:00:00Z`). Defaults to now.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+**Time Range Limits:**
+- Maximum range duration is 1 hour
+- Start time must be before end time
+</Note>
+
+#### Interactive TUI Mode
+
+When run without flags, `helix logs` opens an interactive terminal UI with vim-style navigation:
+
+**Navigation:**
+| Key | Action |
+|-----|--------|
+| `Down Arrow` | Scroll down one line |
+| `Up Arrow` | Scroll up one line |
+| `j` | Scroll down one page |
+| `k` | Scroll up one page |
+| `zt` | Jump to top of logs |
+| `zb` | Jump to bottom of logs |
+
+**Mode Switching:**
+| Key | Action |
+|-----|--------|
+| `l` | Switch to live streaming mode |
+| `r` | Switch to range mode (select time presets or custom range) |
+| `Esc` | Quit |
+
+**Range Mode Presets:**
+- Last 15 minutes
+- Last 30 minutes
+- Last hour
+- Custom range (date/time picker)
+
+**Examples:**
+
+```bash
+# Open interactive log viewer (will prompt for instance selection)
+helix logs
+
+# Open interactive log viewer for a specific instance
+helix logs my-instance
+
+# Stream live logs non-interactively
+helix logs my-instance --live
+
+# Query logs from a specific time range
+helix logs my-instance --range --start 2024-01-15T10:00:00Z --end 2024-01-15T11:00:00Z
+
+# Query last 15 minutes (end defaults to now)
+helix logs my-instance --range --start 2024-01-15T10:45:00Z
+```
+
+---
+
 ## Dashboard
 
 ### `helix dashboard`
