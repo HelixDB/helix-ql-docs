@@ -1,0 +1,34 @@
+---
+title: 'E628'
+---
+
+# DROP Can Only Be Applied to Traversals
+
+## Erroneous Code Example
+
+This error occurs when you try to use `DROP` on an expression that is not a traversal.
+
+<CodeGroup>
+```rust queries.hx
+QUERY deleteValue(value: String) =>
+    DROP value
+```
+</CodeGroup>
+
+## Solution
+
+Ensure `DROP` is applied to a traversal that returns nodes, edges, or vectors.
+
+<CodeGroup>
+```rust queries.hx
+QUERY deleteUser(id: ID) =>
+    user <- N<User>(id)
+    DROP user
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+```
+</CodeGroup>

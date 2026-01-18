@@ -1,0 +1,53 @@
+---
+title: 'E625'
+---
+
+# Edge Type Does Not Have a Vector Type as Its From Source
+
+## Erroneous Code Example
+
+This error occurs when you try to use an edge in a context that requires the `From` type to be a vector type, but the edge's `From` type is not a vector.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getRelated(id: ID) =>
+    user <- N<User>(id)
+    related <- user->>SimilarTo
+    RETURN related
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+
+E::SimilarTo {
+    From: User,
+    To: User,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Set the `From` type of the edge to a vector type.
+
+<CodeGroup>
+```rust schema.hx
+V<128>::Document {
+    title: String,
+}
+
+E::SimilarTo {
+    From: Document,
+    To: Document,
+}
+```
+
+```rust queries.hx
+QUERY getRelated(id: ID) =>
+    doc <- V<Document>(id)
+    related <- doc->>SimilarTo
+    RETURN related
+```
+</CodeGroup>

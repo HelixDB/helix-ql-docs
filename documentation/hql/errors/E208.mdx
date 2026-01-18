@@ -1,0 +1,37 @@
+---
+title: 'E208'
+---
+
+# Field Has Not Been Indexed
+
+## Erroneous Code Example
+
+This error occurs when you try to use a field in an operation that requires the field to be indexed, but the field has not been marked with `INDEX` in the schema.
+
+<CodeGroup>
+```rust queries.hx
+QUERY findUserByEmail(email: String) =>
+    users <- N<User>::WHERE(|u| u.email == email)
+    RETURN users
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+    email: String,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Add the `INDEX` modifier to the field in your schema.
+
+<CodeGroup>
+```rust schema.hx
+N::User {
+    name: String,
+    email: String INDEX,
+}
+```
+</CodeGroup>

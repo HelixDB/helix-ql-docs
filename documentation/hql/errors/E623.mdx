@@ -1,0 +1,53 @@
+---
+title: 'E623'
+---
+
+# Edge Type Does Not Have a Node Type as Its From Source
+
+## Erroneous Code Example
+
+This error occurs when you try to use an edge in a context that requires the `From` type to be a node, but the edge's `From` type is not a node.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getConnections(id: ID) =>
+    doc <- V<Document>(id)
+    connections <- doc->Related
+    RETURN connections
+```
+
+```rust schema.hx
+V<128>::Document {
+    title: String,
+}
+
+E::Related {
+    From: Document,
+    To: Document,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Ensure the edge type has a node type as its `From` source, or use the appropriate traversal for vector types.
+
+<CodeGroup>
+```rust schema.hx
+N::User {
+    name: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+
+```rust queries.hx
+QUERY getFollowing(id: ID) =>
+    user <- N<User>(id)
+    following <- user->Follows
+    RETURN following
+```
+</CodeGroup>

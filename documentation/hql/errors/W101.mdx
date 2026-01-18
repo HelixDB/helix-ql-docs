@@ -1,0 +1,40 @@
+---
+title: 'W101'
+---
+
+# Query Has No Return
+
+## Erroneous Code Example
+
+This warning occurs when a query does not have a `RETURN` statement. While not always an error, queries typically should return a value.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Add a `RETURN` statement to specify what the query should return, or use a mutation operation like `INSERT`, `UPDATE`, or `DROP` if the query is intended to modify data without returning a value.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+    RETURN user
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+```
+</CodeGroup>

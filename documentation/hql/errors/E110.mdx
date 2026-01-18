@@ -1,0 +1,29 @@
+---
+title: 'E110'
+---
+
+# Schema Item Name is a Reserved Type Name
+
+## Erroneous Code Example
+
+This error occurs when you try to use a reserved type name as the name for a node, edge, or vector type.
+
+<CodeGroup>
+```rust schema.hx
+N::String {
+    value: String,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Rename the type to something that is not a reserved type name.
+
+<CodeGroup>
+```rust schema.hx
+N::TextValue {
+    value: String,
+}
+```
+</CodeGroup>

@@ -1,0 +1,33 @@
+---
+title: 'E108'
+---
+
+# Invalid Schema Version
+
+## Erroneous Code Example
+
+This error occurs when the schema version specified is invalid or not supported.
+
+<CodeGroup>
+```rust schema.hx
+VERSION 999
+
+N::User {
+    name: String,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Use a valid schema version number that is supported by your version of Helix.
+
+<CodeGroup>
+```rust schema.hx
+VERSION 1
+
+N::User {
+    name: String,
+}
+```
+</CodeGroup>

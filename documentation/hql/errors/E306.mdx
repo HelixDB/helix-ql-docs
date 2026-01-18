@@ -1,0 +1,43 @@
+---
+title: 'E306'
+---
+
+# Expression is Not a Boolean
+
+## Erroneous Code Example
+
+This error occurs when an expression is expected to result in a boolean value but produces a different type.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getUsers() =>
+    users <- N<User>::WHERE(|u| u.name)
+    RETURN users
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+    active: Bool,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Ensure the expression evaluates to a boolean value.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getUsers() =>
+    users <- N<User>::WHERE(|u| u.active == true)
+    RETURN users
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+    active: Bool,
+}
+```
+</CodeGroup>

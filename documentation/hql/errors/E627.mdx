@@ -1,0 +1,51 @@
+---
+title: 'E627'
+---
+
+# Shortest Path Requires From or To Parameter
+
+## Erroneous Code Example
+
+This error occurs when you use a shortest path operation without providing either a `from` or `to` parameter.
+
+<CodeGroup>
+```rust queries.hx
+QUERY findPath() =>
+    path <- N<User>::ShortestPath()
+    RETURN path
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Add a `from` or `to` parameter to the shortest path operation.
+
+<CodeGroup>
+```rust queries.hx
+QUERY findPath(startId: ID, endId: ID) =>
+    path <- N<User>::ShortestPath(from: startId, to: endId)
+    RETURN path
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+
+E::Follows {
+    From: User,
+    To: User,
+}
+```
+</CodeGroup>

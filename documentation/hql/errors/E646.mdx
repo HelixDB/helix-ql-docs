@@ -1,0 +1,43 @@
+---
+title: 'E646'
+---
+
+# Field Value is Empty
+
+## Erroneous Code Example
+
+This error occurs when you provide an empty value for a field in an object remapping or insert operation.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+    RETURN user::{ name: }
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+    email: String,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Provide a valid value for the field. The value must be a literal, identifier, traversal, or object.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+    RETURN user::{ name: user.name }
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+    email: String,
+}
+```
+</CodeGroup>

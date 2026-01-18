@@ -1,0 +1,36 @@
+---
+title: 'E104'
+---
+
+# Cannot Access Properties on This Type
+
+## Erroneous Code Example
+
+This error occurs when you try to access properties on a type that doesn't support property access.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getValue(x: I32) =>
+    result <- x::{value}
+    RETURN result
+```
+</CodeGroup>
+
+## Solution
+
+Ensure you are accessing properties on a node, edge, or vector type that has defined fields, not on primitive types.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+    result <- user::{name}
+    RETURN result
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+```
+</CodeGroup>

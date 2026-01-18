@@ -1,0 +1,41 @@
+---
+title: 'E201'
+---
+
+# Item Type Not in Schema
+
+## Erroneous Code Example
+
+This error occurs when you reference an item type in a query that is not defined in your schema.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getProduct(id: ID) =>
+    product <- N<Product>(id)
+    RETURN product
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+// Product is not defined
+```
+</CodeGroup>
+
+## Solution
+
+Define the item type in your schema before using it in queries.
+
+<CodeGroup>
+```rust schema.hx
+N::User {
+    name: String,
+}
+
+N::Product {
+    name: String,
+    price: F64,
+}
+```
+</CodeGroup>

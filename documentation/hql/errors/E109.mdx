@@ -1,0 +1,32 @@
+---
+title: 'E109'
+---
+
+# Duplicate Field Name in Schema
+
+## Erroneous Code Example
+
+This error occurs when you define the same field name more than once within a single node, edge, or vector type.
+
+<CodeGroup>
+```rust schema.hx
+N::User {
+    name: String,
+    age: U32,
+    name: String,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Remove the duplicate field or rename one of them.
+
+<CodeGroup>
+```rust schema.hx
+N::User {
+    name: String,
+    age: U32,
+}
+```
+</CodeGroup>

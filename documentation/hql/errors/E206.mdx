@@ -1,0 +1,41 @@
+---
+title: 'E206'
+---
+
+# Invalid Value Type
+
+## Erroneous Code Example
+
+This error occurs when you provide a value that is not a valid literal or identifier.
+
+<CodeGroup>
+```rust queries.hx
+QUERY createUser() =>
+    user <- N<User>::INSERT { name: }
+    RETURN user
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Use a literal value or a valid identifier.
+
+<CodeGroup>
+```rust queries.hx
+QUERY createUser(userName: String) =>
+    user <- N<User>::INSERT { name: userName }
+    RETURN user
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+```
+</CodeGroup>

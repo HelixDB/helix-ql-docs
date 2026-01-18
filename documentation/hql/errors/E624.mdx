@@ -1,0 +1,61 @@
+---
+title: 'E624'
+---
+
+# Edge Type Does Not Have a Node Type as Its To Source
+
+## Erroneous Code Example
+
+This error occurs when you try to use an edge in a context that requires the `To` type to be a node, but the edge's `To` type is not a node.
+
+<CodeGroup>
+```rust queries.hx
+QUERY getConnections(id: ID) =>
+    user <- N<User>(id)
+    connections <- user->LinksTo
+    RETURN connections
+```
+
+```rust schema.hx
+N::User {
+    name: String,
+}
+
+V<128>::Document {
+    title: String,
+}
+
+E::LinksTo {
+    From: User,
+    To: Document,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Ensure the edge type has a node type as its `To` source, or use the appropriate traversal for vector types.
+
+<CodeGroup>
+```rust schema.hx
+N::User {
+    name: String,
+}
+
+N::Post {
+    content: String,
+}
+
+E::Authored {
+    From: User,
+    To: Post,
+}
+```
+
+```rust queries.hx
+QUERY getPosts(id: ID) =>
+    user <- N<User>(id)
+    posts <- user->Authored
+    RETURN posts
+```
+</CodeGroup>
