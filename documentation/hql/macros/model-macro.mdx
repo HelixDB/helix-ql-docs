@@ -16,7 +16,7 @@ QUERY QueryName(param: Type) =>
 ```
 
 <Note>
-The `#[model]` macro overrides the default embedding model configured in your `config.hx.json` file for that specific query.
+The `#[model]` macro overrides the default embedding model configured in your `helix.toml` file for that specific query.
 </Note>
 
 ---
@@ -25,11 +25,9 @@ The `#[model]` macro overrides the default embedding model configured in your `c
 
 The model string follows the format `"provider:model-name:task-type"`:
 
-| Component | Description |
-|-----------|-------------|
-| `provider` | The embedding service provider |
-| `model-name` | The specific model identifier |
-| `task-type` | Task optimization hint | 
+- `provider`  The embedding service provider 
+- `model-name`  The specific model identifier 
+- `task-type`  Task optimization hint 
 
 #### Supported models
 
