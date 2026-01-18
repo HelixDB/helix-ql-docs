@@ -1,0 +1,327 @@
+---
+title: "Model Macro"
+description: "Configure embedding models per-query using the #[model] macro for optimized vector operations."
+sidebarTitle: "Model"
+---
+
+## Usage
+
+The `#[model]` macro specifies which embedding model to use for `Embed()` calls within a query. This allows you to optimize embeddings for different use cases—such as storing documents versus searching them.
+
+```rust
+#[model("provider:model-name:task-type")]
+QUERY QueryName(param: Type) =>
+    result <- AddV<Type>(Embed(param), {properties})
+    RETURN result
+```
+
+<Note>
+The `#[model]` macro overrides the default embedding model configured in your `config.hx.json` file for that specific query.
+</Note>
+
+---
+
+## Syntax Reference
+
+The model string follows the format `"provider:model-name:task-type"`:
+
+| Component | Description |
+|-----------|-------------|
+| `provider` | The embedding service provider |
+| `model-name` | The specific model identifier |
+| `task-type` | Task optimization hint | 
+
+#### Supported models
+
+| Provider | Model                     | Task Type                                  | Notes                                                           |
+|----------|---------------------------|--------------------------------------------|-----------------------------------------------------------------|
+| `gemini` | `gemini-embedding-001`    | `RETRIEVAL_DOCUMENT` OR `RETRIEVAL_QUERY`    | `RETRIEVAL_DOCUMENT` is the default if no task type is included |
+| `openai` | `text-embedding-ada-002`  | Not Supported                              | Not recommended                                                 |
+| `openai` | `text-embedding-small`    | Not Supported                              |                                                                 |
+| `openai` | `text-embedding-large`    | Not Supported                              |                                                                 |
+
+---
+
+## Why use different models for storage vs. search?
+
+Many embedding providers offer task-specific optimizations. For example, Gemini's embedding models support task types that hint whether the text being embedded is a document (to be stored and searched) or a query (used to search documents).
+
+- **`RETRIEVAL_DOCUMENT`** - Optimized for embedding documents that will be stored and retrieved later
+- **`RETRIEVAL_QUERY`** - Optimized for embedding search queries that find relevant documents
+
+Using the appropriate task type can improve search relevance and retrieval quality.
+
+<Warning>
+All vectors in a vector type must have the same dimensions. When using different task types, ensure both use the same model (e.g., `gemini-embedding-001`) so the dimensions match.
+</Warning>
+
+---
+
+## Example: Document Storage vs. Search
+
+This example shows how to use different task types for storing clinical notes versus searching them.
+
+<CodeGroup>
+
+```rust Query focus={1,5}
+#[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
+QUERY addClinicalNote (text: String) =>
+    note <- AddV<ClinicalNote>(Embed(text), {text: text})
+    RETURN note
+
+#[model("gemini:gemini-embedding-001:RETRIEVAL_QUERY")]
+QUERY searchClinicalNotes (query: String, k: I64) =>
+    notes <- SearchV<ClinicalNote>(Embed(query), k)
+    RETURN notes
+```
+
+```rust Schema
+V::ClinicalNote {
+    vector: [F64],
+    text: String
+}
+```
+
+```.env Environment Variables (.env)
+GEMINI_API_KEY=your_api_key
+```
+</CodeGroup>
+
+Here's how to run the queries using the SDKs or curl:
+
+<CodeGroup>
+
+```python Python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# Store clinical notes with RETRIEVAL_DOCUMENT optimization
+notes = [
+    "Patient presents with acute lower back pain radiating to left leg.",
+    "Follow-up visit: Blood pressure 120/80, heart rate normal.",
+    "MRI results show mild disc herniation at L4-L5 level."
+]
+
+for note in notes:
+    client.query("addClinicalNote", {"text": note})
+
+# Search with RETRIEVAL_QUERY optimization
+results = client.query("searchClinicalNotes", {
+    "query": "back pain symptoms",
+    "k": 5
+})
+
+print(results)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // Store clinical notes with RETRIEVAL_DOCUMENT optimization
+    let notes = vec![
+        "Patient presents with acute lower back pain radiating to left leg.",
+        "Follow-up visit: Blood pressure 120/80, heart rate normal.",
+        "MRI results show mild disc herniation at L4-L5 level."
+    ];
+
+    for note in &notes {
+        let _inserted: serde_json::Value = client.query("addClinicalNote", &json!({
+            "text": note
+        })).await?;
+    }
+
+    // Search with RETRIEVAL_QUERY optimization
+    let results: serde_json::Value = client.query("searchClinicalNotes", &json!({
+        "query": "back pain symptoms",
+        "k": 5
+    })).await?;
+
+    println!("Search results: {results:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // Store clinical notes with RETRIEVAL_DOCUMENT optimization
+    notes := []string{
+        "Patient presents with acute lower back pain radiating to left leg.",
+        "Follow-up visit: Blood pressure 120/80, heart rate normal.",
+        "MRI results show mild disc herniation at L4-L5 level.",
+    }
+
+    for _, note := range notes {
+        payload := map[string]any{"text": note}
+
+        var inserted map[string]any
+        if err := client.Query("addClinicalNote", helix.WithData(payload)).Scan(&inserted); err != nil {
+            log.Fatalf("addClinicalNote failed: %s", err)
+        }
+    }
+
+    // Search with RETRIEVAL_QUERY optimization
+    searchPayload := map[string]any{
+        "query": "back pain symptoms",
+        "k":     int64(5),
+    }
+
+    var results map[string]any
+    if err := client.Query("searchClinicalNotes", helix.WithData(searchPayload)).Scan(&results); err != nil {
+        log.Fatalf("searchClinicalNotes failed: %s", err)
+    }
+
+    fmt.Printf("Search results: %#v\n", results)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // Store clinical notes with RETRIEVAL_DOCUMENT optimization
+    const notes = [
+        "Patient presents with acute lower back pain radiating to left leg.",
+        "Follow-up visit: Blood pressure 120/80, heart rate normal.",
+        "MRI results show mild disc herniation at L4-L5 level."
+    ];
+
+    for (const note of notes) {
+        await client.query("addClinicalNote", { text: note });
+    }
+
+    // Search with RETRIEVAL_QUERY optimization
+    const results = await client.query("searchClinicalNotes", {
+        query: "back pain symptoms",
+        k: 5
+    });
+
+    console.log("Search results:", results);
+}
+
+main().catch((err) => {
+    console.error("Query failed:", err);
+});
+```
+
+```bash Curl
+# Store clinical notes
+curl -X POST \
+  http://localhost:6969/addClinicalNote \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"Patient presents with acute lower back pain radiating to left leg."}'
+
+curl -X POST \
+  http://localhost:6969/addClinicalNote \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"Follow-up visit: Blood pressure 120/80, heart rate normal."}'
+
+curl -X POST \
+  http://localhost:6969/addClinicalNote \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"MRI results show mild disc herniation at L4-L5 level."}'
+
+# Search clinical notes
+curl -X POST \
+  http://localhost:6969/searchClinicalNotes \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"back pain symptoms","k":5}'
+```
+</CodeGroup>
+
+<Warning>
+Make sure to set your `GEMINI_API_KEY` environment variable (or `OPENAI_API_KEY` for OpenAI models) in the same location as your `queries.hx`, `schema.hx`, and `config.hx.json` files.
+</Warning>
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use consistent models for the same vector type">
+    Always use the same embedding model for all queries that operate on the same vector type. Different models produce vectors with different dimensions, which will cause errors.
+
+    ```rust
+    // Good - same model, different task types
+    #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
+    QUERY storeDoc (text: String) => ...
+
+    #[model("gemini:gemini-embedding-001:RETRIEVAL_QUERY")]
+    QUERY searchDocs (query: String, k: I64) => ...
+
+    // Bad - different models for same vector type
+    #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
+    QUERY storeDoc (text: String) => ...
+
+    #[model("openai:text-embedding-3-small")]
+    QUERY searchDocs (query: String, k: I64) => ...
+    ```
+  </Accordion>
+
+  <Accordion title="Match task types to operations">
+    Use `RETRIEVAL_DOCUMENT` for operations that store data and `RETRIEVAL_QUERY` for operations that search data.
+
+    ```rust
+    // Storing documents
+    #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
+    QUERY addDocument (content: String) =>
+        doc <- AddV<Document>(Embed(content), {content: content})
+        RETURN doc
+
+    // Searching documents
+    #[model("gemini:gemini-embedding-001:RETRIEVAL_QUERY")]
+    QUERY findDocuments (query: String, limit: I64) =>
+        docs <- SearchV<Document>(Embed(query), limit)
+        RETURN docs
+    ```
+  </Accordion>
+
+  <Accordion title="Consider using the default model for simple cases">
+    If you don't need task-specific optimization, you can skip the `#[model]` macro and use the default model from your `config.hx.json`.
+
+    ```rust
+    // Uses default model from config.hx.json
+    QUERY simpleSearch (text: String, k: I64) =>
+        results <- SearchV<Document>(Embed(text), k)
+        RETURN results
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Embedding Vectors" href="/documentation/hql/vectors/embedding" icon="link">
+    Learn how to use the Embed function for automatic text embedding
+  </Card>
+  <Card title="Vector Search" href="/documentation/hql/vectors/searching" icon="magnifying-glass">
+    Perform similarity search on vector data
+  </Card>
+  <Card title="MCP Macro" href="/documentation/hql/macros/mcp-macro" icon="wand-magic-sparkles">
+    Expose queries as MCP endpoints for AI agents
+  </Card>
+  <Card title="AddV" href="/documentation/hql/create/addV" icon="plus">
+    Create new vector entries with embeddings
+  </Card>
+</CardGroup>

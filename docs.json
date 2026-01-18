@@ -233,7 +233,8 @@
                 "icon": "wand-magic-sparkles",
                 "expanded": false,
                 "pages": [
-                  "documentation/hql/macros/mcp-macro"
+                  "documentation/hql/macros/mcp-macro",
+                  "documentation/hql/macros/model-macro"
                 ]
               }
             ]
