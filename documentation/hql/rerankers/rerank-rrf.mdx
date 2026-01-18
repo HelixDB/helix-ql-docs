@@ -8,7 +8,7 @@ description: "Combine multiple ranked lists using Reciprocal Rank Fusion."
 RerankRRF is a powerful technique for combining multiple ranked lists without requiring score calibration. It's particularly effective for hybrid search scenarios where you want to merge results from different search methods like vector search and BM25 keyword search.
 
 ```rust
-::RerankRRF()           // Uses default k=60
+::RerankRRF             // Uses default k=60
 ::RerankRRF(k: 60)      // Custom k parameter
 ```
 
@@ -63,7 +63,7 @@ Start with the default value of 60 and adjust based on your specific data distri
 ```rust Query focus={1-4}
 QUERY SearchDocuments(query_vec: [F64]) =>
     results <- SearchV<Document>(query_vec, 100)
-        ::RerankRRF()
+        ::RerankRRF
         ::RANGE(0, 10)
     RETURN results
 
@@ -608,10 +608,10 @@ Always fetch more results than you ultimately need to give RRF sufficient candid
 
 ```rust
 // Good: Fetch 100, return 10
-SearchV<Document>(vec, 100)::RerankRRF()::RANGE(0, 10)
+SearchV<Document>(vec, 100)::RerankRRF::RANGE(0, 10)
 
 // Not ideal: Fetch 10, return 10
-SearchV<Document>(vec, 10)::RerankRRF()::RANGE(0, 10)
+SearchV<Document>(vec, 10)::RerankRRF::RANGE(0, 10)
 ```
 
 ### Parameter Tuning
@@ -630,7 +630,7 @@ RRF works well with filtering and other result operations:
 QUERY AdvancedSearch(query_vec: [F64], min_score: F64) =>
     results <- SearchV<Document>(query_vec, 200)
         ::WHERE(_.distance::GT(min_score))  // Filter first
-        ::RerankRRF()                        // Then rerank
+        ::RerankRRF                          // Then rerank
         ::RANGE(0, 20)                       // Finally limit
     RETURN results
 ```
@@ -658,7 +658,7 @@ SearchV<Product>(query_embedding, 100)::RerankRRF(k: 50)::RANGE(0, 20)
 Merge semantic search with keyword matching for comprehensive document retrieval:
 
 ```rust
-SearchV<Document>(semantic_vec, 150)::RerankRRF()::RANGE(0, 10)
+SearchV<Document>(semantic_vec, 150)::RerankRRF::RANGE(0, 10)
 ```
 
 ### Content Recommendation

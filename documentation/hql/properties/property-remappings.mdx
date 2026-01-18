@@ -26,7 +26,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 QUERY GetUserWithAlias () =>
     users <- N<User>::RANGE(0, 5)
     RETURN users::{
-        userID: ID,
+        userID: ::ID,
         displayName: name
     }
 

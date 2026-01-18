@@ -40,7 +40,7 @@ V::Document {}
 ```
 </CodeGroup>
 
-Heres how to run the query using the SDKs or curl
+Here's how to run the query using the SDKs or curl
 
 <CodeGroup>
 ```python Python
@@ -128,7 +128,7 @@ curl -X POST \
 
 ### Example 2: Creating a vector with properties
 <CodeGroup>
-```rust Query focus={2 }
+```rust Query focus={2}
 QUERY InsertVector (vector: [F64], content: String, created_at: Date) =>
     vector_node <- AddV<Document>(vector, { content: content, created_at: created_at })
     RETURN vector_node
@@ -142,7 +142,7 @@ V::Document {
 ```
 </CodeGroup>
 
-Heres how to run the query using the SDKs or curl
+Here's how to run the query using the SDKs or curl
 
 <CodeGroup>
 
@@ -276,7 +276,7 @@ E::User_to_Document_Embedding {
 ```
 </CodeGroup>
 
-Heres how to run the query using the SDKs or curl
+Here's how to run the query using the SDKs or curl
 
 <CodeGroup>
 
@@ -444,7 +444,7 @@ OPENAI_API_KEY=your_api_key
 ```
 </CodeGroup>
 
-Heres how to run the query using the SDKs or curl
+Here's how to run the query using the SDKs or curl
 <CodeGroup>
 ```python Python [expandable]
 from datetime import datetime, timezone

@@ -231,7 +231,7 @@ QUERY createUser(name: String, age: U32, email: String) =>
     RETURN user
 ```
 
-```typescript Python
+```python Python
 client.query("createUser", {"name": "John", "age": 30, "email": "john@example.com"})
 ```
 
@@ -251,7 +251,7 @@ QUERY createFollow(follower_id: ID, followed_id: ID) =>
     RETURN "success"
 ```
 
-```typescript Python
+```python Python
 client.query("createFollow", {"follower_id": "<follower_id>", "followed_id": "<followed_id>"})
 ```
 
@@ -271,7 +271,7 @@ QUERY createPost(user_id: ID, content: String) =>
     RETURN post
 ```
 
-```typescript Python
+```python Python
 client.query("createPost", {"user_id": "<user_id>", "content": "<content>"})
 ```
 
@@ -291,7 +291,7 @@ QUERY getUsers() =>
     RETURN users
 ```
 
-```typescript Python
+```python Python
 client.query("getUsers")
 ```
 
@@ -309,7 +309,7 @@ QUERY getPosts() =>
     RETURN posts
 ```
 
-```typescript Python
+```python Python
 client.query("getPosts")
 ```
 
@@ -327,7 +327,7 @@ QUERY getPostsByUser(user_id: ID) =>
     RETURN posts
 ```
 
-```typescript Python
+```python Python
 client.query("getPostsByUser", {"user_id": "<user_id>"})
 ```
 
@@ -345,7 +345,7 @@ QUERY getFollowedUsers(user_id: ID) =>
     RETURN followed
 ```
 
-```typescript Python
+```python Python
 client.query("getFollowedUsers", {"user_id": "<user_id>"})
 ```
 
@@ -369,7 +369,7 @@ QUERY getFollowedUsersPosts(user_id: ID) =>
     }
 ```
 
-```typescript Python
+```python Python
 client.query("getFollowedUsersPosts", {"user_id": "<user_id>"})
 ```
 

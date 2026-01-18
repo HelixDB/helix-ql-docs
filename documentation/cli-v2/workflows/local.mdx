@@ -39,7 +39,7 @@ This guide walks through common workflows and best practices for developing with
     Edit `db/queries.hx`:
     ```js
     QUERY createUser(name: String, email: String) =>
-      user <- AddN<User({
+      user <- AddN<User>({
         name: name,
         email: email,
       })

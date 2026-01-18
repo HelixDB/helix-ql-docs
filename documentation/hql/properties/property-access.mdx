@@ -3,7 +3,7 @@ title: "Property Access"
 description: "Access specific properties of nodes, edges, and vectors using property selection syntax."
 ---
 
-## Select specific properties with `::{}` &nbsp;
+## Select specific properties with `::{}`
 
 Access properties of an item by using the property names as defined in the schema.
 
@@ -359,7 +359,7 @@ curl -X POST \
 
 ---
 
-## Access unique identifiers with `::ID` &nbsp;
+## Access unique identifiers with `::ID`
 
 Access the unique identifier of any node, edge, or vector.
 
@@ -537,7 +537,7 @@ curl -X POST \
 
 ---
 
-## Include all properties with `..` &nbsp;
+## Include all properties with `..`
 
 Use the spread operator to include all properties while optionally remapping specific fields.
 
@@ -559,7 +559,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 QUERY GetUsersWithAlias () =>
     users <- N<User>::RANGE(0, 5)
     RETURN users::{
-        userID: ID,
+        userID: ::ID,
         ..
     }
 

@@ -27,7 +27,7 @@ Vector data is **required** for `UpsertV`. You can provide vector data as:
 
 <CodeGroup>
 ```rust Query focus={2}
-QUERY UpsertDoc(vector: [F32], content: String) =>
+QUERY UpsertDoc(vector: [F64], content: String) =>
     doc <- UpsertV<Document>(vector, {content: content})
     RETURN doc
 ```

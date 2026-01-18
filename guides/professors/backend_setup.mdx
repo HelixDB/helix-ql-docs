@@ -57,14 +57,14 @@ professor_data = {
 ### Create Professor Node
 ```python
 james_node =db.query("create_professor", {"name": professor_data["name"], "bio": professor_data["bio"]})
-// store the ID of the professor node
+# store the ID of the professor node
 james_node_id = james_node[0]['professor']["id"]
 ```
 
 ### Create Department Node
 ```python
 computer_science_node = db.query("create_department", {"name": professor_data["department"]})
-// store the ID of the department node
+# store the ID of the department node
 computer_science_node_id = computer_science_node[0]['department']["id"]
 ```
 
@@ -72,7 +72,7 @@ computer_science_node_id = computer_science_node[0]['department']["id"]
 
 ```python
 university_node = db.query("create_university", {"name": professor_data["university"]})
-// store the ID of the university node
+# store the ID of the university node
 university_node_id = university_node[0]['university']["id"]
 ```
 

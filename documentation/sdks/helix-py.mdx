@@ -134,7 +134,7 @@ from helix.providers.openai_client import OpenAIProvider
 openai_llm = OpenAIProvider(
     name="openai-llm",
     instructions="You are a helpful assistant.",
-    model="gpt-5-nano",
+    model="gpt-4o-mini",
     history=True
 )
 print(openai_llm.generate("Hello!"))

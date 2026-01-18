@@ -1,6 +1,6 @@
 ---
 title: 'HelixDB MCP'
-description: 'Getting start with connecting HelixDB with LLMs via an MCP connection.'
+description: 'Getting started with connecting HelixDB with LLMs via an MCP connection.'
 icon: 'rocket-launch'
 ---
 
@@ -43,7 +43,7 @@ from helix.embedding.openai_client import OpenAIEmbedder
 embedder = OpenAIEmbedder()
 mcp = MCPServer("helix-mcp", client, embedder=embedder)
 ```
-For more information about the embedder, see our [Helix Embedders](/documentation/sdks/helix-py#embedders) guide.
+For more information about the embedder, see our [Helix Embedders](/documentation/sdks/helix-py#how-do-i-generate-embeddings-with-helixdb) guide.
 
 ## MCP Tools
 - **Session**: `init`, `next`, `collect`, `reset`
@@ -76,14 +76,14 @@ mcp.add_tool(FunctionTool.from_function(get_user_name))
 **OpenAI**:
 ```python
 from helix.providers.openai_client import OpenAIProvider
-llm = OpenAIProvider(name="openai-llm", instructions="You are helpful...", model="gpt-5-nano", history=True)
+llm = OpenAIProvider(name="openai-llm", instructions="You are helpful...", model="gpt-4o-mini", history=True)
 llm.enable_mcps("helix-mcp") # defaults to http://localhost:8000/mcp/
 ```
 
 **Gemini**:
 ```python
 from helix.providers.gemini_client import GeminiProvider
-llm = GeminiProvider(model="gemini-2.5-flash", history=True)
+llm = GeminiProvider(model="gemini-2.0-flash", history=True)
 llm.enable_mcps("helix-mcp") # defaults to http://localhost:8000/mcp/
 ```
 
@@ -95,7 +95,7 @@ llm.enable_mcps("helix-mcp", url="https://your-remote-mcp.example.com/mcp/")
 ```
 <Warning>Anthropic does not support local MCP servers with streamable-http. You must use a URL-based MCP server.</Warning>
 
-For more information about LLM providers, see our [Helix LLM Providers](/documentation/sdks/helix-py#providers) guide.
+For more information about LLM providers, see our [Helix LLM Providers](/documentation/sdks/helix-py#how-do-i-use-llm-providers-with-helixdb) guide.
 
 ## Usage
 1) Get the server script in the directory you want to run the MCP server:

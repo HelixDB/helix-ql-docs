@@ -49,7 +49,7 @@ RRF Usage:
 ```rust focus=3
 QUERY SearchDocuments(query_vec: [F64]) =>
     results <- SearchV<Document>(query_vec, 100)
-        ::RerankRRF             // Apply reranking
+        ::RerankRRF           // Apply reranking
         ::RANGE(0, 10)          // Get top 10 results
     RETURN results
 ```

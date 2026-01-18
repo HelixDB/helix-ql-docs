@@ -756,7 +756,7 @@ QUERY deleteCity (city_id: ID) =>
 		RETURN "success"
 		
 QUERY deleteCapital (country_id: ID) =>
-		DROP N<Country<(country_id)::Out<Country_to_Capital>
+		DROP N<Country>(country_id)::Out<Country_to_Capital>
 		RETURN "success"
 
 QUERY deleteCountry (country_id: ID) =>
@@ -836,7 +836,7 @@ If you have any questions or feedback, please feel free to reach out to us!
 Going from local testing to production? [Helix Cloud](../helix-cloud/overview) makes it effortless. We handle servers, scaling, and maintenance so you can focus on building your application.
 
 **Explore Use Cases**       
-Ready to dive deeper? Check out our [guides and tutorials](/guides/overview) for real-wold use cases and advanced scenarios.
+Ready to dive deeper? Check out our [guides and tutorials](/guides/overview) for real-world use cases and advanced scenarios.
 
 **Learn the Language**      
 Get to know [HelixQL](../documentation/hql/hql), our fast, efficient query language built for traversing and manipulating graph and vector data.
