@@ -8,13 +8,11 @@ description: "Learn how to upsert nodes in your graph using UpsertN for insert-o
 Create new nodes or update existing ones with insert-or-update semantics.
 
 ```rust
-UpsertN<Type>
-UpsertN<Type>()
-UpsertN<Type>({properties})
+::UpsertN({properties})
 ```
 
 <Info>
-`UpsertN` differs from `AddN` in that it will update an existing node if one is found in the traversal context, rather than always creating a new one. If no existing node is found, it creates a new node just like `AddN`.
+`UpsertN` is a traversal step that operates on an existing traversal context. The type comes from the preceding traversal (`N<Type>`), not from the upsert call itself. If the traversal returns existing nodes, they are updated; if no nodes are found, a new node is created.
 </Info>
 
 <Warning>
@@ -24,15 +22,16 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Basic node upsert with properties
 
 <CodeGroup>
-```rust Query focus={2}
+```rust Query focus={2-3}
 QUERY UpsertPerson(name: String, age: U32) =>
-    person <- UpsertN<Person>({name: name, age: age})
+    existing <- N<Person>::WHERE(_::{name}::EQ(name))
+    person <- existing::UpsertN({name: name, age: age})
     RETURN person
 ```
 
 ```rust Schema
 N::Person {
-    name: String,
+    INDEX name: String,
     age: U32,
 }
 ```
@@ -173,18 +172,21 @@ curl -X POST \
 </CodeGroup>
 
 
-### Example 2: Upsert an empty node
+### Example 2: Upsert from a pre-fetched node by ID
+
+When you already have a node ID, you can fetch it directly and apply the upsert.
 
 <CodeGroup>
-```rust Query focus={2}
-QUERY UpsertPersonEmpty() =>
-    person <- UpsertN<Person>()
+```rust Query focus={2-3}
+QUERY UpsertPersonById(id: ID, new_age: U32) =>
+    existing <- N<Person>(id)
+    person <- existing::UpsertN({age: new_age})
     RETURN person
 ```
 
 ```rust Schema
 N::Person {
-    name: String,
+    INDEX name: String,
     age: U32,
 }
 ```
@@ -197,7 +199,11 @@ Here's how to run the query using the SDKs or curl
 from helix.client import Client
 
 client = Client(local=True, port=6969)
-print(client.query("UpsertPersonEmpty"))
+result = client.query("UpsertPersonById", {
+    "id": "<person_id>",
+    "new_age": 30,
+})
+print("Upserted person:", result)
 ```
 
 ```rust Rust [expandable]
@@ -208,8 +214,11 @@ use serde_json::json;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
 
-    let result: serde_json::Value = client.query("UpsertPersonEmpty", &json!({})).await?;
-    println!("Upserted empty person: {result:#?}");
+    let result: serde_json::Value = client.query("UpsertPersonById", &json!({
+        "id": "<person_id>",
+        "new_age": 30,
+    })).await?;
+    println!("Upserted person: {result:#?}");
 
     Ok(())
 }
@@ -228,12 +237,17 @@ import (
 func main() {
     client := helix.NewClient("http://localhost:6969")
 
-    var result map[string]any
-    if err := client.Query("UpsertPersonEmpty").Scan(&result); err != nil {
-        log.Fatalf("UpsertPersonEmpty failed: %s", err)
+    payload := map[string]any{
+        "id":      "<person_id>",
+        "new_age": uint32(30),
     }
 
-    fmt.Printf("Upserted empty person: %#v\n", result)
+    var result map[string]any
+    if err := client.Query("UpsertPersonById", helix.WithData(payload)).Scan(&result); err != nil {
+        log.Fatalf("UpsertPersonById failed: %s", err)
+    }
+
+    fmt.Printf("Upserted person: %#v\n", result)
 }
 ```
 
@@ -243,40 +257,42 @@ import HelixDB from "helix-ts";
 async function main() {
     const client = new HelixDB("http://localhost:6969");
 
-    const result = await client.query("UpsertPersonEmpty", {});
-    console.log("Upserted empty person:", result);
+    const result = await client.query("UpsertPersonById", {
+        id: "<person_id>",
+        new_age: 30,
+    });
+    console.log("Upserted person:", result);
 }
 
 main().catch((err) => {
-    console.error("UpsertPersonEmpty query failed:", err);
+    console.error("UpsertPersonById query failed:", err);
 });
 ```
 
 ```bash Curl
 curl -X POST \
-  http://localhost:6969/UpsertPersonEmpty \
+  http://localhost:6969/UpsertPersonById \
   -H 'Content-Type: application/json' \
-  -d '{}'
+  -d '{"id":"<person_id>","new_age":30}'
 ```
 </CodeGroup>
 
 
-### Example 3: Upsert with traversal context
+### Example 3: Upsert with WHERE filter
 
-When used after a traversal that returns existing nodes, `UpsertN` will update those nodes rather than creating new ones.
+Find existing nodes with a WHERE clause and update or create if not found.
 
 <CodeGroup>
-```rust Query focus={2-5}
+```rust Query focus={2-4}
 QUERY UpdateOrCreatePerson(name: String, new_age: U32) =>
-    // Find existing person or create new one with the given properties
     existing <- N<Person>::WHERE(_::{name}::EQ(name))
-    person <- existing::UpsertN<Person>({name: name, age: new_age})
+    person <- existing::UpsertN({name: name, age: new_age})
     RETURN person
 ```
 
 ```rust Schema
 N::Person {
-    name: String,
+    INDEX name: String,
     age: U32,
 }
 ```
@@ -382,7 +398,7 @@ curl -X POST \
 |-----------|----------|
 | `AddN` | Always creates a new node |
 | `UPDATE` | Only modifies existing nodes (fails if node doesn't exist) |
-| `UpsertN` | Creates if not exists, updates if exists |
+| `UpsertN` | Operates on traversal context: updates if nodes found, creates if empty |
 
 <Tip>
 When updating, `UpsertN` merges properties: it updates specified properties while preserving any existing properties that aren't included in the upsert.

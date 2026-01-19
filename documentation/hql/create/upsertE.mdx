@@ -8,27 +8,27 @@ description: "Learn how to upsert edges in your graph using UpsertE for insert-o
 Create new edges or update existing ones with insert-or-update semantics.
 
 ```rust
-UpsertE<Type>::From(node1)::To(node2)
-UpsertE<Type>({properties})::From(node1)::To(node2)
+UpsertE({properties})::From(node1)::To(node2)
 ```
 
 <Info>
-`UpsertE` differs from `AddE` in that it will update an existing edge if one is found between the specified nodes, rather than always creating a new one. If no existing edge is found, it creates a new edge just like `AddE`.
+`UpsertE` is a traversal step that operates on an existing traversal context. The type comes from the preceding traversal (`E<Type>`), not from the upsert call itself. If an edge already exists between the specified nodes, it is updated; if no edge is found, a new edge is created.
 </Info>
 
 <Warning>
-Edge connections (`::From()` and `::To()`) are **required** for `UpsertE`. The order of `From` and `To` is flexible.
+Edge connections (`::From()` and `::To()`) are **required** for `UpsertE`. The order of `From` and `To` is flexible. Properties are also required.
 </Warning>
 
-### Example 1: Basic edge upsert without properties
+### Example 1: Basic edge upsert with properties
 
 <CodeGroup>
-```rust Query focus={1-5}
-QUERY UpsertFriendship(id1: ID, id2: ID) =>
+```rust Query focus={1-6}
+QUERY UpsertFriendship(id1: ID, id2: ID, since: String) =>
     person1 <- N<Person>(id1)
     person2 <- N<Person>(id2)
-    UpsertE<Knows>::From(person1)::To(person2)
-    RETURN "done"
+    existing <- E<Knows>
+    edge <- existing::UpsertE({since: since})::From(person1)::To(person2)
+    RETURN edge
 
 QUERY CreatePerson(name: String, age: U32) =>
     person <- AddN<Person>({name: name, age: age})
@@ -37,13 +37,16 @@ QUERY CreatePerson(name: String, age: U32) =>
 
 ```rust Schema
 N::Person {
-    name: String,
+    INDEX name: String,
     age: U32,
 }
 
 E::Knows {
     From: Person,
     To: Person,
+    Properties: {
+        since: String,
+    }
 }
 ```
 </CodeGroup>
@@ -71,6 +74,7 @@ bob = client.query("CreatePerson", {
 result = client.query("UpsertFriendship", {
     "id1": alice["id"],
     "id2": bob["id"],
+    "since": "2024-01-15",
 })
 
 print("Created edge:", result)
@@ -79,6 +83,7 @@ print("Created edge:", result)
 result = client.query("UpsertFriendship", {
     "id1": alice["id"],
     "id2": bob["id"],
+    "since": "2024-06-20",
 })
 
 print("Upserted edge:", result)
@@ -109,6 +114,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result: serde_json::Value = client.query("UpsertFriendship", &json!({
         "id1": alice_id,
         "id2": bob_id,
+        "since": "2024-01-15",
     })).await?;
 
     println!("Created edge: {result:#?}");
@@ -117,6 +123,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result: serde_json::Value = client.query("UpsertFriendship", &json!({
         "id1": alice_id,
         "id2": bob_id,
+        "since": "2024-06-20",
     })).await?;
 
     println!("Upserted edge: {result:#?}");
@@ -160,8 +167,9 @@ func main() {
     // First call creates the edge
     var result map[string]any
     if err := client.Query("UpsertFriendship", helix.WithData(map[string]any{
-        "id1": aliceID,
-        "id2": bobID,
+        "id1":   aliceID,
+        "id2":   bobID,
+        "since": "2024-01-15",
     })).Scan(&result); err != nil {
         log.Fatalf("UpsertFriendship failed: %s", err)
     }
@@ -170,8 +178,9 @@ func main() {
 
     // Subsequent calls update the existing edge
     if err := client.Query("UpsertFriendship", helix.WithData(map[string]any{
-        "id1": aliceID,
-        "id2": bobID,
+        "id1":   aliceID,
+        "id2":   bobID,
+        "since": "2024-06-20",
     })).Scan(&result); err != nil {
         log.Fatalf("UpsertFriendship failed: %s", err)
     }
@@ -203,6 +212,7 @@ async function main() {
     let result = await client.query("UpsertFriendship", {
         id1: aliceId,
         id2: bobId,
+        since: "2024-01-15",
     });
 
     console.log("Created edge:", result);
@@ -211,6 +221,7 @@ async function main() {
     result = await client.query("UpsertFriendship", {
         id1: aliceId,
         id2: bobId,
+        since: "2024-06-20",
     });
 
     console.log("Upserted edge:", result);
@@ -237,20 +248,21 @@ curl -X POST \
 curl -X POST \
   http://localhost:6969/UpsertFriendship \
   -H 'Content-Type: application/json' \
-  -d '{"id1":"<alice_id>","id2":"<bob_id>"}'
+  -d '{"id1":"<alice_id>","id2":"<bob_id>","since":"2024-01-15"}'
 ```
 </CodeGroup>
 
 
-### Example 2: Upsert edge with properties
+### Example 2: Upsert edge with multiple properties
 
 <CodeGroup>
-```rust Query focus={1-5}
+```rust Query focus={1-6}
 QUERY UpsertFriendshipWithProps(id1: ID, id2: ID, since: String, strength: F32) =>
     person1 <- N<Person>(id1)
     person2 <- N<Person>(id2)
-    UpsertE<Friendship>({since: since, strength: strength})::From(person1)::To(person2)
-    RETURN "done"
+    existing <- E<Friendship>
+    edge <- existing::UpsertE({since: since, strength: strength})::From(person1)::To(person2)
+    RETURN edge
 
 QUERY CreatePerson(name: String, age: U32) =>
     person <- AddN<Person>({name: name, age: age})
@@ -259,7 +271,7 @@ QUERY CreatePerson(name: String, age: U32) =>
 
 ```rust Schema
 N::Person {
-    name: String,
+    INDEX name: String,
     age: U32,
 }
 
@@ -492,23 +504,27 @@ The `::From()` and `::To()` can be specified in either order.
 
 <CodeGroup>
 ```rust Query
-QUERY UpsertEdgeToFrom(id1: ID, id2: ID) =>
+QUERY UpsertEdgeToFrom(id1: ID, id2: ID, since: String) =>
     person1 <- N<Person>(id1)
     person2 <- N<Person>(id2)
+    existing <- E<Knows>
     // To and From can be in either order
-    UpsertE<Knows>::To(person2)::From(person1)
-    RETURN "done"
+    edge <- existing::UpsertE({since: since})::To(person2)::From(person1)
+    RETURN edge
 ```
 
 ```rust Schema
 N::Person {
-    name: String,
+    INDEX name: String,
     age: U32,
 }
 
 E::Knows {
     From: Person,
     To: Person,
+    Properties: {
+        since: String,
+    }
 }
 ```
 </CodeGroup>
@@ -519,7 +535,7 @@ E::Knows {
 | Operation | Behavior |
 |-----------|----------|
 | `AddE` | Always creates a new edge (can create duplicates) |
-| `UpsertE` | Creates if not exists, updates if exists (no duplicates) |
+| `UpsertE` | Operates on traversal context: updates if edge exists between nodes, creates if not |
 
 <Tip>
 When updating, `UpsertE` merges properties: it updates specified properties while preserving any existing properties that aren't included in the upsert.

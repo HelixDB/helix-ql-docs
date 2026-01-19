@@ -330,7 +330,7 @@ helix migrate --no-backup
 1. Use release mode for production only:
    ```toml
    [local.dev]
-   build_mode = "debug"  # Faster builds
+   build_mode = "dev"  # Faster builds
    ```
 
 2. Reduce vector config for development:
@@ -449,21 +449,6 @@ helix migrate --no-backup
 **Cause**: Network or performance issue
 **Solution**: Check network connection and increase timeout settings
 
-## Debug Mode
-
-Enable debug logging for detailed troubleshooting:
-
-```bash
-# Set log level
-export HELIX_LOG_LEVEL=debug
-
-# Run command with debug output
-HELIX_LOG_LEVEL=debug helix push dev
-
-# View detailed Docker logs
-docker logs helix_my-app_dev -f --tail 100
-```
-
 ## Getting Help
 
 If you're still experiencing issues:
@@ -496,5 +481,4 @@ When reporting issues, include:
   - [ ] Review recent changes to `.hx` files
   - [ ] Check file permissions
   - [ ] Try with a fresh project: `helix init` in a new directory
-  - [ ] Enable debug logging: `HELIX_LOG_LEVEL=debug`
 </Accordion>

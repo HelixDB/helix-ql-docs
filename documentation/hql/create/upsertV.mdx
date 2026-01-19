@@ -8,12 +8,11 @@ description: "Learn how to upsert vectors in your graph using UpsertV for insert
 Create new vector embeddings or update existing ones with insert-or-update semantics.
 
 ```rust
-UpsertV<Type>(vector)
-UpsertV<Type>(vector, {properties})
+::UpsertV(vector, {properties})
 ```
 
 <Info>
-`UpsertV` differs from `AddV` in that it will update an existing vector if one is found in the traversal context, rather than always creating a new one. If no existing vector is found, it creates a new vector just like `AddV`.
+`UpsertV` is a traversal step that operates on an existing traversal context. The type comes from the preceding traversal (`V<Type>`), not from the upsert call itself. If the traversal returns existing vectors, they are updated; if no vectors are found, a new vector is created.
 </Info>
 
 <Warning>
@@ -26,9 +25,10 @@ Vector data is **required** for `UpsertV`. You can provide vector data as:
 ### Example 1: Basic vector upsert with properties
 
 <CodeGroup>
-```rust Query focus={2}
+```rust Query focus={2-3}
 QUERY UpsertDoc(vector: [F64], content: String) =>
-    doc <- UpsertV<Document>(vector, {content: content})
+    existing <- V<Document>::WHERE(_::{content}::EQ(content))
+    doc <- existing::UpsertV(vector, {content: content})
     RETURN doc
 ```
 
@@ -183,9 +183,10 @@ All vectors in a vector type must have the same dimensions. If you change your e
 </Warning>
 
 <CodeGroup>
-```rust Query focus={2}
+```rust Query focus={2-3}
 QUERY UpsertDocEmbed(text: String) =>
-    doc <- UpsertV<Document>(Embed(text), {content: text})
+    existing <- V<Document>::WHERE(_::{content}::EQ(text))
+    doc <- existing::UpsertV(Embed(text), {content: text})
     RETURN doc
 ```
 
@@ -293,7 +294,7 @@ curl -X POST \
 ### Example 3: Complex operation with nodes, edges, and vectors
 
 <CodeGroup>
-```rust Query focus={1-8}
+```rust Query focus={1-14}
 QUERY ComplexUpsertOperation(
     person_name: String,
     person_age: U32,
@@ -301,10 +302,14 @@ QUERY ComplexUpsertOperation(
     position: String,
     resume_content: String
 ) =>
-    person <- UpsertN<Person>({name: person_name, age: person_age})
-    company <- UpsertN<Company>({name: company_name})
-    UpsertE<WorksAt>({position: position})::From(person)::To(company)
-    resume <- UpsertV<Resume>(Embed(resume_content), {content: resume_content})
+    existing_person <- N<Person>::WHERE(_::{name}::EQ(person_name))
+    person <- existing_person::UpsertN({name: person_name, age: person_age})
+    existing_company <- N<Company>::WHERE(_::{name}::EQ(company_name))
+    company <- existing_company::UpsertN({name: company_name})
+    existing_edge <- E<WorksAt>
+    edge <- existing_edge::UpsertE({position: position})::From(person)::To(company)
+    existing_resume <- V<Resume>::WHERE(_::{content}::EQ(resume_content))
+    resume <- existing_resume::UpsertV(Embed(resume_content), {content: resume_content})
     RETURN person
 
 QUERY GetPerson(name: String) =>
@@ -314,12 +319,12 @@ QUERY GetPerson(name: String) =>
 
 ```rust Schema
 N::Person {
-    name: String,
+    INDEX name: String,
     age: U32,
 }
 
 N::Company {
-    name: String,
+    INDEX name: String,
 }
 
 V::Resume {
@@ -510,7 +515,7 @@ curl -X POST \
 | Operation | Behavior |
 |-----------|----------|
 | `AddV` | Always creates a new vector |
-| `UpsertV` | Creates if not exists, updates if exists |
+| `UpsertV` | Operates on traversal context: updates if vectors found, creates if empty |
 
 <Tip>
 When updating, `UpsertV` merges properties: it updates specified properties while preserving any existing properties that aren't included in the upsert. The vector data itself is also updated.

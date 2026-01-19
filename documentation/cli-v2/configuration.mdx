@@ -47,7 +47,7 @@ Local instances use Docker for containerized development environments.
 ```toml
 [local.dev]
 port = 6969                  # Port for the instance (default: 6969)
-build_mode = "debug"         # Build mode: debug | release (default: debug)
+build_mode = "dev"         # Build mode: debug | release (default: debug)
 mcp = true                   # Enable MCP support (default: false)
 bm25 = true                  # Enable BM25 search (default: false)
 ```
@@ -69,11 +69,11 @@ You can define multiple local instances for different purposes:
 ```toml
 [local.dev]
 port = 6969
-build_mode = "debug"
+build_mode = "dev"
 
 [local.testing]
 port = 7070
-build_mode = "debug"
+build_mode = "dev"
 
 [local.benchmark]
 port = 8080
@@ -107,7 +107,7 @@ repository_name = "my-helix-app"
 region = "us-east-1"
 registry_url = "123456789.dkr.ecr.us-west-2.amazonaws.com"
 auth_type = "aws_cli"
-build_mode = "debug"
+build_mode = "dev"
 ```
 
 ### Fly.io Configuration
@@ -115,7 +115,7 @@ build_mode = "debug"
 ```toml
 [cloud.production.fly]
 app_name = "my-helix-app"
-build_mode = "debug"        # Fly.io region
+build_mode = "dev"        # Fly.io region
 vm_size = "shared-cpu-4x"   # VM size
 volume_initial_size = 20            # Volume size in GB
 private = false              # Public accessibility
@@ -127,7 +127,7 @@ auth_type = "cli"                # Auth type: cli | api_key
 Build modes control optimization and debugging capabilities:
 
 ```toml
-build_mode = "debug"    # Development with debug symbols
+build_mode = "dev"    # Development with debug symbols
 build_mode = "release"  # Production optimized
 build_mode = "dev"      # For use with the dashboard UI
 ```
