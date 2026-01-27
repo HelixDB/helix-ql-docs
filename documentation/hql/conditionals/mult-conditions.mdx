@@ -1,6 +1,41 @@
 ---
 title: "Multiple Conditional Steps"
-description: "Combine multiple conditions using AND and OR operators for complex filtering logic."
+description: "Combine multiple conditions using AND, OR, and NOT operators for complex filtering logic."
+---
+
+## Negate a condition with `NOT` (`!`) &nbsp;
+
+Negate a condition to match the opposite.
+
+```rust
+::WHERE(!<condition>)
+```
+
+### Example: Filtering users who are NOT active
+<CodeGroup>
+
+```rust Query focus={1-3}
+QUERY GetInactiveUsers () =>
+    users <- N<User>::WHERE(!_::{is_active}::EQ(true))
+    RETURN users
+```
+
+```rust Schema
+N::User {
+    name: String,
+    is_active: Boolean
+}
+```
+</CodeGroup>
+
+The `!` operator can also be combined with `EXISTS` to find elements without certain relationships:
+
+```rust
+QUERY GetUsersWithoutFollowers () =>
+    users <- N<User>::WHERE(!EXISTS(_::In<Follows>))
+    RETURN users
+```
+
 ---
 
 ## Enforce all conditions with `AND` &nbsp;

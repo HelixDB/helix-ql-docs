@@ -7,6 +7,17 @@ icon: "book-open"
 
 HelixQL is a strongly typed, compiled query language for HelixDB that combines the best features of Gremlin, Cypher, and Rust to provide type-safe graph and vector queries.
 
+## Comments
+
+Use `//` for single-line comments in your HQL files:
+
+```rust
+// This is a comment explaining the query
+QUERY GetUser(user_id: ID) =>
+    user <- N<User>(user_id)  // Select the user by ID
+    RETURN user
+```
+
 ## Why use HelixQL instead of other query languages?
 
 HelixQL addresses key limitations found in existing graph query languages:
