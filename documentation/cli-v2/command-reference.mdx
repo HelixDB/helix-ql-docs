@@ -88,7 +88,9 @@ Initialize a new Helix project with configuration and structure.
             </Expandable>
         </ResponseField>
     </Expandable>
-  Note that `helix init` with no arguments defaults to making a local instance called `dev`.
+  <Tip>
+  If no subcommand is specified, `helix init` defaults to creating a local instance called `dev`. An interactive prompt will guide you through the setup.
+  </Tip>
 </ResponseField>
 
 ### `helix add`
@@ -147,7 +149,9 @@ Add a new instance to an existing Helix project.
         </ResponseField>
 
     </Expandable>
-  
+  <Tip>
+  If no subcommand is specified, an interactive prompt will guide you through adding an instance.
+  </Tip>
 </ResponseField>
 
 
@@ -227,6 +231,9 @@ Build and prepare an instance for deployment.
 <ResponseField name="helix build [INSTANCE]">
   The instance to build.
 </ResponseField>
+<Tip>
+If no instance is specified, an interactive prompt will let you select one.
+</Tip>
 
 ## Deployment & Instance Management
 
@@ -247,15 +254,36 @@ Deploy or update a running instance.
 <ResponseField name="helix push [INSTANCE]">
   The instance to deploy.
 </ResponseField>
+<Tip>
+If no instance is specified, an interactive prompt will let you select one.
+</Tip>
 
 
 
 
-### `helix pull`
+### `helix sync`
 
-<Info>
-    🚧 COMING SOON 🚧
-</Info>
+Downloads `.hx` source files and `helix.toml` configuration from a deployed Helix Cloud instance back to your local project.
+
+<Note>
+  Only supported for Helix Cloud instances. You must be authenticated via `helix auth login` before running this command.
+</Note>
+
+<ResponseField name="helix sync Optional<INSTANCE>">
+  The cloud instance name to sync from.
+</ResponseField>
+
+#### Behavior
+
+- Merges `helix.toml` — updates the `[project]` section and the specific `[cloud.<instance>]` block while preserving `[local.*]` and other cloud entries.
+- Prompts for confirmation before overwriting any files that differ locally.
+
+#### Examples
+
+```bash
+# Sync source files and config from the "production" instance
+helix sync production
+```
 
 ---
 
@@ -266,6 +294,9 @@ Start a stopped instance without rebuilding.
 <ResponseField name="helix start [INSTANCE]">
   The instance to start.
 </ResponseField>
+<Tip>
+If no instance is specified, an interactive prompt will let you select one.
+</Tip>
 
 ### `helix stop`
 
@@ -274,6 +305,9 @@ Stop a running instance.
 <ResponseField name="helix stop [INSTANCE]">
   The instance to stop.
 </ResponseField>
+<Tip>
+If no instance is specified, an interactive prompt will let you select one.
+</Tip>
 
 ### `helix status`
 

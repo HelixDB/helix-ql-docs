@@ -56,7 +56,6 @@
           {
             "group": "CLI",
             "pages": [
-              "documentation/cli-v2/migration",
               "documentation/cli-v2/workflows/local",
               "documentation/cli-v2/workflows/helix_cloud",
               "documentation/cli-v2/workflows/fly",
