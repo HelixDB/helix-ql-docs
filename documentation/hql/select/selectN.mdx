@@ -6,11 +6,9 @@ icon: "draw-circle"
 
 ## How do I select nodes in HelixDB?
 
-Use `N` to select nodes from your graph by ID, type, or property values to begin traversals.
 
 ```rust
-N<Type>(node_id)
-N<Type>({field: value})
+N<Type>
 ```
 
 ### Example 1: Selecting a user by ID
@@ -247,7 +245,7 @@ curl -X POST \
 
 ### Example 3: Selecting nodes by property value
 
-Select nodes by matching field values instead of ID. This is useful when you need to find nodes with specific property values.
+Select nodes by matching INDEX field values instead of ID. This is useful when you need to find nodes with specific property values.
 
 <CodeGroup>
 ```rust Query focus={1-3}
@@ -258,34 +256,16 @@ QUERY GetUserByEmail (email: String) =>
 
 ```rust Schema
 N::User {
+    INDEX email: String,
     name: String,
     age: U8,
-    email: String,
 }
 ```
 
 </CodeGroup>
 
-You can also match on multiple fields:
 
-<CodeGroup>
-```rust Query focus={1-3}
-QUERY FindUser (name: String, age: U8) =>
-    user <- N<User>({name: name, age: age})
-    RETURN user
-```
-
-```rust Schema
-N::User {
-    name: String,
-    age: U8,
-    email: String,
-}
-```
-
-</CodeGroup>
-
-<Note>Property-based selection returns all nodes matching the specified field values. For more complex filtering conditions, use [WHERE clauses](../conditionals/conditions).</Note>
+<Note>Property-based selection returns all nodes matching the specified INDEX field values. For more complex filtering conditions, use [WHERE clauses](../conditionals/conditions).</Note>
 
 <Note>You can also do specific property-based filtering, e.g., returning only ID, see the [Property Filtering](../properties/property-access). You can also do aggregation steps, e.g., returning the count of nodes, see the [Aggregations](../aggregation).</Note>
 

@@ -4,36 +4,28 @@ description: "Transform and organize traversal results using `COUNT`, `RANGE`, `
 icon: "integral"
 ---
 
-## Get first element with `FIRST` &nbsp;
+## Get first element of a list with `FIRST` &nbsp;
 
-Get the first element from a traversal result.
+Get the first element from a traversal result. 
+
+<Warning>
+Note this does not return the first/oldest node in the graph, but the first node that the traversal returns.
+</Warning>
 
 ```rust
 ::FIRST
 ```
 
 <Note>
-`FIRST` returns a single element rather than a collection. If the traversal has no results, the binding will be empty.
+`FIRST` returns a single element (object) rather than a collection (array). If the traversal has no results, the binding will be empty.
 </Note>
 
-<Warning>
-When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
-</Warning>
-
-### Example 1: Getting the first user
+### Example 1: Getting the first node returned by a traversal
 <CodeGroup>
 
 ```rust Query focus={1-3} [expandable]
-QUERY GetFirstUser () =>
+QUERY GetOneUser () =>
     user <- N<User>::FIRST
-    RETURN user
-
-QUERY CreateUser (name: String, age: U8, email: String) =>
-    user <- AddN<User>({
-        name: name,
-        age: age,
-        email: email
-    })
     RETURN user
 ```
 
@@ -46,11 +38,11 @@ N::User {
 ```
 </CodeGroup>
 
-### Example 2: Getting the first follower of a user
+### Example 2: Getting the first node returned by an edge traversal
 <CodeGroup>
 
 ```rust Query focus={1-4} [expandable]
-QUERY GetFirstFollower (user_id: ID) =>
+QUERY GetOneFollower (user_id: ID) =>
     user <- N<User>(user_id)
     first_follower <- user::In<Follows>::FIRST
     RETURN first_follower

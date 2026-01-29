@@ -46,6 +46,7 @@ The following operations can be used to compare values.
 | Operation | Description | Example |
 | -------------------- | ---------------------------------- | ------------------------------------------------- |
 | `::CONTAINS(value)` | String contains substring | `::WHERE(_::{name}::CONTAINS("john"))` |
+| `::CONTAINS(object)` | Array contains object | `::WHERE(_::Out<Follows>::CONTAINS(user))` |
 
 #### Array/Set Operations
 
