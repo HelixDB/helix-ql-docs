@@ -9,13 +9,13 @@ title: 'E306'
 This error occurs when an expression is expected to result in a boolean value but produces a different type.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUsers() =>
     users <- N<User>::WHERE(|u| u.name)
     RETURN users
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
     active: Bool,
@@ -28,13 +28,13 @@ N::User {
 Ensure the expression evaluates to a boolean value.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUsers() =>
     users <- N<User>::WHERE(|u| u.active == true)
     RETURN users
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
     active: Bool,

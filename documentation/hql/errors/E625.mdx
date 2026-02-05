@@ -9,14 +9,14 @@ title: 'E625'
 This error occurs when you try to use an edge in a context that requires the `From` type to be a vector type, but the edge's `From` type is not a vector.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getRelated(id: ID) =>
     user <- N<User>(id)
     related <- user->>SimilarTo
     RETURN related
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }
@@ -33,7 +33,7 @@ E::SimilarTo {
 Set the `From` type of the edge to a vector type.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 V<128>::Document {
     title: String,
 }
@@ -44,7 +44,7 @@ E::SimilarTo {
 }
 ```
 
-```rust queries.hx
+```helixql queries.hx
 QUERY getRelated(id: ID) =>
     doc <- V<Document>(id)
     related <- doc->>SimilarTo

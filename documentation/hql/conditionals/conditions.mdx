@@ -7,7 +7,7 @@ description: "Filter and select specific elements from your graph based on condi
 
 Filter elements based on specific conditions.
 
-```rust
+```helixql
 ::WHERE(<condition>)
 ::WHERE(_::{property}::COMPARISON(value))
 ```
@@ -58,7 +58,7 @@ The following operations can be used to compare values.
 ### Example 1: Basic filtering with WHERE
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetAdultUsers () =>
     adult_users <- N<User>::WHERE(_::{age}::GT(18))
     RETURN adult_users
@@ -72,7 +72,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -230,7 +230,7 @@ For multiple conditions, see [Multiple Conditional Steps](./mult-conditions).
 ### Example 2: String and equality filtering
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetActiveUsers (status: String) =>
     active_users <- N<User>::WHERE(_::{status}::EQ(status))
     RETURN active_users
@@ -245,7 +245,7 @@ QUERY CreateUser (name: String, age: U8, email: String, status: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -407,14 +407,14 @@ curl -X POST \
 
 Returns true if a traversal has any results. Otherwise, it returns false.
 
-```rust
+```helixql
 EXISTS(<traversal>)
 ```
 
 ### Example 1: Using `EXISTS` for relationship filtering
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetUsersWithFollowers () =>
     users <- N<User>::WHERE(EXISTS(_::In<Follows>))
     RETURN users
@@ -434,7 +434,7 @@ QUERY CreateFollow (follower_id: ID, following_id: ID) =>
     RETURN "Success"
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,

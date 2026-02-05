@@ -8,7 +8,7 @@ sidebarTitle: "MCP"
 
 The `#[mcp]` macro enables you to expose any HelixQL query as an MCP (Model Context Protocol) endpoint, making it directly accessible to AI agents and LLM applications.
 
-```rust
+```helixql
 #[mcp]
 QUERY QueryName(param1: Type, param2: Type) =>
     result <- traversal_expression
@@ -42,14 +42,14 @@ The MCP macro automatically converts your HelixQL query into a callable MCP tool
 Once you've defined your MCP queries, you can use them with any LLM provider that supports MCP:
 
 <CodeGroup>
-```rust Query focus={1-2}
+```helixql Query focus={1-2}
 #[mcp]
 QUERY get_user(user_id: ID) =>
     user <- N<User>(user_id)
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U32,
@@ -148,7 +148,7 @@ curl -X POST \
   <Accordion title="Use descriptive query names">
     Choose query names that clearly describe what the tool does. AI agents rely on function names to understand capabilities.
 
-    ```rust
+    ```helixql
     // Good
     #[mcp]
     QUERY get_user_purchase_history(user_id: ID) => ...
@@ -162,7 +162,7 @@ curl -X POST \
   <Accordion title="Keep query signatures simple">
     Use clear parameter types and avoid overly complex signatures. AI agents work best with straightforward interfaces.
 
-    ```rust
+    ```helixql
     // Good
     #[mcp]
     QUERY search_products(name: String, max_price: F64) => ...

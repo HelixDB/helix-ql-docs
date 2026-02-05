@@ -11,12 +11,12 @@ This error occurs when you provide a date value that cannot be parsed or is in a
 In this example, the date value is invalid and cannot be parsed.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query addEvent() =>
     AddN<Event>({date: "2023-99-99"})
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::Event {
     date: Date,
 }
@@ -28,7 +28,7 @@ N::Event {
 Ensure the date value is in the correct format.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query addEvent() =>
     AddN<Event>({date: "2023-01-01"})
 ```

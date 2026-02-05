@@ -14,7 +14,7 @@ In this example, the start value is greater than the end value.
 
 <CodeGroup>
 
-```rust queries.hx
+```helixql queries.hx
 Query getUser() =>
     subset_of_users <- N<User>::RANGE(100, 10)
     RETURN subset_of_users
@@ -26,7 +26,7 @@ Query getUser() =>
 Ensure range start value is less than end value.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser() =>
     subset_of_users <- N<User>::RANGE(10, 100)
     RETURN subset_of_users

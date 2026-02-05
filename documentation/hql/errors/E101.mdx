@@ -10,13 +10,13 @@ title: "E101"
 This error occurs when you try to reference a node type that is not defined in your schema.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUser(id: ID) =>
     user <- N<User>(id)
     RETURN user
 ```
 
-```rust schema.hx
+```helixql schema.hx
 // no types defined
 ```
 </CodeGroup>
@@ -26,7 +26,7 @@ QUERY getUser(id: ID) =>
 Define the node type `User` in your schema.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     // fields
 }

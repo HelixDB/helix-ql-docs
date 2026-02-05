@@ -9,13 +9,13 @@ title: "E102"
 This error occurs when you try to reference an edge type that is not defined in your schema.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUsersPosts(id: ID) =>
     posts <- N<User>(id)::Out<Posted>
     RETURN posts
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     // fields
 }
@@ -32,7 +32,7 @@ N::Post {
 Define the edge type `Posted` in your schema.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     // fields
 }

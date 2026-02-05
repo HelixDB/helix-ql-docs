@@ -7,7 +7,7 @@ description: "Find weighted shortest paths with heuristic optimization."
 
 ShortestPathAStar uses the A* (A-star) algorithm to find optimal shortest paths in weighted graphs. It combines the precision of Dijkstra's algorithm with heuristic guidance to dramatically improve performance, especially for long-distance pathfinding in spatial graphs.
 
-```rust
+```helixql
 ::ShortestPathAStar<EdgeType>(weight_expression, "heuristic_property")
 ::To(target_id)
 ```
@@ -64,7 +64,7 @@ Common heuristics:
 ## Example 1: Geographic routing with straight-line distance heuristic
 
 <CodeGroup>
-```rust Query focus={1-4}
+```helixql Query focus={1-4}
 QUERY FindFastestRoute(start_id: ID, end_id: ID) =>
     result <- N<City>(start_id)
         ::ShortestPathAStar<Highway>(_::{distance}, "straight_line_distance")
@@ -85,7 +85,7 @@ QUERY CreateHighway(from_id: ID, to_id: ID, distance: F64) =>
     RETURN highway
 ```
 
-```rust Schema
+```helixql Schema
 N::City {
     name: String,
     latitude: F64,
@@ -426,7 +426,7 @@ curl -X POST http://localhost:6969/FindFastestRoute \
 ## Example 2: Time-optimized routing with traffic-aware weights
 
 <CodeGroup>
-```rust Query focus={1-4}
+```helixql Query focus={1-4}
 QUERY FindQuickestRoute(start_id: ID, end_id: ID) =>
     result <- N<Junction>(start_id)
         ::ShortestPathAStar<Road>(MUL(_::{distance}, _::{traffic_multiplier}), "estimated_time_remaining")
@@ -445,7 +445,7 @@ QUERY CreateRoad(from_id: ID, to_id: ID, distance: F64, traffic_mult: F64) =>
     RETURN road
 ```
 
-```rust Schema
+```helixql Schema
 N::Junction {
     name: String,
     estimated_time_remaining: F64  // Heuristic: est. minutes to destination
@@ -784,7 +784,7 @@ Using an inadmissible heuristic may cause A* to return suboptimal paths. Always 
 
 A* returns the same structure as Dijkstra:
 
-```rust
+```helixql
 {
     path: [Node],           // Ordered list of nodes from start to end
     edges: [Edge],          // Ordered list of edges connecting nodes
@@ -797,7 +797,7 @@ A* returns the same structure as Dijkstra:
 
 ### Pre-calculate Heuristics
 For static targets, pre-calculate and store heuristic values:
-```rust
+```helixql
 // Pre-calculate straight-line distance to common destinations
 N::City {
     distance_to_hub: F64,

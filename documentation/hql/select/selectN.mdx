@@ -7,14 +7,14 @@ icon: "draw-circle"
 ## How do I select nodes in HelixDB?
 
 
-```rust
+```helixql
 N<Type>
 ```
 
 ### Example 1: Selecting a user by ID
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetUser (user_id: ID) =>
     user <- N<User>(user_id)
     RETURN user
@@ -28,7 +28,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -157,13 +157,13 @@ curl -X POST \
 ### Example 2: Selecting all users
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY GetAllUsers () =>
     users <- N<User>
     RETURN users
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -248,13 +248,13 @@ curl -X POST \
 Select nodes by matching INDEX field values instead of ID. This is useful when you need to find nodes with specific property values.
 
 <CodeGroup>
-```rust Query focus={1-3}
+```helixql Query focus={1-3}
 QUERY GetUserByEmail (email: String) =>
     user <- N<User>({email: email})
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     INDEX email: String,
     name: String,

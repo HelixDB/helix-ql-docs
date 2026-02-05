@@ -9,13 +9,13 @@ title: 'E646'
 This error occurs when you provide an empty value for a field in an object remapping or insert operation.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUser(id: ID) =>
     user <- N<User>(id)
     RETURN user::{ name: }
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
     email: String,
@@ -28,13 +28,13 @@ N::User {
 Provide a valid value for the field. The value must be a literal, identifier, traversal, or object.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUser(id: ID) =>
     user <- N<User>(id)
     RETURN user::{ name: user.name }
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
     email: String,

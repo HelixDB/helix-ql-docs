@@ -9,14 +9,14 @@ title: 'E626'
 This error occurs when you try to use an edge in a context that requires the `To` type to be a vector type, but the edge's `To` type is not a vector.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getRelated(id: ID) =>
     doc <- V<Document>(id)
     related <- doc->>References
     RETURN related
 ```
 
-```rust schema.hx
+```helixql schema.hx
 V<128>::Document {
     title: String,
 }
@@ -37,7 +37,7 @@ E::References {
 Set the `To` type of the edge to a vector type.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 V<128>::Document {
     title: String,
 }
@@ -52,7 +52,7 @@ E::References {
 }
 ```
 
-```rust queries.hx
+```helixql queries.hx
 QUERY getRelated(id: ID) =>
     doc <- V<Document>(id)
     citations <- doc->>References

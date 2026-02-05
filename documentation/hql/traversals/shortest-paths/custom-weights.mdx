@@ -33,7 +33,7 @@ All weight expressions must evaluate to non-negative values. Negative weights ca
 
 Access properties directly on the edge being evaluated:
 
-```rust
+```helixql
 // Use edge distance property
 ::ShortestPathDijkstras<Road>(_::{distance})
 
@@ -54,7 +54,7 @@ Access properties directly on the edge being evaluated:
 
 Access properties from the node where the edge originates:
 
-```rust
+```helixql
 // Weight based on source traffic
 ::ShortestPathDijkstras<Road>(MUL(_::{distance}, _::FromN::{traffic_factor}))
 
@@ -75,7 +75,7 @@ Access properties from the node where the edge originates:
 
 Access properties from the node where the edge terminates:
 
-```rust
+```helixql
 // Prefer popular destinations
 ::ShortestPathDijkstras<Road>(DIV(_::{distance}, _::ToN::{popularity}))
 
@@ -95,7 +95,7 @@ Access properties from the node where the edge terminates:
 ## Example 1: Time-decay routing with source context
 
 <CodeGroup>
-```rust Query focus={1-7}
+```helixql Query focus={1-7}
 QUERY FindFreshRoute(start_id: ID, end_id: ID) =>
     result <- N<Warehouse>(start_id)
         ::ShortestPathDijkstras<ShippingRoute>(
@@ -116,7 +116,7 @@ QUERY CreateShippingRoute(from_id: ID, to_id: ID, distance: F64) =>
     RETURN route
 ```
 
-```rust Schema
+```helixql Schema
 N::Warehouse {
     name: String,
     days_since_update: I64  // Days since route info was updated
@@ -428,7 +428,7 @@ curl -X POST http://localhost:6969/FindFreshRoute \
 ## Example 2: Destination-aware routing with popularity weighting
 
 <CodeGroup>
-```rust Query focus={1-7}
+```helixql Query focus={1-7}
 QUERY FindPopularRoute(start_id: ID, end_id: ID) =>
     result <- N<Station>(start_id)
         ::ShortestPathDijkstras<Connection>(
@@ -449,7 +449,7 @@ QUERY CreateConnection(from_id: ID, to_id: ID, distance: F64) =>
     RETURN connection
 ```
 
-```rust Schema
+```helixql Schema
 N::Station {
     name: String,
     popularity: F64  // Visitor traffic score (higher = more popular)
@@ -753,7 +753,7 @@ curl -X POST http://localhost:6969/FindPopularRoute \
 ## Example 3: Combining source and destination contexts
 
 <CodeGroup>
-```rust Query focus={1-9}
+```helixql Query focus={1-9}
 QUERY FindBalancedRoute(start_id: ID, end_id: ID) =>
     result <- N<Node>(start_id)
         ::ShortestPathDijkstras<Link>(
@@ -778,7 +778,7 @@ QUERY CreateLink(from_id: ID, to_id: ID, cost: F64) =>
     RETURN link
 ```
 
-```rust Schema
+```helixql Schema
 N::Node {
     name: String,
     load_factor: F64,  // Current load (1.0 = normal, 2.0 = heavy)
@@ -1087,25 +1087,25 @@ curl -X POST http://localhost:6969/FindBalancedRoute \
 ## Real-World Use Cases
 
 ### Traffic-Aware Navigation
-```rust
+```helixql
 // Penalize routes starting from congested areas
 ::ShortestPathDijkstras<Road>(MUL(_::{distance}, _::FromN::{congestion}))
 ```
 
 ### Cost Optimization
-```rust
+```helixql
 // Minimize cost considering both base rate and destination fees
 ::ShortestPathDijkstras<Route>(ADD(_::{base_cost}, _::ToN::{destination_fee}))
 ```
 
 ### Load Balancing
-```rust
+```helixql
 // Distribute traffic away from heavily loaded servers
 ::ShortestPathDijkstras<Connection>(DIV(_::{latency}, SUB(1, _::ToN::{load_percent})))
 ```
 
 ### Capacity Planning
-```rust
+```helixql
 // Prefer high-capacity destinations
 ::ShortestPathDijkstras<Link>(DIV(_::{distance}, _::ToN::{available_capacity}))
 ```
@@ -1114,7 +1114,7 @@ curl -X POST http://localhost:6969/FindBalancedRoute \
 
 ### 1. Property Normalization
 Ensure properties are on similar scales:
-```rust
+```helixql
 // Good: Both factors are normalized 0-1
 MUL(_::{distance}, ADD(_::FromN::{traffic}, _::ToN::{congestion}))
 
@@ -1124,14 +1124,14 @@ MUL(_::{distance}, _::FromN::{traffic_percent})  // May need scaling
 
 ### 2. Avoid Division by Zero
 Protect against zero denominators:
-```rust
+```helixql
 // Add small epsilon or use MAX
 DIV(_::{distance}, ADD(_::ToN::{popularity}, 0.01))
 ```
 
 ### 3. Index Key Properties
 For best performance, index properties used in weight calculations:
-```rust
+```helixql
 // Index frequently-accessed properties
 N::City {
     @index traffic_factor: F64,

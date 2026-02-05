@@ -7,7 +7,7 @@ description: "Access specific properties of nodes, edges, and vectors using prop
 
 Access properties of an item by using the property names as defined in the schema.
 
-```rust
+```helixql
 ::{<property1>, <property2>, ...}
 ::{<property1>: <alias>, <property2>}
 ```
@@ -23,7 +23,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Basic property selection
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetUserBasicInfo () =>
     users <- N<User>::RANGE(0, 10)
     RETURN users::{name, age}
@@ -37,7 +37,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -191,7 +191,7 @@ curl -X POST \
 ### Example 2: Property selection with renaming
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetUserDisplayInfo () =>
     users <- N<User>::RANGE(0, 10)
     RETURN users::{displayName: name, userAge: age}
@@ -205,7 +205,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -363,7 +363,7 @@ curl -X POST \
 
 Access the unique identifier of any node, edge, or vector.
 
-```rust
+```helixql
 ::ID
 ```
 
@@ -378,7 +378,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Getting element IDs
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetUserIDs () =>
     users <- N<User>::RANGE(0, 5)
     RETURN users::ID
@@ -392,7 +392,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -541,7 +541,7 @@ curl -X POST \
 
 Use the spread operator to include all properties while optionally remapping specific fields.
 
-```rust
+```helixql
 ::{
     <alias>: <property>, 
     ..
@@ -555,7 +555,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Property aliasing with spread operator
 <CodeGroup>
 
-```rust Query focus={1-5} [expandable]
+```helixql Query focus={1-5} [expandable]
 QUERY GetUsersWithAlias () =>
     users <- N<User>::RANGE(0, 5)
     RETURN users::{
@@ -572,7 +572,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,

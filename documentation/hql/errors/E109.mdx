@@ -9,7 +9,7 @@ title: 'E109'
 This error occurs when you define the same field name more than once within a single node, edge, or vector type.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
     age: U32,
@@ -23,7 +23,7 @@ N::User {
 Remove the duplicate field or rename one of them.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
     age: U32,

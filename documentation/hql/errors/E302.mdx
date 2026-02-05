@@ -10,7 +10,7 @@ This error occurs when you try to declare a variable that has already been decla
 In this example, the variable `user_name` is declared twice.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser(userId: ID) =>
     userId <- N<User>(userId)::ID
     RETURN userId
@@ -22,7 +22,7 @@ Query getUser(userId: ID) =>
 Use a different variable name.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser(userId: ID) =>
     user_id <- N<User>(userId)::ID
     RETURN user_id

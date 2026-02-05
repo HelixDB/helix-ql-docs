@@ -7,7 +7,7 @@ description: "Learn how to upsert vectors in your graph using UpsertV for insert
 
 Create new vector embeddings or update existing ones with insert-or-update semantics.
 
-```rust
+```helixql
 ::UpsertV(vector, {properties})
 ```
 
@@ -25,14 +25,14 @@ Vector data is **required** for `UpsertV`. You can provide vector data as:
 ### Example 1: Basic vector upsert with properties
 
 <CodeGroup>
-```rust Query focus={2-3}
+```helixql Query focus={2-3}
 QUERY UpsertDoc(vector: [F64], content: String) =>
     existing <- V<Document>::WHERE(_::{content}::EQ(content))
     doc <- existing::UpsertV(vector, {content: content})
     RETURN doc
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     content: String,
 }
@@ -183,14 +183,14 @@ All vectors in a vector type must have the same dimensions. If you change your e
 </Warning>
 
 <CodeGroup>
-```rust Query focus={2-3}
+```helixql Query focus={2-3}
 QUERY UpsertDocEmbed(text: String) =>
     existing <- V<Document>::WHERE(_::{content}::EQ(text))
     doc <- existing::UpsertV(Embed(text), {content: text})
     RETURN doc
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     content: String,
 }
@@ -294,7 +294,7 @@ curl -X POST \
 ### Example 3: Complex operation with nodes, edges, and vectors
 
 <CodeGroup>
-```rust Query focus={1-14}
+```helixql Query focus={1-14}
 QUERY ComplexUpsertOperation(
     person_name: String,
     person_age: U32,
@@ -317,7 +317,7 @@ QUERY GetPerson(name: String) =>
     RETURN person
 ```
 
-```rust Schema
+```helixql Schema
 N::Person {
     INDEX name: String,
     age: U32,

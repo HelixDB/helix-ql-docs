@@ -58,7 +58,7 @@ All algorithms guarantee finding the optimal shortest path when used correctly. 
 ## Quick Examples
 
 ### BFS: Unweighted Path
-```rust
+```helixql
 // Find shortest path by hop count
 QUERY FindShortestPath(start_id: ID, end_id: ID) =>
     path <- N<City>(start_id)
@@ -68,7 +68,7 @@ QUERY FindShortestPath(start_id: ID, end_id: ID) =>
 ```
 
 ### Dijkstra: Weighted Path
-```rust
+```helixql
 // Find shortest path by distance
 QUERY FindShortestRoute(start_id: ID, end_id: ID) =>
     path <- N<City>(start_id)
@@ -78,7 +78,7 @@ QUERY FindShortestRoute(start_id: ID, end_id: ID) =>
 ```
 
 ### A*: Heuristic-Guided Path
-```rust
+```helixql
 // Find shortest path with geographic heuristic
 QUERY FindOptimalRoute(start_id: ID, end_id: ID) =>
     path <- N<City>(start_id)
@@ -97,13 +97,13 @@ Both Dijkstra and A* support sophisticated weight calculations that can referenc
 - **Mathematical operations**: Combine properties with functions like ADD, MUL, POW, etc.
 
 ### Example: Traffic-Aware Routing
-```rust
+```helixql
 // Weight = distance * source_traffic_factor
 ::ShortestPathDijkstras<Road>(MUL(_::{distance}, _::FromN::{traffic_factor}))
 ```
 
 ### Example: Multi-Factor Scoring
-```rust
+```helixql
 // Weight = 0.4*distance + 0.3*traffic + 0.3*(1-reliability)
 ::ShortestPathDijkstras<Road>(
     ADD(
@@ -124,7 +124,7 @@ When using custom weights, ensure all weight values are non-negative. Negative w
 
 All shortest path algorithms return the same result structure:
 
-```rust
+```helixql
 {
     path: [Node],           // Ordered list of nodes in the path
     edges: [Edge],          // Ordered list of edges in the path

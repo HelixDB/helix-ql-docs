@@ -12,7 +12,7 @@ In this example, the parameter `name` is not a collection, so it cannot be used 
 
 <CodeGroup>
 
-```rust queries.hx
+```helixql queries.hx
 Query addUser(name: String) =>
     FOR n IN name {
         AddN<User>({name: n})
@@ -26,7 +26,7 @@ Query addUser(name: String) =>
 Ensure variables used in iterations are collections or arrays.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query addUser(names: [String]) =>
     FOR n IN names {
         AddN<User>({name: n})

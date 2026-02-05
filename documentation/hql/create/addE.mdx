@@ -8,7 +8,7 @@ icon: "circle-nodes"
 
 Create connections between nodes in your graph.
 
-```rust
+```helixql
 AddE<Type>::From(v1)::To(v2)
 AddE<Type>({properties})::From(v1)::To(v2)
 ```
@@ -20,7 +20,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Creating a simple follows relationship
 
 <CodeGroup>
-```rust Query focus={1-3}
+```helixql Query focus={1-3}
 QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
     follows <- AddE<Follows>::From(user1_id)::To(user2_id)
     RETURN follows
@@ -34,7 +34,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -216,7 +216,7 @@ curl -X POST \
 
 ### Example 2: Creating a detailed friendship with properties
 <CodeGroup>
-```rust Query focus={1-7}
+```helixql Query focus={1-7}
 QUERY CreateFriendship (user1_id: ID, user2_id: ID) =>
     friendship <- AddE<Friends>({
         since: "2024-01-15",
@@ -233,7 +233,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -416,7 +416,7 @@ curl -X POST \
 ### Example 3: Traversal Example
 <CodeGroup>
 
-```rust Query focus={1-5}
+```helixql Query focus={1-5}
 QUERY CreateRelationships (user1_id: ID, user2_name: String) =>
     user2 <- N<User>::WHERE(_::{name}::EQ(user2_name))
     follows <- AddE<Follows>::From(user1_id)::To(user2)
@@ -431,7 +431,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,

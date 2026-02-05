@@ -7,7 +7,7 @@ description: "Learn how to upsert edges in your graph using UpsertE for insert-o
 
 Create new edges or update existing ones with insert-or-update semantics.
 
-```rust
+```helixql
 UpsertE({properties})::From(node1)::To(node2)
 ```
 
@@ -22,7 +22,7 @@ Edge connections (`::From()` and `::To()`) are **required** for `UpsertE`. The o
 ### Example 1: Basic edge upsert with properties
 
 <CodeGroup>
-```rust Query focus={1-6}
+```helixql Query focus={1-6}
 QUERY UpsertFriendship(id1: ID, id2: ID, since: String) =>
     person1 <- N<Person>(id1)
     person2 <- N<Person>(id2)
@@ -35,7 +35,7 @@ QUERY CreatePerson(name: String, age: U32) =>
     RETURN person
 ```
 
-```rust Schema
+```helixql Schema
 N::Person {
     INDEX name: String,
     age: U32,
@@ -256,7 +256,7 @@ curl -X POST \
 ### Example 2: Upsert edge with multiple properties
 
 <CodeGroup>
-```rust Query focus={1-6}
+```helixql Query focus={1-6}
 QUERY UpsertFriendshipWithProps(id1: ID, id2: ID, since: String, strength: F32) =>
     person1 <- N<Person>(id1)
     person2 <- N<Person>(id2)
@@ -269,7 +269,7 @@ QUERY CreatePerson(name: String, age: U32) =>
     RETURN person
 ```
 
-```rust Schema
+```helixql Schema
 N::Person {
     INDEX name: String,
     age: U32,
@@ -503,7 +503,7 @@ curl -X POST \
 The `::From()` and `::To()` can be specified in either order.
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY UpsertEdgeToFrom(id1: ID, id2: ID, since: String) =>
     person1 <- N<Person>(id1)
     person2 <- N<Person>(id2)
@@ -513,7 +513,7 @@ QUERY UpsertEdgeToFrom(id1: ID, id2: ID, since: String) =>
     RETURN edge
 ```
 
-```rust Schema
+```helixql Schema
 N::Person {
     INDEX name: String,
     age: U32,

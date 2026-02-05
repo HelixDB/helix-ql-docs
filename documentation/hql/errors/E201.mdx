@@ -9,13 +9,13 @@ title: 'E201'
 This error occurs when you reference an item type in a query that is not defined in your schema.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getProduct(id: ID) =>
     product <- N<Product>(id)
     RETURN product
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }
@@ -28,7 +28,7 @@ N::User {
 Define the item type in your schema before using it in queries.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }

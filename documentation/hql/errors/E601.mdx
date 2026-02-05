@@ -11,7 +11,7 @@ title: 'E601'
 This error occurs when you attempt a malformed traversal.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser() =>
     user <- N() 
 ```
@@ -22,7 +22,7 @@ Query getUser() =>
 Ensure each step in the traversal is valid.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser() =>
     user <- N<User>
     RETURN user

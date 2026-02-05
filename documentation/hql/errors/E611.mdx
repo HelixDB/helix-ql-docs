@@ -11,7 +11,7 @@ This error occurs when you try to create an edge without specifying the target n
 In this example, the `AddE` step is used without specifying the `To` parameter.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query addEdge(from: ID, to: ID) =>
     AddE<Follows>::From(from)
 ```
@@ -22,7 +22,7 @@ Query addEdge(from: ID, to: ID) =>
 Provide both 'from' and 'to' node IDs when creating edges.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query addEdge(from: ID, to: ID) =>
     AddE<Follows>::From(from)::To(to)
 ```

@@ -10,13 +10,13 @@ This error occurs when you reference a field that is not defined in your schema 
 
 For example, the field `username` is not defined in the schema for the `User` item type.
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUser(id: ID) =>
     user <- N<User>(id)
     RETURN user::{username}
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     age: U32,
 }
@@ -28,7 +28,7 @@ N::User {
 Define the field `username` in the schema for the `User` item type.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     username: String,
     age: U32,

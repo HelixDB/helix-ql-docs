@@ -12,7 +12,7 @@ Define the structure of your graph using HelixQL schema definitions. Every node,
 
 Define node types and their properties:
 
-```rust
+```helixql
 N::NodeType {
   field1: String,
   field2: U32
@@ -25,7 +25,7 @@ N::NodeType {
 
 Define relationships between nodes with properties:
 
-```rust
+```helixql
 E::EdgeType {
   From: String,
   To: String,
@@ -42,7 +42,7 @@ E::EdgeType {
 
 Define vector types with metadata properties:
 
-```rust
+```helixql
 V::VectorType {
   field1: String
 }

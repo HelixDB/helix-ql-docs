@@ -8,7 +8,7 @@ icon: "magnifying-glass"
 
 Use `SearchV` to find vectors similar to your query vector using cosine similarity.
 
-```rust
+```helixql
 SearchV<Type>(vector, limit)
 ```
 
@@ -25,7 +25,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Basic vector search
 <CodeGroup>
 
-```rust Query focus={1-3} 
+```helixql Query focus={1-3} 
 QUERY SearchVector (vector: [F64], limit: I64) =>
     documents <- SearchV<Document>(vector, limit)
     RETURN documents
@@ -35,7 +35,7 @@ QUERY InsertVector (vector: [F64], content: String, created_at: Date) =>
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     content: String,
     created_at: Date
@@ -177,7 +177,7 @@ curl -X POST \
 
 ### Example 2: Vector search with postfiltering
 <CodeGroup>
-```rust Query focus={1-3}
+```helixql Query focus={1-3}
 QUERY SearchRecentDocuments (vector: [F64], limit: I64, cutoff_date: Date) =>
     documents <- SearchV<Document>(vector, limit)::WHERE(_::{created_at}::GTE(cutoff_date))
     RETURN documents
@@ -187,7 +187,7 @@ QUERY InsertVector (vector: [F64], content: String, created_at: Date) =>
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     content: String,
     created_at: Date
@@ -395,7 +395,7 @@ All vectors in a vector type must have the same dimensions. If you change your e
 </Warning>
 
 <CodeGroup>
-```rust Query focus={1-3}
+```helixql Query focus={1-3}
 QUERY SearchWithText (text: String, limit: I64) =>
     documents <- SearchV<Document>(Embed(text), limit)
     RETURN documents
@@ -404,7 +404,7 @@ QUERY InsertTextAsVector (content: String, created_at: Date) =>
     document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
     RETURN document
 ```
-```rust Schema
+```helixql Schema
 V::Document {
     content: String,
     created_at: Date

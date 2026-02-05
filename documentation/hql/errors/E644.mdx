@@ -11,7 +11,7 @@ This error occurs when you place an exclude operation in a position other than t
 In this example, the exclude step is used before the `Out<Knows>` step which is not allowed.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser(userId: ID) =>
     users <- N<User>(userId)::!{email}::Out<Knows>
     RETURN users

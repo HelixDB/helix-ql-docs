@@ -8,7 +8,7 @@ icon: "chart-scatter-3d"
 
 Create new vector embeddings in your graph.
 
-```rust
+```helixql
 AddV<Type>
 AddV<Type>(vector, {properties})
 ```
@@ -27,13 +27,13 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Creating a vector with no properties
 <CodeGroup>
 
-```rust Query focus={2}
+```helixql Query focus={2}
 QUERY InsertVector (vector: [F64]) =>
     vector_node <- AddV<Document>(vector)
     RETURN vector_node
 ```
 
-```rust Schema
+```helixql Schema
 // You don't need to define the properties in the schema,
 //  it uses [F64] by default
 V::Document {}
@@ -128,13 +128,13 @@ curl -X POST \
 
 ### Example 2: Creating a vector with properties
 <CodeGroup>
-```rust Query focus={2}
+```helixql Query focus={2}
 QUERY InsertVector (vector: [F64], content: String, created_at: Date) =>
     vector_node <- AddV<Document>(vector, { content: content, created_at: created_at })
     RETURN vector_node
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     content: String,
     created_at: Date
@@ -242,7 +242,7 @@ curl -X POST \
 
 ### Example 3: Creating a vector and connecting it to a node
 <CodeGroup>
-```rust Query focus={2-3}
+```helixql Query focus={2-3}
 QUERY InsertVector (user_id: ID, vector: [F64], content: String, created_at: Date) =>
     vector_node <- AddV<Document>(vector, { content: content, created_at: created_at })
     edge <- AddE<User_to_Document_Embedding>::From(user_id)::To(vector_node)
@@ -257,7 +257,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -427,12 +427,12 @@ All vectors in a vector type must have the same dimensions. If you change your e
 </Warning>
 
 <CodeGroup>
-```rust Query focus={2}
+```helixql Query focus={2}
 QUERY InsertVector (content: String, created_at: Date) =>
     vector_node <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
     RETURN vector_node
 ```
-```rust Schema
+```helixql Schema
 V::Document {
     content: String,
     created_at: Date

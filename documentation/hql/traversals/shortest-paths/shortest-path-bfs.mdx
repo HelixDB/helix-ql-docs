@@ -7,7 +7,7 @@ description: "Find unweighted shortest paths using breadth-first search."
 
 ShortestPathBFS uses breadth-first search to find the shortest path between nodes when all edges have equal weight. It's the fastest algorithm for unweighted graphs and is ideal when you care about minimizing the number of hops rather than total distance or cost.
 
-```rust
+```helixql
 ::ShortestPathBFS<EdgeType>
 ::To(target_id)
 ```
@@ -43,7 +43,7 @@ If edges have different weights (distance, cost, time), use [ShortestPathDijkstr
 ## Example 1: Basic shortest path by hop count
 
 <CodeGroup>
-```rust Query focus={1-4}
+```helixql Query focus={1-4}
 QUERY FindShortestPath(start_id: ID, end_id: ID) =>
     result <- N<City>(start_id)
         ::ShortestPathBFS<Road>
@@ -59,7 +59,7 @@ QUERY ConnectCities(from_id: ID, to_id: ID) =>
     RETURN road
 ```
 
-```rust Schema
+```helixql Schema
 N::City {
     name: String
 }
@@ -315,7 +315,7 @@ curl -X POST http://localhost:6969/FindShortestPath \
 ## Example 2: Social network degree of separation
 
 <CodeGroup>
-```rust Query focus={1-4}
+```helixql Query focus={1-4}
 QUERY FindConnection(person1_id: ID, person2_id: ID) =>
     connection <- N<Person>(person1_id)
         ::ShortestPathBFS<Knows>
@@ -331,7 +331,7 @@ QUERY CreateFriendship(from_id: ID, to_id: ID) =>
     RETURN knows
 ```
 
-```rust Schema
+```helixql Schema
 N::Person {
     name: String
 }
@@ -600,7 +600,7 @@ curl -X POST http://localhost:6969/FindConnection \
 
 ShortestPathBFS returns a result containing:
 
-```rust
+```helixql
 {
     path: [Node],           // Ordered list of nodes from start to end
     edges: [Edge],          // Ordered list of edges connecting the nodes

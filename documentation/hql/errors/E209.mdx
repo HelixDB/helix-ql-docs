@@ -9,12 +9,12 @@ title: 'E209'
 This error occurs when you specify an unknown type for a query parameter that is not a primitive type or a type defined in your schema.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getItem(data: UnknownType) =>
     RETURN data
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }
@@ -26,13 +26,13 @@ N::User {
 Use a primitive type (String, I32, U32, F64, Bool, ID, etc.) or declare the type in your schema.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUser(id: ID) =>
     user <- N<User>(id)
     RETURN user
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }

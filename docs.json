@@ -2,6 +2,13 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "HelixDB Docs",
+  "styling": {
+    "codeblocks": {
+      "languages": {
+        "custom": ["languages/helixql.json"]
+      }
+    }
+  },
   "colors": {
     "primary": "#F26419",
     "light": "#FF8548",

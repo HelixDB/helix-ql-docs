@@ -8,7 +8,7 @@ sidebarTitle: "Model"
 
 The `#[model]` macro specifies which embedding model to use for `Embed()` calls within a query. This allows you to optimize embeddings for different use cases—such as storing documents versus searching them.
 
-```rust
+```helixql
 #[model("provider:model-name:task-type")]
 QUERY QueryName(param: Type) =>
     result <- AddV<Type>(Embed(param), {properties})
@@ -61,7 +61,7 @@ This example shows how to use different task types for storing clinical notes ve
 
 <CodeGroup>
 
-```rust Query focus={1,5}
+```helixql Query focus={1,5}
 #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
 QUERY addClinicalNote (text: String) =>
     note <- AddV<ClinicalNote>(Embed(text), {text: text})
@@ -73,7 +73,7 @@ QUERY searchClinicalNotes (query: String, k: I64) =>
     RETURN notes
 ```
 
-```rust Schema
+```helixql Schema
 V::ClinicalNote {
     vector: [F64],
     text: String
@@ -258,7 +258,7 @@ Make sure to set your `GEMINI_API_KEY` environment variable (or `OPENAI_API_KEY`
   <Accordion title="Use consistent models for the same vector type">
     Always use the same embedding model for all queries that operate on the same vector type. Different models produce vectors with different dimensions, which will cause errors.
 
-    ```rust
+    ```helixql
     // Good - same model, different task types
     #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
     QUERY storeDoc (text: String) => ...
@@ -278,7 +278,7 @@ Make sure to set your `GEMINI_API_KEY` environment variable (or `OPENAI_API_KEY`
   <Accordion title="Match task types to operations">
     Use `RETRIEVAL_DOCUMENT` for operations that store data and `RETRIEVAL_QUERY` for operations that search data.
 
-    ```rust
+    ```helixql
     // Storing documents
     #[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
     QUERY addDocument (content: String) =>
@@ -296,7 +296,7 @@ Make sure to set your `GEMINI_API_KEY` environment variable (or `OPENAI_API_KEY`
   <Accordion title="Consider using the default model for simple cases">
     If you don't need task-specific optimization, you can skip the `#[model]` macro and use the default model from your `config.hx.json`.
 
-    ```rust
+    ```helixql
     // Uses default model from config.hx.json
     QUERY simpleSearch (text: String, k: I64) =>
         results <- SearchV<Document>(Embed(text), k)

@@ -9,7 +9,7 @@ title: 'E110'
 This error occurs when you try to use a reserved type name as the name for a node, edge, or vector type.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::String {
     value: String,
 }
@@ -21,7 +21,7 @@ N::String {
 Rename the type to something that is not a reserved type name.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::TextValue {
     value: String,
 }

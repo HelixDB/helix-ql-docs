@@ -11,7 +11,7 @@ This error occurs when you define a range without both start and end values.
 In this example, the range is incomplete because it is missing the end value.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser() =>
     subset_of_users <- N<User>::RANGE(0)
     RETURN subset_of_users
@@ -23,7 +23,7 @@ Query getUser() =>
 Provide both start and end values for ranges.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser() =>
     subset_of_users <- N<User>::RANGE(0, 100)
     RETURN subset_of_users

@@ -11,14 +11,14 @@ This error occurs when you compare a property with a value of a different type.
 In this example, the `age` property is an integer, but the comparison is done with a string value.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser(user: ID) =>
     user <- N<User>(user)
     is_eq <- user::{name}::EQ(25)
     RETURN is_eq
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
     age: I64,
@@ -31,7 +31,7 @@ N::User {
 Ensure compared values match the property type.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser(user: ID) =>
     user <- N<User>(user)
     is_eq <- user::{age}::EQ(25)

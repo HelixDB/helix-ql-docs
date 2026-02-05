@@ -11,7 +11,7 @@ This error occurs when you try to apply a boolean comparison operation to a type
 In this example, the `&&` operator is used on a non-boolean type.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser(user1: ID, user2: ID) =>
     user1 <- N<User>(user1)
     user2 <- N<User>(user2)
@@ -19,7 +19,7 @@ Query getUser(user1: ID, user2: ID) =>
     RETURN is_eq
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }
@@ -31,7 +31,7 @@ N::User {
 Ensure boolean operations are used on values that result in primitive types like booleans, numbers, or strings.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser(user1: ID, user2: ID) =>
     user1_name <- N<User>(user1)::{name}
     user2_name <- N<User>(user2)::{name}

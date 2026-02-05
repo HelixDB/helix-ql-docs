@@ -11,7 +11,7 @@ HelixQL provides built-in mathematical constants PI and E for use in calculation
 
 ### PI - Pi Constant
 
-```rust
+```helixql
 PI()  // Returns π ≈ 3.14159265358979323846
 ```
 
@@ -19,7 +19,7 @@ Returns the mathematical constant π (pi), the ratio of a circle's circumference
 
 ### E - Euler's Number
 
-```rust
+```helixql
 E()  // Returns e ≈ 2.71828182845904523536
 ```
 
@@ -34,7 +34,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 Calculate circle properties using the PI constant:
 
 <CodeGroup>
-```rust Query focus={2-7}
+```helixql Query focus={2-7}
 QUERY CalculateCircleProperties() =>
     circles <- N::Circle
         ::{
@@ -49,7 +49,7 @@ QUERY CreateCircle(radius: F64) =>
     RETURN circle
 ```
 
-```rust Schema
+```helixql Schema
 N::Circle {
     radius: F64
 }
@@ -193,7 +193,7 @@ curl -X POST \
 Model exponential growth and decay using Euler's number:
 
 <CodeGroup>
-```rust Query focus={2-7}
+```helixql Query focus={2-7}
 QUERY CalculateExponentialGrowth(time: F64, rate: F64) =>
     populations <- N::Population
         ::{
@@ -208,7 +208,7 @@ QUERY CreatePopulation(initial_size: F64) =>
     RETURN population
 ```
 
-```rust Schema
+```helixql Schema
 N::Population {
     initial_size: F64
 }
@@ -362,7 +362,7 @@ curl -X POST \
 
 Use PI for converting between degrees and radians:
 
-```rust
+```helixql
 // Degrees to radians
 radians = MUL(degrees, DIV(PI(), 180.0))
 
@@ -374,7 +374,7 @@ degrees = MUL(radians, DIV(180.0, PI()))
 
 Calculate properties of circular motion:
 
-```rust
+```helixql
 QUERY CalculateAngularVelocity() =>
     objects <- N::RotatingObject
         ::{
@@ -388,7 +388,7 @@ QUERY CalculateAngularVelocity() =>
 
 Use E for continuous compound interest calculations:
 
-```rust
+```helixql
 QUERY CalculateCompoundInterest(principal: F64, rate: F64, time: F64) =>
     amount <- MUL(principal, POW(E(), MUL(rate, time)))
     RETURN amount
@@ -398,7 +398,7 @@ QUERY CalculateCompoundInterest(principal: F64, rate: F64, time: F64) =>
 
 Model radioactive decay or other natural decay processes:
 
-```rust
+```helixql
 QUERY CalculateDecay() =>
     samples <- N::Sample
         ::{
@@ -432,7 +432,7 @@ The constants are implemented as functions rather than literals to maintain cons
 
 Constants are often used in complex mathematical formulas:
 
-```rust
+```helixql
 // Gaussian distribution
 QUERY CalculateGaussian(x: F64, mean: F64, std_dev: F64) =>
     coefficient <- DIV(1.0, MUL(std_dev, SQRT(MUL(2.0, PI()))))

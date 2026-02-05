@@ -8,7 +8,7 @@ You can create secondary indexes on node fields using the `INDEX` keyword. For e
 
 To create a secondary index, use the `INDEX` keyword:
 
-```rust
+```helixql
 N::NodeType {
   INDEX field1: String,
   field2: U32
@@ -18,7 +18,7 @@ N::NodeType {
 This internally creates a table for the indexed field.
 To query a node by the indexed field, you can use object syntax:
 
-```rust
+```helixql
 QUERY getByIndex(index_field: String) =>
     node <- N<User>({field1: index_field})
     RETURN node

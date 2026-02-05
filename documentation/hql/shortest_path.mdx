@@ -12,7 +12,7 @@ HelixDB provides multiple algorithms for finding shortest paths between nodes:
 
 Breadth-first search finds the minimum number of hops between nodes along a specific edge type. This is the default algorithm for backward compatibility.
 
-```rust
+```helixql
 ::ShortestPath<EdgeType>::To(to_id: ID)
 ::ShortestPath<EdgeType>::From(from_id: ID)
 ```
@@ -21,7 +21,7 @@ Breadth-first search finds the minimum number of hops between nodes along a spec
 
 Explicitly use breadth-first search to find the path with minimum hops.
 
-```rust
+```helixql
 ::ShortestPathBFS<EdgeType>::To(to_id: ID)
 ::ShortestPathBFS<EdgeType>::From(from_id: ID)
 ```
@@ -30,7 +30,7 @@ Explicitly use breadth-first search to find the path with minimum hops.
 
 Dijkstra's algorithm finds the path with minimum total weight by summing edge weights. Requires specifying which edge property to use as weight.
 
-```rust
+```helixql
 ::ShortestPathDijkstras<EdgeType>(_::{weight_property})::To(to_id: ID)
 ::ShortestPathDijkstras<EdgeType>(_::{weight_property})::From(from_id: ID)
 ```
@@ -57,7 +57,7 @@ Choose the appropriate algorithm based on your use case:
 This example demonstrates the difference between BFS (minimum hops) and Dijkstra's algorithm (minimum weight).
 
 <CodeGroup>
-```rust Query focus={1-8} [expandable]
+```helixql Query focus={1-8} [expandable]
 // BFS finds path with minimum hops (default behavior)
 QUERY GetShortestPathBFS (from_id: ID, to_id: ID) =>
     path <- N<City>(from_id)::ShortestPath<Road>::To(to_id)
@@ -84,7 +84,7 @@ QUERY ConnectCities (from_id: ID, to_id: ID, distance_km: F64) =>
     RETURN road
 ```
 
-```rust Schema
+```helixql Schema
 N::City {
     name: String,
 }
@@ -109,7 +109,7 @@ Consider this graph:
 ### Example 2: Finding routes between locations
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetShortestPath (from_id: ID, to_id: ID) =>
     path <- N<Location>(from_id)::ShortestPath<Road>::To(to_id)
     RETURN path
@@ -127,7 +127,7 @@ QUERY ConnectLocations (from_id: ID, to_id: ID, distance_km: U32) =>
     RETURN road
 ```
 
-```rust Schema
+```helixql Schema
 N::Location {
     name: String,
 }

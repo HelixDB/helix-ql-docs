@@ -8,13 +8,13 @@ icon: "layer-group"
 
 GROUP_BY organizes query results into groups based on one or more property values, returning count summaries for each unique combination.
 
-```rust
+```helixql
 ::GROUP_BY(property)
 ::GROUP_BY(property1, property2)
 ```
 
 Returns count summaries:
-```rust
+```helixql
 [
     {'property': value1, 'count': 3},
     {'property': value2, 'count': 2},
@@ -33,7 +33,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ## Example 1: Group users by country
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GroupUsersByCountry () =>
     users <- N<User>
     RETURN users::GROUP_BY(country)
@@ -48,7 +48,7 @@ QUERY CreateUser (name: String, country: String, city: String, age: U8) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     country: String,
@@ -222,7 +222,7 @@ curl -X POST \
 ## Example 2: Group users by multiple properties (country and city)
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GroupUsersByCountryAndCity () =>
     users <- N<User>
     RETURN users::GROUP_BY(country, city)
@@ -237,7 +237,7 @@ QUERY CreateUser (name: String, country: String, city: String, age: U8) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     country: String,
@@ -411,7 +411,7 @@ curl -X POST \
 ## Example 3: Count users per country using COUNT with GROUP_BY
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY CountUsersByCountry () =>
     users <- N<User>
     RETURN users::COUNT::GROUP_BY(country)
@@ -426,7 +426,7 @@ QUERY CreateUser (name: String, country: String, city: String, age: U8) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     country: String,

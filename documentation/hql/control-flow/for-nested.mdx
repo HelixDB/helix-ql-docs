@@ -7,7 +7,7 @@ description: "Use multiple levels of iteration for complex operations."
 
 Nest FOR loops to perform operations across multiple collections simultaneously. This is particularly useful for creating relationships between all pairs of elements or processing hierarchical data structures.
 
-```rust
+```helixql
 FOR outer_var IN outer_collection {
     FOR inner_var IN inner_collection {
         // Operations using both outer_var and inner_var
@@ -31,7 +31,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 
 <CodeGroup>
 
-```rust Query focus={1-15} [expandable]
+```helixql Query focus={1-15} [expandable]
 QUERY CreateUserNetwork (user_data: [{name: String, age: U8, interests: String}]) =>
     // First, create all users
     FOR {name, age, interests} IN user_data {
@@ -55,7 +55,7 @@ QUERY CreateUserNetwork (user_data: [{name: String, age: U8, interests: String}]
     RETURN "User network created"
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -186,7 +186,7 @@ curl -X POST \
 
 <CodeGroup>
 
-```rust Query focus={1-20} [expandable]
+```helixql Query focus={1-20} [expandable]
 QUERY LoadDocumentStructure (
     chapters: [{
         id: I64,
@@ -220,7 +220,7 @@ QUERY LoadDocumentStructure (
     RETURN "Document structure loaded"
 ```
 
-```rust Schema
+```helixql Schema
 N::Chapter {
     chapter_index: I64,
     title: String

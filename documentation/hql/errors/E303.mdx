@@ -9,13 +9,13 @@ title: 'E303'
 This error occurs when you provide a primitive value that is not valid for the expected type.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY createUser() =>
     user <- N<User>::INSERT { age: "not a number" }
     RETURN user
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
     age: U32,
@@ -28,13 +28,13 @@ N::User {
 Provide a valid primitive value that matches the expected type.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY createUser() =>
     user <- N<User>::INSERT { age: 25 }
     RETURN user
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
     age: U32,
