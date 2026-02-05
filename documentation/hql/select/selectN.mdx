@@ -1,14 +1,16 @@
 ---
-title: "Select nodes"
+title: "Nodes"
 description: "How to select and query nodes in your HelixDB graph by ID or type with code examples"
 icon: "draw-circle"
 ---
 
 ## How do I select nodes in HelixDB?
 
+Use `N` to select nodes from your graph by ID, type, or property values to begin traversals.
 
-```helixql
-N<Type>
+```rust
+N<Type>(node_id)
+N<Type>({field: value})
 ```
 
 ### Example 1: Selecting a user by ID
