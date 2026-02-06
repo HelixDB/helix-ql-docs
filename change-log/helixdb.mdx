@@ -6,6 +6,63 @@ rss: true
 ---
 
 <Update
+  label="February 6, 2026"
+  description="v2.2.8"
+  rss={{
+    title: "HelixDB v2.2.8",
+    description: "HelixDB v2.2.8 released on February 6, 2026"
+  }}
+>
+
+## Math Operations & CLI Improvements
+- New math operations support: `ADD`, `SUB`, `MUL`, `DIV`, `POW`, `MOD`, `ABS`, `SQRT`, `MIN`, `MAX`
+- CLI output revamp with structured verbosity levels and animated spinners
+- Nested HQL improvements for ID access and math operations in sub-queries
+- Bug fixes for `UpsertE` parameter handling and `WHERE` property access
+
+[View on GitHub →](https://github.com/HelixDB/helix-db/releases/tag/v2.2.8)
+
+</Update>
+
+<Update
+  label="January 30, 2026"
+  description="v2.2.7"
+  rss={{
+    title: "HelixDB v2.2.7",
+    description: "HelixDB v2.2.7 released on January 30, 2026"
+  }}
+>
+
+## Compiler Reliability & Error Reporting
+- Systematic panic removal across the HQL compiler with proper error handling
+- Improved error diagnostics with source-annotated error messages
+- Nested traversal code generation fixes including `ORDER BY` support
+- Query validation enhancements and port availability checking
+
+[View on GitHub →](https://github.com/HelixDB/helix-db/releases/tag/v2.2.7)
+
+</Update>
+
+<Update
+  label="January 25, 2026"
+  description="v2.2.5"
+  rss={{
+    title: "HelixDB v2.2.5",
+    description: "HelixDB v2.2.5 released on January 25, 2026"
+  }}
+>
+
+## Upsert Refactoring & Developer Experience
+- Upsert operations (`UpsertN`, `UpsertE`, `UpsertV`) refactored as traversal steps for more composable queries
+- Renamed `debug` build mode to `dev` for clarity
+- Configuration validation now resolves relative paths from `helix.toml` location
+- Bug fixes for date picker handling and Rust code generation
+
+[View on GitHub →](https://github.com/HelixDB/helix-db/releases/tag/v2.2.5)
+
+</Update>
+
+<Update
   label="January 17, 2026"
   description="v2.2.2"
   rss={{
