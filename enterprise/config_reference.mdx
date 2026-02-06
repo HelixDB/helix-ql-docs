@@ -1,46 +1,76 @@
 ---
-title: "Dashboard Configuration Reference"
-description: "A comprehensive reference for all dashboard configuration options available in Helix."
-sidebarTitle: "Dashboard Configuration"
+title: "HyperScale Cluster Configuration"
+description: "A comprehensive reference for all dashboard configuration options available with Helix Hyperscale."
+sidebarTitle:  "Configuration"
 icon: "gear"
 ---
+
+## Cluster Configuration Options
+
+### Cluster Modes
+
+Helix supports two cluster modes to match your deployment needs:
+
+| Feature | Dev Mode | HA Mode |
+|---------|----------|---------|
+| Purpose | Testing/Development | Production |
+| Instance Count | 1 gateway + 1 DB (fixed) | 3-100 (configurable) |
+| API Authentication | None | Enabled |
+| Logging Level | Verbose (debugging) | Reduced (production) |
+
+#### Storage Persistence
+Your data persists in the same Object Storage location regardless of which mode you're running. Switching from Dev to HA mode preserves all your data—only the nodes change, and data is loaded dynamically. This means you can start with Dev mode for testing, then upgrade to HA mode when you're ready for production.
+
 ---
-# Cluster Configuration Options
 
-<Warning>
-    This node count configuration settings do not apply to development clusters as they are limited to 1 gateway and 1 database node.
-</Warning>
+### Instance Configuration (HA Mode)
+
+<Info>
+Instance configuration only applies to HA mode clusters. Dev mode clusters are fixed at 1 gateway and 1 database node.
+</Info>
+
+HA clusters run a minimum of 3 gateway and 3 database nodes for high availability. The system automatically scales instances based on demand, up to your configured maximum. Gateway count always equals database count.
+
+| Setting | Min | Max | Default |
+|---------|-----|-----|---------|
+| Instances | 3 | 100 | 3-5 |
+
+Need more than 100 instances? Contact support.
 
 ---
 
-<ResponseField name="Minimum Gateway Nodes" type="number" default={3}>
-    This is the minimum number of gateway nodes that can be deployed. Note that the minimum number of gateway nodes is 3
-    ![Minimum Gateway Nodes](../images/dashboard.png)
-</ResponseField>
+### Database Node Architecture
 
-<ResponseField name="Maximum Gateway Nodes" type="number" default={5}>
-    This is the maximum number of gateway nodes that can be deployed. 
-    ![Maximum Gateway Nodes](../images/dashboard.png)
-    Note that the maximum number of gateway nodes is 100. If your usecase requires more please contact us.
-</ResponseField>
+Database nodes use a writer/reader architecture:
 
+- **1 writer node** handles all write operations
+- **Remaining nodes are readers** and handle read queries
+- Gateway nodes are all equivalent (no writer/reader distinction)
 
-<ResponseField name="Minimum Database Nodes" type="number" default={3}>
-    This is the minimum number of database nodes that can be deployed.
-    ![Minimum Database Nodes](../images/dashboard.png)
-    Note that the minimum number of database nodes is 3.
-</ResponseField>
+This architecture ensures write consistency while allowing read operations to scale horizontally across reader nodes.
 
-<ResponseField name="Maximum Database Nodes" type="number" default={5}>
-    This is the maximum number of database nodes that can be deployed.
-    ![Maximum Database Nodes](../images/dashboard.png) 
-    Note that the maximum number of database nodes is 100. If your usecase requires more please contact us.
-</ResponseField>
+---
 
+### Gateway Node Architecture
+
+Gateway nodes handle request routing based on query type:
+
+- **Incoming requests** are distributed across gateway nodes via load balancing
+- **Gateways analyze each query** to determine if it's a read or write operation
+- **Write queries** are routed to the writer database node
+- **Read queries** are distributed across reader database nodes
+
+This routing layer ensures write operations maintain consistency through the single writer node while read operations can scale horizontally across all reader nodes.
+
+---
+
+## Advanced
+
+These settings control low-level database behavior. Modify with caution.
 
 <ResponseField name="Flush Interval" type="milliseconds" default={200}>
-  Controls how often data is flushed from memory (memtable) to disk as SST files.                                                                                                 
-                                                                 
+  Controls how often data is flushed from memory (memtable) to disk as SST files.
+
   - Lower values: Better durability (less data loss on crash), but increased disk I/O
   - Higher values: Better write throughput, but more data at risk in memory
 </ResponseField>
@@ -79,5 +109,5 @@ icon: "gear"
   - Higher values: Faster vector queries (more cache hits), reduced disk I/O
   - Lower values: Lower memory footprint, but slower queries due to more disk reads
 
-  ⚠️ Over-allocating can cause memory pressure on the system.
+  <Warning>Over-allocating can cause memory pressure on the system.</Warning>
 </ResponseField>

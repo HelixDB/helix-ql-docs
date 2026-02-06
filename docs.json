@@ -323,13 +323,16 @@
         ]
       },
       {
-        "tab": "Benchmarks",
-        "pages": ["benchmarks/v1"]
-      },
-      {
         "tab": "Changelog",
         "pages": [
           "change-log/helixdb"
+        ]
+      },
+      {
+        "tab": "Helix HyperScale",
+        "pages": [
+          "enterprise/overview",
+          "enterprise/config_reference"
         ]
       }
       
