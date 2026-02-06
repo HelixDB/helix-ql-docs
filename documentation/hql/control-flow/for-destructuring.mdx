@@ -7,7 +7,7 @@ description: "Extract multiple properties directly in loop variable binding."
 
 Use destructuring syntax to extract specific properties from collection elements directly in the loop variable declaration. This eliminates the need for property access syntax within the loop body.
 
-```rust
+```helixql
 FOR {field1, field2, field3} IN collection {
     // Use field1, field2, field3 directly
 }
@@ -29,7 +29,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 
 <CodeGroup>
 
-```rust Query focus={1-9} [expandable]
+```helixql Query focus={1-9} [expandable]
 QUERY CreateUsersFromData (user_data: [{name: String, age: U8, email: String}]) =>
     FOR {name, age, email} IN user_data {
         user <- AddN<User>({
@@ -41,7 +41,7 @@ QUERY CreateUsersFromData (user_data: [{name: String, age: U8, email: String}]) 
     RETURN "Users created successfully"
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -169,7 +169,7 @@ curl -X POST \
 
 <CodeGroup>
 
-```rust Query focus={1-14} [expandable]
+```helixql Query focus={1-14} [expandable]
 QUERY LoadOrdersWithItems (
     order_data: [{
         customer: {name: String, email: String},
@@ -194,7 +194,7 @@ QUERY LoadOrdersWithItems (
     RETURN "Orders loaded successfully"
 ```
 
-```rust Schema
+```helixql Schema
 N::Order {
     customer_name: String,
     customer_email: String,
@@ -381,7 +381,7 @@ curl -X POST \
 
 <CodeGroup>
 
-```rust Query focus={1-12} [expandable]
+```helixql Query focus={1-12} [expandable]
 QUERY CreateProductsFromCatalog (
     catalog: [{
         id: String,
@@ -401,7 +401,7 @@ QUERY CreateProductsFromCatalog (
     RETURN "Products created from catalog"
 ```
 
-```rust Schema
+```helixql Schema
 N::Product {
     name: String,
     price: F64,

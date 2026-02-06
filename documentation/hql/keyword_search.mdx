@@ -8,7 +8,7 @@ icon: "magnifying-glass"
 
 Search for keywords in nodes using the BM25 ranking algorithm.
 
-```rust
+```helixql
 SearchBM25<Type>(text, limit)
 ```
 
@@ -23,7 +23,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Basic keyword search
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY SearchKeyword (keywords: String, limit: I64) =>
     documents <- SearchBM25<Document>(keywords, limit)
     RETURN documents
@@ -33,7 +33,7 @@ QUERY InsertDocument (content: String, created_at: Date) =>
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 N::Document {
     content: String,
     created_at: Date
@@ -210,7 +210,7 @@ curl -X POST \
 
 ### Example 2: Keyword search with postfiltering
 <CodeGroup>
-```rust Query focus={1-4} [expandable]
+```helixql Query focus={1-4} [expandable]
 QUERY SearchRecentKeywords (keywords: String, limit: I64, cutoff_date: Date) =>
     searched_docs <- SearchBM25<Document>(keywords, limit)
     documents <- searched_docs::WHERE(_::{created_at}::GTE(cutoff_date))
@@ -221,7 +221,7 @@ QUERY InsertDocument (content: String, created_at: Date) =>
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 N::Document {
     content: String,
     created_at: Date

@@ -8,7 +8,7 @@ icon: "link"
 
 Automatically embed text into vectors using your configured embedding model.
 
-```rust
+```helixql
 AddV<Type>(Embed(text))
 AddV<Type>(Embed(text), {properties})
 SearchV<Type>(Embed(text), limit)
@@ -29,13 +29,13 @@ All vectors in a vector type must have the same dimensions. If you change your e
 ### Example 1: Creating a vector from text
 <CodeGroup>
 
-```rust Query focus={2}
+```helixql Query focus={2}
 QUERY InsertTextAsVector (content: String, created_at: Date) =>
     document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     content: String,
     created_at: Date
@@ -140,7 +140,7 @@ curl -X POST \
 
 ### Example 2: Searching with text embeddings
 <CodeGroup>
-```rust Query focus={1-2} 
+```helixql Query focus={1-2} 
 QUERY SearchWithText (query: String, limit: I64) =>
     documents <- SearchV<Document>(Embed(query), limit)
     RETURN documents
@@ -150,7 +150,7 @@ QUERY InsertTextAsVector (content: String, created_at: Date) =>
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     content: String,
     created_at: Date
@@ -328,7 +328,7 @@ curl -X POST \
 
 ### Example 3: Creating a vector and connecting it to a user
 <CodeGroup>
-```rust Query focus={1-3} 
+```helixql Query focus={1-3} 
 QUERY CreateUserDocument (user_id: ID, content: String, created_at: Date) =>
     document <- AddV<Document>(Embed(content), { content: content, created_at: created_at })
     edge <- AddE<User_to_Document_Embedding>::From(user_id)::To(document)
@@ -342,7 +342,7 @@ QUERY CreateUser (name: String, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     email: String
@@ -498,7 +498,7 @@ curl -X POST \
 
 ### Example 4: Semantic search with postfiltering
 <CodeGroup>
-```rust Query focus={1-3}
+```helixql Query focus={1-3}
 QUERY SearchRecentNotes (query: String, limit: I64, cutoff_date: Date) =>
     documents <- SearchV<Document>(Embed(query), limit)
                     ::WHERE(_::{created_at}::GTE(cutoff_date))
@@ -509,7 +509,7 @@ QUERY InsertTextAsVector (content: String, created_at: Date) =>
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     content: String,
     created_at: Date

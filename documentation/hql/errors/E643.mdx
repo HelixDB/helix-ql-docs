@@ -12,7 +12,7 @@ In this example, the `email` field is excluded in the traversal, but is being ac
 
 <CodeGroup>
 
-```rust queries.hx
+```helixql queries.hx
 Query getUser(userId: ID) =>
     user <- N<User>(userId)::!{email}
     RETURN user::{email}
@@ -24,7 +24,7 @@ Query getUser(userId: ID) =>
 Remove the exclusion or access the field after the exclusion.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser(userId: ID) =>
     user <- N<User>(userId)
     RETURN user::{email}

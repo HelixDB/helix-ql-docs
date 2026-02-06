@@ -9,14 +9,14 @@ title: 'E624'
 This error occurs when you try to use an edge in a context that requires the `To` type to be a node, but the edge's `To` type is not a node.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getConnections(id: ID) =>
     user <- N<User>(id)
     connections <- user->LinksTo
     RETURN connections
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }
@@ -37,7 +37,7 @@ E::LinksTo {
 Ensure the edge type has a node type as its `To` source, or use the appropriate traversal for vector types.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }
@@ -52,7 +52,7 @@ E::Authored {
 }
 ```
 
-```rust queries.hx
+```helixql queries.hx
 QUERY getPosts(id: ID) =>
     user <- N<User>(id)
     posts <- user->Authored

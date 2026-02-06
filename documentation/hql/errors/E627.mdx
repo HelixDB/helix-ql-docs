@@ -9,13 +9,13 @@ title: 'E627'
 This error occurs when you use a shortest path operation without providing either a `from` or `to` parameter.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY findPath() =>
     path <- N<User>::ShortestPath()
     RETURN path
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }
@@ -32,13 +32,13 @@ E::Follows {
 Add a `from` or `to` parameter to the shortest path operation.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY findPath(startId: ID, endId: ID) =>
     path <- N<User>::ShortestPath(from: startId, to: endId)
     RETURN path
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }

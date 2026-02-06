@@ -33,7 +33,7 @@ HelixQL provides a comprehensive set of mathematical functions for performing ca
 
 Use math functions to calculate dynamic weights for shortest path algorithms:
 
-```rust
+```helixql
 ::ShortestPathDijkstras<Route>(
     MUL(_::{distance}, POW(0.95, DIV(_::{days_old}, 30)))
 )
@@ -43,7 +43,7 @@ Use math functions to calculate dynamic weights for shortest path algorithms:
 
 Transform property values during queries:
 
-```rust
+```helixql
 QUERY NormalizeScores(threshold: F64) =>
     items <- N::Item
         ::{
@@ -58,7 +58,7 @@ QUERY NormalizeScores(threshold: F64) =>
 
 Calculate distances using mathematical formulas:
 
-```rust
+```helixql
 QUERY CalculateDistance(x1: F64, y1: F64, x2: F64, y2: F64) =>
     dx <- SUB(x2, x1)
     dy <- SUB(y2, y1)
@@ -70,7 +70,7 @@ QUERY CalculateDistance(x1: F64, y1: F64, x2: F64, y2: F64) =>
 
 Perform statistical calculations on collections:
 
-```rust
+```helixql
 QUERY GetProductStats() =>
     products <- N::Product
     stats <- {
@@ -87,7 +87,7 @@ QUERY GetProductStats() =>
 
 Math functions can be nested and composed to create complex expressions:
 
-```rust
+```helixql
 // Exponential decay with normalization
 MUL(
     DIV(_::{score}, 100.0),

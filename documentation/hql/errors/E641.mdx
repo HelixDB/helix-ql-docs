@@ -12,7 +12,7 @@ In this example, the closure is not at the end of the traversal.
 
 <CodeGroup>
 
-```rust queries.hx
+```helixql queries.hx
 Query getUser(userId: ID) =>
     user <- N<User>(userId)
     RETURN user::|u|{
@@ -26,7 +26,7 @@ Query getUser(userId: ID) =>
 Place closure operations only at the end of traversals.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser(userId: ID) =>
     user <- N<User>(userId)
     out_users <- user::Out<Knows>

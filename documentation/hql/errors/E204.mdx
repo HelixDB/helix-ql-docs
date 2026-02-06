@@ -11,7 +11,7 @@ This error occurs when you try to use a reserved field name in your schema or qu
 For example, the field `id` is a reserved field name for any item type.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     id: String,
 }
@@ -23,7 +23,7 @@ N::User {
 Rename the field to a valid identifier.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     github_id: String,
 }

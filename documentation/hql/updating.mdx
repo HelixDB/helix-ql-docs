@@ -7,7 +7,7 @@ icon: "arrows-rotate"
 
 Modify properties on existing elements.
 
-```rust
+```helixql
 ::UPDATE({<properties_list>})
 ```
 
@@ -15,7 +15,7 @@ Modify properties on existing elements.
 ### Example 1: Updating a person's profile
 
 <CodeGroup>
-```rust Query focus={1-6} [expandable]
+```helixql Query focus={1-6} [expandable]
 QUERY UpdateUser(user_id: ID, new_name: String, new_age: U32) =>
     updated <- N<Person>(user_id)::UPDATE({
         name: new_name,
@@ -31,7 +31,7 @@ QUERY CreatePerson(name: String, age: U32) =>
     RETURN person
 ```
 
-```rust Schema
+```helixql Schema
 N::Person {
     name: String,
     age: U32,
@@ -173,7 +173,7 @@ curl -X POST \
 **The following examples would not work as the types don't match**
 </Danger>
 
-```rust
+```helixql
 QUERY UpdateUser(userID: ID) =>
     // No email field in Person node
     updatedUsers <- N<Person>(userID)::UPDATE({ email: "john@example.com" })

@@ -8,7 +8,7 @@ icon: "draw-circle"
 
 Use `AddN` to create new nodes in your graph with optional properties.
 
-```rust
+```helixql
 AddN<Type>
 AddN<Type>({properties})
 ```
@@ -19,13 +19,13 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 
 ### Example 1: Adding an empty user node
 <CodeGroup>
-```rust Query focus={2}
+```helixql Query focus={2}
 QUERY CreateUsers () =>
     empty_user <- AddN<User>
     RETURN empty_user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -106,7 +106,7 @@ curl -X POST \
 
 ### Example 2: Adding a user with parameters
 <CodeGroup>
-```rust Query focus={2-6}
+```helixql Query focus={2-6}
 QUERY CreateUser (name: String, age: U8, email: String) =>
     user <- AddN<User>({
         name: name,
@@ -117,7 +117,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -224,7 +224,7 @@ curl -X POST \
 
 ### Example 3: Adding a user with predefined properties
 <CodeGroup>
-```rust Query focus={2-6}
+```helixql Query focus={2-6}
 QUERY CreateUser () =>
     predefined_user <- AddN<User>({
         name: "Alice Johnson",
@@ -235,7 +235,7 @@ QUERY CreateUser () =>
     RETURN predefined_user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,

@@ -29,7 +29,7 @@ HelixQL provides two powerful reranking strategies:
 
 A technique for combining multiple ranked lists without requiring score calibration. Perfect for hybrid search scenarios where you want to merge results from different search methods.
 
-```rust
+```helixql
 ::RerankRRF             // Uses default k=60
 ::RerankRRF(k: 30.0)    // Custom k parameter
 ```
@@ -38,7 +38,7 @@ A technique for combining multiple ranked lists without requiring score calibrat
 
 A diversification technique that balances relevance with diversity to reduce redundancy. Ideal when you want to show varied results instead of similar or duplicate content.
 
-```rust
+```helixql
 ::RerankMMR(lambda: 0.7)                           
 ```
 
@@ -46,7 +46,7 @@ A diversification technique that balances relevance with diversity to reduce red
 ## Basic Usage Pattern
 
 RRF Usage:
-```rust focus=3
+```helixql focus=3
 QUERY SearchDocuments(query_vec: [F64]) =>
     results <- SearchV<Document>(query_vec, 100)
         ::RerankRRF           // Apply reranking
@@ -56,7 +56,7 @@ QUERY SearchDocuments(query_vec: [F64]) =>
 
 MMR Usage:
 
-```rust focus=3
+```helixql focus=3
 QUERY SearchDocuments(query_vec: [F64]) =>
     results <- SearchV<Document>(query_vec, 100)
         ::RerankMMR(lambda: 0.7)  // Apply reranking
@@ -68,7 +68,7 @@ QUERY SearchDocuments(query_vec: [F64]) =>
 
 You can chain multiple rerankers together for complex result optimization:
 
-```rust focus={3-4}
+```helixql focus={3-4}
 QUERY AdvancedSearch(query_vec: [F64]) =>
     results <- SearchV<Document>(query_vec, 150)
         ::RerankRRF(k: 60)       // First: combine multiple rankings
@@ -86,7 +86,7 @@ QUERY AdvancedSearch(query_vec: [F64]) =>
 
 ## Common Patterns
 
-```rust
+```helixql
 // Pattern 1: Simple diversification
 SearchV<Document>(vec, 100)::RerankMMR(lambda: 0.7)::RANGE(0, 10)
 

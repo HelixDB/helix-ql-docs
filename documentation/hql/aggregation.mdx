@@ -8,12 +8,12 @@ icon: "chart-bar"
 
 Group elements by specific properties to get count summaries.
 
-```rust
+```helixql
 ::GROUP_BY(property1, property2, ...)
 ```
 
 Returns count summaries:
-```rust
+```helixql
 [
     {'property': 25, 'count': 3}, 
     {'property': 30, 'count': 2},
@@ -33,7 +33,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Group users by age
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GroupUsersByAge () =>
     users <- N<User>
     RETURN users::GROUP_BY(age)
@@ -47,7 +47,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -220,7 +220,7 @@ curl -X POST \
 
 Aggregate elements by specific properties to get detailed data grouped by those properties.
 
-```rust
+```helixql
 ::AGGREGATE_BY(property1, property2, ...)
 ```
 
@@ -257,7 +257,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Aggregate users by age and email domain
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY AggregateUsersByAge () =>
     users <- N<User>
     RETURN users::AGGREGATE_BY(age)
@@ -271,7 +271,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,

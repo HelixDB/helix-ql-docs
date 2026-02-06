@@ -11,13 +11,13 @@ This error occurs when the type of a value you're providing doesn't match the ex
 For example, the field `age` is defined as an integer in the schema but you're providing a string.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY addUser(someField: U32) =>
     user <- AddN<User>({someField: someField})
     RETURN user
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     someField: String,
 }
@@ -33,13 +33,13 @@ N::User {
   <Tab title="Solution 1">
     Either change the type of the field in the schema to `U32`.
     <CodeGroup>
-    ```rust queries.hx
+    ```helixql queries.hx
         QUERY addUser(someField: U32) =>
             user <- AddN<User>({someField: someField})
             RETURN user
         ```
 
-        ```rust schema.hx
+        ```helixql schema.hx
         N::User {
             someField: U32,
         }
@@ -50,13 +50,13 @@ N::User {
   <Tab title="Solution 2">
     Or change the value you're providing to a string.
     <CodeGroup>
-    ```rust queries.hx
+    ```helixql queries.hx
         QUERY addUser(someField: String) =>
             user <- AddN<User>({someField: someField})
             RETURN user
         ```
 
-        ```rust schema.hx
+        ```helixql schema.hx
         N::User {
             someField: String,
         }

@@ -8,7 +8,7 @@ description: "Rename and restructure properties in query results using simple re
 Sometimes, you may want to rename a property that is returned from a traversal. 
 You can access properties of an item by using the name of the property as defined
 in the schema. 
-```rust
+```helixql
 ::{new_name: property_name}
 ::{alias: _::{property}}
 ```
@@ -22,7 +22,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Basic property remapping
 <CodeGroup>
 
-```rust Query focus={1-5} [expandable]
+```helixql Query focus={1-5} [expandable]
 QUERY GetUserWithAlias () =>
     users <- N<User>::RANGE(0, 5)
     RETURN users::{
@@ -39,7 +39,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -183,7 +183,7 @@ curl -X POST \
 
 ## Nested Mappings &nbsp;
 
-```rust
+```helixql
 ::|item_name|{
     field: item_name::traversal,
     nested_field: other::{
@@ -205,7 +205,7 @@ When accessing properties in nested mappings, scope matters. Use the explicit `i
 ### Example 1: User posts with nested remappings
 <CodeGroup>
 
-```rust Query focus={1-10} [expandable]
+```helixql Query focus={1-10} [expandable]
 QUERY GetUserPosts (user_id: ID) =>
     user <- N<User>(user_id)
     posts <- user::Out<HasPost>
@@ -236,7 +236,7 @@ QUERY CreatePost (user_id: ID, title: String, content: String) =>
     RETURN post
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,

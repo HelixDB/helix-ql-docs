@@ -7,7 +7,7 @@ description: "Learn how to upsert nodes in your graph using UpsertN for insert-o
 
 Create new nodes or update existing ones with insert-or-update semantics.
 
-```rust
+```helixql
 ::UpsertN({properties})
 ```
 
@@ -22,14 +22,14 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Basic node upsert with properties
 
 <CodeGroup>
-```rust Query focus={2-3}
+```helixql Query focus={2-3}
 QUERY UpsertPerson(name: String, age: U32) =>
     existing <- N<Person>::WHERE(_::{name}::EQ(name))
     person <- existing::UpsertN({name: name, age: age})
     RETURN person
 ```
 
-```rust Schema
+```helixql Schema
 N::Person {
     INDEX name: String,
     age: U32,
@@ -177,14 +177,14 @@ curl -X POST \
 When you already have a node ID, you can fetch it directly and apply the upsert.
 
 <CodeGroup>
-```rust Query focus={2-3}
+```helixql Query focus={2-3}
 QUERY UpsertPersonById(id: ID, new_age: U32) =>
     existing <- N<Person>(id)
     person <- existing::UpsertN({age: new_age})
     RETURN person
 ```
 
-```rust Schema
+```helixql Schema
 N::Person {
     INDEX name: String,
     age: U32,
@@ -283,14 +283,14 @@ curl -X POST \
 Find existing nodes with a WHERE clause and update or create if not found.
 
 <CodeGroup>
-```rust Query focus={2-4}
+```helixql Query focus={2-4}
 QUERY UpdateOrCreatePerson(name: String, new_age: U32) =>
     existing <- N<Person>::WHERE(_::{name}::EQ(name))
     person <- existing::UpsertN({name: name, age: new_age})
     RETURN person
 ```
 
-```rust Schema
+```helixql Schema
 N::Person {
     INDEX name: String,
     age: U32,

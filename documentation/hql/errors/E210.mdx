@@ -9,13 +9,13 @@ title: 'E210'
 This error occurs when an identifier is expected to be of type ID but a different type was provided.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUser(userId: String) =>
     user <- N<User>(userId)
     RETURN user
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }
@@ -27,13 +27,13 @@ N::User {
 Ensure the identifier is of type ID.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUser(userId: ID) =>
     user <- N<User>(userId)
     RETURN user
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }

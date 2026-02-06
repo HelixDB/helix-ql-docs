@@ -22,7 +22,7 @@ HelixDB provides two powerful operations for organizing and summarizing data: `G
 
 Both operations support single or multiple properties:
 
-```rust
+```helixql
 // GROUP_BY - Returns counts only
 ::GROUP_BY(property)
 ::GROUP_BY(property1, property2, ...)
@@ -35,7 +35,7 @@ Both operations support single or multiple properties:
 ## Output Format Comparison
 
 ### GROUP_BY Output
-```rust
+```helixql
 [
     {'country': 'USA', 'count': 3},
     {'country': 'Canada', 'count': 2},
@@ -129,7 +129,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ## Example 1: Side-by-Side Comparison - User Distribution
 
 <CodeGroup>
-```rust Query focus={1-8} [expandable]
+```helixql Query focus={1-8} [expandable]
 QUERY GroupUsersByCountry () =>
     users <- N<User>
     RETURN users::GROUP_BY(country)
@@ -147,7 +147,7 @@ QUERY CreateUser (name: String, country: String, age: U8) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     country: String,
@@ -351,7 +351,7 @@ curl -X POST \
 ## Example 2: Using COUNT with Both Operations
 
 <CodeGroup>
-```rust Query focus={1-8} [expandable]
+```helixql Query focus={1-8} [expandable]
 QUERY CountWithGroupBy () =>
     orders <- N<Order>
     RETURN orders::COUNT::GROUP_BY(status)
@@ -369,7 +369,7 @@ QUERY CreateOrder (customer_name: String, status: String, total: F64) =>
     RETURN order
 ```
 
-```rust Schema
+```helixql Schema
 N::Order {
     customer_name: String,
     status: String,
@@ -564,7 +564,7 @@ curl -X POST \
 ## Common Pitfalls
 
 ### Memory Issues with AGGREGATE_BY
-```rust
+```helixql
 // ❌ Bad: AGGREGATE_BY on millions of records
 users <- N<User>
 RETURN users::AGGREGATE_BY(country)
@@ -575,7 +575,7 @@ RETURN users::GROUP_BY(country)
 ```
 
 ### Using GROUP_BY When You Need Data
-```rust
+```helixql
 // ❌ Bad: GROUP_BY when you need to process items
 items <- N<Item>
 grouped <- items::GROUP_BY(category)

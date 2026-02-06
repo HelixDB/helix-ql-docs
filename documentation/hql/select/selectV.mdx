@@ -8,14 +8,14 @@ icon: "chart-scatter-3d"
 
 Select vectors from your graph to begin traversal.
 
-```rust
+```helixql
 V<Type>(vector_id)
 ```
 
 ### Example 1: Selecting a vector by ID
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetDocumentVector (vector_id: ID) =>
     doc_vector <- V<Document>(vector_id)
     RETURN doc_vector
@@ -27,7 +27,7 @@ QUERY CreateDocumentVector (vector: [F64], content: String) =>
     RETURN doc_vector
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     content: String,
 }

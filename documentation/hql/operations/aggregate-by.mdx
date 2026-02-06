@@ -8,7 +8,7 @@ icon: "chart-column"
 
 AGGREGATE_BY organizes query results into groups based on one or more property values, returning both count summaries and the full data objects for each group.
 
-```rust
+```helixql
 ::AGGREGATE_BY(property)
 ::AGGREGATE_BY(property1, property2)
 ```
@@ -46,7 +46,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ## Example 1: Aggregate orders by status
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY AggregateOrdersByStatus () =>
     orders <- N<Order>
     RETURN orders::AGGREGATE_BY(status)
@@ -60,7 +60,7 @@ QUERY CreateOrder (customer_name: String, status: String, total: F64) =>
     RETURN order
 ```
 
-```rust Schema
+```helixql Schema
 N::Order {
     customer_name: String,
     status: String,
@@ -232,7 +232,7 @@ curl -X POST \
 ## Example 2: Aggregate products by category with COUNT
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY CountProductsByCategory () =>
     products <- N<Product>
     RETURN products::COUNT::AGGREGATE_BY(category)
@@ -247,7 +247,7 @@ QUERY CreateProduct (name: String, category: String, price: F64, stock: I32) =>
     RETURN product
 ```
 
-```rust Schema
+```helixql Schema
 N::Product {
     name: String,
     category: String,

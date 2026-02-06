@@ -11,7 +11,7 @@ This error occurs when you try to reference a variable that is not currently in 
 In this example, the variable `userId` is not declared.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser() =>
     user <- N<User>(userId)
     RETURN user
@@ -23,7 +23,7 @@ Query getUser() =>
 Declare the variable as a parameter before using it.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser(userId: ID) =>
     user <- N<User>(userId)
     RETURN user

@@ -7,7 +7,7 @@ description: "Find weighted shortest paths with custom weight calculations."
 
 ShortestPathDijkstras finds the optimal shortest path in weighted graphs using Dijkstra's algorithm. It supports sophisticated weight calculations that can reference edge properties, source node properties, and destination node properties, making it incredibly flexible for real-world routing scenarios.
 
-```rust
+```helixql
 ::ShortestPathDijkstras<EdgeType>(weight_expression)
 ::To(target_id)
 ```
@@ -50,7 +50,7 @@ Weight expressions can reference:
 ## Example 1: Simple property-based weight
 
 <CodeGroup>
-```rust Query focus={1-4}
+```helixql Query focus={1-4}
 QUERY FindShortestRoute(start_id: ID, end_id: ID) =>
     result <- N<City>(start_id)
         ::ShortestPathDijkstras<Road>(_::{distance})
@@ -66,7 +66,7 @@ QUERY CreateRoad(from_id: ID, to_id: ID, distance: F64, traffic_level: F64) =>
     RETURN road
 ```
 
-```rust Schema
+```helixql Schema
 N::City {
     name: String,
     population: I64
@@ -357,7 +357,7 @@ curl -X POST http://localhost:6969/FindShortestRoute \
 ## Example 2: Traffic-aware routing with multi-context weights
 
 <CodeGroup>
-```rust Query focus={1-4}
+```helixql Query focus={1-4}
 QUERY FindTrafficAwareRoute(start_id: ID, end_id: ID) =>
     result <- N<City>(start_id)
         ::ShortestPathDijkstras<Road>(MUL(_::{distance}, _::FromN::{traffic_factor}))
@@ -373,7 +373,7 @@ QUERY CreateRoad(from_id: ID, to_id: ID, distance: F64) =>
     RETURN road
 ```
 
-```rust Schema
+```helixql Schema
 N::City {
     name: String,
     traffic_factor: F64  // Multiplier: 1.0 = normal, 2.0 = heavy traffic
@@ -661,7 +661,7 @@ curl -X POST http://localhost:6969/FindTrafficAwareRoute \
 ## Example 3: Complex multi-factor weight calculation
 
 <CodeGroup>
-```rust Query focus={1-11}
+```helixql Query focus={1-11}
 QUERY FindOptimalRoute(start_id: ID, end_id: ID) =>
     result <- N<Location>(start_id)
         ::ShortestPathDijkstras<Route>(
@@ -685,7 +685,7 @@ QUERY CreateRoute(from_id: ID, to_id: ID, distance: F64, reliability: F64) =>
     RETURN route
 ```
 
-```rust Schema
+```helixql Schema
 N::Location {
     name: String,
     traffic_factor: F64  // Current traffic multiplier

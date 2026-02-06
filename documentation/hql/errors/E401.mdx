@@ -12,7 +12,7 @@ In this example, the MCP query returns multiple users, but MCP expects a single 
 This is so the agent using the MCP tool can traverse from the return value of the query.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 #[mcp]
 Query getUsers(userId: ID, postId: ID) =>
     user <- N<User>(userId)
@@ -26,7 +26,7 @@ Query getUsers(userId: ID, postId: ID) =>
 Ensure MCP queries return exactly one value.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 #[mcp]
 Query getUsers(userId: ID, postId: ID) =>
     user <- N<User>(userId)

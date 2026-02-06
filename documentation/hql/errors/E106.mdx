@@ -9,7 +9,7 @@ title: 'E106'
 This error occurs when you reference a node or vector type in an edge definition before that type has been declared in the schema.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 E::Follows {
     From: User,
     To: User,
@@ -24,7 +24,7 @@ E::Follows {
 Declare the node or vector type in your schema before using it in an edge definition.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }

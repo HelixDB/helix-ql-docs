@@ -11,7 +11,7 @@ This error occurs when you try to use a step that is not valid in the current co
 In this example, the `OutE<Knows>` step results in edges, but the `Out` step can only be used on nodes.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser() =>
     user <- N<User>::OutE<Knows>::Out<Knows>
     RETURN user
@@ -23,7 +23,7 @@ Query getUser() =>
 Use valid step types in your traversals.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser() =>
     user <- N<User>::Out<Knows>::Out<Knows>
     RETURN user

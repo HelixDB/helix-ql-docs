@@ -2,6 +2,13 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "HelixDB Docs",
+  "styling": {
+    "codeblocks": {
+      "languages": {
+        "custom": ["languages/helixql.json"]
+      }
+    }
+  },
   "colors": {
     "primary": "#F26419",
     "light": "#FF8548",
@@ -42,7 +49,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Database",
+        "tab": "HelixDB",
         "groups": [
           {
             "group": "Getting Started",
@@ -323,6 +330,24 @@
         "tab": "Changelog",
         "pages": [
           "change-log/helixdb"
+        ]
+      },
+      {
+        "tab": "Helix Hyperscale",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "enterprise/overview"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "enterprise/config_reference",
+              "enterprise/env_vars"
+            ]
+          }
         ]
       }
 

@@ -12,14 +12,14 @@ HelixQL is strongly typed, so you can only traverse edges and access properties 
 
 Return the nodes reached via outgoing edges of a given type.
 
-```rust
+```helixql
 ::Out<EdgeType>
 ```
 
 ### Example 1: Listing who a user follows
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetUserFollowing (user_id: ID) =>
     following <- N<User>(user_id)::Out<Follows>
     RETURN following
@@ -38,7 +38,7 @@ QUERY FollowUser (follower_id: ID, followed_id: ID, since: Date) =>
     RETURN follow_edge
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     handle: String,
@@ -237,14 +237,14 @@ curl -X POST \
 
 Return the nodes that point to the current selection via incoming edges of the given type.
 
-```rust
+```helixql
 ::In<EdgeType>
 ```
 
 ### Example 1: Listing who follows a user
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetUserFollowers (user_id: ID) =>
     followers <- N<User>(user_id)::In<Follows>
     RETURN followers
@@ -263,7 +263,7 @@ QUERY FollowUser (follower_id: ID, followed_id: ID, since: Date) =>
     RETURN follow_edge
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     handle: String,
@@ -462,14 +462,14 @@ curl -X POST \
 
 Return the outgoing edges themselves (including properties and endpoints) for the given edge type.
 
-```rust
+```helixql
 ::OutE<EdgeType>
 ```
 
 ### Example 1: Inspecting follow relationships
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetFollowingEdges (user_id: ID) =>
     follow_edges <- N<User>(user_id)::OutE<Follows>
     RETURN follow_edges
@@ -488,7 +488,7 @@ QUERY FollowUser (follower_id: ID, followed_id: ID, since: Date) =>
     RETURN follow_edge
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     handle: String,
@@ -687,14 +687,14 @@ curl -X POST \
 
 Return incoming edges (with properties and endpoints) for the given type.
 
-```rust
+```helixql
 ::InE<EdgeType>
 ```
 
 ### Example 1: Inspecting who followed a user
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetFollowerEdges (user_id: ID) =>
     follow_edges <- N<User>(user_id)::InE<Follows>
     RETURN follow_edges
@@ -713,7 +713,7 @@ QUERY FollowUser (follower_id: ID, followed_id: ID, since: Date) =>
     RETURN follow_edge
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     handle: String,

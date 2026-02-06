@@ -11,7 +11,7 @@ HelixQL provides a comprehensive set of trigonometric functions for angular calc
 
 ### SIN - Sine
 
-```rust
+```helixql
 SIN(x)  // Returns sin(x)
 ```
 
@@ -19,7 +19,7 @@ Returns the sine of an angle in radians.
 
 ### COS - Cosine
 
-```rust
+```helixql
 COS(x)  // Returns cos(x)
 ```
 
@@ -27,7 +27,7 @@ Returns the cosine of an angle in radians.
 
 ### TAN - Tangent
 
-```rust
+```helixql
 TAN(x)  // Returns tan(x)
 ```
 
@@ -35,7 +35,7 @@ Returns the tangent of an angle in radians.
 
 ### ASIN - Arcsine
 
-```rust
+```helixql
 ASIN(x)  // Returns arcsin(x)
 ```
 
@@ -43,7 +43,7 @@ Returns the arcsine (inverse sine) of x in radians. Domain: [-1, 1].
 
 ### ACOS - Arccosine
 
-```rust
+```helixql
 ACOS(x)  // Returns arccos(x)
 ```
 
@@ -51,7 +51,7 @@ Returns the arccosine (inverse cosine) of x in radians. Domain: [-1, 1].
 
 ### ATAN - Arctangent
 
-```rust
+```helixql
 ATAN(x)  // Returns arctan(x)
 ```
 
@@ -59,7 +59,7 @@ Returns the arctangent (inverse tangent) of x in radians.
 
 ### ATAN2 - Two-Argument Arctangent
 
-```rust
+```helixql
 ATAN2(y, x)  // Returns atan2(y, x)
 ```
 
@@ -74,7 +74,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 Calculate the bearing (direction) between geographic coordinates:
 
 <CodeGroup>
-```rust Query focus={2-10}
+```helixql Query focus={2-10}
 QUERY CalculateBearings() =>
     locations <- N::Location
         ::{
@@ -92,7 +92,7 @@ QUERY CreateLocation(name: String, latitude: F64, longitude: F64) =>
     RETURN location
 ```
 
-```rust Schema
+```helixql Schema
 N::Location {
     name: String,
     latitude: F64,
@@ -244,7 +244,7 @@ curl -X POST \
 Use ATAN2 to calculate angles between vectors and points:
 
 <CodeGroup>
-```rust Query focus={2-7}
+```helixql Query focus={2-7}
 QUERY CalculateAngles() =>
     vectors <- N::Vector
         ::{
@@ -259,7 +259,7 @@ QUERY CreateVector(x: F64, y: F64) =>
     RETURN vector
 ```
 
-```rust Schema
+```helixql Schema
 N::Vector {
     x: F64,
     y: F64
@@ -418,7 +418,7 @@ curl -X POST \
 Use inverse trigonometric functions to recover angles from ratios:
 
 <CodeGroup>
-```rust Query focus={2-8}
+```helixql Query focus={2-8}
 QUERY RecoverAngles() =>
     measurements <- N::Measurement
         ::{
@@ -434,7 +434,7 @@ QUERY CreateMeasurement(ratio: F64) =>
     RETURN measurement
 ```
 
-```rust Schema
+```helixql Schema
 N::Measurement {
     ratio: F64
 }
@@ -577,7 +577,7 @@ curl -X POST \
 
 All trigonometric functions in HelixQL work with radians. To convert between degrees and radians:
 
-```rust
+```helixql
 // Degrees to radians
 radians = MUL(degrees, DIV(PI(), 180.0))
 
@@ -605,7 +605,7 @@ ATAN2 is preferred over ATAN for angle calculations because:
 - It avoids division by zero when x = 0
 - It returns values in the full range [-π, π]
 
-```rust
+```helixql
 // ATAN2 correctly handles all quadrants
 ATAN2(1.0, 1.0)    // π/4 (first quadrant)
 ATAN2(1.0, -1.0)   // 3π/4 (second quadrant)
@@ -617,7 +617,7 @@ ATAN2(-1.0, 1.0)   // -π/4 (fourth quadrant)
 
 Trigonometric functions are essential for geospatial calculations:
 
-```rust
+```helixql
 // Calculate great circle distance (Haversine formula)
 QUERY CalculateDistance(lat1: F64, lon1: F64, lat2: F64, lon2: F64) =>
     dlat <- SUB(lat2, lat1)

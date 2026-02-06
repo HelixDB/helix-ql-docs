@@ -9,12 +9,12 @@ title: 'W101'
 This warning occurs when a query does not have a `RETURN` statement. While not always an error, queries typically should return a value.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUser(id: ID) =>
     user <- N<User>(id)
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }
@@ -26,13 +26,13 @@ N::User {
 Add a `RETURN` statement to specify what the query should return, or use a mutation operation like `INSERT`, `UPDATE`, or `DROP` if the query is intended to modify data without returning a value.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY getUser(id: ID) =>
     user <- N<User>(id)
     RETURN user
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }

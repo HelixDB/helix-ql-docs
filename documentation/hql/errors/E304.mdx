@@ -11,13 +11,13 @@ This error occurs when an item type is required but not provided in your query.
 In this example, the `User` item type is required but not provided.
 
 <CodeGroup>
-```rust example1.hx
+```helixql example1.hx
 Query getUser(userId: ID) =>
     user <- N(userId)
     RETURN user
 ```
 
-```rust example2.hx
+```helixql example2.hx
 Query getUser(userId: ID) =>
     user <- N<User>(userId)::Out
     RETURN user
@@ -29,13 +29,13 @@ Query getUser(userId: ID) =>
 Specify the required item type within the `<` and `>` brackets after the traversal step in your query.
 
 <CodeGroup>
-```rust example1.hx
+```helixql example1.hx
 Query getUser(userId: ID) =>
     user <- N<User>(userId)
     RETURN user
 ```
 
-```rust example2.hx
+```helixql example2.hx
 Query getUser(userId: ID) =>
     user <- N<User>(userId)::Out<Knows>
     RETURN user

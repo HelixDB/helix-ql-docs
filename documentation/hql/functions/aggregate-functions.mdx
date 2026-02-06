@@ -11,7 +11,7 @@ HelixQL provides a comprehensive set of aggregate functions for performing stati
 
 ### MIN - Minimum Value
 
-```rust
+```helixql
 MIN(collection)  // Returns the smallest value
 ```
 
@@ -19,7 +19,7 @@ Returns the minimum value from a collection of numbers.
 
 ### MAX - Maximum Value
 
-```rust
+```helixql
 MAX(collection)  // Returns the largest value
 ```
 
@@ -27,7 +27,7 @@ Returns the maximum value from a collection of numbers.
 
 ### SUM - Sum of Values
 
-```rust
+```helixql
 SUM(collection)  // Returns the total sum
 ```
 
@@ -35,7 +35,7 @@ Returns the sum of all values in a collection.
 
 ### AVG - Average Value
 
-```rust
+```helixql
 AVG(collection)  // Returns the mean
 ```
 
@@ -43,7 +43,7 @@ Returns the arithmetic mean (average) of all values in a collection.
 
 ### COUNT - Count Elements
 
-```rust
+```helixql
 COUNT(collection)  // Returns the number of elements
 ```
 
@@ -58,7 +58,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 Analyze sales performance using aggregate functions:
 
 <CodeGroup>
-```rust Query focus={2-9}
+```helixql Query focus={2-9}
 QUERY AnalyzeSalesStatistics() =>
     stats <- {
         total_sales: SUM(N::Sale::{amount}),
@@ -74,7 +74,7 @@ QUERY CreateSale(amount: F64, product: String) =>
     RETURN sale
 ```
 
-```rust Schema
+```helixql Schema
 N::Sale {
     amount: F64,
     product: String
@@ -251,7 +251,7 @@ curl -X POST \
 Calculate grade statistics for students:
 
 <CodeGroup>
-```rust Query focus={2-10}
+```helixql Query focus={2-10}
 QUERY AnalyzeStudentGrades() =>
     students <- N::Student
         ::{
@@ -269,7 +269,7 @@ QUERY CreateStudent(name: String, grades: [F64]) =>
     RETURN student
 ```
 
-```rust Schema
+```helixql Schema
 N::Student {
     name: String,
     grades: [F64]
@@ -428,7 +428,7 @@ curl -X POST \
 Monitor and summarize IoT sensor readings:
 
 <CodeGroup>
-```rust Query focus={2-11}
+```helixql Query focus={2-11}
 QUERY MonitorSensorReadings() =>
     sensors <- N::Sensor
         ::{
@@ -447,7 +447,7 @@ QUERY CreateSensor(sensor_id: String, readings: [F64]) =>
     RETURN sensor
 ```
 
-```rust Schema
+```helixql Schema
 N::Sensor {
     sensor_id: String,
     readings: [F64]
@@ -607,7 +607,7 @@ curl -X POST \
 
 Aggregate functions are often used together for comprehensive analysis:
 
-```rust
+```helixql
 QUERY ComprehensiveStats() =>
     stats <- {
         count: COUNT(N::DataPoint::{value}),
@@ -624,7 +624,7 @@ QUERY ComprehensiveStats() =>
 
 Combine aggregates with filtering for conditional statistics:
 
-```rust
+```helixql
 QUERY FilteredStats(threshold: F64) =>
     filtered <- N::DataPoint WHERE _::{value} > threshold
     stats <- {
@@ -639,7 +639,7 @@ QUERY FilteredStats(threshold: F64) =>
 
 Calculate aggregates on aggregate results:
 
-```rust
+```helixql
 QUERY NestedAggregates() =>
     groups <- N::Group
         ::{
@@ -672,7 +672,7 @@ When aggregate functions are applied to empty collections:
 
 To calculate variance and standard deviation, combine aggregate functions:
 
-```rust
+```helixql
 // Calculate variance
 QUERY CalculateVariance() =>
     values <- N::Value::{amount}

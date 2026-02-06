@@ -10,7 +10,7 @@ This error occurs when you define an object remapping with no fields.
 
 <CodeGroup>
 
-```rust queries.hx
+```helixql queries.hx
 Query getUser(userId: ID) =>
     user <- N<User>(userId)
     RETURN user::{}
@@ -19,7 +19,7 @@ Query getUser(userId: ID) =>
 ## Solution
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUser(userId: ID) =>
     user <- N<User>(userId)
     RETURN user::{name}

@@ -7,7 +7,7 @@ description: "Diversify search results using Maximal Marginal Relevance."
 
 RerankMMR is a diversification technique that balances relevance with diversity to reduce redundancy in search results. It iteratively selects results that are both relevant to the query and dissimilar to already-selected results, ensuring users see varied content instead of near-duplicates.
 
-```rust
+```helixql
 ::RerankMMR(lambda: 0.7)                           // Cosine distance (default)
 ::RerankMMR(lambda: 0.5, distance: "euclidean")    // Euclidean distance
 ::RerankMMR(lambda: 0.6, distance: "dotproduct")   // Dot product distance
@@ -96,7 +96,7 @@ The distance metric used for calculating similarity:
 ## Example 1: Basic diversification with default cosine distance
 
 <CodeGroup>
-```rust Query focus={1-4}
+```helixql Query focus={1-4}
 QUERY DiverseSearch(query_vec: [F64]) =>
     results <- SearchV<Document>(query_vec, 100)
         ::RerankMMR(lambda: 0.7)
@@ -111,7 +111,7 @@ QUERY InsertDocument(vector: [F64], title: String, category: String) =>
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     title: String,
     category: String
@@ -277,7 +277,7 @@ curl -X POST \
 ## Example 2: High diversity with euclidean distance
 
 <CodeGroup>
-```rust Query focus={1-4}
+```helixql Query focus={1-4}
 QUERY HighDiversitySearch(query_vec: [F64]) =>
     results <- SearchV<Document>(query_vec, 100)
         ::RerankMMR(lambda: 0.3, distance: "euclidean")
@@ -292,7 +292,7 @@ QUERY InsertDocument(vector: [F64], title: String, category: String) =>
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     title: String,
     category: String
@@ -449,7 +449,7 @@ curl -X POST \
 ## Example 3: Balanced approach with dot product
 
 <CodeGroup>
-```rust Query focus={1-4}
+```helixql Query focus={1-4}
 QUERY BalancedSearch(query_vec: [F64]) =>
     results <- SearchV<Document>(query_vec, 100)
         ::RerankMMR(lambda: 0.5, distance: "dotproduct")
@@ -464,7 +464,7 @@ QUERY InsertDocument(vector: [F64], title: String, category: String) =>
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     title: String,
     category: String
@@ -621,7 +621,7 @@ curl -X POST \
 ## Example 4: Dynamic lambda for user-controlled diversity
 
 <CodeGroup>
-```rust Query focus={1-4}
+```helixql Query focus={1-4}
 QUERY CustomDiversitySearch(query_vec: [F64], diversity: F64) =>
     results <- SearchV<Document>(query_vec, 100)
         ::RerankMMR(lambda: diversity)
@@ -636,7 +636,7 @@ QUERY InsertDocument(vector: [F64], title: String, category: String) =>
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     title: String,
     category: String
@@ -819,7 +819,7 @@ curl -X POST \
 Combine RRF and MMR for hybrid search with diversification:
 
 <CodeGroup>
-```rust Query focus={1-5}
+```helixql Query focus={1-5}
 QUERY HybridDiverseSearch(query_vec: [F64]) =>
     results <- SearchV<Document>(query_vec, 150)
         ::RerankRRF(k: 60)           // First: combine rankings
@@ -835,7 +835,7 @@ QUERY InsertDocument(vector: [F64], title: String, category: String) =>
     RETURN document
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     title: String,
     category: String
@@ -849,7 +849,7 @@ V::Document {
 
 MMR works best with a larger pool of candidates:
 
-```rust
+```helixql
 // Good: Fetch 100-200, return 10-20
 SearchV<Document>(vec, 100)::RerankMMR(lambda: 0.7)::RANGE(0, 10)
 
@@ -876,7 +876,7 @@ Start with these guidelines and adjust based on your results:
 
 Apply filters before reranking for better performance:
 
-```rust
+```helixql
 QUERY FilteredDiverseSearch(query_vec: [F64], category: String) =>
     results <- SearchV<Document>(query_vec, 200)
         ::WHERE(_::{category}::EQ(category))  // Filter first
@@ -935,7 +935,7 @@ Key performance factors:
 
 Diversify news articles to show varied perspectives:
 
-```rust
+```helixql
 SearchV<Article>(query_vec, 100)::RerankMMR(lambda: 0.5)::RANGE(0, 10)
 ```
 
@@ -943,7 +943,7 @@ SearchV<Article>(query_vec, 100)::RerankMMR(lambda: 0.5)::RANGE(0, 10)
 
 Show varied product categories while maintaining relevance:
 
-```rust
+```helixql
 SearchV<Product>(query_vec, 150)::RerankMMR(lambda: 0.65)::RANGE(0, 20)
 ```
 
@@ -951,7 +951,7 @@ SearchV<Product>(query_vec, 150)::RerankMMR(lambda: 0.65)::RANGE(0, 20)
 
 Maximize exploration with diverse recommendations:
 
-```rust
+```helixql
 SearchV<Content>(user_vec, 200)::RerankMMR(lambda: 0.4, distance: "euclidean")::RANGE(0, 15)
 ```
 
@@ -959,7 +959,7 @@ SearchV<Content>(user_vec, 200)::RerankMMR(lambda: 0.4, distance: "euclidean")::
 
 Balance comprehensive coverage with relevance:
 
-```rust
+```helixql
 SearchV<Document>(query_vec, 100)::RerankMMR(lambda: 0.6)::RANGE(0, 10)
 ```
 

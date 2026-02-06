@@ -8,14 +8,14 @@ icon: "circle-nodes"
 
 Select edges from your graph to begin traversal.
 
-```rust
+```helixql
 E<Type>(edge_id)
 ```
 
 ### Example 1: Selecting a follows edge by ID
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetFollowEdge (edge_id: ID) =>
     follow_edge <- E<Follows>(edge_id)
     RETURN follow_edge
@@ -34,7 +34,7 @@ QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
 
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -239,13 +239,13 @@ curl -X POST \
 ### Example 2: Selecting all follows edges
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY GetAllFollows () =>
     follows <- E<Follows>
     RETURN follows
 ```
 
-```rust Schema
+```helixql Schema
 E::Follows {
     From: User,
     To: User,

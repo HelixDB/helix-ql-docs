@@ -11,7 +11,7 @@ This error occurs when a required parameter is missing from a function call or o
 In this example, the `SearchV` function is called without the `k` parameter which is required to limit the number of results.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query searchUsers(vector: [F64]) =>
     users <- SearchV<Document>(vector)
     RETURN users
@@ -23,7 +23,7 @@ Query searchUsers(vector: [F64]) =>
 Provide all required parameters for functions and operations.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query searchUsers(vector: [F64]) =>
     users <- SearchV<Document>(vector, 10)
     RETURN users

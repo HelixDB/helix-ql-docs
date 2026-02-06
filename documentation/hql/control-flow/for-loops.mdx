@@ -7,7 +7,7 @@ description: "Iterate over collections and perform batch operations."
 
 FOR loops enable you to iterate over collections and perform operations on each element. They are essential for batch processing, data transformation, and building complex graph structures.
 
-```rust
+```helixql
 FOR variable IN collection {
     // Operations on each element
 }
@@ -31,21 +31,21 @@ FOR loops are executed sequentially, making them ideal for operations that need 
 ## Quick examples
 
 ### Basic iteration
-```rust
+```helixql
 FOR user IN users {
     AddN<User>({ name: user.name, age: user.age })
 }
 ```
 
 ### Destructuring
-```rust
+```helixql
 FOR {name, age, email} IN user_data {
     AddN<User>({ name: name, age: age, email: email })
 }
 ```
 
 ### Nested loops
-```rust
+```helixql
 FOR user1 IN users {
     FOR user2 IN users {
         AddE<Knows>::From(user1)::To(user2)

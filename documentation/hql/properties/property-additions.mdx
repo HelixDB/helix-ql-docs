@@ -3,7 +3,7 @@ title: "Property Additions"
 description: "Add computed properties and derived values to query results by combining schema fields and traversal results to enrich query responses"
 ---
 
-```rust
+```helixql
 ::{
     <new_property>: <schema_field>,
     <computed_property>: <traversal_expression>
@@ -21,7 +21,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Adding computed properties with traversals
 <CodeGroup>
 
-```rust Query focus={1-6} [expandable]
+```helixql Query focus={1-6} [expandable]
 QUERY GetUserDetails () =>
     users <- N<User>::RANGE(0, 5)
     RETURN users::{
@@ -43,7 +43,7 @@ QUERY CreateFollow (follower_id: ID, following_id: ID) =>
     RETURN "Success"
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8

@@ -9,7 +9,7 @@ title: 'E628'
 This error occurs when you try to use `DROP` on an expression that is not a traversal.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY deleteValue(value: String) =>
     DROP value
 ```
@@ -20,13 +20,13 @@ QUERY deleteValue(value: String) =>
 Ensure `DROP` is applied to a traversal that returns nodes, edges, or vectors.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY deleteUser(id: ID) =>
     user <- N<User>(id)
     DROP user
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }

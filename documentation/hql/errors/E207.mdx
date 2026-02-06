@@ -12,12 +12,12 @@ In this example, the `Created` edge exists. However, it goes from `User` to `Pos
 Therefore, it is not valid for an `Out` step from a `Post` node.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUserFromPost(postId: ID) =>
     user <- N<Post>(postId)::Out<Created>
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     // Fields
 }
@@ -38,7 +38,7 @@ E::Created {
 In this case, the solution would be to change the traversal to use the `In` step instead of the `Out` step.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query getUserFromPost(postId: ID) =>
     user <- N<Post>(postId)::In<Created>
 ```

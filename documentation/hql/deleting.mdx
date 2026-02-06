@@ -7,7 +7,7 @@ icon: "eraser"
 
 Drops elements from your database. The `DROP` effects the elements returned by the traversal.
 
-```rust
+```helixql
 DROP <traversal>
 ```
 You can use the drop on any traversal that returns a list of elements.
@@ -19,7 +19,7 @@ You can use the drop on any traversal that returns a list of elements.
 Dropping a node will also remove all related edges that are connected to it.
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY DeleteUserNode (user_id: ID) =>
     DROP N<User>(user_id)
     RETURN "Removed user node"
@@ -29,7 +29,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -175,7 +175,7 @@ curl -X POST \
 Use `DROP` on the outgoing traversal to delete connected neighbor nodes and the connecting edges.
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY DeleteOutgoingNeighbors (user_id: ID) =>
     DROP N<User>(user_id)::Out<Follows>
     RETURN "Removed outgoing neighbors"
@@ -189,7 +189,7 @@ QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
     RETURN follows
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -385,7 +385,7 @@ curl -X POST \
 Delete any users that follow the target user by traversing incoming connections.
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY DeleteIncomingNeighbors (user_id: ID) =>
     DROP N<User>(user_id)::In<Follows>
     RETURN "Removed incoming neighbors"
@@ -399,7 +399,7 @@ QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
     RETURN follows
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -595,7 +595,7 @@ curl -X POST \
 Strip all follows edges that originate from the user without touching the neighbor nodes.
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY DeleteOutgoingEdges (user_id: ID) =>
     DROP N<User>(user_id)::OutE<Follows>
     RETURN "Removed outgoing edges"
@@ -609,7 +609,7 @@ QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
     RETURN follows
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -805,7 +805,7 @@ curl -X POST \
 Target follows edges pointing at the user while leaving the neighbor nodes untouched.
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY DeleteIncomingEdges (user_id: ID) =>
     DROP N<User>(user_id)::InE<Follows>
     RETURN "Removed incoming edges"
@@ -819,7 +819,7 @@ QUERY CreateRelationships (user1_id: ID, user2_id: ID) =>
     RETURN follows
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,

@@ -44,7 +44,7 @@ All mathematical functions available in Helix can be used in weight expressions.
 ## Example 1: Exponential time decay
 
 <CodeGroup>
-```rust Query focus={1-7}
+```helixql Query focus={1-7}
 QUERY FindFreshestPath(start_id: ID, end_id: ID) =>
     result <- N<DataCenter>(start_id)
         ::ShortestPathDijkstras<Link>(
@@ -62,7 +62,7 @@ QUERY CreateLink(from_id: ID, to_id: ID, distance: F64, days_old: I64) =>
     RETURN link
 ```
 
-```rust Schema
+```helixql Schema
 N::DataCenter {
     name: String
 }
@@ -346,7 +346,7 @@ curl -X POST http://localhost:6969/FindFreshestPath \
 ## Example 2: Multi-factor composite scoring
 
 <CodeGroup>
-```rust Query focus={1-13}
+```helixql Query focus={1-13}
 QUERY FindOptimalPath(start_id: ID, end_id: ID) =>
     result <- N<Server>(start_id)
         ::ShortestPathDijkstras<Connection>(
@@ -373,7 +373,7 @@ QUERY CreateConnection(from_id: ID, to_id: ID, latency: F64, bandwidth: F64, rel
     RETURN connection
 ```
 
-```rust Schema
+```helixql Schema
 N::Server {
     name: String
 }
@@ -661,7 +661,7 @@ curl -X POST http://localhost:6969/FindOptimalPath \
 ## Example 3: Conditional weights with thresholds
 
 <CodeGroup>
-```rust Query focus={1-11}
+```helixql Query focus={1-11}
 QUERY FindConditionalPath(start_id: ID, end_id: ID, threshold: F64) =>
     result <- N<Router>(start_id)
         ::ShortestPathDijkstras<Cable>(
@@ -685,7 +685,7 @@ QUERY CreateCable(from_id: ID, to_id: ID, length: F64, capacity_used: F64) =>
     RETURN cable
 ```
 
-```rust Schema
+```helixql Schema
 N::Router {
     name: String
 }
@@ -972,25 +972,25 @@ curl -X POST http://localhost:6969/FindConditionalPath \
 ## Complex Expression Patterns
 
 ### Vector Distance with Property Weighting
-```rust
+```helixql
 // Euclidean-style distance combining two properties
 SQRT(ADD(POW(_::{distance}, 2), POW(MUL(1000, SUB(1, _::{reliability})), 2)))
 ```
 
 ### Logarithmic Scaling for Large Values
-```rust
+```helixql
 // Compress large bandwidth values logarithmically
 MUL(_::{distance}, LN(ADD(_::{bandwidth}, 1)))
 ```
 
 ### Periodic Patterns with Trigonometry
-```rust
+```helixql
 // Prefer routes updated on certain days (weekly cycle)
 MUL(_::{distance}, ADD(1, MUL(SIN(DIV(_::{days_since_update}, 7)), 0.2)))
 ```
 
 ### Quantized Weights
-```rust
+```helixql
 // Round to nearest 10 for simplified routing
 MUL(ROUND(DIV(_::{distance}, 10)), 10)
 ```
@@ -1009,13 +1009,13 @@ MUL(ROUND(DIV(_::{distance}, 10)), 10)
 ### Optimization Tips
 
 1. **Pre-calculate when possible**: Store derived values as properties
-   ```rust
+   ```helixql
    // Instead of: POW(0.95, DIV(days, 30))
    // Pre-calculate: decay_factor property
    ```
 
 2. **Simplify expressions**: Combine constants
-   ```rust
+   ```helixql
    // Instead of: MUL(MUL(_::{x}, 0.3), 0.4)
    // Use: MUL(_::{x}, 0.12)
    ```
@@ -1030,28 +1030,28 @@ MUL(ROUND(DIV(_::{distance}, 10)), 10)
 ## Common Patterns Library
 
 ### Time-based Decay
-```rust
+```helixql
 // Exponential: POW(0.95, DIV(age, period))
 // Linear: MUL(distance, ADD(1, DIV(age, 100)))
 // Step: MUL(distance, ADD(1, FLOOR(DIV(age, 30))))
 ```
 
 ### Multi-factor Scoring
-```rust
+```helixql
 // Weighted sum: ADD(MUL(factor1, w1), MUL(factor2, w2))
 // Geometric mean: SQRT(MUL(factor1, factor2))
 // Harmonic mean: DIV(2, ADD(DIV(1, f1), DIV(1, f2)))
 ```
 
 ### Threshold-based Penalties
-```rust
+```helixql
 // Hard threshold: IF(GT(value, thresh), penalty, 1)
 // Soft threshold: ADD(1, MUL(MAX(0, SUB(value, thresh)), rate))
 // Step function: CEIL(DIV(MAX(0, SUB(value, thresh)), step))
 ```
 
 ### Normalization
-```rust
+```helixql
 // Min-max: DIV(SUB(value, min), SUB(max, min))
 // Z-score: DIV(SUB(value, mean), stddev)
 // Log scale: LN(ADD(value, 1))

@@ -10,7 +10,7 @@ Unique indexes allow you to enforce uniqueness constraints on your data, ensurin
 
 To enforce uniqueness on a node field, use the `UNIQUE INDEX` keywords before the field name:
 
-```rust
+```helixql
 N::User {
     UNIQUE INDEX email: String,
     name: String,
@@ -22,7 +22,7 @@ This creates a unique secondary index on the `email` field, preventing duplicate
 
 ### Syntax
 
-```rust
+```helixql
 N::NodeType {
     UNIQUE INDEX field_name: Type,
     UNIQUE INDEX field_name: Type DEFAULT default_value,
@@ -33,7 +33,7 @@ N::NodeType {
 
 You can combine unique indexes with default values:
 
-```rust
+```helixql
 N::Document {
     UNIQUE INDEX slug: String,
     INDEX view_count: I32 DEFAULT 0,
@@ -45,7 +45,7 @@ N::Document {
 
 Nodes with unique indexes can be queried using object syntax, just like regular indexes:
 
-```rust
+```helixql
 QUERY getUserByEmail(email: String) =>
     user <- N<User>({email: email})
     RETURN user
@@ -59,7 +59,7 @@ Unique edges ensure that only one edge of a given type can exist between two spe
 
 ### Syntax
 
-```rust
+```helixql
 E::EdgeType UNIQUE {
     From: NodeType,
     To: NodeType,
@@ -70,7 +70,7 @@ The `UNIQUE` modifier is placed between the edge name and the edge body.
 
 ### Example
 
-```rust
+```helixql
 N::User {
     UNIQUE INDEX username: String,
     name: String,
@@ -88,7 +88,7 @@ With this schema, each user can only have one `BestFriend` edge pointing to anot
 
 Unique edges can also have properties:
 
-```rust
+```helixql
 E::PrimaryContact UNIQUE {
     From: Company,
     To: Person,
@@ -104,7 +104,7 @@ E::PrimaryContact UNIQUE {
 ## Complete Example
 
 <CodeGroup>
-```rust Schema
+```helixql Schema
 N::Employee {
     UNIQUE INDEX employee_id: String,
     UNIQUE INDEX email: String,
@@ -128,7 +128,7 @@ E::WorksOn {
 }
 ```
 
-```rust Queries
+```helixql Queries
 QUERY createEmployee(employee_id: String, email: String, name: String, department: String) =>
     emp <- AddN<Employee>({
         employee_id: employee_id,
@@ -164,7 +164,7 @@ When inserting data that violates a unique constraint, HelixDB will return an er
 
 If you attempt to insert a node with a value that already exists for a unique indexed field, the operation will fail:
 
-```rust
+```helixql
 // First insert succeeds
 emp1 <- AddN<Employee>({
     employee_id: "EMP001",
@@ -186,7 +186,7 @@ The second operation will return an error indicating that a node with that email
 
 Similarly, attempting to create a duplicate unique edge will fail:
 
-```rust
+```helixql
 // First edge succeeds
 lead1 <- AddE<LeadOf>::From(alice_id)::To(project_id)
 

@@ -9,13 +9,13 @@ title: 'E603'
 This error occurs when you use `SearchV` on a type that is not a vector type.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY findSimilar(embedding: [F32; 128]) =>
     results <- N<User>::SearchV(embedding, 10)
     RETURN results
 ```
 
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }
@@ -27,13 +27,13 @@ N::User {
 Use `SearchV` on a vector type, not a node or edge type.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 QUERY findSimilar(embedding: [F32; 128]) =>
     results <- V<Document>::SearchV(embedding, 10)
     RETURN results
 ```
 
-```rust schema.hx
+```helixql schema.hx
 V<128>::Document {
     title: String,
     content: String,

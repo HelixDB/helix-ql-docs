@@ -1,14 +1,74 @@
 ---
 title: "Result Operations"
-description: "Transform and organize traversal results using `COUNT`, `RANGE`, and `ORDER` operations."
+description: "Transform and organize traversal results using `COUNT`, `RANGE`, `ORDER`, and `FIRST` operations."
 icon: "integral"
+---
+
+## Get first element of a list with `FIRST` &nbsp;
+
+Get the first element from a traversal result. 
+
+<Warning>
+Note this does not return the first/oldest node in the graph, but the first node that the traversal returns.
+</Warning>
+
+```helixql
+::FIRST
+```
+
+<Note>
+`FIRST` returns a single element (object) rather than a collection (array). If the traversal has no results, the binding will be empty.
+</Note>
+
+### Example 1: Getting the first node returned by a traversal
+<CodeGroup>
+
+```helixql Query focus={1-3} [expandable]
+QUERY GetOneUser () =>
+    user <- N<User>::FIRST
+    RETURN user
+```
+
+```helixql Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+```
+</CodeGroup>
+
+### Example 2: Getting the first node returned by an edge traversal
+<CodeGroup>
+
+```helixql Query focus={1-4} [expandable]
+QUERY GetOneFollower (user_id: ID) =>
+    user <- N<User>(user_id)
+    first_follower <- user::In<Follows>::FIRST
+    RETURN first_follower
+```
+
+```helixql Schema
+N::User {
+    name: String,
+    age: U8,
+    email: String
+}
+
+E::Follows {
+    From: User,
+    To: User
+}
+```
+</CodeGroup>
+
 ---
 
 ## Count elements with `COUNT` &nbsp;
 
 Count the number of elements in a traversal.
 
-```rust
+```helixql
 ::COUNT
 ```
 
@@ -20,7 +80,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Basic element counting
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetUserCount () =>
     user_count <- N<User>::COUNT
     RETURN user_count
@@ -34,7 +94,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -192,7 +252,7 @@ curl -X POST \
 
 Get a specific range of elements from a traversal.
 
-```rust
+```helixql
 ::RANGE(start, end)
 ```
 
@@ -207,7 +267,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Basic pagination
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetUsersPaginated (start: U32, end: U32) =>
     users <- N<User>::RANGE(start, end)
     RETURN users
@@ -221,7 +281,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -397,7 +457,7 @@ curl -X POST \
 
 Sort the results of a traversal by a property in ascending or descending order.
 
-```rust
+```helixql
 ::ORDER<Asc>(_::{property})
 ::ORDER<Desc>(_::{property})
 ```
@@ -413,7 +473,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Sorting by age (oldest first)
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetUsersOldestFirst () =>
     users <- N<User>::ORDER<Desc>(_::{age})
     RETURN users
@@ -427,7 +487,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -591,7 +651,7 @@ curl -X POST \
 ### Example 2: Sorting by age (youngest first)
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetUsersYoungestFirst () =>
     users <- N<User>::ORDER<Asc>(_::{age})
     RETURN users
@@ -605,7 +665,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,

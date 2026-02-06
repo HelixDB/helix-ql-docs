@@ -26,13 +26,13 @@ When using the [Python SDK](../sdks/helix-py), the output values are wrapped in 
 Return any previously bound value from your traversal.
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY GetAllUsers() =>
     users <- N<User>
     RETURN users
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -55,14 +55,14 @@ Returning multiple values creates multiple top-level fields in the response, nam
 after the variables.
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY GetUserAndPosts(user_id: ID) =>
     user <- N<User>(user_id)
     posts <- user::Out<User_to_Post>
     RETURN user, posts
 ```
 
-```rust Schema [expandable]
+```helixql Schema [expandable]
 N::User {
     name: String,
     age: U8,
@@ -98,13 +98,13 @@ E::User_to_Post {
 Use property projection to shape the returned data.
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY FindUsers() =>
     users <- N<User>::RANGE(0, 10)
     RETURN users::{ name, age }
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -126,13 +126,13 @@ N::User {
 Return just the `ID` of each element:
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY FindUserIDs() =>
     users <- N<User>::RANGE(0, 10)
     RETURN users::ID
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -154,13 +154,13 @@ N::User {
 Exclude specific properties:
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY FindUsersNoPII() =>
     users <- N<User>::RANGE(0, 10)
     RETURN users::!{ email, location }
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -183,7 +183,7 @@ N::User {
 You can also create nested or remapped shapes in `RETURN` using nested mappings:
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY FindFriends(user_id: ID) =>
     user <- N<User>(user_id)
     posts <- user::Out<User_to_Post>::RANGE(20)
@@ -197,7 +197,7 @@ QUERY FindFriends(user_id: ID) =>
     }
 ```
 
-```rust Schema [expandable]
+```helixql Schema [expandable]
 N::User {
     name: String,
     age: U8,
@@ -247,13 +247,13 @@ See [property access](../hql/properties/property-access), [remappings](../hql/pr
 Aggregations and scalar bindings can be returned directly:
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY CountUsers() =>
     user_count <- N<User>::COUNT
     RETURN user_count
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -271,13 +271,13 @@ N::User {
 You can also return literals (strings, numbers, booleans) when useful:
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY DeleteCity(city_id: ID) =>
     DROP N<City>(city_id)
     RETURN "success"
 ```
 
-```rust Schema
+```helixql Schema
 N::City {
     name: String,
     population: U32
@@ -299,13 +299,13 @@ For mutations or maintenance operations where you do not want a response payload
 use `RETURN NONE`.
 
 <CodeGroup>
-```rust Query
+```helixql Query
 QUERY DeleteCityQuietly(city_id: ID) =>
     DROP N<City>(city_id)
     RETURN NONE
 ```
 
-```rust Schema
+```helixql Schema
 N::City {
     name: String,
     population: U32

@@ -12,14 +12,14 @@ When you have an edge, you can traverse to its connected endpoints. Use `::FromN
 
 Return the node that the edge originates from.
 
-```rust
+```helixql
 ::FromN
 ```
 
 ### Example 1: Getting the user from a document creation edge
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetCreatorFromEdge (creation_id: ID) =>
     creator <- E<Creates>(creation_id)::FromN
     RETURN creator
@@ -39,7 +39,7 @@ QUERY CreateDocument (user_id: ID, content: String, vector: [F64]) =>
     RETURN creation_edge
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     email: String,
@@ -211,14 +211,14 @@ curl -s -X POST \
 
 Return the vector that the edge originates from.
 
-```rust
+```helixql
 ::FromV
 ```
 
 ### Example 1: Getting the source document from a mentions edge
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetMentionSource (mention_id: ID) =>
     source_doc <- E<MentionsUser>(mention_id)::FromV
     RETURN source_doc
@@ -241,7 +241,7 @@ QUERY LinkMention (document_id: ID, user_id: ID) =>
     RETURN mention_edge
 ```
 
-```rust Schema
+```helixql Schema
 V::Document {
     content: String
 }
@@ -444,14 +444,14 @@ curl -s -X POST \
 
 Return the node that the edge points to.
 
-```rust
+```helixql
 ::ToN
 ```
 
 ### Example 1: Getting the followed user from a follow edge
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetFollowedUser (follow_id: ID) =>
     followed_user <- E<Follows>(follow_id)::ToN
     RETURN followed_user
@@ -468,7 +468,7 @@ QUERY FollowUser (follower_id: ID, followed_id: ID, since: String) =>
     RETURN follow_edge
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     email: String,
@@ -674,14 +674,14 @@ curl -s -X POST \
 
 Return the vector that the edge points to.
 
-```rust
+```helixql
 ::ToV
 ```
 
 ### Example 1: Inspecting the document vector
 
 <CodeGroup>
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetDocumentVector (creation_id: ID) =>
     document_vector <- E<Creates>(creation_id)::ToV
     RETURN document_vector
@@ -701,7 +701,7 @@ QUERY CreateDocument (user_id: ID, content: String, vector: [F64]) =>
     RETURN creation_edge
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     email: String,

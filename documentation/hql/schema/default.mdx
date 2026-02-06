@@ -6,13 +6,22 @@ icon: "sliders"
 
 Sometimes, you may want to set default values for item fields
 
-```rust
+```helixql
 N::NodeType {
   field1: String DEFAULT "default",
-  field2: U32 DEFAULT 0
+  field2: U32 DEFAULT 0,
+  created_at: Date DEFAULT NOW
 }
 ```
 Helix will use the default value if a value is not provided when inserting the item.
+
+### Default value types
+
+| Type | Example | Description |
+|------|---------|-------------|
+| String | `DEFAULT "value"` | Default string literal |
+| Number | `DEFAULT 0` | Default numeric value |
+| Timestamp | `DEFAULT NOW` | Automatically set to current timestamp on creation |
 
 ---
 
@@ -20,7 +29,7 @@ Helix will use the default value if a value is not provided when inserting the i
 
 In the example below, the `age` field has not been provided when inserting the item so the default value of `0` will be used.
 
-```rust
+```helixql
 QUERY createUser(name: String) =>
     user <- AddN<User>({name}) 
     RETURN user

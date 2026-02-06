@@ -11,37 +11,37 @@ HelixQL provides six fundamental arithmetic functions for performing basic mathe
 
 ### ADD - Addition
 
-```rust
+```helixql
 ADD(a, b)  // Returns a + b
 ```
 
 ### SUB - Subtraction
 
-```rust
+```helixql
 SUB(a, b)  // Returns a - b
 ```
 
 ### MUL - Multiplication
 
-```rust
+```helixql
 MUL(a, b)  // Returns a * b
 ```
 
 ### DIV - Division
 
-```rust
+```helixql
 DIV(a, b)  // Returns a / b
 ```
 
 ### POW - Power
 
-```rust
+```helixql
 POW(base, exponent)  // Returns base^exponent
 ```
 
 ### MOD - Modulo
 
-```rust
+```helixql
 MOD(a, b)  // Returns a % b (remainder)
 ```
 
@@ -54,7 +54,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 Calculate discounted prices and tax for products:
 
 <CodeGroup>
-```rust Query focus={2-8}
+```helixql Query focus={2-8}
 QUERY CalculateProductPricing(discount_percent: F64, tax_rate: F64) =>
     products <- N::Product
         ::{
@@ -71,7 +71,7 @@ QUERY InsertProduct(name: String, price: F64) =>
     RETURN product
 ```
 
-```rust Schema
+```helixql Schema
 N::Product {
     name: String,
     price: F64
@@ -235,7 +235,7 @@ curl -X POST \
 Calculate compound interest over time:
 
 <CodeGroup>
-```rust Query focus={2-6}
+```helixql Query focus={2-6}
 QUERY CalculateInvestmentGrowth(years: I32, rate: F64) =>
     accounts <- N::Account
         ::{
@@ -250,7 +250,7 @@ QUERY CreateAccount(account_id: String, initial_amount: F64) =>
     RETURN account
 ```
 
-```rust Schema
+```helixql Schema
 N::Account {
     account_id: String,
     initial_amount: F64
@@ -414,7 +414,7 @@ curl -X POST \
 Use modulo to determine recurring patterns or groupings:
 
 <CodeGroup>
-```rust Query focus={2-7}
+```helixql Query focus={2-7}
 QUERY CategorizeByRotation(group_size: I64) =>
     items <- N::Item
         ::{
@@ -430,7 +430,7 @@ QUERY CreateItem(item_id: String, position: I64) =>
     RETURN item
 ```
 
-```rust Schema
+```helixql Schema
 N::Item {
     item_id: String,
     position: I64
@@ -570,7 +570,7 @@ curl -X POST \
 
 Arithmetic functions can be nested to create complex calculations:
 
-```rust
+```helixql
 // Multi-factor scoring
 ADD(
     MUL(_::{base_score}, 0.6),
@@ -588,7 +588,7 @@ MUL(_::{initial_value}, POW(0.9, _::{time_elapsed}))
 
 Arithmetic functions are commonly used in custom weight calculations:
 
-```rust
+```helixql
 // Distance-based weight with decay
 ::ShortestPathDijkstras<Route>(
     MUL(_::{distance}, POW(0.95, DIV(_::{days_old}, 30)))

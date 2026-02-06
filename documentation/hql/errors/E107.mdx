@@ -9,7 +9,7 @@ title: 'E107'
 This error occurs when you define the same node, edge, or vector type more than once in your schema.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
 }
@@ -25,7 +25,7 @@ N::User {
 Remove the duplicate definition or rename one of the types.
 
 <CodeGroup>
-```rust schema.hx
+```helixql schema.hx
 N::User {
     name: String,
     email: String,

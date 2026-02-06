@@ -11,12 +11,12 @@ This error occurs when you try to perform an update operation on something other
 In this example, the `update` step is used on a vector type which is not allowed **yet**.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query updateVector(vectorId: ID) =>
     vector <- V<Vector>(vectorId)::UPDATE({field1: "updated value"})
 ```
 
-```rust schema.hx
+```helixql schema.hx
 V::Vector {
     field1: String,
 }

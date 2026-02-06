@@ -12,7 +12,7 @@ In this example, the `numbers` variable contains primitives, not objects, so fie
 
 <CodeGroup>
 
-```rust queries.hx
+```helixql queries.hx
 Query addUsers(names: [String]) =>
     FOR {name} In names {
         AddN<User>({name: name})
@@ -26,7 +26,7 @@ Query addUsers(names: [String]) =>
 Ensure iterable contains object types for field access.
 
 <CodeGroup>
-```rust queries_solution1.hx
+```helixql queries_solution1.hx
 Query addUsers(names: [String]) =>
     FOR name IN names {
         AddN<User>({name: name})
@@ -34,7 +34,7 @@ Query addUsers(names: [String]) =>
     RETURN "Users added"
 ```
 
-```rust queries_solution2.hx
+```helixql queries_solution2.hx
 Query addUsers(names: [{name: String}]) =>
     FOR {name} IN names {
         AddN<User>({name: name})

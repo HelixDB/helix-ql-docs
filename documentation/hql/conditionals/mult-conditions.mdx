@@ -1,18 +1,63 @@
 ---
 title: "Multiple Conditional Steps"
-description: "Combine multiple conditions using AND and OR operators for complex filtering logic."
+description: "Combine multiple conditions using AND, OR, and NOT operators for complex filtering logic."
+---
+
+## Negate a condition with `NOT` (`!`) &nbsp;
+
+Negate a condition to match the opposite.
+
+```helixql
+::WHERE(!<condition>)
+```
+
+### Example: ! can be used infront of any condition that returns a boolean.
+<CodeGroup>
+
+```helixql Query focus={1-3}
+QUERY GetActiveUsersWithFollowers () =>
+    followers <- N<User>::WHERE(
+        !AND( // Negate the AND condition
+            !_::{is_active}::EQ(true), // Negate the EQ condition
+            _::Out<Follows>::COUNT::LT(10)
+        )
+    )
+    RETURN followers
+```
+
+```helixql Schema
+N::User {
+    name: String,
+    is_active: Boolean
+}
+
+E::Follows {
+    From: User,
+    To: User
+}
+```
+</CodeGroup>
+
+The `!` operator can also be combined with `EXISTS` to find elements without certain relationships:
+
+```helixql
+QUERY GetUsersWithoutFollowers () =>
+    users <- N<User>::WHERE(!EXISTS(_::In<Follows>))
+    RETURN users
+```
+
 ---
 
 ## Enforce all conditions with `AND` &nbsp;
 Takes a list of conditions and returns true only if all conditions are true.
 
-```rust
+```helixql
 ::WHERE(AND(<condition1>, <condition2>, ...))
 ```
 
 ## Enforce any condition with `OR` &nbsp;
 Takes a list of conditions and returns true if at least one condition is true.
-```rust
+```helixql
 ::WHERE(OR(<condition1>, <condition2>, ...))
 ```
 
@@ -23,7 +68,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Using AND for range filtering
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetYoungAdults () =>
     users <- N<User>::WHERE(AND(_::{age}::GT(18), _::{age}::LT(30)))
     RETURN users
@@ -37,7 +82,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -200,7 +245,7 @@ curl -X POST \
 ### Example 2: Using OR for multiple valid options
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetSpecificUsers () =>
     users <- N<User>::WHERE(OR(_::{name}::EQ("Alice"), _::{name}::EQ("Bob")))
     RETURN users
@@ -214,7 +259,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -369,7 +414,7 @@ curl -X POST \
 ### Example 3: Complex nested AND and OR conditions
 <CodeGroup>
 
-```rust Query focus={1-9} [expandable]
+```helixql Query focus={1-9} [expandable]
 QUERY GetFilteredUsers () =>
     users <- N<User>::WHERE(
         AND(
@@ -388,7 +433,7 @@ QUERY CreateUser (name: String, age: U8, email: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,

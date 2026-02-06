@@ -7,7 +7,7 @@ description: "Iterate over collections with simple variable binding."
 
 Use FOR loops to perform operations on each element in a collection. The loop variable can reference the entire element or specific properties.
 
-```rust
+```helixql
 FOR variable IN collection {
     // Access element properties: variable.property
     // Perform operations on each element
@@ -26,7 +26,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 
 <CodeGroup>
 
-```rust Query focus={1-8} [expandable]
+```helixql Query focus={1-8} [expandable]
 QUERY UpdateUserStatus (user_updates: [{id: ID, status: String}]) =>
     FOR {id, status} IN user_updates {
         user <- N<User>(id)::UPDATE({
@@ -47,7 +47,7 @@ QUERY CreateUser (name: String, age: U8, email: String, status: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -248,7 +248,7 @@ curl -X POST \
 
 <CodeGroup>
 
-```rust Query focus={1-7} [expandable]
+```helixql Query focus={1-7} [expandable]
 QUERY ArchiveInactiveUsers () =>
     inactive_users <- N<User>::WHERE(_::{status}::EQ("inactive"))
     FOR user IN inactive_users {
@@ -268,7 +268,7 @@ QUERY CreateUser (name: String, age: U8, email: String, status: String) =>
     RETURN user
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -435,7 +435,7 @@ curl -X POST \
 
 <CodeGroup>
 
-```rust Query focus={1-10} [expandable]
+```helixql Query focus={1-10} [expandable]
 QUERY LoadProducts (products: [{name: String, price: F64, category: String}]) =>
     FOR product IN products {
         new_product <- AddN<Product>({
@@ -448,7 +448,7 @@ QUERY LoadProducts (products: [{name: String, price: F64, category: String}]) =>
     RETURN "Products loaded successfully"
 ```
 
-```rust Schema
+```helixql Schema
 N::Product {
     name: String,
     price: F64,

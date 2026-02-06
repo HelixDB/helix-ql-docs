@@ -11,7 +11,7 @@ HelixQL provides a rich set of single-argument mathematical functions for transf
 
 ### ABS - Absolute Value
 
-```rust
+```helixql
 ABS(x)  // Returns |x|
 ```
 
@@ -19,7 +19,7 @@ Returns the absolute value of a number.
 
 ### SQRT - Square Root
 
-```rust
+```helixql
 SQRT(x)  // Returns √x
 ```
 
@@ -27,7 +27,7 @@ Returns the square root of a non-negative number.
 
 ### LN - Natural Logarithm
 
-```rust
+```helixql
 LN(x)  // Returns ln(x)
 ```
 
@@ -35,7 +35,7 @@ Returns the natural logarithm (base e) of a positive number.
 
 ### LOG10 - Base-10 Logarithm
 
-```rust
+```helixql
 LOG10(x)  // Returns log₁₀(x)
 ```
 
@@ -43,7 +43,7 @@ Returns the base-10 logarithm of a positive number.
 
 ### LOG - Custom Base Logarithm
 
-```rust
+```helixql
 LOG(x, base)  // Returns log_base(x)
 ```
 
@@ -51,7 +51,7 @@ Returns the logarithm of x with a custom base.
 
 ### EXP - Exponential
 
-```rust
+```helixql
 EXP(x)  // Returns e^x
 ```
 
@@ -59,7 +59,7 @@ Returns e raised to the power of x.
 
 ### CEIL - Ceiling
 
-```rust
+```helixql
 CEIL(x)  // Returns ⌈x⌉
 ```
 
@@ -67,7 +67,7 @@ Rounds up to the nearest integer.
 
 ### FLOOR - Floor
 
-```rust
+```helixql
 FLOOR(x)  // Returns ⌊x⌋
 ```
 
@@ -75,7 +75,7 @@ Rounds down to the nearest integer.
 
 ### ROUND - Round
 
-```rust
+```helixql
 ROUND(x)  // Returns round(x)
 ```
 
@@ -90,7 +90,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 Calculate Euclidean distances between points:
 
 <CodeGroup>
-```rust Query focus={2-6}
+```helixql Query focus={2-6}
 QUERY CalculateDistances() =>
     points <- N::Point
         ::{
@@ -105,7 +105,7 @@ QUERY CreatePoint(x: F64, y: F64) =>
     RETURN point
 ```
 
-```rust Schema
+```helixql Schema
 N::Point {
     x: F64,
     y: F64
@@ -251,7 +251,7 @@ curl -X POST \
 Use logarithms for normalization and scaling:
 
 <CodeGroup>
-```rust Query focus={2-7}
+```helixql Query focus={2-7}
 QUERY NormalizeMetrics() =>
     metrics <- N::Metric
         ::{
@@ -267,7 +267,7 @@ QUERY CreateMetric(value: F64) =>
     RETURN metric
 ```
 
-```rust Schema
+```helixql Schema
 N::Metric {
     value: F64
 }
@@ -401,7 +401,7 @@ curl -X POST \
 Model time-based decay using exponential functions:
 
 <CodeGroup>
-```rust Query focus={2-6}
+```helixql Query focus={2-6}
 QUERY CalculateDecayFactors(decay_rate: F64) =>
     items <- N::Item
         ::{
@@ -416,7 +416,7 @@ QUERY CreateItem(name: String, age_days: F64, base_score: F64) =>
     RETURN item
 ```
 
-```rust Schema
+```helixql Schema
 N::Item {
     name: String,
     age_days: F64,
@@ -577,7 +577,7 @@ curl -X POST \
 
 CEIL, FLOOR, and ROUND provide different rounding behaviors:
 
-```rust
+```helixql
 CEIL(3.2)   // Returns 4.0
 FLOOR(3.8)  // Returns 3.0
 ROUND(3.5)  // Returns 4.0
@@ -586,7 +586,7 @@ ROUND(3.4)  // Returns 3.0
 
 Use rounding for display formatting or bucketing:
 
-```rust
+```helixql
 QUERY BucketScores() =>
     items <- N::Item
         ::{
@@ -609,7 +609,7 @@ Some functions have domain restrictions:
 
 Unary math functions are powerful in shortest path weight calculations:
 
-```rust
+```helixql
 // Exponential time decay
 ::ShortestPathDijkstras<Route>(
     MUL(_::{distance}, EXP(MUL(-0.05, _::{days_old})))

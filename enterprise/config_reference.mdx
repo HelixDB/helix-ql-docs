@@ -1,0 +1,83 @@
+---
+title: "Dashboard Configuration Reference"
+description: "A comprehensive reference for all dashboard configuration options available in Helix."
+sidebarTitle: "Dashboard Configuration"
+icon: "gear"
+---
+---
+# Cluster Configuration Options
+
+<Warning>
+    This node count configuration settings do not apply to development clusters as they are limited to 1 gateway and 1 database node.
+</Warning>
+
+---
+
+<ResponseField name="Minimum Gateway Nodes" type="number" default={3}>
+    This is the minimum number of gateway nodes that can be deployed. Note that the minimum number of gateway nodes is 3
+    ![Minimum Gateway Nodes](../images/dashboard.png)
+</ResponseField>
+
+<ResponseField name="Maximum Gateway Nodes" type="number" default={5}>
+    This is the maximum number of gateway nodes that can be deployed. 
+    ![Maximum Gateway Nodes](../images/dashboard.png)
+    Note that the maximum number of gateway nodes is 100. If your usecase requires more please contact us.
+</ResponseField>
+
+
+<ResponseField name="Minimum Database Nodes" type="number" default={3}>
+    This is the minimum number of database nodes that can be deployed.
+    ![Minimum Database Nodes](../images/dashboard.png)
+    Note that the minimum number of database nodes is 3.
+</ResponseField>
+
+<ResponseField name="Maximum Database Nodes" type="number" default={5}>
+    This is the maximum number of database nodes that can be deployed.
+    ![Maximum Database Nodes](../images/dashboard.png) 
+    Note that the maximum number of database nodes is 100. If your usecase requires more please contact us.
+</ResponseField>
+
+
+<ResponseField name="Flush Interval" type="milliseconds" default={200}>
+  Controls how often data is flushed from memory (memtable) to disk as SST files.                                                                                                 
+                                                                 
+  - Lower values: Better durability (less data loss on crash), but increased disk I/O
+  - Higher values: Better write throughput, but more data at risk in memory
+</ResponseField>
+
+<ResponseField name="L0 SST Size" type="bytes" default={1024 * 1024 * 1024}>
+  Target size for SST files created at Level 0 during flush operations.
+
+  - Larger values: Fewer files created, reduced compaction overhead, but longer individual flush times
+  - Smaller values: More granular files, faster flushes, but more compaction work
+</ResponseField>
+
+<ResponseField name="Poll Interval" type="milliseconds" default={50}>
+  How frequently the system checks for new data or events.
+
+  - Lower values: More responsive to changes, but higher CPU usage
+  - Higher values: Reduced CPU overhead, but increased latency for detecting changes
+</ResponseField>
+
+<ResponseField name="L0 Max SSTs Default" type="number" default={100}>
+  Maximum number of SST files allowed at Level 0 before compaction is triggered.
+
+  - Higher values: Better sustained write throughput, but slower read performance (more files to search)
+  - Lower values: Faster reads, but more frequent compaction and write amplification
+</ResponseField>
+
+<ResponseField name="L0 Max SSTs Vector" type="number" default={100}>
+  Maximum L0 SST files for the vector index (separate from graph data).
+
+  - Higher values: Better vector ingestion throughput during bulk loads
+  - Lower values: Faster vector similarity searches, but more compaction during writes
+</ResponseField>
+
+<ResponseField name="Vector Block Cache Size" type="bytes" default={1024 * 1024 * 1024}>
+  Memory allocated for caching frequently accessed vectors.
+
+  - Higher values: Faster vector queries (more cache hits), reduced disk I/O
+  - Lower values: Lower memory footprint, but slower queries due to more disk reads
+
+  ⚠️ Over-allocating can cause memory pressure on the system.
+</ResponseField>

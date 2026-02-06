@@ -3,7 +3,7 @@ title: "Anonymous Traversals"
 description: "Use anonymous traversals for sub-queries and complex filtering without breaking the main traversal flow."
 ---
 
-```rust
+```helixql
 _::<traversal>::<operation>
 ```
 
@@ -14,7 +14,7 @@ When using the SDKs or curling the endpoint, the query name must match what is d
 ### Example 1: Filter by relationship count
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetInfluentialUsers () =>
     users <- N<User>::WHERE(_::In<Follows>::COUNT::GT(100))
     RETURN users
@@ -34,7 +34,7 @@ QUERY CreateFollow (follower_id: ID, following_id: ID) =>
     RETURN "Success"
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,
@@ -252,7 +252,7 @@ curl -X POST \
 ### Example 2: Property-based filtering with anonymous traversal
 <CodeGroup>
 
-```rust Query focus={1-3} [expandable]
+```helixql Query focus={1-3} [expandable]
 QUERY GetActiveUsersWithPosts () =>
     users <- N<User>::WHERE(AND(_::{status}::EQ("active"), _::Out<HasPost>::COUNT::GT(0)))
     RETURN users
@@ -276,7 +276,7 @@ QUERY CreatePost (user_id: ID, title: String, content: String) =>
     RETURN post
 ```
 
-```rust Schema
+```helixql Schema
 N::User {
     name: String,
     age: U8,

@@ -10,7 +10,7 @@ This error occurs when you try to access a field that doesn't exist on the inner
 
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query addUser(userData: [{name: String, age: I64}]) =>
     FOR { name, age, nonexistent_field } IN userData {
         AddN<User>({name: name, age: age})
@@ -24,7 +24,7 @@ Query addUser(userData: [{name: String, age: I64}]) =>
 Ensure to only access fields that exist on the inner type.
 
 <CodeGroup>
-```rust queries.hx
+```helixql queries.hx
 Query addUser(userData: [{name: String, age: I64}]) =>
     FOR { name, age } IN userData {
         AddN<User>({name: name, age: age})

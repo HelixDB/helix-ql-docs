@@ -12,13 +12,13 @@ This error occurs when you use an invalid identifier in your HelixQL query.
 For example, `Out` is a reserved keyword so it cannot be used as a variable or a parameter name.
 
 <CodeGroup>
-```rust example_1.hx
+```helixql example_1.hx
 QUERY getUser(id: ID) =>
     Out <- N<User>(id)
     RETURN Out
 ```
 
-```rust example_2.hx
+```helixql example_2.hx
 QUERY getUser(Out: ID) =>
     user <- N<User>(Out)
     RETURN user
@@ -31,13 +31,13 @@ QUERY getUser(Out: ID) =>
 Rename the variable or parameter to a valid identifier.
 
 <CodeGroup>
-```rust example_1.hx
+```helixql example_1.hx
 QUERY getUser(id: ID) =>
     user <- N<User>(id)
     RETURN user
 ```
 
-```rust example_2.hx
+```helixql example_2.hx
 QUERY getUser(id: ID) =>
     user <- N<User>(id)
     RETURN user
