@@ -332,7 +332,8 @@
         "tab": "Helix HyperScale",
         "pages": [
           "enterprise/overview",
-          "enterprise/config_reference"
+          "enterprise/config_reference",
+          "enterprise/incidents"
         ]
       }
       
