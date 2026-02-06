@@ -331,25 +331,8 @@
         "pages": [
           "change-log/helixdb"
         ]
-      },
-      {
-        "tab": "Helix Hyperscale",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "enterprise/overview"
-            ]
-          },
-          {
-            "group": "Configuration",
-            "pages": [
-              "enterprise/config_reference",
-              "enterprise/env_vars"
-            ]
-          }
-        ]
       }
+      
 
     ]
   },
