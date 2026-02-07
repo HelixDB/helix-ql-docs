@@ -64,7 +64,10 @@ N::City {
     name: String
 }
 
-E::Road {}
+E::Road {
+    From: City,
+    To: City,
+}
 ```
 </CodeGroup>
 
@@ -336,7 +339,10 @@ N::Person {
     name: String
 }
 
-E::Knows {}
+E::Knows {
+    From: Person,
+    To: Person,
+}
 ```
 </CodeGroup>
 

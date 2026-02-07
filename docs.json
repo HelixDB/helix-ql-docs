@@ -249,6 +249,7 @@
           {
             "group": "Reference",
             "pages": [
+              "documentation/hql/language-reference",
               {
                 "group": "Error Codes",
                 "icon": "triangle-exclamation",

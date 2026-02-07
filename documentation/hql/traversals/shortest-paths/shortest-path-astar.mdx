@@ -94,7 +94,11 @@ N::City {
 }
 
 E::Highway {
-    distance: F64  // Actual road distance
+    From: City,
+    To: City,
+    Properties: {
+        distance: F64  // Actual road distance
+    }
 }
 ```
 </CodeGroup>
@@ -452,8 +456,12 @@ N::Junction {
 }
 
 E::Road {
-    distance: F64,
-    traffic_multiplier: F64  // 1.0 = normal, 2.0 = heavy traffic
+    From: Junction,
+    To: Junction,
+    Properties: {
+        distance: F64,
+        traffic_multiplier: F64  // 1.0 = normal, 2.0 = heavy traffic
+    }
 }
 ```
 </CodeGroup>

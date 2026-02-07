@@ -1,0 +1,1380 @@
+---
+title: "HelixQL Language Reference"
+description: "A complete reference of every HelixQL command, operator, and feature."
+sidebarTitle: "Language Reference"
+icon: "book"
+---
+
+Every HelixQL feature on one page. Each entry shows what it does, its syntax variants, and links to the full documentation.
+
+## Query Structure
+
+---
+
+### `QUERY`
+
+Define a named query with typed parameters.
+
+```helixql lines
+QUERY GetUser(user_id: ID) =>
+QUERY CreateUser(name: String, age: U8) =>
+QUERY GetAllUsers() =>
+```
+
+1. A query with one typed parameter.
+2. A query with multiple typed parameters.
+3. A query with no parameters.
+
+See [What is HelixQL?](/documentation/hql/hql) for more details.
+
+---
+
+### `RETURN`
+
+Specify query output values.
+
+```helixql lines
+RETURN users
+RETURN user, posts
+RETURN users::{name, age}
+RETURN users::ID
+RETURN "ok"
+RETURN NONE
+```
+
+1. Return a single binding.
+2. Return multiple bindings.
+3. Return projected fields.
+4. Return only IDs.
+5. Return a string literal.
+6. Return no payload.
+
+See [Output Values](/documentation/hql/output_values) for more details.
+
+---
+
+### `<-` (Assignment)
+
+Bind the result of an expression to a variable.
+
+```helixql lines
+user <- N<User>(user_id)
+users <- N<User>::WHERE(_::{age}::GT(18))
+count <- N<User>::COUNT
+```
+
+1. Bind a node lookup to `user`.
+2. Bind a filtered traversal to `users`.
+3. Bind a count result to `count`.
+
+See [What is HelixQL?](/documentation/hql/hql) for more details.
+
+---
+
+### Comments (`//`)
+
+Single-line comments.
+
+```helixql lines
+// This is a comment
+user <- N<User>(user_id) // inline comment
+```
+
+1. A standalone comment line.
+2. A comment at the end of a statement.
+
+See [What is HelixQL?](/documentation/hql/hql) for more details.
+
+---
+
+## Types
+
+---
+
+### Scalar Types
+
+Built-in primitive types for schema fields and query parameters.
+
+```helixql lines
+name: String
+is_active: Boolean
+age: U8
+count: I64
+score: F64
+```
+
+1. Text data.
+2. True/false value.
+3. 8-bit unsigned integer. Also available: `U16`, `U32`, `U64`, `U128`.
+4. 64-bit signed integer. Also available: `I8`, `I16`, `I32`.
+5. 64-bit floating point. Also available: `F32`.
+
+See [Helix Types](/documentation/hql/types) for more details.
+
+---
+
+### `ID`
+
+UUID identifier type for nodes, edges, and vectors.
+
+```helixql lines
+QUERY GetUser(user_id: ID) =>
+userID: ::ID
+```
+
+1. Accept an ID as a query parameter.
+2. Access an element's unique identifier in a property selection.
+
+See [Helix Types](/documentation/hql/types) for more details.
+
+---
+
+### `Date`
+
+Timestamp / RFC3339 date type.
+
+```helixql lines
+created_at: Date
+created_at: Date DEFAULT NOW
+```
+
+1. A date field in a schema.
+2. A date field with automatic timestamp default.
+
+See [Helix Types](/documentation/hql/types) for more details.
+
+---
+
+### `[T]` (Arrays)
+
+Array of any type.
+
+```helixql lines
+QUERY Search(vector: [F64]) =>
+QUERY CreateUsers(user_data: [{name: String, age: U8}]) =>
+tags: [String]
+```
+
+1. An array of 64-bit floats as a parameter.
+2. An array of objects as a parameter.
+3. An array of strings as a schema field.
+
+See [Helix Types](/documentation/hql/types) for more details.
+
+---
+
+## Schema Definition
+
+---
+
+### `N::` (Node Schema)
+
+Define node types with properties.
+
+```helixql lines
+N::User {
+    name: String,
+    age: U8,
+    email: String,
+}
+```
+
+1. Define a `User` node type with three properties.
+
+See [Schema Definition](/documentation/hql/schema/schema-definition) for more details.
+
+---
+
+### `E::` (Edge Schema)
+
+Define edge types with source, target, and optional properties.
+
+```helixql lines
+E::Follows {
+    From: User,
+    To: User,
+}
+E::Friends {
+    From: User,
+    To: User,
+    Properties: {
+        since: Date,
+        strength: F64
+    }
+}
+```
+
+1. An edge with no properties connecting `User` to `User`.
+2. An edge with properties connecting `User` to `User`.
+
+See [Schema Definition](/documentation/hql/schema/schema-definition) for more details.
+
+---
+
+### `V::` (Vector Schema)
+
+Define vector embedding types with metadata properties.
+
+```helixql lines
+V::Document {
+    content: String,
+    created_at: Date
+}
+V::Embedding {}
+```
+
+1. A vector type with metadata properties.
+2. A vector type with no extra properties.
+
+See [Schema Definition](/documentation/hql/schema/schema-definition) for more details.
+
+---
+
+### `INDEX`
+
+Create indexed fields for fast property-based lookup.
+
+```helixql lines
+N::User {
+    INDEX email: String,
+    name: String,
+}
+```
+
+1. Index the `email` field on `User` nodes for fast lookups via `N<User>({email: email})`.
+
+See [Secondary Indexing](/documentation/hql/schema/indexing) for more details.
+
+---
+
+### `UNIQUE INDEX`
+
+Create unique constraints on fields, preventing duplicates.
+
+```helixql lines
+N::User {
+    UNIQUE INDEX email: String,
+    name: String,
+}
+E::BestFriend UNIQUE {
+    From: User,
+    To: User,
+}
+```
+
+1. Enforce uniqueness on the `email` field.
+2. Enforce that only one `BestFriend` edge can exist from a given user.
+
+See [Unique Indexes](/documentation/hql/schema/unique-index) for more details.
+
+---
+
+### `DEFAULT`
+
+Set default property values used when a value is not provided on insert.
+
+```helixql lines
+N::Post {
+    title: String,
+    view_count: I32 DEFAULT 0,
+    status: String DEFAULT "draft",
+    created_at: Date DEFAULT NOW,
+}
+```
+
+1. A schema with three default values: a number, a string, and an auto-timestamp.
+
+See [Default Values](/documentation/hql/schema/default) for more details.
+
+---
+
+## Node Operations
+
+---
+
+### `AddN`
+
+Create new nodes with optional properties.
+
+```helixql lines
+AddN<User>
+AddN<User>({name: "Alice", age: 25, email: "alice@example.com"})
+```
+
+1. Create a `User` node with no properties.
+2. Create a `User` node with a properties object.
+
+See [Create Nodes](/documentation/hql/create/addN) for more details.
+
+---
+
+### `N`
+
+Select nodes by type, by ID, or by indexed property.
+
+```helixql lines
+N<User>
+N<User>(user_id)
+N<User>({email: email})
+```
+
+1. Select all `User` nodes.
+2. Select a `User` by ID.
+3. Select a `User` by an indexed property value.
+
+See [Select Nodes](/documentation/hql/select/selectN) for more details.
+
+---
+
+### `UpsertN`
+
+Insert-or-update a node. Updates existing nodes from the traversal context, or creates a new one if none are found.
+
+```helixql lines
+existing <- N<Person>::WHERE(_::{name}::EQ(name))
+person <- existing::UpsertN({name: "Alice", age: 30})
+```
+
+1. Find existing nodes matching a condition.
+2. Upsert with the given properties — updates if found, creates if not.
+
+See [Upsert Nodes](/documentation/hql/create/upsertN) for more details.
+
+---
+
+## Edge Operations
+
+---
+
+### `AddE`
+
+Create edges between nodes with optional properties.
+
+```helixql lines
+AddE<Follows>::From(user1_id)::To(user2_id)
+AddE<Friends>({since: "2024-01-15", strength: 0.85})::From(user1_id)::To(user2_id)
+```
+
+1. Create a `Follows` edge between two nodes.
+2. Create a `Friends` edge with properties.
+
+See [Create Edges](/documentation/hql/create/addE) for more details.
+
+---
+
+### `E`
+
+Select edges by type or by ID.
+
+```helixql lines
+E<Follows>
+E<Follows>(edge_id)
+```
+
+1. Select all `Follows` edges.
+2. Select a specific `Follows` edge by ID.
+
+See [Select Edges](/documentation/hql/select/selectE) for more details.
+
+---
+
+### `UpsertE`
+
+Insert-or-update an edge. Operates on an existing edge traversal context — updates if an edge exists between the specified nodes, creates a new one otherwise.
+
+```helixql lines
+existing <- E<Knows>
+edge <- existing::UpsertE({since: "2024-06-01"})::From(user1_id)::To(user2_id)
+```
+
+1. Select the edge type to operate on.
+2. Upsert with properties between two nodes — updates if found, creates if not.
+
+See [Upsert Edges](/documentation/hql/create/upsertE) for more details.
+
+---
+
+## Vector Operations
+
+---
+
+### `AddV`
+
+Create vector embeddings with optional properties.
+
+```helixql lines
+AddV<Document>(vector)
+AddV<Document>(vector, {content: "Hello world", created_at: created_at})
+AddV<Document>(Embed(content), {content: content})
+```
+
+1. Create a vector with no metadata.
+2. Create a vector with metadata properties.
+3. Create a vector using the built-in `Embed` function.
+
+See [Create Vectors](/documentation/hql/create/addV) for more details.
+
+---
+
+### `V`
+
+Select vectors by type or by ID.
+
+```helixql lines
+V<Document>
+V<Document>(vector_id)
+```
+
+1. Select all `Document` vectors.
+2. Select a specific vector by ID.
+
+See [Select Vectors](/documentation/hql/select/selectV) for more details.
+
+---
+
+### `UpsertV`
+
+Insert-or-update a vector. Updates existing vectors from the traversal context, or creates a new one if none are found.
+
+```helixql lines
+existing <- V<Document>::WHERE(_::{content}::EQ(content))
+doc <- existing::UpsertV(Embed(content), {content: content})
+```
+
+1. Find existing vectors matching a condition.
+2. Upsert with new vector data and properties.
+
+See [Upsert Vectors](/documentation/hql/create/upsertV) for more details.
+
+---
+
+### `Embed`
+
+Generate vector embeddings from text using your configured embedding model.
+
+```helixql lines
+AddV<Document>(Embed(content), {content: content})
+SearchV<Document>(Embed(query), 10)
+```
+
+1. Embed text and store it as a vector.
+2. Embed a search query for vector similarity search.
+
+See [Embedding Vectors](/documentation/hql/vectors/embedding) for more details.
+
+---
+
+## Traversal Steps (from Nodes)
+
+---
+
+### `::Out`
+
+Follow outgoing edges and return the target nodes.
+
+```helixql lines
+N<User>(user_id)::Out<Follows>
+N<User>(user_id)::Out<Follows>::Out<Follows>
+```
+
+1. Get all users that `user_id` follows.
+2. Chain traversals to get followers-of-followers.
+
+See [Traversals From Nodes](/documentation/hql/traversals/steps_nodes) for more details.
+
+---
+
+### `::In`
+
+Follow incoming edges and return the source nodes.
+
+```helixql lines
+N<User>(user_id)::In<Follows>
+```
+
+1. Get all users that follow `user_id`.
+
+See [Traversals From Nodes](/documentation/hql/traversals/steps_nodes) for more details.
+
+---
+
+### `::OutE`
+
+Return the outgoing edges themselves (with their properties).
+
+```helixql lines
+N<User>(user_id)::OutE<Follows>
+```
+
+1. Get the outgoing `Follows` edge objects from a user.
+
+See [Traversals From Nodes](/documentation/hql/traversals/steps_nodes) for more details.
+
+---
+
+### `::InE`
+
+Return the incoming edges themselves (with their properties).
+
+```helixql lines
+N<User>(user_id)::InE<Follows>
+```
+
+1. Get the incoming `Follows` edge objects pointing at a user.
+
+See [Traversals From Nodes](/documentation/hql/traversals/steps_nodes) for more details.
+
+---
+
+## Traversal Steps (from Edges)
+
+---
+
+### `::FromN`
+
+Get the source node of an edge.
+
+```helixql lines
+E<Creates>(edge_id)::FromN
+```
+
+1. Get the node that the `Creates` edge originates from.
+
+See [Traversals From Edges](/documentation/hql/traversals/steps_edges) for more details.
+
+---
+
+### `::ToN`
+
+Get the target node of an edge.
+
+```helixql lines
+E<Creates>(edge_id)::ToN
+```
+
+1. Get the node that the `Creates` edge points to.
+
+See [Traversals From Edges](/documentation/hql/traversals/steps_edges) for more details.
+
+---
+
+### `::FromV`
+
+Get the source vector of an edge.
+
+```helixql lines
+E<HasEmbedding>(edge_id)::FromV
+```
+
+1. Get the vector that the edge originates from.
+
+See [Traversals From Edges](/documentation/hql/traversals/steps_edges) for more details.
+
+---
+
+### `::ToV`
+
+Get the target vector of an edge.
+
+```helixql lines
+E<HasEmbedding>(edge_id)::ToV
+```
+
+1. Get the vector that the edge points to.
+
+See [Traversals From Edges](/documentation/hql/traversals/steps_edges) for more details.
+
+---
+
+## Filtering & Conditions
+
+---
+
+### `::WHERE`
+
+Filter elements by a condition.
+
+```helixql lines
+N<User>::WHERE(_::{age}::GT(18))
+N<User>::WHERE(EXISTS(_::In<Follows>))
+N<User>::WHERE(AND(_::{age}::GT(18), _::{age}::LT(30)))
+```
+
+1. Filter users where `age` is greater than 18.
+2. Filter users that have at least one follower.
+3. Combine multiple conditions with `AND`.
+
+See [Conditional Steps](/documentation/hql/conditionals/conditions) for more details.
+
+---
+
+### `::EQ`
+
+Equals comparison. Works with strings, booleans, and numbers.
+
+```helixql lines
+::WHERE(_::{status}::EQ("active"))
+::WHERE(_::{name}::EQ(name))
+```
+
+1. Filter where `status` equals the string `"active"`.
+2. Filter where `name` equals a query parameter.
+
+See [Conditional Steps](/documentation/hql/conditionals/conditions) for more details.
+
+---
+
+### `::NEQ`
+
+Not equals comparison. Works with strings, booleans, and numbers.
+
+```helixql lines
+::WHERE(_::{role}::NEQ("admin"))
+```
+
+1. Filter where `role` is not `"admin"`.
+
+See [Conditional Steps](/documentation/hql/conditionals/conditions) for more details.
+
+---
+
+### `::GT`
+
+Greater than comparison. Works with numbers.
+
+```helixql lines
+::WHERE(_::{age}::GT(18))
+```
+
+1. Filter where `age` is greater than 18.
+
+See [Conditional Steps](/documentation/hql/conditionals/conditions) for more details.
+
+---
+
+### `::GTE`
+
+Greater than or equal comparison. Works with numbers.
+
+```helixql lines
+::WHERE(_::{rating}::GTE(4.5))
+```
+
+1. Filter where `rating` is at least 4.5.
+
+See [Conditional Steps](/documentation/hql/conditionals/conditions) for more details.
+
+---
+
+### `::LT`
+
+Less than comparison. Works with numbers.
+
+```helixql lines
+::WHERE(_::{age}::LT(30))
+```
+
+1. Filter where `age` is less than 30.
+
+See [Conditional Steps](/documentation/hql/conditionals/conditions) for more details.
+
+---
+
+### `::LTE`
+
+Less than or equal comparison. Works with numbers.
+
+```helixql lines
+::WHERE(_::{priority}::LTE(2))
+```
+
+1. Filter where `priority` is at most 2.
+
+See [Conditional Steps](/documentation/hql/conditionals/conditions) for more details.
+
+---
+
+### `::CONTAINS`
+
+Check if a string contains a substring or an array contains an element.
+
+```helixql lines
+::WHERE(_::{name}::CONTAINS("john"))
+::WHERE(_::Out<Follows>::CONTAINS(user))
+```
+
+1. Filter where `name` contains the substring `"john"`.
+2. Filter where the outgoing `Follows` set contains `user`.
+
+See [Conditional Steps](/documentation/hql/conditionals/conditions) for more details.
+
+---
+
+### `::IS_IN`
+
+Check if a value exists in an array.
+
+```helixql lines
+::WHERE(_::{status}::IS_IN(["active", "pending"]))
+```
+
+1. Filter where `status` is one of `"active"` or `"pending"`.
+
+See [Conditional Steps](/documentation/hql/conditionals/conditions) for more details.
+
+---
+
+### `EXISTS`
+
+Check if a traversal returns any results.
+
+```helixql lines
+::WHERE(EXISTS(_::In<Follows>))
+::WHERE(!EXISTS(_::In<Follows>))
+```
+
+1. Filter for elements that have incoming `Follows` edges.
+2. Filter for elements that have no incoming `Follows` edges (negated with `!`).
+
+See [Conditional Steps](/documentation/hql/conditionals/conditions) for more details.
+
+---
+
+### Multiple Conditions (`AND` / `OR` / `!`)
+
+Combine conditions with boolean logic.
+
+```helixql lines
+::WHERE(AND(_::{age}::GT(18), _::{age}::LT(30)))
+::WHERE(OR(_::{role}::EQ("admin"), _::{role}::EQ("moderator")))
+::WHERE(!_::{is_active}::EQ(true))
+```
+
+1. Match when **all** conditions are true.
+2. Match when **any** condition is true.
+3. Negate a condition with `!`.
+
+See [Multiple Conditional Steps](/documentation/hql/conditionals/mult-conditions) for more details.
+
+---
+
+## Result Operations
+
+---
+
+### `::FIRST`
+
+Get the first element from a traversal result.
+
+```helixql lines
+N<User>::FIRST
+N<User>(user_id)::In<Follows>::FIRST
+```
+
+1. Get the first `User` node.
+2. Get the first follower of a user.
+
+See [Result Operations](/documentation/hql/result_ops) for more details.
+
+---
+
+### `::COUNT`
+
+Count the number of elements in a traversal result.
+
+```helixql lines
+N<User>::COUNT
+N<User>(user_id)::In<Follows>::COUNT
+```
+
+1. Count all `User` nodes.
+2. Count how many users follow `user_id`.
+
+See [Result Operations](/documentation/hql/result_ops) for more details.
+
+---
+
+### `::RANGE`
+
+Get a range of elements (inclusive start, exclusive end).
+
+```helixql lines
+N<User>::RANGE(0, 10)
+N<User>::RANGE(start, end)
+```
+
+1. Get the first 10 users (elements 0 through 9).
+2. Get a dynamic page of users using parameters.
+
+See [Result Operations](/documentation/hql/result_ops) for more details.
+
+---
+
+### `::ORDER`
+
+Sort elements ascending or descending by a property.
+
+```helixql lines
+N<User>::ORDER<Desc>(_::{age})
+N<User>::ORDER<Asc>(_::{age})
+```
+
+1. Sort users by `age` descending (oldest first).
+2. Sort users by `age` ascending (youngest first).
+
+See [Result Operations](/documentation/hql/result_ops) for more details.
+
+---
+
+## Aggregation
+
+---
+
+### `::GROUP_BY`
+
+Group elements by one or more properties, returning count summaries.
+
+```helixql lines
+N<User>::GROUP_BY(age)
+N<User>::GROUP_BY(department, role)
+```
+
+1. Group users by `age`, returning `[{age: 25, count: 3}, ...]`.
+2. Group users by multiple properties.
+
+See [Group By](/documentation/hql/operations/group-by) for more details.
+
+---
+
+### `::AGGREGATE_BY`
+
+Group elements by properties, returning counts and full data objects.
+
+```helixql lines
+N<User>::AGGREGATE_BY(department)
+N<User>::AGGREGATE_BY(department, role)
+```
+
+1. Aggregate users by `department`, returning counts and full user objects per group.
+2. Aggregate by multiple properties.
+
+See [Aggregations](/documentation/hql/operations/aggregate-by) for more details.
+
+---
+
+## Property Operations
+
+---
+
+### `::{}` (Property Selection)
+
+Select specific properties from elements.
+
+```helixql lines
+users::{name, age}
+users::{name, age, email}
+```
+
+1. Return only `name` and `age` from each user.
+2. Return three specific fields.
+
+See [Property Access](/documentation/hql/properties/property-access) for more details.
+
+---
+
+### `::ID`
+
+Access an element's unique identifier.
+
+```helixql lines
+users::ID
+users::{userID: ::ID, name}
+```
+
+1. Return only the IDs of users.
+2. Map the ID to a custom field name alongside other properties.
+
+See [Property Access](/documentation/hql/properties/property-access) for more details.
+
+---
+
+### `::!{}` (Property Exclusion)
+
+Exclude specific properties, returning all others.
+
+```helixql lines
+users::!{email, location}
+```
+
+1. Return all user properties except `email` and `location`.
+
+See [Property Exclusion](/documentation/hql/properties/property-exclusion) for more details.
+
+---
+
+### Property Remapping
+
+Rename properties in output using alias syntax.
+
+```helixql lines
+users::{displayName: name, userAge: age}
+users::{userID: ::ID, displayName: name}
+```
+
+1. Rename `name` to `displayName` and `age` to `userAge`.
+2. Map the ID to `userID` and `name` to `displayName`.
+
+See [Property Remappings](/documentation/hql/properties/property-remappings) for more details.
+
+---
+
+### Spread Operator (`..`)
+
+Include all properties while optionally adding or remapping specific fields.
+
+```helixql lines
+users::{
+    userID: ::ID,
+    ..
+}
+```
+
+1. Include all schema properties plus a computed `userID` field.
+
+See [Property Access](/documentation/hql/properties/property-access) for more details.
+
+---
+
+### Nested Mappings (`::|name|{}`)
+
+Closure-style scoped property access for complex output structures.
+
+```helixql lines
+user::|usr|{
+    posts: posts::{
+        postID: ID,
+        creatorID: usr::ID,
+        creatorName: usr::name,
+        ..
+    }
+}
+```
+
+1. Scope `usr` as a reference to `user`, then use it inside nested property selections.
+
+See [Property Remappings](/documentation/hql/properties/property-remappings) for more details.
+
+---
+
+### Computed Properties
+
+Add derived values to output using traversals or expressions.
+
+```helixql lines
+users::{
+    userID: ::ID,
+    followerCount: _::In<Follows>::COUNT
+}
+```
+
+1. Add a `followerCount` computed from the incoming `Follows` edge count.
+
+See [Property Additions](/documentation/hql/properties/property-additions) for more details.
+
+---
+
+## Modification Operations
+
+---
+
+### `::UPDATE`
+
+Update properties on existing elements.
+
+```helixql lines
+N<Person>(user_id)::UPDATE({name: "Alice Johnson", age: 26})
+```
+
+1. Update the `name` and `age` of a person. Omitted properties stay unchanged.
+
+See [Updating Items](/documentation/hql/updating) for more details.
+
+---
+
+### `DROP`
+
+Delete elements and their related edges.
+
+```helixql lines
+DROP N<User>(user_id)
+DROP N<User>(user_id)::Out<Follows>
+DROP N<User>(user_id)::OutE<Follows>
+```
+
+1. Delete a user node and all its connected edges.
+2. Delete all nodes that the user follows (and connecting edges).
+3. Delete only the outgoing `Follows` edges without touching neighbor nodes.
+
+See [Delete Operation](/documentation/hql/deleting) for more details.
+
+---
+
+## Search
+
+---
+
+### `SearchV`
+
+Vector similarity search using cosine similarity.
+
+```helixql lines
+SearchV<Document>(vector, 10)
+SearchV<Document>(Embed(query), limit)
+```
+
+1. Search for the 10 most similar `Document` vectors to a raw vector.
+2. Search using an embedded text query with a dynamic limit.
+
+See [Vector Search](/documentation/hql/vectors/searching) for more details.
+
+---
+
+### `SearchBM25`
+
+Keyword search using the BM25 ranking algorithm.
+
+```helixql lines
+SearchBM25<Document>(keywords, 10)
+SearchBM25<Document>(query, limit)
+```
+
+1. Search `Document` nodes for keywords, returning up to 10 results.
+2. Search with dynamic query text and limit.
+
+See [Keyword Search](/documentation/hql/keyword_search) for more details.
+
+---
+
+## Reranking
+
+---
+
+### `::RerankRRF`
+
+Reciprocal Rank Fusion — combine multiple ranked lists without score calibration.
+
+```helixql lines
+::RerankRRF
+::RerankRRF(k: 60.0)
+```
+
+1. Apply RRF with the default `k=60`.
+2. Apply RRF with a custom `k` parameter.
+
+See [RerankRRF](/documentation/hql/rerankers/rerank-rrf) for more details.
+
+---
+
+### `::RerankMMR`
+
+Maximal Marginal Relevance — diversify results by balancing relevance with diversity.
+
+```helixql lines
+::RerankMMR(lambda: 0.7)
+::RerankMMR(lambda: 0.5, distance: "euclidean")
+::RerankMMR(lambda: 0.6, distance: "dotproduct")
+```
+
+1. Apply MMR with cosine distance (default).
+2. Apply MMR with euclidean distance.
+3. Apply MMR with dot product distance.
+
+See [RerankMMR](/documentation/hql/rerankers/rerank-mmr) for more details.
+
+---
+
+## Shortest Path Algorithms
+
+---
+
+### `::ShortestPathBFS`
+
+Unweighted shortest path using breadth-first search. Minimizes the number of hops.
+
+```helixql lines
+N<City>(start_id)::ShortestPathBFS<Road>::To(end_id)
+```
+
+1. Find the shortest unweighted path from one city to another via `Road` edges.
+
+See [ShortestPathBFS](/documentation/hql/traversals/shortest-paths/shortest-path-bfs) for more details.
+
+---
+
+### `::ShortestPathDijkstras`
+
+Weighted shortest path using Dijkstra's algorithm.
+
+```helixql lines
+N<City>(start_id)::ShortestPathDijkstras<Road>(_::{distance})::To(end_id)
+```
+
+1. Find the shortest weighted path using the `distance` edge property as the weight.
+
+See [ShortestPathDijkstras](/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra) for more details.
+
+---
+
+### `::ShortestPathAStar`
+
+Heuristic shortest path using the A* algorithm.
+
+```helixql lines
+N<City>(start_id)::ShortestPathAStar<Road>(_::{distance}, "heuristic")::To(end_id)
+```
+
+1. Find the shortest path using edge `distance` as weight and a node `heuristic` property for guidance.
+
+See [ShortestPathAStar](/documentation/hql/traversals/shortest-paths/shortest-path-astar) for more details.
+
+---
+
+### Custom Weight Expressions
+
+Define edge weights for path algorithms using property contexts.
+
+```helixql lines
+_::{distance}
+_::FromN::{population}
+_::ToN::{capacity}
+ADD(_::{distance}, _::ToN::{traffic})
+```
+
+1. Use an edge property as weight.
+2. Reference the source node's property.
+3. Reference the target node's property.
+4. Combine edge and node properties with arithmetic.
+
+See [Custom Weight Calculations](/documentation/hql/traversals/shortest-paths/custom-weights) for more details.
+
+---
+
+## Control Flow
+
+---
+
+### `FOR ... IN`
+
+Iterate over collections and perform operations on each element.
+
+```helixql lines
+FOR user IN users {
+    AddN<User>({name: user.name, age: user.age})
+}
+```
+
+1. Loop through a collection and create a node for each element.
+
+See [FOR Loops](/documentation/hql/control-flow/for-loops) for more details.
+
+---
+
+### `FOR` with Destructuring
+
+Unpack properties directly in the loop variable declaration.
+
+```helixql lines
+FOR {name, age, email} IN user_data {
+    AddN<User>({name: name, age: age, email: email})
+}
+```
+
+1. Destructure `name`, `age`, and `email` from each element and use them directly.
+
+See [FOR Loop Destructuring](/documentation/hql/control-flow/for-destructuring) for more details.
+
+---
+
+## Math Functions
+
+---
+
+### Arithmetic
+
+Basic arithmetic operations.
+
+```helixql lines
+ADD(price, tax)
+SUB(total, discount)
+MUL(quantity, unit_price)
+DIV(total, count)
+POW(base, exponent)
+MOD(value, divisor)
+```
+
+1. Addition: `price + tax`.
+2. Subtraction: `total - discount`.
+3. Multiplication: `quantity * unit_price`.
+4. Division: `total / count`.
+5. Power: `base ^ exponent`.
+6. Modulo: `value % divisor`.
+
+See [Arithmetic Functions](/documentation/hql/functions/arithmetic) for more details.
+
+---
+
+### Unary Math
+
+Single-argument mathematical functions.
+
+```helixql lines
+ABS(value)
+SQRT(value)
+LN(value)
+LOG10(value)
+LOG(value, base)
+EXP(value)
+CEIL(value)
+FLOOR(value)
+ROUND(value)
+```
+
+1. Absolute value.
+2. Square root.
+3. Natural logarithm.
+4. Base-10 logarithm.
+5. Logarithm with custom base.
+6. Exponential (`e^value`).
+7. Round up to nearest integer.
+8. Round down to nearest integer.
+9. Round to nearest integer.
+
+See [Unary Math Functions](/documentation/hql/functions/unary-math) for more details.
+
+---
+
+### Trigonometry
+
+Trigonometric and inverse trigonometric functions (angles in radians).
+
+```helixql lines
+SIN(angle)
+COS(angle)
+TAN(angle)
+ASIN(value)
+ACOS(value)
+ATAN(value)
+ATAN2(y, x)
+```
+
+1. Sine of an angle.
+2. Cosine of an angle.
+3. Tangent of an angle.
+4. Inverse sine (arc sine).
+5. Inverse cosine (arc cosine).
+6. Inverse tangent (arc tangent).
+7. Two-argument inverse tangent.
+
+See [Trigonometric Functions](/documentation/hql/functions/trigonometry) for more details.
+
+---
+
+### Constants
+
+Mathematical constants.
+
+```helixql lines
+PI()
+E()
+```
+
+1. Returns the value of pi (~3.14159).
+2. Returns the value of Euler's number (~2.71828).
+
+See [Mathematical Constants](/documentation/hql/functions/constants) for more details.
+
+---
+
+### Aggregate Functions
+
+Aggregate operations on collections.
+
+```helixql lines
+MIN(ages)
+MAX(ages)
+SUM(prices)
+AVG(scores)
+COUNT(users)
+```
+
+1. Minimum value in a collection.
+2. Maximum value in a collection.
+3. Sum of all values.
+4. Average of all values.
+5. Number of elements.
+
+See [Aggregate Functions](/documentation/hql/functions/aggregate-functions) for more details.
+
+---
+
+## Macros
+
+---
+
+### `@model`
+
+Specify which embedding model to use for `Embed()` calls within a query.
+
+```helixql lines
+#[model("openai:text-embedding-3-small:search_document")]
+QUERY StoreDocument(content: String) =>
+    doc <- AddV<Document>(Embed(content), {content: content})
+    RETURN doc
+```
+
+1. Override the default embedding model for this query using the `#[model]` macro.
+
+See [Model Macro](/documentation/hql/macros/model-macro) for more details.
+
+---
+
+### `@mcp`
+
+Expose a query as an MCP (Model Context Protocol) endpoint for AI agents.
+
+```helixql lines
+#[mcp]
+QUERY SearchDocuments(query: String) =>
+    docs <- SearchV<Document>(Embed(query), 10)
+    RETURN docs
+```
+
+1. Mark a query as an MCP tool, making it accessible to LLM applications.
+
+See [MCP Macro](/documentation/hql/macros/mcp-macro) for more details.
+
+---
+
+## Output
+
+---
+
+### Output Values
+
+Return literals, computed values, and structured objects from queries.
+
+```helixql lines
+RETURN "Success"
+RETURN users::{name, age}
+RETURN user, posts
+RETURN users::!{email}
+RETURN NONE
+```
+
+1. Return a string literal.
+2. Return projected properties.
+3. Return multiple bindings.
+4. Return all properties except `email`.
+5. Return no payload.
+
+See [Output Values](/documentation/hql/output_values) for more details.

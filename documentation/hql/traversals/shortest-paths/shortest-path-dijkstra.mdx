@@ -73,8 +73,12 @@ N::City {
 }
 
 E::Road {
-    distance: F64,
-    traffic_level: F64
+    From: City,
+    To: City,
+    Properties: {
+        distance: F64,
+        traffic_level: F64
+    }
 }
 ```
 </CodeGroup>
@@ -380,7 +384,11 @@ N::City {
 }
 
 E::Road {
-    distance: F64
+    From: City,
+    To: City,
+    Properties: {
+        distance: F64
+    }
 }
 ```
 </CodeGroup>
@@ -692,8 +700,12 @@ N::Location {
 }
 
 E::Route {
-    distance: F64,
-    reliability: F64     // 0.0 to 1.0 (1.0 = perfectly reliable)
+    From: Location,
+    To: Location,
+    Properties: {
+        distance: F64,
+        reliability: F64     // 0.0 to 1.0 (1.0 = perfectly reliable)
+    }
 }
 ```
 </CodeGroup>

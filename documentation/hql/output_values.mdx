@@ -186,7 +186,7 @@ You can also create nested or remapped shapes in `RETURN` using nested mappings:
 ```helixql Query
 QUERY FindFriends(user_id: ID) =>
     user <- N<User>(user_id)
-    posts <- user::Out<User_to_Post>::RANGE(20)
+    posts <- user::Out<User_to_Post>::RANGE(0, 20)
     RETURN user::|u|{
         userID: u::ID,
         posts: posts::{
