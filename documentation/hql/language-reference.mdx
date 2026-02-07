@@ -23,7 +23,7 @@ QUERY GetAllUsers() =>
 
 1. A query with one typed parameter.
 2. A query with multiple typed parameters.
-3. A query with no parameters.
+4. A query with no parameters.
 
 See [What is HelixQL?](/documentation/hql/hql) for more details.
 
@@ -119,7 +119,8 @@ UUID identifier type for nodes, edges, and vectors.
 
 ```helixql lines
 QUERY GetUser(user_id: ID) =>
-userID: ::ID
+user <- N<User>(user_id)
+RETURN user::{userID: ID}
 ```
 
 1. Accept an ID as a query parameter.
@@ -279,10 +280,12 @@ N::Post {
     view_count: I32 DEFAULT 0,
     status: String DEFAULT "draft",
     created_at: Date DEFAULT NOW,
+    is_published: Boolean DEFAULT false,
+    archived_at: Date DEFAULT NONE,
 }
 ```
 
-1. A schema with three default values: a number, a string, and an auto-timestamp.
+1. A schema with defaults for numbers, strings, timestamps, booleans, and NONE.
 
 See [Default Values](/documentation/hql/schema/default) for more details.
 
@@ -608,6 +611,20 @@ See [Conditional Steps](/documentation/hql/conditionals/conditions) for more det
 
 ---
 
+### `::INTERSECT`
+
+Intersect sub-traversal results across the current result set.
+
+```helixql lines
+N<Tag>::WHERE(_::{name}::IS_IN(tag_names))::INTERSECT(_::In<HasTag>)
+```
+
+1. Return only nodes that appear in `In<HasTag>` for every tag in `tag_names`.
+
+See [Traversals From Nodes](/documentation/hql/traversals/steps_nodes) for more details.
+
+---
+
 ### `::EQ`
 
 Equals comparison. Works with strings, booleans, and numbers.
@@ -747,12 +764,12 @@ Combine conditions with boolean logic.
 ```helixql lines
 ::WHERE(AND(_::{age}::GT(18), _::{age}::LT(30)))
 ::WHERE(OR(_::{role}::EQ("admin"), _::{role}::EQ("moderator")))
-::WHERE(!_::{is_active}::EQ(true))
+::WHERE(!AND(_::{is_active}::EQ(true), _::{age}::GT(18)))
 ```
 
 1. Match when **all** conditions are true.
 2. Match when **any** condition is true.
-3. Negate a condition with `!`.
+3. Negate an `AND`/`OR` block by prefixing `!`.
 
 See [Multiple Conditional Steps](/documentation/hql/conditionals/mult-conditions) for more details.
 
@@ -888,7 +905,7 @@ Access an element's unique identifier.
 
 ```helixql lines
 users::ID
-users::{userID: ::ID, name}
+users::{userID: ID, name}
 ```
 
 1. Return only the IDs of users.
@@ -918,7 +935,7 @@ Rename properties in output using alias syntax.
 
 ```helixql lines
 users::{displayName: name, userAge: age}
-users::{userID: ::ID, displayName: name}
+users::{userID: ID, displayName: name}
 ```
 
 1. Rename `name` to `displayName` and `age` to `userAge`.
@@ -934,7 +951,7 @@ Include all properties while optionally adding or remapping specific fields.
 
 ```helixql lines
 users::{
-    userID: ::ID,
+    userID: ID,
     ..
 }
 ```
@@ -972,7 +989,7 @@ Add derived values to output using traversals or expressions.
 
 ```helixql lines
 users::{
-    userID: ::ID,
+    userID: ID,
     followerCount: _::In<Follows>::COUNT
 }
 ```
@@ -1097,6 +1114,20 @@ See [RerankMMR](/documentation/hql/rerankers/rerank-mmr) for more details.
 
 ---
 
+### `::ShortestPath`
+
+Default shortest path (BFS). Minimizes hop count when no weights are provided.
+
+```helixql lines
+N<City>(start_id)::ShortestPath<Road>::To(end_id)
+```
+
+1. Find the shortest unweighted path via `Road` edges.
+
+See [Shortest Path](/documentation/hql/shortest_path) for more details.
+
+---
+
 ### `::ShortestPathBFS`
 
 Unweighted shortest path using breadth-first search. Minimizes the number of hops.
@@ -1168,12 +1199,12 @@ See [Custom Weight Calculations](/documentation/hql/traversals/shortest-paths/cu
 Iterate over collections and perform operations on each element.
 
 ```helixql lines
-FOR user IN users {
-    AddN<User>({name: user.name, age: user.age})
+FOR user_name IN user_names {
+    AddN<User>({name: user_name})
 }
 ```
 
-1. Loop through a collection and create a node for each element.
+1. Loop through a collection of names and create a node for each element.
 
 See [FOR Loops](/documentation/hql/control-flow/for-loops) for more details.
 
@@ -1321,12 +1352,12 @@ See [Aggregate Functions](/documentation/hql/functions/aggregate-functions) for 
 
 ---
 
-### `@model`
+### `#[model]`
 
 Specify which embedding model to use for `Embed()` calls within a query.
 
 ```helixql lines
-#[model("openai:text-embedding-3-small:search_document")]
+#[model("gemini:gemini-embedding-001:RETRIEVAL_DOCUMENT")]
 QUERY StoreDocument(content: String) =>
     doc <- AddV<Document>(Embed(content), {content: content})
     RETURN doc
@@ -1338,15 +1369,15 @@ See [Model Macro](/documentation/hql/macros/model-macro) for more details.
 
 ---
 
-### `@mcp`
+### `#[mcp]`
 
 Expose a query as an MCP (Model Context Protocol) endpoint for AI agents.
 
 ```helixql lines
 #[mcp]
-QUERY SearchDocuments(query: String) =>
-    docs <- SearchV<Document>(Embed(query), 10)
-    RETURN docs
+QUERY GetDocument(doc_id: ID) =>
+    doc <- N<Document>(doc_id)
+    RETURN doc
 ```
 
 1. Mark a query as an MCP tool, making it accessible to LLM applications.
