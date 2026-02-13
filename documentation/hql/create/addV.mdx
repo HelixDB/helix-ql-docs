@@ -38,6 +38,14 @@ QUERY InsertVector (vector: [F64]) =>
 //  it uses [F64] by default
 V::Document {}
 ```
+
+```json Output
+{
+  "vector_node": {
+    "id": "f5e6d7c8-2ef0-6hcg-0358-d62715914193"
+  }
+}
+```
 </CodeGroup>
 
 Here's how to run the query using the SDKs or curl
@@ -138,6 +146,16 @@ QUERY InsertVector (vector: [F64], content: String, created_at: Date) =>
 V::Document {
     content: String,
     created_at: Date
+}
+```
+
+```json Output
+{
+  "vector_node": {
+    "id": "f5e6d7c8-2ef0-6hcg-0358-d62715914193",
+    "content": "Quick brown fox",
+    "created_at": "2024-06-15T12:00:00Z"
+  }
 }
 ```
 </CodeGroup>
@@ -272,6 +290,12 @@ V::Document {
 E::User_to_Document_Embedding {
     From: User,
     To: Document,
+}
+```
+
+```json Output
+{
+  "result": "Success"
 }
 ```
 </CodeGroup>
@@ -436,6 +460,16 @@ QUERY InsertVector (content: String, created_at: Date) =>
 V::Document {
     content: String,
     created_at: Date
+}
+```
+
+```json Output
+{
+  "vector_node": {
+    "id": "a1b2c3d4-3fg1-7hij-1469-e73826025204",
+    "content": "Quick summary of a meeting",
+    "created_at": "2024-06-15T12:00:00Z"
+  }
 }
 ```
 
