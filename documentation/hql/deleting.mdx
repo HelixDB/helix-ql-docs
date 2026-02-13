@@ -41,6 +41,12 @@ E::Follows {
     To: User,
 }
 ```
+
+```json Output
+{
+  "result": "Removed user node"
+}
+```
 </CodeGroup>
 
 Here's how to run the query using the SDKs or curl
@@ -199,6 +205,12 @@ N::User {
 E::Follows {
     From: User,
     To: User,
+}
+```
+
+```json Output
+{
+  "result": "Removed outgoing neighbors"
 }
 ```
 </CodeGroup>
@@ -411,6 +423,12 @@ E::Follows {
     To: User,
 }
 ```
+
+```json Output
+{
+  "result": "Removed incoming neighbors"
+}
+```
 </CodeGroup>
 
 Here's how to run the query using the SDKs or curl
@@ -621,6 +639,12 @@ E::Follows {
     To: User,
 }
 ```
+
+```json Output
+{
+  "result": "Removed outgoing edges"
+}
+```
 </CodeGroup>
 
 Here's how to run the query using the SDKs or curl
@@ -829,6 +853,12 @@ N::User {
 E::Follows {
     From: User,
     To: User,
+}
+```
+
+```json Output
+{
+  "result": "Removed incoming edges"
 }
 ```
 </CodeGroup>

@@ -46,6 +46,16 @@ E::Follows {
     To: User,
 }
 ```
+
+```json Output
+{
+  "follows": {
+    "id": "a1b2c3d4-1de9-5gbf-9247-c51604803082",
+    "from": "c2ca233f-0cd8-4fae-8136-b40593792071",
+    "to": "d3db344g-0cd8-4fae-8136-b40593792071"
+  }
+}
+```
 </CodeGroup>
 
 
@@ -249,6 +259,18 @@ E::Friends {
     }
 }
 ```
+
+```json Output
+{
+  "friendship": {
+    "id": "b2c3d4e5-1de9-5gbf-9247-c51604803082",
+    "from": "c2ca233f-0cd8-4fae-8136-b40593792071",
+    "to": "d3db344g-0cd8-4fae-8136-b40593792071",
+    "since": "2024-01-15",
+    "strength": 0.85
+  }
+}
+```
 </CodeGroup>
 
 Here's how to run the query using the SDKs or curl
@@ -441,6 +463,16 @@ N::User {
 E::Follows {
     From: User,
     To: User,
+}
+```
+
+```json Output
+{
+  "follows": {
+    "id": "a1b2c3d4-1de9-5gbf-9247-c51604803082",
+    "from": "c2ca233f-0cd8-4fae-8136-b40593792071",
+    "to": "d3db344g-0cd8-4fae-8136-b40593792071"
+  }
 }
 ```
 </CodeGroup>
