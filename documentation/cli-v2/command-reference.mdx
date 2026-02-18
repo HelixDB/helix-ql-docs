@@ -251,11 +251,46 @@ Deploy or update a running instance.
 
 
 
-### `helix pull`
+### `helix sync`
 
-<Info>
-    🚧 COMING SOON 🚧
-</Info>
+Sync `.hx` source files and `helix.toml` configuration from a deployed Helix Cloud instance back to your local project.
+
+<Note>
+**What it does:**
+
+1. Authenticates with Helix Cloud
+2. Resolves your workspace and cluster (interactive prompts if needed)
+3. Downloads `.hx` query files and `helix.toml` from the remote instance
+4. Prompts before overwriting any local files that differ
+5. Merges the remote `helix.toml` — updates `[project]` and the specific `[cloud.<instance>]` block while preserving `[local.*]` and other cloud entries
+</Note>
+
+<ResponseField name="helix sync [INSTANCE] [OPTIONS]">
+  Instance name to sync from. If omitted, an interactive selection prompt will appear.
+
+  <Expandable title="options">
+    <ResponseField name="--yes, -y" type="Boolean">
+      Overwrite local files without confirmation prompts.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+**Requirements:**
+- Only supported for Helix Cloud instances (standard and enterprise)
+- Requires authentication via `helix auth login`
+
+**Examples:**
+
+```bash
+# Sync from a specific cloud instance
+helix sync my-instance
+
+# Interactive instance selection
+helix sync
+
+# Skip confirmation prompts
+helix sync my-instance --yes
+```
 
 ---
 

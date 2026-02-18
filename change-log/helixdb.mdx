@@ -6,6 +6,28 @@ rss: true
 ---
 
 <Update
+  label="February 17, 2026"
+  description="v2.3.0"
+  rss={{
+    title: "HelixDB v2.3.0",
+    description: "HelixDB v2.3.0 released on February 17, 2026"
+  }}
+>
+
+## Helix Sync, Intersect & HQL Improvements
+- New `helix sync` command to pull `.hx` source files and `helix.toml` from deployed Helix Cloud instances back to your local project
+- New `Intersect` function for computing set intersections in HQL queries
+- Dashboard backend integration with workspace-driven cluster creation flow
+- Fixed complex traversals inside `AND`/`OR` `WHERE` clauses
+- `Date` fields now stored as `Value::Date` instead of `Value::String`
+- New analyzer checks: `E659` for non-boolean `WHERE` expressions, `E660` for non-String `Embed()` arguments
+- Fixed date parsing ordering violation for mixed-type comparisons
+
+[View on GitHub →](https://github.com/HelixDB/helix-db/releases/tag/v2.3.0)
+
+</Update>
+
+<Update
   label="February 6, 2026"
   description="v2.2.8"
   rss={{
