@@ -613,13 +613,16 @@ See [Conditional Steps](/documentation/hql/conditionals/conditions) for more det
 
 ### `::INTERSECT`
 
-Intersect sub-traversal results across the current result set.
+Keep only elements that appear in a sub-traversal result for every upstream element.
 
 ```helixql lines
 N<Tag>::WHERE(_::{name}::IS_IN(tag_names))::INTERSECT(_::In<HasTag>)
+N<Tag>::WHERE(_::{name}::IS_IN(tag_names))::INTERSECT(_::In<HasTag>)::WHERE(_::{title}::EQ(title))
 ```
 
-1. Return only nodes that appear in `In<HasTag>` for every tag in `tag_names`.
+1. `INTERSECT` takes an anonymous traversal expression, such as `_::In<HasTag>`.
+2. Helix runs that sub-traversal for each upstream element, then keeps only IDs shared across all sub-results.
+3. If the upstream set is empty (or there is no overlap), the final result is empty.
 
 See [Traversals From Nodes](/documentation/hql/traversals/steps_nodes) for more details.
 

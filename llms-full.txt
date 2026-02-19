@@ -1,6 +1,6 @@
 ---
 title: HelixDB Guide Full
-last_updated: 2025-10-24
+last_updated: 2026-02-19
 audience: LLM agents
 ---
 
@@ -6841,6 +6841,43 @@ Note: For multiple conditions, see [Multiple Conditions Steps](#multiple-conditi
 Notes:
 - The condition in the `WHERE` step must evaluate to a boolean value. 
 - If the condition is not met, the element will be filtered out from the results.
+
+#### Intersect traversal results using `INTERSECT`
+
+##### Syntax
+```query.hx
+::INTERSECT(_::<traversal>)
+```
+
+Notes:
+- `INTERSECT` requires an anonymous traversal expression (for example `_::In<HasTag>`).
+- For each upstream element, Helix executes the sub-traversal and intersects returned IDs.
+- If upstream is empty, or no ID appears in every sub-result, the output is empty.
+
+##### Example: Find articles with all requested tags
+
+- Schema:
+```schema.hx
+N::Article {
+    title: String
+}
+
+N::Tag {
+    name: String
+}
+
+E::HasTag {
+    From: Article,
+    To: Tag
+}
+```
+
+- Query:
+```query.hx
+QUERY ArticlesByAllTags (tag_names: [String]) =>
+    articles <- N<Tag>::WHERE(_::{name}::IS_IN(tag_names))::INTERSECT(_::In<HasTag>)
+    RETURN articles
+```
 
 ##### Comparison Operators
 
