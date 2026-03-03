@@ -15,7 +15,6 @@ title: "Helix Software Development Kits (SDKs)"
 - LLM Ready: Built-in support for OpenAI, Gemini, and Anthropic providers with MCP tools
 - Vector Operations: Native embedding support with OpenAI, Gemini, and VoyageAI embedders
 - Text Processing: Integrated chunking with Chonkie for document processing
-- Instance Management: Programmatic control over HelixDB instances (start/stop/deploy)
 - Type Safe: Pydantic models for structured data and responses
 - Local & Cloud: Works with both local Docker instances and cloud deployments
 
@@ -45,6 +44,7 @@ db.query('add_user', {"name": "John", "age": 20})
 - Default port: `6969`
 - Change port: pass `port` parameter
 - Cloud instances: local=False, pass `api_endpoint` parameter, optionally `api_key` parameter
+- For local development, start and manage Helix instances with the Helix CLI before connecting
 
 ### Custom Queries (not recommended for simple queries)
 
@@ -80,34 +80,6 @@ db.query(add_user("John", 20))
 Requirements
 - `Query.query` method must return a list of objects
 - Query name is case sensitive
-
-### Instance Management
-
-Setup and manage helix instances programmatically:
-
-```python
-from helix.instance import Instance
-
-helix_instance = Instance("helixdb-cfg", 6969, verbose=True)
-
-# Deploy & redeploy instance
-helix_instance.deploy()
-
-# Start instance
-helix_instance.start()
-
-# Stop instance
-helix_instance.stop()
-
-# Delete instance
-helix_instance.delete()
-
-# Instance status
-print(helix_instance.status())
-```
-
-- `helixdb-cfg`: directory for configuration files
-- Instance auto-stops on script exit
 
 ### LLM Providers
 
