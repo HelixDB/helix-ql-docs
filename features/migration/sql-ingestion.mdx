@@ -28,25 +28,20 @@ This guide will walk you through the process of exporting your SQL data, uploadi
    curl -sSL "https://install.helix-db.com" | bash
    ```
 
-3. **Ingest Data into Helix**
+3. **Export Data from PostgreSQL**
 
-   Run the following command to ingest data from your PostgreSQL database into Helix:
+   The Helix CLI does not currently include a SQL ingestion command.
+   Export your data with `pg_dump` so it can be uploaded in the Helix Console:
 
    ```bash
-   helix ingest -t pg --db "postgres://<username>:<password>@<host>:<port>/<dbname>" -i <instance-name> --ssl
+   pg_dump "postgres://<username>:<password>@<host>:<port>/<dbname>" > helix-export.sql
    ```
 
    - Replace `<username>`, `<password>`, `<host>`, `<port>`, and `<dbname>` with your PostgreSQL credentials and connection details.
 
-| Short Flag | Long Flag    | Description                                                             |
-| ---------- | ------------ | ----------------------------------------------------------------------- |
-| `-i`       | `--instance` | Specifies the name of the instance you are uploading for.               |
-| `-t`       | `--type`     | Specifies the database type, which is `pg` for PostgreSQL               |
-| `-s`       | `--ssl`      | Required for dbs in the cloud like AWS RDS but not for local databases. |
-
 4. **Upload Data to S3**
 
-   After exporting your data, download it and go to the [Helix Console](https://helix-db.com/dashboard) and upload the data.
+   After exporting your data, go to the [Helix Console](https://helix-db.com/dashboard) and upload the file.
 
 5. **Helix Instance Pulls Data**
 
