@@ -21,6 +21,49 @@ projected properties, aggregations, literals, or choose to return nothing at all
 When using the [Python SDK](../sdks/helix-py), the output values are wrapped in an array for multiple query calls, so you will need to access the first element of the array to get the result of the first call.
 </Warning>
 
+## Response structure
+
+Every HelixQL response is a JSON object whose top-level keys are the binding names
+used in `RETURN`. The value for each key depends on how many elements the binding holds:
+
+| Binding selects            | Example syntax              | Value shape         |
+|----------------------------|-----------------------------|---------------------|
+| Multiple elements          | `N<User>`                   | Array of objects    |
+| Single element (by ID)     | `N<User>(user_id)`          | Single object       |
+| Traversal results          | `user::Out<Follows>`        | Array of objects    |
+| Scalar / aggregation       | `N<User>::COUNT`            | Single value        |
+
+### Element object shapes
+
+Every element returned by HelixDB includes an `id` field (a UUID string) alongside its
+schema-defined properties.
+
+**Node**
+```json
+{ "id": "c2ca233f-...", "name": "Alice", "age": 25, "email": "alice@example.com" }
+```
+
+**Edge** &mdash; includes `from` and `to` fields referencing the connected node IDs, plus
+any properties defined in the `Properties` block of the schema.
+```json
+{ "id": "a1b2c3d4-...", "from": "c2ca233f-...", "to": "d3db344g-...", "since": "2024-01-15" }
+```
+
+**Vector** &mdash; includes metadata properties defined in the schema.
+```json
+{ "id": "f5e6d7c8-...", "content": "Quick brown fox", "created_at": "2024-01-15T00:00:00Z" }
+```
+
+<Note>
+When you use [property projection](../hql/properties/property-access) (`::{ name, age }`),
+only the fields you list are returned &mdash; `id` is **not** included unless you explicitly
+request it (e.g. `::{ userID: ::ID, name }`). When you use
+[property exclusion](../hql/properties/property-exclusion) (`::!{ email }`), `id` is still
+included because it is not a schema-defined property.
+</Note>
+
+---
+
 ## Returning bindings
 
 Return any previously bound value from your traversal.
@@ -43,9 +86,9 @@ N::User {
 ```json Output
 {
   "users": [
-    { "name": "Alice", "age": 25, "email": "alice@example.com" },
-    { "name": "Bob", "age": 30, "email": "bob@example.com" },
-    { "name": "Charlie", "age": 28, "email": "charlie@example.com" },
+    { "id": "c2ca233f-0cd8-4fae-8136-b40593792071", "name": "Alice", "age": 25, "email": "alice@example.com" },
+    { "id": "d3db344g-1de9-5gbf-9247-c51604803082", "name": "Bob", "age": 30, "email": "bob@example.com" },
+    { "id": "e4ec455h-2ef0-6hcg-0358-d62715914193", "name": "Charlie", "age": 28, "email": "charlie@example.com" }
   ]
 }
 ```
@@ -82,10 +125,10 @@ E::User_to_Post {
 
 ```json Output
 {
-  "user": {"name": "Alice", "age": 25, "email": "alice@example.com"},
-  "posts": [ 
-    {"title": "My First Post", "content": "This is my first blog post!"}, 
-    ...,
+  "user": {"id": "c2ca233f-0cd8-4fae-8136-b40593792071", "name": "Alice", "age": 25, "email": "alice@example.com"},
+  "posts": [
+    {"id": "d3db344g-1de9-5gbf-9247-c51604803082", "title": "My First Post", "content": "This is my first blog post!"},
+    ...
   ]
 }
 ```
@@ -172,9 +215,9 @@ N::User {
 ```json Output
 {
   "users": [
-    { "name": "Alice", "age": 25 },
-    { "name": "Bob", "age": 30 },
-    { "name": "Charlie", "age": 28 }
+    { "id": "c2ca233f-0cd8-4fae-8136-b40593792071", "name": "Alice", "age": 25 },
+    { "id": "d3db344g-1de9-5gbf-9247-c51604803082", "name": "Bob", "age": 30 },
+    { "id": "e4ec455h-2ef0-6hcg-0358-d62715914193", "name": "Charlie", "age": 28 }
   ]
 }
 ```
