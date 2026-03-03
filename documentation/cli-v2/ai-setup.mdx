@@ -1,0 +1,74 @@
+---
+title: "AI Setup"
+description: "Generate AI skills and onboarding prompts for Helix projects"
+sidebarTitle: "AI Setup"
+icon: "sparkles"
+---
+
+Use `helix ai setup` to scaffold agent instructions and skills for your Helix project.
+
+## Why use this command?
+
+- Creates reusable AI context files for Helix workflows
+- Adds Claude skills for HelixQL authoring, MCP tasks, and CLI workflows
+- Optionally generates setup files for Cursor, Copilot, and Codex
+- Uses non-destructive behavior by default (existing edited files are skipped unless forced)
+
+## Command
+
+```bash
+helix ai setup [OPTIONS]
+```
+
+### Options
+
+- `--path, -p <PATH>`: target directory (defaults to project root if `helix.toml` is found)
+- `--agents <LIST>`: comma-separated targets: `claude,cursor,copilot,codex,all`
+- `--yes, -y`: skip interactive prompts
+- `--force`: overwrite existing managed files
+- `--copy-prompt`: copy `HELIX_AI_SETUP_PROMPT.md` to clipboard
+
+## Generated files
+
+By default (`--agents` omitted), the CLI generates:
+
+- `HELIX_AI_SETUP_PROMPT.md`
+- `AGENTS.md`
+- `.claude/skills/helix-author-hql/SKILL.md`
+- `.claude/skills/helix-mcp-tools/SKILL.md`
+- `.claude/skills/helix-cli-workflows/SKILL.md`
+
+Optional agent targets add:
+
+- Cursor: `.cursor/rules/helix.mdc`
+- Copilot: `.github/copilot-instructions.md`
+- Codex: `CODEX_SETUP.md`
+
+## Examples
+
+```bash
+# Default (Claude-first)
+helix ai setup
+
+# Generate all agent files
+helix ai setup --agents all
+
+# Non-interactive in CI, but do not overwrite edited files
+helix ai setup --agents claude,cursor --yes
+
+# Regenerate managed files and copy starter prompt
+helix ai setup --agents all --force --copy-prompt
+```
+
+## Init integration
+
+You can generate AI setup files directly during project initialization:
+
+```bash
+helix init --ai
+```
+
+Optional flags:
+
+- `--ai-agents <LIST>`
+- `--ai-copy-prompt`

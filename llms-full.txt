@@ -134,6 +134,9 @@ Initialize a new Helix project with configuration and structure.
 - `--path, -p [PATH]` - The path to the project
 - `--template [TEMPLATE]` - The template to use for the project
 - `--queries-path, -q [PATH]` - The path to the query files
+- `--ai` - Generate AI onboarding files after init
+- `--ai-agents [LIST]` - Comma-separated AI targets (`claude,cursor,copilot,codex,all`)
+- `--ai-copy-prompt` - Copy generated AI setup prompt to clipboard
 
 **Subcommands:**
 - `helix init cloud [OPTIONS]` - Initialize cloud instance
@@ -145,12 +148,11 @@ Initialize a new Helix project with configuration and structure.
   - `--name [NAME]` - The name of the Fly.io app
   - `--volume-size` - The volume size in GB
   - `--vm-size [SIZE]` - VM size options:
-    - `shared-cpu-1x` - 1 shared vCPU, 256MB RAM
-    - `shared-cpu-2x` - 2 shared vCPUs, 512MB RAM
     - `shared-cpu-4x` - 4 shared vCPUs, 1GB RAM
+    - `shared-cpu-8x` - 8 shared vCPUs, 2GB RAM
     - `performance-4x` - 4 dedicated vCPUs, 8GB RAM
     - `performance-8x` - 8 dedicated vCPUs, 16GB RAM
-  - `--public` - Make instance public
+  - `--private` - Make deployment private (internal network only)
 - `helix init local [OPTIONS]` - Initialize local instance
   - `--name [NAME]` - The name of the local instance
 
@@ -171,9 +173,22 @@ Add a new instance to an existing Helix project.
   - `--name [NAME]` - The name of the Fly.io app
   - `--volume-size` - The volume size in GB
   - `--vm-size [SIZE]` - VM size options (same as `helix init fly`)
-  - `--public` - Make instance public
+  - `--private` - Make deployment private (internal network only)
 - `helix add local [OPTIONS]` - Add local instance
   - `--name [NAME]` - The name of the local instance
+
+#### `helix ai`
+Generate AI onboarding files and agent skills for your Helix project.
+
+**Usage:** `helix ai [SUBCOMMAND]`
+
+**Subcommands:**
+- `setup [OPTIONS]` - Generate AI setup files
+  - `--path, -p [PATH]` - Target directory
+  - `--agents [LIST]` - Comma-separated targets: `claude,cursor,copilot,codex,all`
+  - `--yes, -y` - Skip interactive prompts
+  - `--force` - Overwrite existing managed files
+  - `--copy-prompt` - Copy `HELIX_AI_SETUP_PROMPT.md` to clipboard
 
 #### `helix migrate`
 Migrate a v1 Helix project to v2 format.
@@ -231,8 +246,12 @@ Deploy or update a running instance.
 **Usage:** `helix push [INSTANCE]`
 - `[INSTANCE]` - The instance to deploy
 
-#### `helix pull`
-** COMING SOON **
+#### `helix sync`
+Sync `.hx` source files and `helix.toml` configuration from a deployed Helix Cloud instance.
+
+**Usage:** `helix sync [INSTANCE] [OPTIONS]`
+- `[INSTANCE]` - Instance name to sync from
+- `--yes, -y` - Overwrite local files without confirmation prompts
 
 #### `helix start`
 Start a stopped instance without rebuilding.

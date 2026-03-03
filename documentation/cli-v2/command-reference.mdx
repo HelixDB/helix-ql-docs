@@ -37,6 +37,15 @@ Initialize a new Helix project with configuration and structure.
     <ResponseField name="--queries-path | -q [PATH]" type="String">
         The path to the query files.
     </ResponseField>
+    <ResponseField name="--ai" type="Boolean">
+        Generate AI onboarding files after init.
+    </ResponseField>
+    <ResponseField name="--ai-agents [LIST]" type="String">
+        Comma-separated agent targets for AI setup (`claude,cursor,copilot,codex,all`).
+    </ResponseField>
+    <ResponseField name="--ai-copy-prompt" type="Boolean">
+        Copy the generated AI setup prompt to clipboard after init.
+    </ResponseField>
     </Expandable>
 
   <Expandable title="subcommands">
@@ -68,14 +77,13 @@ Initialize a new Helix project with configuration and structure.
                     The volume size in GB.
                 </ResponseField>
                 <ResponseField name="--vm-size [SIZE]" type="String">
-                     - `shared-cpu-1x` - 1 shared vCPU, 256MB RAM
-                    - `shared-cpu-2x` - 2 shared vCPUs, 512MB RAM
                     - `shared-cpu-4x` - 4 shared vCPUs, 1GB RAM
+                    - `shared-cpu-8x` - 8 shared vCPUs, 2GB RAM
                     - `performance-4x` - 4 dedicated vCPUs, 8GB RAM
                     - `performance-8x` - 8 dedicated vCPUs, 16GB RAM
                 </ResponseField>
-                <ResponseField name="--public">
-                    Make instance public.
+                <ResponseField name="--private" type="Boolean">
+                    Make deployment private (internal network only).
                 </ResponseField>
             </Expandable>
         </ResponseField>
@@ -126,14 +134,13 @@ Add a new instance to an existing Helix project.
                     The volume size in GB.
                 </ResponseField>
                 <ResponseField name="--vm-size [SIZE]" type="String">
-                    - `shared-cpu-1x` - 1 shared vCPU, 256MB RAM
-                    - `shared-cpu-2x` - 2 shared vCPUs, 512MB RAM
                     - `shared-cpu-4x` - 4 shared vCPUs, 1GB RAM
+                    - `shared-cpu-8x` - 8 shared vCPUs, 2GB RAM
                     - `performance-4x` - 4 dedicated vCPUs, 8GB RAM
                     - `performance-8x` - 8 dedicated vCPUs, 16GB RAM
                 </ResponseField>
-                <ResponseField name="--public">
-                    Make instance public.
+                <ResponseField name="--private" type="Boolean">
+                    Make deployment private (internal network only).
                 </ResponseField>
             </Expandable>
         </ResponseField>
@@ -148,6 +155,39 @@ Add a new instance to an existing Helix project.
 
     </Expandable>
   
+</ResponseField>
+
+
+### `helix ai`
+
+Generate AI onboarding files and agent skills for your Helix project.
+
+<ResponseField name="helix ai [SUBCOMMAND]">
+  The subcommand to run.
+
+  <Expandable title="subcommands">
+    <ResponseField name="setup [OPTIONS]">
+      Generate AI setup files.
+
+      <Expandable title="options">
+        <ResponseField name="--path, -p [PATH]" type="String">
+          Target directory (defaults to project root when `helix.toml` is found).
+        </ResponseField>
+        <ResponseField name="--agents [LIST]" type="String">
+          Comma-separated targets: `claude,cursor,copilot,codex,all`.
+        </ResponseField>
+        <ResponseField name="--yes, -y" type="Boolean">
+          Skip interactive prompts.
+        </ResponseField>
+        <ResponseField name="--force" type="Boolean">
+          Overwrite existing managed files.
+        </ResponseField>
+        <ResponseField name="--copy-prompt" type="Boolean">
+          Copy `HELIX_AI_SETUP_PROMPT.md` to clipboard.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
 </ResponseField>
 
 

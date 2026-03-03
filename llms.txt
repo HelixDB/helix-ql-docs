@@ -1,6 +1,6 @@
 ---
 title: HelixDB Guide
-last_updated: 2025-10-24
+last_updated: 2026-02-19
 audience: LLM agents
 ---
 
@@ -11,6 +11,7 @@ If you have access to curl, you must curl the urls below to get the content that
 - [HelixDB Overview](https://docs.helix-db.com/documentation/getting-started/intro): Introduction to HelixDB, its features, and its use cases.
 - [Installation](https://docs.helix-db.com/documentation/getting-started/installation): Prerequisites, installation steps, and best practices.
 - [HelixDB CLI](https://docs.helix-db.com/documentation/cli-v2): CLI commands, project configurations, common workflows, and troubleshooting.
+- [HelixDB AI Setup](https://docs.helix-db.com/documentation/cli-v2/ai-setup): Generate AI skills, prompts, and agent-specific onboarding files.
 - [HelixDB SDKs](https://docs.helix-db.com/documentation/sdks): SDKs for Python, TypeScript, Rust, and Go.
 - [HelixDB Query Language Introduction](https://docs.helix-db.com/documentation/hql/hql): Helix Query Language components, syntax, and types. Schema definition and rules.
 - [CRUD Operations](https://docs.helix-db.com/documentation/hql): HQL for creating, reading, updating, and deleting nodes, edges, and vectors.
