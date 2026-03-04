@@ -91,7 +91,7 @@ helix push dev
 helix status
 
 # View logs
-docker logs helix_my-app_dev
+helix logs dev --live
 
 # Stop when done
 helix stop dev
@@ -150,8 +150,8 @@ helix status
 
   <Tab title="Rollback">
     ```bash
-    # If issues arise, pull previous version
-    helix pull production
+    # If issues arise, sync deployed source and config locally
+    helix sync production
 
     # Or stop the instance
     helix stop production
@@ -232,7 +232,7 @@ Deploy to Fly.io:
       --name production \
       --vm-size performance-4x \
       --volume-size 20 \
-      --public false
+      --private
     ```
   </Step>
 

@@ -124,8 +124,12 @@ Deploy or update a running instance.
 **Usage:** `helix push [INSTANCE]`
 - `[INSTANCE]` - The instance to deploy
 
-#### `helix pull`
-** COMING SOON **
+#### `helix sync`
+Sync `.hx` source files and `helix.toml` configuration from a deployed Helix Cloud instance back to your local project.
+
+**Usage:** `helix sync [INSTANCE]`
+- `[INSTANCE]` - The cloud instance to sync from
+- `--yes, -y` - Overwrite local files without confirmation prompts
 
 #### `helix start`
 Start a stopped instance without rebuilding.
