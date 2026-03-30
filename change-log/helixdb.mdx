@@ -6,6 +6,45 @@ rss: true
 ---
 
 <Update
+  label="March 10, 2026"
+  description="v2.3.3"
+  rss={{
+    title: "HelixDB v2.3.3",
+    description: "HelixDB v2.3.3 released on March 10, 2026"
+  }}
+>
+
+## BM25 Performance & Index Correctness
+- BM25 tokenization refactored to structured per-property indexing for better performance
+- BM25 updates now diff old vs new entries, skipping unchanged documents
+- Unique index enforcement tightened across all write paths (`add_n`, `update`, `upsert_n`)
+- Proper `DuplicateKey` error returns for unique constraint violations
+- Gateway performance improvement: reduced redundant allocations on schema introspection
+
+[View on GitHub →](https://github.com/HelixDB/helix-db/releases/tag/v2.3.3)
+
+</Update>
+
+<Update
+  label="March 8, 2026"
+  description="v2.3.2"
+  rss={{
+    title: "HelixDB v2.3.2",
+    description: "HelixDB v2.3.2 released on March 8, 2026"
+  }}
+>
+
+## Unique Edges, Upsert Defaults & CLI Improvements
+- Unique edge enforcement rewritten to correctly check `(from, label, to)` triples
+- New `upsert_*_with_defaults` variants applying schema defaults only during creation
+- Fixed `UPDATE` from variable codegen (direct variable-to-update without intermediate traversal)
+- CLI `init` command: `.gitignore` creation changed from overwrite to append with deduplication
+
+[View on GitHub →](https://github.com/HelixDB/helix-db/releases/tag/v2.3.2)
+
+</Update>
+
+<Update
   label="February 17, 2026"
   description="v2.3.0"
   rss={{

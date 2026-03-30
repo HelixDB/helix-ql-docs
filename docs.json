@@ -55,15 +55,46 @@
             "group": "Getting Started",
             "pages": [
               "documentation/getting-started/intro",
-              "documentation/cli-v2/getting-started",
-              "documentation/getting-started/helixdb",
-              "documentation/getting-started/graph-database"
+              
+              "documentation/getting-started/helixdb"
             ]
           },
           {
-            "group": "CLI",
+            "group": "Changelog & Roadmap",
             "pages": [
-              "documentation/cli-v2/migration",
+              "change-log/helixdb",
+              "change-log/roadmap"
+            ]
+          },
+          {
+            "group": "Benchmarks",
+            "pages": [
+              "benchmarks/v1"
+            ]
+          }
+          
+        ]
+      },
+      {
+        "tab": "Helix Lite",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "documentation/cli-v2/getting-started",
+              "documentation/hql/hql",
+              "documentation/hql/types",
+              "documentation/hql/language-reference"
+            ]
+          },
+          {
+            "group": "Tooling",
+            "pages": [
+            {
+              "icon": "terminal",
+              "group": "CLI",
+              "pages": [
+              "documentation/cli-v2/getting-started",
               "documentation/cli-v2/workflows/local",
               "documentation/cli-v2/workflows/helix_cloud",
               "documentation/cli-v2/workflows/fly",
@@ -72,34 +103,19 @@
               "documentation/cli-v2/configuration",
               "documentation/cli-v2/troubleshooting"
             ]
-          },
-          {
-            "group": "SDKs",
-            "pages": [
-              "documentation/sdks/helix-py",
-              "documentation/sdks/helix-rs",
-              "documentation/sdks/helix-ts",
-              "documentation/sdks/helix-go"
-            ]
-          },
-          {
-            "group": "Other Features",
-            "pages": [
-              "features/mcp/helix-mcp",
-              "features/chunking/helix-chunking"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "HelixQL",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "documentation/hql/hql",
-              "documentation/hql/types"
-            ]
+            },
+            {
+              "icon": "book-open",
+              "group": "SDKs",
+              "pages": [
+                "documentation/sdks/helix-py",
+                "documentation/sdks/helix-rs",
+                "documentation/sdks/helix-ts",
+                "documentation/sdks/helix-go"
+              ]
+            }
+            
+          ]
           },
           {
             "group": "Schema",
@@ -290,50 +306,16 @@
                 ]
               }
             ]
-          }
-        ]
-      },
-      {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Guides",
-            "pages": [
-              "guides/overview",
-              "guides/mcp-guide",
-              "guides/helixir",
-              "guides/dashboard",
-              "guides/code-index"
-            ]
           },
           {
-            "group": "Use Cases",
+            "group": "Other Features",
             "pages": [
-              "guides/social-network",
-              {
-                "group": "Professor Search",
-                "pages": [
-                  "guides/professors/prof",
-                  "guides/professors/helixdb_setup",
-                  "guides/professors/backend_setup"
-                ],
-                "icon": "user-graduate"
-              }
+              "features/mcp/helix-mcp",
+              "features/chunking/helix-chunking"
             ]
           }
         ]
-      },
-      {
-        "tab": "Benchmarks",
-        "pages": ["benchmarks/v1"]
-      },
-      {
-        "tab": "Changelog",
-        "pages": [
-          "change-log/helixdb"
-        ]
       }
-      
 
     ]
   },
