@@ -1,0 +1,70 @@
+# Guarantees
+
+Helix Enterprise provides full ACID guarantees for every transaction.
+
+## Atomicity
+
+Each query executes as a single atomic transaction. All mutations within a query either commit
+together or roll back entirely. There are no partial writes. If any step of a multi-traversal
+query fails, the entire transaction is aborted and no data is modified.
+
+## Consistency
+
+The database transitions from one valid state to another on every committed transaction. All
+constraints (unique IDs, type safety on properties, vector dimension matching, and text index
+value constraints) are enforced at write time, not retroactively.
+
+## Isolation
+
+Transactions run with serializable snapshot isolation. Each transaction reads from a consistent
+point-in-time snapshot. Graph reads, vector search, and text search all observe that same
+snapshot. Write transactions also get read-your-writes, and indexed reads participate in normal
+conflict detection.
+
+- Read-only queries see a consistent snapshot and are never blocked by writes.
+- Write transactions commit through the single writer process, so conflicting writes are detected
+  before commit.
+
+## Durability
+
+All committed data is persisted to object storage before the write is acknowledged to the client.
+Object storage provides the durability guarantee. Local caches (SSD and in-memory) are
+performance optimizations, not durability mechanisms. A full cache loss does not result in data
+loss.
+
+## High Availability
+
+Helix Enterprise can run with fewer than three gateway or database nodes, but those deployments
+are not high availability and are not recommended for production. For high availability, use at
+least three database nodes (one writer and two readers) and at least three gateway instances per
+cluster.
+
+This baseline ensures:
+
+- **Reader redundancy.** If a reader becomes unavailable, the remaining readers and the writer
+  continue serving read traffic. A replacement reader is provisioned automatically.
+- **Gateway redundancy.** Gateway instances are stateless and interchangeable. Loss of one gateway
+  has no impact on availability. Traffic is redistributed across the remaining instances.
+- **Writer recovery.** If the writer becomes unavailable, a new writer process is started and
+  recovers its state from object storage. No committed data is lost. Write availability is
+  restored once the new writer is running.
+- **Infrastructure redundancy.** All supporting services (load balancers, metadata stores,
+  coordination layers) run with redundant infrastructure sized for high-availability clusters,
+  eliminating single points of failure across the cluster.
+
+Object storage itself provides independent durability and availability guarantees. The database
+cluster can be fully rebuilt from object storage contents.
+
+## Service Level Agreements
+
+Custom SLAs covering uptime, latency percentiles, and support response times for enterprise
+clusters. Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss SLA terms for
+your deployment.
+
+## Consistency Model
+
+Helix Enterprise executes every query against a committed snapshot. The writer can serve newly
+committed state immediately.
+
+Readers observe new data on their next snapshot refresh. The refresh interval determines the upper
+bound on read staleness for read-only traffic after a write is acknowledged.

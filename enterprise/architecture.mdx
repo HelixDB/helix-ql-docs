@@ -1,0 +1,87 @@
+
+
+import { EnterpriseDiagram } from "/snippets/enterprise-diagram.jsx"
+import { architectureDiagram } from "/snippets/diagrams.jsx"
+
+# Architecture
+
+Helix Enterprise runs as a single writer and auto-scaling readers behind a routing gateway. Reads
+scale horizontally. Writes are serialized through a dedicated writer process to maintain a simple
+consistency model.
+
+<EnterpriseDiagram diagram={architectureDiagram} />
+
+## Gateway
+
+The gateway is the entry point for all client traffic. For high availability, deploy at least
+three gateway instances per cluster. Smaller gateway fleets can be used for non-HA or test
+workloads, but they are not recommended for production. Gateways accept HTTP requests,
+authenticate the caller via Bearer token, resolve a stored query name or accept an inline query
+payload, and route the request to the writer or a reader. Mutations are always routed to the
+writer. Read-only queries are distributed across readers and the writer. Gateways handle
+connection management, load balancing, token validation, and the translation from HTTP requests to
+the backend query RPC.
+
+## Writer
+
+A single writer process handles all mutations. The writer supports concurrent write transactions
+through MVCC (multi-version concurrency control), allowing multiple writes to execute in parallel
+without blocking each other. Serializing the commit path through one process eliminates distributed
+coordination and simplifies the consistency model. The writer batches mutations for throughput and
+persists them durably to object storage before acknowledging.
+
+The writer also serves read-only queries. It maintains its own SSD and in-memory cache, giving it
+the most up-to-date view of the data. Reads routed to the writer see committed writes immediately,
+with no snapshot refresh delay.
+
+## Readers
+
+Readers serve all read-only queries. They are stateless with respect to writes and can be added
+or removed without coordination. Each reader maintains a local SSD and in-memory cache populated
+from object storage.
+
+Reader scaling is automatic. As query load increases, new readers are provisioned. As load
+decreases, excess readers are removed. This keeps cost proportional to actual query volume.
+
+## Object Storage
+
+Object storage is the durable system of record. All graph data, vector indexes, text index
+artifacts, and metadata persist here. No data lives exclusively on local disk. This means the
+system can recover from a full cache loss by reading from object storage, and storage capacity is
+effectively unbounded.
+
+## Cache Hierarchy
+
+Each process (writer and readers) maintains local cache tiers for the data and indexes it serves.
+
+- **In-memory cache.** Fastest access. Holds the most frequently accessed graph data, vector
+  search state, and hot text-search generations. Bounded by available RAM.
+- **SSD cache.** Larger capacity, lower cost per byte. Holds warm graph data, vector data, and
+  reusable text-search artifacts. Reads from SSD are significantly faster than reads from object
+  storage.
+
+Graph, vector, and text workloads use specialized cache paths so hot working sets do not fully
+contend with one another.
+
+On cold start, caches warm progressively as queries execute. Frequently accessed data reaches
+steady-state cache residency quickly. For predictable latency from the first query, caches can be
+pre-warmed, including text index generations.
+
+## Read Path
+
+1. A read request arrives at the gateway and is routed to a reader or the writer.
+2. The reader resolves a consistent snapshot from object storage metadata.
+3. Data is read from the in-memory cache, SSD cache, or object storage (in that order).
+4. The query executes against the snapshot and returns results.
+
+Cache misses transparently fall through to object storage. The same query produces the same result
+regardless of cache state; caching affects latency, not correctness.
+
+## Write Path
+
+1. A write request arrives at the gateway and is routed to the writer.
+2. The writer executes the mutation within a serializable transaction. Multiple write transactions
+   execute concurrently via MVCC; conflicts are resolved at commit time.
+3. The mutation is batched and persisted durably to object storage.
+4. Once durable, the write is acknowledged to the client.
+5. Readers observe the new data on their next snapshot refresh.

@@ -1,0 +1,88 @@
+
+
+# Multi-Tenancy
+
+Multi-tenant architectures generally fall into one of three isolation levels.
+
+## Isolation Levels
+
+| Level                    | Description                                                                                                                 | Isolation                                                        | Resource efficiency                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **Infrastructure-level** | Separate database instance per tenant. Fully independent compute, storage, and networking.                                  | Strongest. No shared resources.                                  | Lowest. Each tenant pays the full cost of an idle cluster.           |
+| **Namespace-level**      | Shared infrastructure, separate logical partitions (databases, schemas, or namespaces) per tenant.                          | Strong. Logical separation with shared compute.                  | Moderate. Shared compute, but metadata and indexes scale per tenant. |
+| **Row-level**            | Shared infrastructure, shared data structures. Tenants distinguished by a property on every record, enforced at query time. | Application-enforced. Relies on consistent query-time filtering. | Highest. All tenants share indexes, caches, and storage.             |
+
+## Row-Level Isolation in Helix Enterprise
+
+Helix Enterprise focuses on row-level isolation. This is the fundamental building block for
+multi-tenancy. It provides full flexibility to implement any tenancy model at the application
+layer without imposing structural constraints on the database.
+
+Assign a tenant identifier as a property on every node and edge. Index that property with an
+equality index. All queries filter on the tenant property, ensuring that each request only
+accesses data belonging to the requesting tenant.
+
+This is the same mechanism used for any property-based filtering: secondary indexes make the
+lookup fast, and snapshot isolation guarantees that concurrent tenants do not interfere with each
+other.
+
+Row-level isolation keeps the architecture simple. The main model is still shared infrastructure:
+one writer fleet, one reader fleet, shared caches, and shared secondary indexes. Vector and text
+search can additionally use tenant-partitioned physical indexes when search isolation is needed.
+The tenant property in an index definition is the property name Helix reads from each node or edge
+to decide which tenant partition to use. When that property name is `tenant_id`, Helix maintains
+separate vector and text search structures for each distinct `tenant_id` value. This keeps
+tenant-scoped search working sets smaller and allows cache residency to track active tenants more
+closely. Tenants are still a data concern, not an infrastructure concern. Adding a new tenant is a
+write, not a provisioning event.
+
+## What This Provides
+
+- **Data isolation.** Queries scoped to a tenant ID never observe another tenant's data. Isolation
+  is enforced by the query layer, not by network or infrastructure boundaries.
+- **Shared infrastructure.** All tenants share the same writer, readers, caches, and object
+  storage. No per-tenant provisioning, no per-tenant scaling configuration.
+- **Uniform scaling.** Reader auto-scaling responds to aggregate query load across all tenants.
+  A spike from one tenant benefits from the same scaling that serves all others.
+- **Index efficiency.** Equality indexes on the tenant property resolve tenant-scoped queries
+  without scanning unrelated data.
+- **Full flexibility.** The application layer decides how tenancy is modeled, scoped, and
+  enforced. Helix Enterprise provides the primitives; the application owns the policy.
+
+## Tenant-Partitioned Search Indexes
+
+Tenant-partitioned search indexes are optional. They supplement row-level filtering with separate
+physical search structures per tenant value.
+
+### Vector Indexes
+
+Vector indexes can optionally partition by a configured tenant property name. Helix reads that
+property from each record and maintains a separate vector index for each distinct property value.
+For example, if the tenant property name is `tenant_id`, records with different `tenant_id` values
+land in different vector indexes. This keeps tenant-scoped search working sets smaller and allows
+vector caches to warm, retain, and evict data at tenant granularity. Tenant-partitioned vector
+indexes are the preferred way to isolate vector search results when that behavior is required.
+
+### Text Indexes
+
+Text indexes provide the same model for full-text search. The tenant property still means the
+property name used to read the partition value from each record. Current text index validation
+requires that property name to be `tenant_id`, so Helix maintains a separate text index for each
+distinct `tenant_id` value. This keeps tenant-scoped full-text search working sets smaller and
+allows local text-search caches to track active tenants more closely. Tenant-partitioned text
+indexes are the preferred way to isolate full-text search results when that behavior is required.
+
+## Considerations
+
+- **Noisy neighbors.** Tenants share compute and cache resources. A tenant issuing a high volume
+  of queries or large writes affects cache residency and query latency for other tenants.
+  Monitoring per-tenant query volume and applying rate limiting on your infrastructure mitigates this.
+- **Shared search semantics.** Secondary indexes remain shared. Tenant-scoped vector and text
+  searches require an explicit tenant value for the configured tenant property, and the system
+  remains shared infrastructure even when search indexes are partitioned by tenant.
+
+## Stricter Isolation Requirements
+
+For workloads that require namespace-level or infrastructure-level tenant isolation (regulatory
+compliance, data residency, or dedicated-resource SLAs), contact us at
+[founders@helix-db.com](mailto:founders@helix-db.com) to discuss options.

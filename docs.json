@@ -23,6 +23,30 @@
   },
   "fonts": {
   },
+  "head": [
+    {
+      "tag": "link",
+      "attributes": {
+        "rel": "preconnect",
+        "href": "https://fonts.googleapis.com"
+      }
+    },
+    {
+      "tag": "link",
+      "attributes": {
+        "rel": "preconnect",
+        "href": "https://fonts.gstatic.com",
+        "crossorigin": ""
+      }
+    },
+    {
+      "tag": "link",
+      "attributes": {
+        "rel": "stylesheet",
+        "href": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap"
+      }
+    }
+  ],
   "favicon": "/favicon.svg",
   "contextual": {
     "options": [
@@ -89,6 +113,20 @@
               "features/chunking/helix-chunking"
             ]
           }
+        ]
+      },
+      {
+        "tab": "Helix Enterprise",
+        "pages": [
+          "enterprise/introduction",
+          "enterprise/working-with-enterprise",
+          "enterprise/architecture",
+          "enterprise/concepts",
+          "enterprise/guarantees",
+          "enterprise/multi-tenancy",
+          "enterprise/security",
+          "enterprise/tradeoffs",
+          "enterprise/limits"
         ]
       },
       {

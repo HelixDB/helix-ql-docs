@@ -1,0 +1,53 @@
+
+
+# Limits
+
+Current constraints and practical limits. These reflect the current implementation, not
+fundamental architectural boundaries.
+
+## Data Model
+
+| Limit                  | Value                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| Node and edge ID range | 64-bit unsigned integer (max 2^63)                                                             |
+| Property value types   | boolean, integer, float, string, bytes, and array variants                                     |
+| Nested structures      | Not supported. Properties are flat key-value pairs.                                            |
+| Reserved property keys | `$label` (used for label-based filtering and label-scoped secondary, vector, and text indexes) |
+
+## Vector Indexes
+
+| Limit                    | Value                                                                                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope                    | Node and edge properties                                                                                                                 |
+| Supported property types | Numeric array properties (`float32[]`, `float64[]`, `int64[]`) normalized to `float32` for indexing                                      |
+| Tenant partitioning      | Optional by configured tenant property name. Tenant-scoped searches require a tenant value. Unknown tenant partitions return no results. |
+| Dimension matching       | Vectors must exactly match the configured index dimension                                                                                |
+| Distance metrics         | cosine, euclidean, manhattan                                                                                                             |
+| Search type              | Approximate nearest neighbor (ANN)                                                                                                       |
+
+## Text Indexes
+
+| Limit                    | Value                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope                    | Node and edge properties                                                                                                                                      |
+| Supported property types | `String` and `StringArray`                                                                                                                                    |
+| Unsupported values       | `null` and non-string values are rejected                                                                                                                     |
+| Analyzer config          | Preset analyzers: `standard`, `standard_stem_en`, `whitespace_lowercase`                                                                                      |
+| Term positions           | Optional                                                                                                                                                      |
+| Tenant partitioning      | Optional. Tenant-partitioned text indexes currently require the partition property name to be `tenant_id`, and tenant-scoped searches require a tenant value. |
+
+## Secondary Indexes
+
+| Limit            | Value                                                                                                      |
+| ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| Equality indexes | Supported on node and edge properties                                                                      |
+| Range indexes    | Supported on numeric and string properties                                                                 |
+| Encoding         | Range indexes use lexicographic string encoding. Values must be encoded consistently for correct ordering. |
+
+## Queries
+
+| Limit             | Value                                |
+| ----------------- | ------------------------------------ |
+| Query model       | Stored procedures and runtime queries|
+| Query language    | Rust DSL                             |
+| Transaction scope | One transaction per query invocation |

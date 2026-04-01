@@ -1,0 +1,44 @@
+---
+mode: "wide"
+---
+
+import { EnterpriseDiagram } from "/snippets/enterprise-diagram.jsx"
+import { architectureDiagram } from "/snippets/diagrams.jsx"
+
+# Introduction
+
+Helix Enterprise is an object-storage-backed graph database with integrated vector search and
+full-text search. It combines a property graph engine with approximate vector search and BM25
+full-text search on top of durable object storage, using SSD and in-memory caches for
+low-latency reads.
+
+## System at a Glance
+
+<EnterpriseDiagram diagram={architectureDiagram} />
+
+A gateway routes all traffic. A single writer serializes mutations for consistency. Readers
+auto-scale horizontally to handle query load. Object storage is the durable system of record.
+Caches reduce steady-state latency and accelerate cold starts.
+
+## Key Properties
+
+- **Graph, vector, and text storage on object storage.** Nodes, edges, properties, vector
+  indexes, and text index artifacts all persist durably in object storage. No local disk is
+  required for correctness.
+- **Tiered caching.** Separate in-memory and SSD cache paths for graph data, vector data, and
+  text search artifacts keep hot-path reads fast.
+- **Full ACID transactions.** Every query runs in a serializable snapshot isolation transaction.
+  Concurrent reads and writes do not block each other.
+- **Stored query model.** Queries are authored in a Rust DSL, deployed as stored procedures, and
+  invoked by name over HTTP. No query parsing at runtime.
+
+## Navigation
+
+| Chapter                                                     | Covers                                   |
+| ----------------------------------------------------------- | ---------------------------------------- |
+| [Working with Helix Enterprise](/enterprise/working-with-enterprise) | Deployment and query workflow            |
+| [Architecture](/enterprise/architecture)                             | Runtime topology, read and write paths   |
+| [Concepts](/enterprise/concepts)                                     | Data model, indexes, transactions        |
+| [Guarantees](/enterprise/guarantees)                                 | Consistency, durability, isolation       |
+| [Tradeoffs](/enterprise/tradeoffs)                                   | Design choices and their implications    |
+| [Limits](/enterprise/limits)                                         | Current constraints and practical limits |

@@ -1,0 +1,115 @@
+
+
+import { EnterpriseDiagram } from "/snippets/enterprise-diagram.jsx"
+import { workflowDiagram } from "/snippets/diagrams.jsx"
+
+# Working with Helix Enterprise
+
+Helix Enterprise separates deployment-time operations from runtime query execution. This boundary
+keeps the system easier to scale, secure, and operate.
+
+## End-to-End Workflow
+
+<EnterpriseDiagram diagram={workflowDiagram} />
+
+
+
+## Deploy-Time Workflow
+
+Deployment is a two-step process.
+
+1. **Author queries.** Define graph traversals, property filters, vector searches, text searches,
+   and mutations using the Rust DSL. Queries are composable: a single query can chain multiple
+   traversals, apply filters, and combine graph, vector, and text operations within one
+   transaction.
+2. **Deploy with the CLI.** The Helix CLI compiles queries and pushes them to Helix Enterprise as
+   stored procedures. Once deployed, queries are immediately available for invocation.
+
+Queries are the only artifact that moves from development to production. There is no schema
+migration step, no ORM configuration, and no SQL to manage. The data model is implicit in the
+queries themselves.
+
+## Runtime Workflow
+
+At runtime, applications interact with Helix Enterprise over HTTP.
+
+1. **Call by name.** An HTTP client sends a request to the gateway with a stored query name and
+   any required parameters at `POST /v1/query/<query-name>`. Clients can also send an inline query
+   at `POST /v1/query`.
+2. **Transaction execution.** The gateway routes the request to the appropriate process. The query
+   runs inside a transaction with serializable snapshot isolation. Reads and writes within the
+   same query see a consistent snapshot.
+3. **Result delivery.** Helix returns the query result as a JSON response. Reads are served by
+   horizontally scaled readers. Writes are serialized through the single writer.
+
+Stored queries execute as pre-compiled procedures, keeping runtime overhead minimal. Dynamic
+queries deserialize the inline query JSON at request time, which makes them more flexible but less
+optimized than stored routes.
+
+## Dynamic Queries
+
+Helix supports inline queries for cases where you do not want to deploy the route ahead of time.
+
+- Send `POST /v1/query`.
+- Include a JSON body shaped like:
+
+```json
+{
+  "request_type": "read",
+  "query": {
+    "queries": [
+      {
+        "name": "user",
+        "steps": [
+          {
+            "NWhere": {
+              "Eq": ["username", { "String": "Alice" }]
+            }
+          }
+        ],
+        "condition": null
+      }
+    ],
+    "returns": ["user"]
+  },
+  "parameters": {}
+}
+```
+
+- `request_type` must be `read` or `write` so the gateway can route the request correctly.
+- `query` is the same JSON object that would otherwise live under `read_routes.<name>` or
+  `write_routes.<name>` in `queries.json`.
+- `parameters` is optional and uses the same shape as stored-query calls.
+
+## Query Warming
+
+Helix supports built-in query warming for read queries.
+
+- Send the normal read request with the same parameters you would use for a real read:
+  - stored route: `POST /v1/query/<query-name>`
+  - dynamic route: `POST /v1/query`
+- Add `X-Helix-Warm: true` or `X-Helix-Warm: 1`.
+- Helix executes the query as a query warming request, discards the result body, and returns
+  `204 No Content`.
+
+This is useful when you want to pre-populate the per-process caches that a known query touches
+before live traffic arrives.
+
+Important details:
+
+- Query warming is only supported for read queries. Warming a write query is rejected.
+- Helix sends the query warming request to all backends so every node can populate its local caches
+  with the data fetched during query execution.
+- Query warming does not create a separate query-result cache. It warms the normal storage,
+  vector, and text-search caches that the query touches during execution.
+
+## Separation of Concerns
+
+| Responsibility    | Deploy-time | Runtime                     |
+| ----------------- | ----------- | --------------------------- |
+| Query authoring   | Rust DSL    | --                          |
+| Query compilation | Helix CLI   | --                          |
+| Query execution   | --          | Gateway + Writer/Readers    |
+| Data storage      | --          | Object storage              |
+| Caching           | --          | SSD + in-memory per process |
+| Scaling           | --          | Auto-scaling readers        |
