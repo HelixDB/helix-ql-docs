@@ -1,0 +1,26 @@
+---
+title: "helix prune"
+description: "Remove unused containers, images, and workspace files."
+sidebarTitle: "prune"
+---
+
+Remove unused containers, images, and workspace files.
+
+
+<Note>
+**What it removes:**
+
+- Stopped containers
+- Unused Docker images
+- Workspace files
+- **Note:** Preserves data volumes
+</Note>
+
+<ResponseField name="helix prune [OPTIONS] [INSTANCE]">
+  The instance to prune.
+    <Expandable title="options">
+    <ResponseField name="--all, -a" type="Boolean">
+        Prune all instances in the project.
+    </ResponseField>
+    </Expandable>
+</ResponseField>

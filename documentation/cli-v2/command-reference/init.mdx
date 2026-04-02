@@ -1,0 +1,74 @@
+---
+title: "helix init"
+description: "Initialize a new Helix project with configuration and structure."
+sidebarTitle: "init"
+---
+
+Initialize a new Helix project with configuration and structure.
+
+
+<ResponseField name="helix init [OPTIONS] [SUBCOMMAND]" >
+
+    <Expandable title="options">
+    <ResponseField name="--path | -p [PATH]" type="String">
+        The path to the project.
+    </ResponseField>
+    <ResponseField name="--template [TEMPLATE]" type="String">
+        The template to use for the project.
+    </ResponseField>
+    <ResponseField name="--queries-path | -q [PATH]" type="String">
+        The path to the query files.
+    </ResponseField>
+    </Expandable>
+
+  <Expandable title="subcommands">
+    <ResponseField name="helix init cloud" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--region [REGION]" type="String">
+                    The region the instance is deployed to.
+                </ResponseField>
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the instance.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+
+         <ResponseField name="helix init ecr" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the AWS ECR repository. Note this will create the repository if needed.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+
+         <ResponseField name="helix init fly" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the Fly.io app.
+                </ResponseField>
+                <ResponseField name="--volume-size">
+                    The volume size in GB.
+                </ResponseField>
+                <ResponseField name="--vm-size [SIZE]" type="String">
+                     - `shared-cpu-1x` - 1 shared vCPU, 256MB RAM
+                    - `shared-cpu-2x` - 2 shared vCPUs, 512MB RAM
+                    - `shared-cpu-4x` - 4 shared vCPUs, 1GB RAM
+                    - `performance-4x` - 4 dedicated vCPUs, 8GB RAM
+                    - `performance-8x` - 8 dedicated vCPUs, 16GB RAM
+                </ResponseField>
+                <ResponseField name="--public">
+                    Make instance public.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+
+        <ResponseField name="helix init local" type= "[Options]">
+            <Expandable title="options">
+                <ResponseField name="--name [NAME]" type="String">
+                    The name of the local instance.
+                </ResponseField>
+            </Expandable>
+        </ResponseField>
+    </Expandable>
+  Note that `helix init` with no arguments defaults to making a local instance called `dev`.
+</ResponseField>

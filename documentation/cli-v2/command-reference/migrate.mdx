@@ -1,0 +1,36 @@
+---
+title: "helix migrate"
+description: "Migrate a v1 Helix project to v2 format."
+sidebarTitle: "migrate"
+---
+
+Migrate a v1 Helix project to v2 format.
+
+<ResponseField name="helix migrate [OPTIONS]" >
+    <Expandable title="options">
+        <ResponseField name="--path | -p [PATH]" type="String">
+            The path to the project to migrate.
+            - Default: current directory
+        </ResponseField>
+        <ResponseField name="--queries-dir | -q [DIR]" type="String">
+            The directory to move .hx files to.
+            - Default: "./db/"
+        </ResponseField>
+        <ResponseField name="--instance-name | -i [NAME]" type="String">
+            The name for the default local instance.
+            - Default: "dev"
+        </ResponseField>
+        <ResponseField name="--port [PORT]" type="String">
+            The port for the local instance.
+            - Default: 6969
+        </ResponseField>
+        <ResponseField name="--dry-run">
+            Show what would be migrated without making changes.
+        </ResponseField>
+        <ResponseField name="--no-backup">
+            Skip creating backup of v1 files.
+        </ResponseField>
+
+    </Expandable>
+
+</ResponseField>

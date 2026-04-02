@@ -1,0 +1,25 @@
+---
+title: "helix auth"
+description: "Manage authentication for Helix Cloud."
+sidebarTitle: "auth"
+---
+
+Manage authentication for Helix Cloud.
+
+<ResponseField name="helix auth [SUBCOMMAND]">
+  The subcommand to run.
+
+    <Expandable title="subcommands">
+        <ResponseField name="login">
+            Initiates browser-based authentication flow.
+        </ResponseField>
+
+        <ResponseField name="logout">
+            Clears authentication tokens from `~/.helix/credentials`.
+        </ResponseField>
+
+        <ResponseField name="create-key">
+            Generates a new API key for programmatic access.
+        </ResponseField>
+    </Expandable>
+</ResponseField>
