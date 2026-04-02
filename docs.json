@@ -91,56 +91,7 @@
       ]
     },
     "tabs": [
-      {
-        "tab": "HelixDB Enterprise",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "enterprise/introduction",
-              "enterprise/working-with-enterprise",
-              "enterprise/architecture",
-              "enterprise/concepts",
-              "enterprise/guarantees",
-              "enterprise/multi-tenancy",
-              "enterprise/security",
-              "enterprise/tradeoffs",
-              "enterprise/limits"
-            ]
-          },
-          {
-            "group": "Changelog & Roadmap",
-            "pages": [
-              "change-log/roadmap",
-              "change-log/helix-enterprise",
-              "change-log/helixdb"
-            ]
-          },
-          {
-            "group": "Tooling",
-            "pages": [
-              "documentation/cli-v2/command-reference",
-              {
-                "group": "SDKs",
-                "pages": [
-                  "documentation/sdks/helix-rs",
-                  "documentation/sdks/helix-ts",
-                  "documentation/sdks/helix-py",
-                  "documentation/sdks/helix-go"
-                ]
-              }
-
-            ]
-          },
-          {
-            "group": "Benchmarks",
-            "pages": [
-              "benchmarks/v1"
-            ]
-          }
-          
-        ]
-      },
+      
       {
         "tab": "HelixDB Lite",
         "groups": [
@@ -352,6 +303,56 @@
               "features/chunking/helix-chunking"
             ]
           }
+        ]
+      },
+      {
+        "tab": "HelixDB Enterprise",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "enterprise/introduction",
+              "enterprise/working-with-enterprise",
+              "enterprise/architecture",
+              "enterprise/concepts",
+              "enterprise/guarantees",
+              "enterprise/multi-tenancy",
+              "enterprise/security",
+              "enterprise/tradeoffs",
+              "enterprise/limits"
+            ]
+          },
+          {
+            "group": "Changelog & Roadmap",
+            "pages": [
+              "change-log/roadmap",
+              "change-log/helix-enterprise",
+              "change-log/helixdb"
+            ]
+          },
+          {
+            "group": "Tooling",
+            "pages": [
+              "documentation/cli-v2/command-reference",
+              {
+                "group": "SDKs",
+                "pages": [
+                  "documentation/sdks/helix-rs",
+                  "documentation/sdks/helix-ts",
+                  "documentation/sdks/helix-py",
+                  "documentation/sdks/helix-go"
+                ]
+              }
+
+            ]
+          },
+          {
+            "group": "Benchmarks",
+            "pages": [
+              "benchmarks/v1"
+            ]
+          }
+          
         ]
       },
       {
