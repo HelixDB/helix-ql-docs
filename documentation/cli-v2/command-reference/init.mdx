@@ -6,69 +6,82 @@ sidebarTitle: "init"
 
 Initialize a new Helix project with configuration and structure.
 
+## Usage
 
-<ResponseField name="helix init [OPTIONS] [SUBCOMMAND]" >
+```bash
+helix init [OPTIONS] [SUBCOMMAND]
+```
 
-    <Expandable title="options">
-    <ResponseField name="--path | -p [PATH]" type="String">
-        The path to the project.
-    </ResponseField>
-    <ResponseField name="--template [TEMPLATE]" type="String">
-        The template to use for the project.
-    </ResponseField>
-    <ResponseField name="--queries-path | -q [PATH]" type="String">
-        The path to the query files.
-    </ResponseField>
-    </Expandable>
+## Available sub-commands
 
-  <Expandable title="subcommands">
-    <ResponseField name="helix init cloud" type= "[Options]">
-            <Expandable title="options">
-                <ResponseField name="--region [REGION]" type="String">
-                    The region the instance is deployed to.
-                </ResponseField>
-                <ResponseField name="--name [NAME]" type="String">
-                    The name of the instance.
-                </ResponseField>
-            </Expandable>
-        </ResponseField>
+| Sub-command | Description |
+|-------------|-------------|
+| `cloud` | Initialize a Helix Cloud instance |
+| `ecr` | Initialize an AWS ECR instance |
+| `fly` | Initialize a Fly.io instance |
+| `local` | Initialize a local instance |
 
-         <ResponseField name="helix init ecr" type= "[Options]">
-            <Expandable title="options">
-                <ResponseField name="--name [NAME]" type="String">
-                    The name of the AWS ECR repository. Note this will create the repository if needed.
-                </ResponseField>
-            </Expandable>
-        </ResponseField>
+## Available flags
 
-         <ResponseField name="helix init fly" type= "[Options]">
-            <Expandable title="options">
-                <ResponseField name="--name [NAME]" type="String">
-                    The name of the Fly.io app.
-                </ResponseField>
-                <ResponseField name="--volume-size">
-                    The volume size in GB.
-                </ResponseField>
-                <ResponseField name="--vm-size [SIZE]" type="String">
-                     - `shared-cpu-1x` - 1 shared vCPU, 256MB RAM
-                    - `shared-cpu-2x` - 2 shared vCPUs, 512MB RAM
-                    - `shared-cpu-4x` - 4 shared vCPUs, 1GB RAM
-                    - `performance-4x` - 4 dedicated vCPUs, 8GB RAM
-                    - `performance-8x` - 8 dedicated vCPUs, 16GB RAM
-                </ResponseField>
-                <ResponseField name="--public">
-                    Make instance public.
-                </ResponseField>
-            </Expandable>
-        </ResponseField>
+| Flag | Type | Description |
+|------|------|-------------|
+| `--path`, `-p` | String | The path to the project |
+| `--template` | String | The template to use for the project |
+| `--queries-path`, `-q` | String | The path to the query files |
 
-        <ResponseField name="helix init local" type= "[Options]">
-            <Expandable title="options">
-                <ResponseField name="--name [NAME]" type="String">
-                    The name of the local instance.
-                </ResponseField>
-            </Expandable>
-        </ResponseField>
-    </Expandable>
-  Note that `helix init` with no arguments defaults to making a local instance called `dev`.
-</ResponseField>
+### `helix init cloud`
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--region` | String | The region the instance is deployed to |
+| `--name` | String | The name of the instance |
+
+### `helix init ecr`
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | String | The name of the AWS ECR repository. Creates the repository if needed |
+
+### `helix init fly`
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | String | The name of the Fly.io app |
+| `--volume-size` | Number | The volume size in GB |
+| `--vm-size` | String | The VM size (see options below) |
+| `--public` | Boolean | Make instance public |
+
+Available `--vm-size` options:
+- `shared-cpu-1x` — 1 shared vCPU, 256MB RAM
+- `shared-cpu-2x` — 2 shared vCPUs, 512MB RAM
+- `shared-cpu-4x` — 4 shared vCPUs, 1GB RAM
+- `performance-4x` — 4 dedicated vCPUs, 8GB RAM
+- `performance-8x` — 8 dedicated vCPUs, 16GB RAM
+
+### `helix init local`
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | String | The name of the local instance |
+
+## Examples
+
+```bash
+# Initialize a new local project (defaults to instance named 'dev')
+helix init
+
+# Initialize with a specific path
+helix init --path ./my-project
+
+# Initialize a Helix Cloud instance
+helix init cloud --name my-instance --region us-east-1
+
+# Initialize a Fly.io instance
+helix init fly --name my-app --vm-size shared-cpu-2x
+
+# Initialize an AWS ECR instance
+helix init ecr --name my-repo
+
+# Initialize a local instance with a custom name
+helix init local --name staging
+```

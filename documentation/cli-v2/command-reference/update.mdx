@@ -6,12 +6,24 @@ sidebarTitle: "update"
 
 Update the Helix CLI to the latest version.
 
-<ResponseField name="helix update [OPTIONS]">
-  The options to run.
+## Usage
 
-  <Expandable title="options">
-    <ResponseField name="--force" type="Boolean">
-      Force update even if already on latest version.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+```bash
+helix update [OPTIONS]
+```
+
+## Available flags
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--force` | Boolean | Force update even if already on latest version |
+
+## Examples
+
+```bash
+# Update to the latest version
+helix update
+
+# Force update
+helix update --force
+```

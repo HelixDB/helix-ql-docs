@@ -6,42 +6,37 @@ sidebarTitle: "logs"
 
 View logs for a running instance. Opens an interactive terminal UI by default, or use flags for non-interactive modes.
 
-<Note>
-**Requirements:**
-- For local instances: Docker or Podman must be running
-- For cloud instances: Must be authenticated via `helix auth login`
-</Note>
+For local instances, Docker or Podman must be running. For cloud instances, you must be authenticated via `helix auth login`.
 
-<ResponseField name="helix logs [INSTANCE] [OPTIONS]">
-  The instance to view logs for. If omitted, an interactive selection prompt will appear.
+## Usage
 
-  <Expandable title="options">
-    <ResponseField name="--live, -l" type="Boolean">
-      Stream live logs non-interactively to stdout. Useful for scripts and CI/CD pipelines. Press Ctrl+C to stop.
-    </ResponseField>
-    <ResponseField name="--range, -r" type="Boolean">
-      Query historical logs within a time range. Requires `--start` and/or `--end`.
-    </ResponseField>
-    <ResponseField name="--start [DATETIME]" type="String">
-      Start time for range query. Format: ISO 8601 (e.g., `2024-01-15T10:00:00Z`). Defaults to 15 minutes before end time.
-    </ResponseField>
-    <ResponseField name="--end [DATETIME]" type="String">
-      End time for range query. Format: ISO 8601 (e.g., `2024-01-15T11:00:00Z`). Defaults to now.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+```bash
+helix logs [INSTANCE] [OPTIONS]
+```
 
-<Note>
-**Time Range Limits:**
-- Maximum range duration is 1 hour
-- Start time must be before end time
-</Note>
+## Arguments
 
-#### Interactive TUI Mode
+| Argument | Description |
+|----------|-------------|
+| `INSTANCE` | The instance to view logs for. If omitted, an interactive selection prompt will appear |
+
+## Available flags
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--live`, `-l` | Boolean | Stream live logs non-interactively to stdout. Press Ctrl+C to stop |
+| `--range`, `-r` | Boolean | Query historical logs within a time range. Requires `--start` and/or `--end` |
+| `--start` | String | Start time for range query (ISO 8601, e.g. `2024-01-15T10:00:00Z`). Defaults to 15 minutes before end time |
+| `--end` | String | End time for range query (ISO 8601, e.g. `2024-01-15T11:00:00Z`). Defaults to now |
+
+Maximum range duration is 1 hour. Start time must be before end time.
+
+## Interactive TUI mode
 
 When run without flags, `helix logs` opens an interactive terminal UI with vim-style navigation:
 
 **Navigation:**
+
 | Key | Action |
 |-----|--------|
 | `Down Arrow` | Scroll down one line |
@@ -51,20 +46,21 @@ When run without flags, `helix logs` opens an interactive terminal UI with vim-s
 | `zt` | Jump to top of logs |
 | `zb` | Jump to bottom of logs |
 
-**Mode Switching:**
+**Mode switching:**
+
 | Key | Action |
 |-----|--------|
 | `l` | Switch to live streaming mode |
 | `r` | Switch to range mode (select time presets or custom range) |
 | `Esc` | Quit |
 
-**Range Mode Presets:**
+**Range mode presets:**
 - Last 15 minutes
 - Last 30 minutes
 - Last hour
 - Custom range (date/time picker)
 
-**Examples:**
+## Examples
 
 ```bash
 # Open interactive log viewer (will prompt for instance selection)

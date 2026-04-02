@@ -6,48 +6,37 @@ sidebarTitle: "dashboard"
 
 Launch the Helix Dashboard in a container to visualize and interact with your database.
 
-<Note>
-**Requirements:**
-- Docker or Podman must be installed and running
-- `build_mode` must be set to `dev` in your `helix.toml` configuration
-</Note>
+Docker or Podman must be installed and running. `build_mode` must be set to `dev` in your `helix.toml` configuration.
 
-<ResponseField name="helix dashboard [SUBCOMMAND]">
-  The subcommand to run.
+## Usage
 
-  <Expandable title="subcommands">
-    <ResponseField name="start [INSTANCE] [OPTIONS]">
-      Start the dashboard.
-      <Expandable title="options">
-        <ResponseField name="--port, -p [PORT]" type="Number">
-          Port to run dashboard on. Default: 3000
-        </ResponseField>
-        <ResponseField name="--host [HOST]" type="String">
-          Helix host to connect to (e.g., localhost). Bypasses project config.
-        </ResponseField>
-        <ResponseField name="--helix-port [PORT]" type="Number">
-          Helix port to connect to. Used with --host. Default: 6969
-        </ResponseField>
-        <ResponseField name="--attach" type="Boolean">
-          Run dashboard in foreground with logs.
-        </ResponseField>
-        <ResponseField name="--restart" type="Boolean">
-          Restart if dashboard is already running.
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
+```bash
+helix dashboard <SUBCOMMAND>
+```
 
-    <ResponseField name="stop">
-      Stop the running dashboard.
-    </ResponseField>
+## Available sub-commands
 
-    <ResponseField name="status">
-      Show dashboard status and connection info.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+| Sub-command | Description |
+|-------------|-------------|
+| `start` | Start the dashboard |
+| `stop` | Stop the running dashboard |
+| `status` | Show dashboard status and connection info |
 
-**Examples:**
+### `helix dashboard start`
+
+```bash
+helix dashboard start [INSTANCE] [OPTIONS]
+```
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--port`, `-p` | Number | Port to run dashboard on | `3000` |
+| `--host` | String | Helix host to connect to (e.g. `localhost`). Bypasses project config | |
+| `--helix-port` | Number | Helix port to connect to. Used with `--host` | `6969` |
+| `--attach` | Boolean | Run dashboard in foreground with logs | |
+| `--restart` | Boolean | Restart if dashboard is already running | |
+
+## Examples
 
 ```bash
 # Start dashboard for default instance

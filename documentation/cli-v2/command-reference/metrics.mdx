@@ -6,26 +6,33 @@ sidebarTitle: "metrics"
 
 Configure telemetry and usage metrics collection.
 
+## Usage
 
-<ResponseField name="helix metrics [SUBCOMMAND]">
-  The subcommand to run.
+```bash
+helix metrics <SUBCOMMAND>
+```
 
-  <Expandable title="subcommands">
-    <ResponseField name="full">
-      Enable full metrics collection (requires email).
-    </ResponseField>
+## Available sub-commands
 
-    <ResponseField name="basic">
-      Enable minimal anonymous metrics.
-    </ResponseField>
+| Sub-command | Description |
+|-------------|-------------|
+| `full` | Enable full metrics collection (requires email) |
+| `basic` | Enable minimal anonymous metrics |
+| `off` | Disable all metrics collection |
+| `status` | Show current metrics configuration |
 
-    <ResponseField name="off">
-      Disable all metrics collection.
-    </ResponseField>
+## Examples
 
-    <ResponseField name="status">
-      Show current metrics configuration.
-    </ResponseField>
+```bash
+# Enable full metrics
+helix metrics full
 
-  </Expandable>
-</ResponseField>
+# Enable basic anonymous metrics
+helix metrics basic
+
+# Disable all metrics
+helix metrics off
+
+# Check current metrics configuration
+helix metrics status
+```

@@ -6,16 +6,30 @@ sidebarTitle: "push"
 
 Deploy or update a running instance.
 
-
-<Note>
-**What it does:**
+This command:
 1. Builds the instance if needed
 2. Creates/updates Docker container for local instances
 3. Pushes to cloud provider for remote instances
 4. Starts the instance
 
-</Note>
+## Usage
 
-<ResponseField name="helix push [INSTANCE]">
-  The instance to deploy.
-</ResponseField>
+```bash
+helix push [INSTANCE]
+```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `INSTANCE` | The instance to deploy |
+
+## Examples
+
+```bash
+# Push the default instance
+helix push
+
+# Push a specific instance
+helix push production
+```

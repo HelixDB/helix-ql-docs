@@ -6,21 +6,37 @@ sidebarTitle: "prune"
 
 Remove unused containers, images, and workspace files.
 
-
-<Note>
-**What it removes:**
-
+This command removes:
 - Stopped containers
 - Unused Docker images
 - Workspace files
-- **Note:** Preserves data volumes
-</Note>
 
-<ResponseField name="helix prune [OPTIONS] [INSTANCE]">
-  The instance to prune.
-    <Expandable title="options">
-    <ResponseField name="--all, -a" type="Boolean">
-        Prune all instances in the project.
-    </ResponseField>
-    </Expandable>
-</ResponseField>
+Data volumes are preserved.
+
+## Usage
+
+```bash
+helix prune [OPTIONS] [INSTANCE]
+```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `INSTANCE` | The instance to prune |
+
+## Available flags
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--all`, `-a` | Boolean | Prune all instances in the project |
+
+## Examples
+
+```bash
+# Prune a specific instance
+helix prune dev
+
+# Prune all instances
+helix prune --all
+```

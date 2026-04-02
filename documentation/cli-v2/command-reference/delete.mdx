@@ -6,15 +6,27 @@ sidebarTitle: "delete"
 
 Permanently delete an instance and all its data.
 
-<Note>
-**What it removes:**
-
+This command removes:
 - Container and images
 - All data volumes
 - Workspace files
 - Configuration entries
-</Note>
 
-<ResponseField name="helix delete [INSTANCE]">
-  The instance to delete.
-</ResponseField>
+## Usage
+
+```bash
+helix delete [INSTANCE]
+```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `INSTANCE` | The instance to delete |
+
+## Examples
+
+```bash
+# Delete a specific instance
+helix delete dev
+```

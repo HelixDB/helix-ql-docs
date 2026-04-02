@@ -6,13 +6,25 @@ sidebarTitle: "compile"
 
 Compile project queries into executable format.
 
-<ResponseField name="helix compile [OPTIONS]">
-  <Expandable title="options">
-    <ResponseField name="--path, -p [PATH]" type="String">
-      The path to the project.
-    </ResponseField>
-    <ResponseField name="--output, -o [PATH]" type="String">
-      The output path for compiled queries.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+## Usage
+
+```bash
+helix compile [OPTIONS]
+```
+
+## Available flags
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--path`, `-p` | String | The path to the project |
+| `--output`, `-o` | String | The output path for compiled queries |
+
+## Examples
+
+```bash
+# Compile queries in the current project
+helix compile
+
+# Compile with a specific output path
+helix compile --output ./build
+```

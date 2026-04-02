@@ -6,31 +6,35 @@ sidebarTitle: "migrate"
 
 Migrate a v1 Helix project to v2 format.
 
-<ResponseField name="helix migrate [OPTIONS]" >
-    <Expandable title="options">
-        <ResponseField name="--path | -p [PATH]" type="String">
-            The path to the project to migrate.
-            - Default: current directory
-        </ResponseField>
-        <ResponseField name="--queries-dir | -q [DIR]" type="String">
-            The directory to move .hx files to.
-            - Default: "./db/"
-        </ResponseField>
-        <ResponseField name="--instance-name | -i [NAME]" type="String">
-            The name for the default local instance.
-            - Default: "dev"
-        </ResponseField>
-        <ResponseField name="--port [PORT]" type="String">
-            The port for the local instance.
-            - Default: 6969
-        </ResponseField>
-        <ResponseField name="--dry-run">
-            Show what would be migrated without making changes.
-        </ResponseField>
-        <ResponseField name="--no-backup">
-            Skip creating backup of v1 files.
-        </ResponseField>
+## Usage
 
-    </Expandable>
+```bash
+helix migrate [OPTIONS]
+```
 
-</ResponseField>
+## Available flags
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--path`, `-p` | String | The path to the project to migrate | Current directory |
+| `--queries-dir`, `-q` | String | The directory to move `.hx` files to | `./db/` |
+| `--instance-name`, `-i` | String | The name for the default local instance | `dev` |
+| `--port` | String | The port for the local instance | `6969` |
+| `--dry-run` | Boolean | Show what would be migrated without making changes | |
+| `--no-backup` | Boolean | Skip creating backup of v1 files | |
+
+## Examples
+
+```bash
+# Migrate the current directory
+helix migrate
+
+# Preview migration without making changes
+helix migrate --dry-run
+
+# Migrate a specific project with custom settings
+helix migrate --path ./my-project --instance-name staging --port 8080
+
+# Migrate without creating a backup
+helix migrate --no-backup
+```

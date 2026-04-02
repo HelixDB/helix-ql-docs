@@ -6,20 +6,42 @@ sidebarTitle: "auth"
 
 Manage authentication for Helix Cloud.
 
-<ResponseField name="helix auth [SUBCOMMAND]">
-  The subcommand to run.
+## Usage
 
-    <Expandable title="subcommands">
-        <ResponseField name="login">
-            Initiates browser-based authentication flow.
-        </ResponseField>
+```bash
+helix auth <SUBCOMMAND>
+```
 
-        <ResponseField name="logout">
-            Clears authentication tokens from `~/.helix/credentials`.
-        </ResponseField>
+## Available sub-commands
 
-        <ResponseField name="create-key">
-            Generates a new API key for programmatic access.
-        </ResponseField>
-    </Expandable>
-</ResponseField>
+| Sub-command | Description |
+|-------------|-------------|
+| `login` | Initiates browser-based authentication flow |
+| `logout` | Clears authentication tokens from `~/.helix/credentials` |
+| `create-key` | Generates a new API key for programmatic access |
+
+## Examples
+
+### `helix auth login`
+
+```bash
+helix auth login
+```
+
+Opens a browser window to authenticate with Helix Cloud.
+
+### `helix auth logout`
+
+```bash
+helix auth logout
+```
+
+Clears stored authentication tokens.
+
+### `helix auth create-key`
+
+```bash
+helix auth create-key
+```
+
+Generates a new API key for use in scripts and CI/CD pipelines.

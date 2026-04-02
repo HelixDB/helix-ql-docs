@@ -6,57 +6,65 @@ sidebarTitle: "add"
 
 Add a new instance to an existing Helix project.
 
-<ResponseField name="helix add [SUBCOMMAND]" >
+## Usage
 
-    <Expandable title="subcommands">
-        <ResponseField name="helix add cloud" type= "[Options]">
-            <Expandable title="options">
-                <ResponseField name="--region [REGION]" type="String">
-                    The region the instance is deployed to.
-                </ResponseField>
-                <ResponseField name="--name [NAME]" type="String">
-                    The name of the instance.
-                </ResponseField>
-            </Expandable>
-        </ResponseField>
+```bash
+helix add <SUBCOMMAND>
+```
 
-        <ResponseField name="helix add ecr" type= "[Options]">
-            <Expandable title="options">
-                <ResponseField name="--name [NAME]" type="String">
-                    The name of the AWS ECR repository. Note this will create the repository if needed.
-                </ResponseField>
-            </Expandable>
-        </ResponseField>
+## Available sub-commands
 
-         <ResponseField name="helix add fly" type= "[Options]">
-            <Expandable title="options">
-                <ResponseField name="--name [NAME]" type="String">
-                    The name of the Fly.io app.
-                </ResponseField>
-                <ResponseField name="--volume-size">
-                    The volume size in GB.
-                </ResponseField>
-                <ResponseField name="--vm-size [SIZE]" type="String">
-                    - `shared-cpu-1x` - 1 shared vCPU, 256MB RAM
-                    - `shared-cpu-2x` - 2 shared vCPUs, 512MB RAM
-                    - `shared-cpu-4x` - 4 shared vCPUs, 1GB RAM
-                    - `performance-4x` - 4 dedicated vCPUs, 8GB RAM
-                    - `performance-8x` - 8 dedicated vCPUs, 16GB RAM
-                </ResponseField>
-                <ResponseField name="--public">
-                    Make instance public.
-                </ResponseField>
-            </Expandable>
-        </ResponseField>
+| Sub-command | Description |
+|-------------|-------------|
+| `cloud` | Add a Helix Cloud instance |
+| `ecr` | Add an AWS ECR instance |
+| `fly` | Add a Fly.io instance |
+| `local` | Add a local instance |
 
-         <ResponseField name="helix add local" type= "[Options]">
-            <Expandable title="options">
-                <ResponseField name="--name [NAME]" type="String">
-                    The name of the local instance.
-                </ResponseField>
-            </Expandable>
-        </ResponseField>
+### `helix add cloud`
 
-    </Expandable>
+| Flag | Type | Description |
+|------|------|-------------|
+| `--region` | String | The region the instance is deployed to |
+| `--name` | String | The name of the instance |
 
-</ResponseField>
+### `helix add ecr`
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | String | The name of the AWS ECR repository. Creates the repository if needed |
+
+### `helix add fly`
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | String | The name of the Fly.io app |
+| `--volume-size` | Number | The volume size in GB |
+| `--vm-size` | String | The VM size (see options below) |
+| `--public` | Boolean | Make instance public |
+
+Available `--vm-size` options:
+- `shared-cpu-1x` — 1 shared vCPU, 256MB RAM
+- `shared-cpu-2x` — 2 shared vCPUs, 512MB RAM
+- `shared-cpu-4x` — 4 shared vCPUs, 1GB RAM
+- `performance-4x` — 4 dedicated vCPUs, 8GB RAM
+- `performance-8x` — 8 dedicated vCPUs, 16GB RAM
+
+### `helix add local`
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | String | The name of the local instance |
+
+## Examples
+
+```bash
+# Add a new cloud instance
+helix add cloud --name production --region us-west-2
+
+# Add a Fly.io instance
+helix add fly --name my-app --vm-size performance-4x
+
+# Add a local instance
+helix add local --name testing
+```
