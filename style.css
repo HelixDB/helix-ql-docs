@@ -336,3 +336,51 @@ h5 {
 .accordion-group {
     border: 1px solid #E2DDDB;
 }
+
+.enterprise-diagram {
+    background-color: var(--background);
+    border: 1px solid #E2DDDB;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dark .enterprise-diagram,
+[data-theme="dark"] .enterprise-diagram {
+    border-color: #403A38;
+}
+
+.enterprise-diagram__pre {
+    margin: 0;
+    padding: 1rem 1.25rem;
+    white-space: pre;
+    overflow-wrap: normal;
+    word-break: normal;
+    width: max-content;
+    min-width: 100%;
+    box-sizing: border-box;
+    line-height: 1;
+    letter-spacing: 0;
+    word-spacing: 0;
+    tab-size: 4;
+    font-size: 0.82rem;
+    font-kerning: none;
+    text-rendering: optimizeSpeed;
+}
+
+.enterprise-diagram *,
+.enterprise-diagram__pre,
+.enterprise-diagram__code {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
+    font-variant-ligatures: none !important;
+    text-transform: none !important;
+    font-synthesis-weight: none;
+    font-synthesis-style: none;
+}
+
+.enterprise-diagram__code {
+    display: block;
+    white-space: inherit;
+}

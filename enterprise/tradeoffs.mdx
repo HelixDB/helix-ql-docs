@@ -1,0 +1,43 @@
+
+
+# Tradeoffs
+
+Every system makes design choices. Helix Enterprise optimizes for durable, cost-effective graph,
+vector, and text workloads with strong transactional guarantees. These choices have implications.
+
+## Excels At
+
+| Area                                 | Details                                                                                                                                |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Durable storage**                  | All data persists in object storage. No risk of data loss from local disk failure. Storage capacity scales independently of compute.   |
+| **Read scalability**                 | Readers auto-scale horizontally. Doubling readers doubles read throughput with no coordination overhead.                               |
+| **Serializable transactions**       | Every query runs against a stable snapshot with ACID semantics by default.                                                             |
+| **Mixed graph, vector, and text workloads** | Graph traversals, vector search, and full-text search execute in the same transaction, against the same snapshot. No need to stitch together separate systems for those workloads. |
+| **Cost efficiency at scale**         | Object storage is significantly cheaper per GB than local SSDs or in-memory stores. Large datasets remain affordable.                  |
+| **Operational simplicity**           | Single writer eliminates distributed consensus. No leader election, no split-brain, no quorum management.                              |
+
+## Not Optimal For
+
+| Area                         | Details                                                                                                                                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Sub-millisecond reads**    | Cache hits are fast, but cold reads require an object storage round trip. Workloads that require guaranteed sub-millisecond latency on every read are better served by in-memory databases. |
+| **Ultra-low write latency**  | Writes incur object storage latency for durability. Write throughput is high, but individual write latency has a floor set by object storage round-trip time.                               |
+| **Exhaustive vector recall** | Vector search is approximate (ANN). Applications that require 100% exact nearest neighbor results should use brute-force search on smaller datasets.                                        |
+
+## Design Choices
+
+**Object storage as the system of record.** Caches accelerate reads but are not required for
+correctness. This means cold starts are slower than systems that keep all data on local disk, but
+durability and cost characteristics are superior.
+
+**Single writer.** Serializing all writes through one process avoids distributed coordination at the
+cost of write throughput being bounded by a single node. In practice, batching and the high
+throughput of the writer process make this sufficient for most workloads.
+
+**Specialized cache paths.** Helix maintains separate cache paths for graph data, vector indexes,
+and text search artifacts. The tradeoff is less flexibility in cache allocation when only one
+workload dominates.
+
+**Stored query model.** Pre-compiling queries eliminates runtime parsing overhead and limits the
+API surface to explicitly deployed operations. The tradeoff is that ad-hoc queries are not
+supported; all queries must be authored and deployed in advance.

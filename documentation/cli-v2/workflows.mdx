@@ -128,10 +128,10 @@ helix status
     helix init
 
     # Add staging environment
-    helix add cloud --name staging --region us-east-1
+    helix add cloud --name staging --region us-west-2
 
     # Add production environment
-    helix add cloud --name production --region us-east-1
+    helix add cloud --name production --region us-west-2
     ```
   </Tab>
 
@@ -176,7 +176,7 @@ helix status
 
   <Step title="Initialize cloud instance">
     ```bash
-    helix init cloud --region us-east-1 --name production
+    helix init cloud --region us-west-2 --name production
     ```
   </Step>
 
@@ -185,7 +185,7 @@ helix status
     ```toml
     [cloud.production]
     type = "helix"
-    region = "us-east-1"
+    region = "us-west-2"
     build_mode = "release"
     mcp = true
     bm25 = true

@@ -1,0 +1,106 @@
+# Concepts
+
+## Data Model
+
+Helix Enterprise stores data as a labeled property graph. The graph consists of nodes and directed
+edges, each carrying typed properties.
+
+### Nodes and Edges
+
+Nodes and edges are identified by 64-bit unsigned IDs. Edges are directed: each edge has a source
+node and a target node. Labels are stored as the reserved `$label` property and are used for
+type-based filtering and label-scoped secondary, vector, and text indexes.
+
+Properties are strongly typed. Supported types: boolean, integer, floating-point, string, bytes,
+and array variants of each.
+
+### Multigraph
+
+Multiple edges between the same pair of nodes are supported. Each edge has a unique ID. The pair
+`(from, to)` maps to the set of all edge IDs connecting those nodes. This allows modeling
+relationships like "user A sent message B to user C" and "user A sent message D to user C" as
+distinct edges with distinct properties.
+
+## Indexes
+
+### Secondary Indexes
+
+Optional secondary indexes accelerate property-based filtering on both nodes and edges.
+
+- **Equality indexes.** Map `property=value` to the set of matching node or edge IDs. Useful for
+  exact-match lookups like "all users with `status=active`."
+- **Range indexes.** Provide ordered scans over numeric and string properties. Useful for queries
+  like "all events with `timestamp > T`."
+
+Secondary indexes are opt-in. They speed up reads at the cost of additional write overhead and
+storage. Only index properties that are frequently filtered on.
+
+### Vector Indexes
+
+Numeric array properties can be vector-indexed. Vector indexes enable approximate nearest
+neighbor (ANN) search and return the nodes or edges closest to a query vector.
+
+Values are normalized to float32 for indexing. Supported distance metrics: cosine, euclidean, and
+manhattan. Vectors must match the configured index dimension exactly.
+
+Vector search is approximate by design, trading a small amount of recall for significantly faster
+search over large datasets. Vector indexes can also partition physical search structures by a
+configured tenant property name when tenant-scoped isolation is required.
+
+### Text Indexes
+
+Text indexes provide BM25 full-text search on node and edge properties. They are stored durably
+like other indexes rather than built transiently per query.
+
+Text indexes support `String` and `StringArray` values, configurable analyzer presets, and
+optional term positions. They can also partition physical search structures by tenant.
+Tenant-partitioned text indexes currently require the partition property name to be `tenant_id`.
+
+## Queries
+
+### Traversal DSL
+
+Helix exposes a composable Rust DSL for defining queries. The DSL supports graph traversals,
+property filters, vector searches, text searches, variable bindings, conditional logic, and
+mutations within a single query. Multiple traversals can be chained and combined.
+
+### Stored Queries
+
+Queries are deployed as stored procedures. Clients invoke them by name over HTTP at
+`POST /v1/query/<query-name>`, passing parameters as needed. Stored queries avoid runtime query
+deserialization because the route has already been registered in the deployed query bundle.
+
+Each stored query can compose graph traversals, property filters, vector search, text search, and
+mutations in one transaction. All operations within a query share the same consistent snapshot.
+
+### Dynamic Queries
+
+Clients can also execute inline queries at `POST /v1/query` without pre-registering a route in the
+bundle. The request body carries:
+
+- `request_type`: `read` or `write`
+- `query`: the same JSON object that would otherwise appear under `read_routes.<name>` or
+  `write_routes.<name>` in `queries.json`
+- `parameters`: optional runtime parameters
+
+Dynamic queries trade some runtime overhead for flexibility. Stored queries remain the preferred
+path when you want a stable API surface and minimal per-request overhead.
+
+For the authoring and deployment workflow, see
+[Working with Helix Enterprise](/enterprise/working-with-enterprise).
+
+## Transactions
+
+Every query executes as a single transaction with serializable snapshot isolation.
+
+- **Serializable.** Transactions behave as if they executed one at a time, even when running
+  concurrently.
+- **Snapshot isolation.** Each transaction reads from a consistent point-in-time snapshot. Reads
+  within a transaction are never affected by concurrent writes.
+- **Automatic.** Transactions are implicit. Every query invocation is a transaction. There is no
+  manual `BEGIN` / `COMMIT` / `ROLLBACK`.
+
+Read-only queries never block writes. Write transactions are serialized through the single writer
+process for correctness without distributed locking.
+
+For consistency and durability details, see [Guarantees](/enterprise/guarantees).
