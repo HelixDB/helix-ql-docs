@@ -1,0 +1,37 @@
+---
+title: "helix metrics"
+sidebarTitle: "metrics"
+---
+
+Configure telemetry and usage metrics collection.
+
+## Usage
+
+```bash
+helix metrics <SUBCOMMAND>
+```
+
+## Available sub-commands
+
+| Sub-command | Description |
+|-------------|-------------|
+| `full` | Enable full metrics collection (requires email) |
+| `basic` | Enable minimal anonymous metrics |
+| `off` | Disable all metrics collection |
+| `status` | Show current metrics configuration |
+
+## Examples
+
+```bash
+# Enable full metrics
+helix metrics full
+
+# Enable basic anonymous metrics
+helix metrics basic
+
+# Disable all metrics
+helix metrics off
+
+# Check current metrics configuration
+helix metrics status
+```

@@ -1,0 +1,43 @@
+---
+title: "helix push"
+sidebarTitle: "push"
+---
+
+Deploy or update a running instance.
+
+This command:
+1. Builds the instance if needed
+2. Creates/updates Docker container for local instances
+3. Pushes to cloud provider for remote instances
+4. Starts the instance
+
+## Usage
+
+```bash
+helix push [INSTANCE] [OPTIONS]
+```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `INSTANCE` | The instance to deploy. If not provided, an interactive selection prompt will appear |
+
+## Available flags
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--dev` | Boolean | Use development profile for faster builds (Helix Cloud only) |
+
+## Examples
+
+```bash
+# Push the default instance
+helix push
+
+# Push a specific instance
+helix push production
+
+# Push with dev profile (Helix Cloud)
+helix push my-cloud-instance --dev
+```

@@ -1,0 +1,70 @@
+---
+title: "helix add"
+sidebarTitle: "add"
+---
+
+Add a new instance to an existing Helix project.
+
+## Usage
+
+```bash
+helix add <SUBCOMMAND>
+```
+
+## Available sub-commands
+
+| Sub-command | Description |
+|-------------|-------------|
+| `cloud` | Add a Helix Cloud instance |
+| `ecr` | Add an AWS ECR instance |
+| `fly` | Add a Fly.io instance |
+| `local` | Add a local instance |
+
+### `helix add cloud`
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--region` | String | The region the instance is deployed to | `us-east-1` |
+| `-n`, `--name` | String | The name of the instance | |
+
+### `helix add ecr`
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `-n`, `--name` | String | The name of the AWS ECR repository. Creates the repository if needed |
+
+### `helix add fly`
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `-n`, `--name` | String | The name of the Fly.io app | |
+| `--auth` | String | Authentication type | `cli` |
+| `--volume-size` | Number | The volume size in GB | `20` |
+| `--vm-size` | String | The VM size (see options below) | `shared-cpu-4x` |
+| `--private` | Boolean | Make instance private | `false` |
+
+Available `--vm-size` options:
+- `shared-cpu-1x` — 1 shared vCPU, 256MB RAM
+- `shared-cpu-2x` — 2 shared vCPUs, 512MB RAM
+- `shared-cpu-4x` — 4 shared vCPUs, 1GB RAM
+- `performance-4x` — 4 dedicated vCPUs, 8GB RAM
+- `performance-8x` — 8 dedicated vCPUs, 16GB RAM
+
+### `helix add local`
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `-n`, `--name` | String | The name of the local instance |
+
+## Examples
+
+```bash
+# Add a new cloud instance
+helix add cloud --name production --region us-west-2
+
+# Add a Fly.io instance
+helix add fly --name my-app --vm-size performance-4x
+
+# Add a local instance
+helix add local --name testing
+```

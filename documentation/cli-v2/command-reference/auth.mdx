@@ -1,0 +1,52 @@
+---
+title: "helix auth"
+sidebarTitle: "auth"
+---
+
+Manage authentication for Helix Cloud.
+
+## Usage
+
+```bash
+helix auth <SUBCOMMAND>
+```
+
+## Available sub-commands
+
+| Sub-command | Description |
+|-------------|-------------|
+| `login` | Login to Helix Cloud via browser-based authentication |
+| `logout` | Logout and clear authentication tokens from `~/.helix/credentials` |
+| `createkey` | Rotate an API key for a cluster |
+
+### `helix auth createkey`
+
+| Argument | Description |
+|----------|-------------|
+| `CLUSTER` | The cluster ID to rotate the API key for (required) |
+
+## Examples
+
+### `helix auth login`
+
+```bash
+helix auth login
+```
+
+Opens a browser window to authenticate with Helix Cloud via GitHub OAuth.
+
+### `helix auth logout`
+
+```bash
+helix auth logout
+```
+
+Clears stored authentication tokens.
+
+### `helix auth createkey`
+
+```bash
+helix auth createkey my-cluster-id
+```
+
+Rotates the API key for the specified cluster.

@@ -1,0 +1,39 @@
+---
+title: "helix backup"
+sidebarTitle: "backup"
+---
+
+Create a backup of an instance's database files.
+
+This command:
+1. Creates an atomic snapshot of the LMDB database
+2. Copies `data.mdb` and `lock.mdb` to the backup directory
+3. Warns if backup size exceeds 10GB and prompts for confirmation
+
+## Usage
+
+```bash
+helix backup [INSTANCE] [OPTIONS]
+```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `INSTANCE` | The instance to backup |
+
+## Available flags
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--output`, `-o` | String | Output directory for the backup. Defaults to `./backups/backup-<timestamp>/` |
+
+## Examples
+
+```bash
+# Backup the 'dev' instance to default location
+helix backup dev
+
+# Backup to a specific directory
+helix backup dev --output /path/to/backup
+```

@@ -1,0 +1,39 @@
+---
+title: "helix migrate"
+sidebarTitle: "migrate"
+---
+
+Migrate a v1 Helix project to v2 format.
+
+## Usage
+
+```bash
+helix migrate [OPTIONS]
+```
+
+## Available flags
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--path`, `-p` | String | The path to the project to migrate | Current directory |
+| `--queries-dir`, `-q` | String | The directory to move `.hx` files to | `./db/` |
+| `--instance-name`, `-i` | String | The name for the default local instance | `dev` |
+| `--port` | String | The port for the local instance | `6969` |
+| `--dry-run` | Boolean | Show what would be migrated without making changes | |
+| `--no-backup` | Boolean | Skip creating backup of v1 files | |
+
+## Examples
+
+```bash
+# Migrate the current directory
+helix migrate
+
+# Preview migration without making changes
+helix migrate --dry-run
+
+# Migrate a specific project with custom settings
+helix migrate --path ./my-project --instance-name staging --port 8080
+
+# Migrate without creating a backup
+helix migrate --no-backup
+```

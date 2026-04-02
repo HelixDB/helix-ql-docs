@@ -1,0 +1,58 @@
+---
+title: "helix dashboard"
+sidebarTitle: "dashboard"
+---
+
+Launch the Helix Dashboard in a container to visualize and interact with your database.
+
+Docker or Podman must be installed and running. `build_mode` must be set to `dev` in your `helix.toml` configuration.
+
+## Usage
+
+```bash
+helix dashboard <SUBCOMMAND>
+```
+
+## Available sub-commands
+
+| Sub-command | Description |
+|-------------|-------------|
+| `start` | Start the dashboard |
+| `stop` | Stop the running dashboard |
+| `status` | Show dashboard status and connection info |
+
+### `helix dashboard start`
+
+```bash
+helix dashboard start [INSTANCE] [OPTIONS]
+```
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--port`, `-p` | Number | Port to run dashboard on | `3000` |
+| `--host` | String | Helix host to connect to (e.g. `localhost`). Bypasses project config | |
+| `--helix-port` | Number | Helix port to connect to. Used with `--host` | `6969` |
+| `--attach` | Boolean | Run dashboard in foreground with logs | |
+| `--restart` | Boolean | Restart if dashboard is already running | |
+
+## Examples
+
+```bash
+# Start dashboard for default instance
+helix dashboard start
+
+# Start dashboard on a specific port
+helix dashboard start --port 8080
+
+# Start dashboard for a specific instance
+helix dashboard start my-instance
+
+# Connect to a specific host directly
+helix dashboard start --host localhost --helix-port 6969
+
+# Check dashboard status
+helix dashboard status
+
+# Stop the dashboard
+helix dashboard stop
+```

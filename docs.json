@@ -43,7 +43,7 @@
       "tag": "link",
       "attributes": {
         "rel": "stylesheet",
-        "href": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap"
+        "href": "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=JetBrains+Mono:wght@400;700&display=block"
       }
     }
   ],
@@ -71,74 +71,41 @@
     ]
   },
   "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Dashboard",
+          "icon": "desktop",
+          "href": "https://helix-db.com/login"
+        },
+        {
+          "anchor": "Status",
+          "icon": "signal",
+          "href": "https://status.helix-db.com"
+        },
+        {
+          "anchor": "GitHub",
+          "icon": "github",
+          "href": "https://github.com/HelixDB/helix-db"
+        }
+      ]
+    },
     "tabs": [
+      
       {
-        "tab": "HelixDB",
+        "tab": "HelixDB Lite",
         "groups": [
           {
             "group": "Getting Started",
             "pages": [
               "documentation/getting-started/intro",
-              "documentation/cli-v2/getting-started",
               "documentation/getting-started/helixdb",
-              "documentation/getting-started/graph-database"
-            ]
-          },
-          {
-            "group": "CLI",
-            "pages": [
-              "documentation/cli-v2/migration",
-              "documentation/cli-v2/workflows/local",
-              "documentation/cli-v2/workflows/helix_cloud",
-              "documentation/cli-v2/workflows/fly",
-              "documentation/cli-v2/workflows/ecr",
-              "documentation/cli-v2/command-reference",
-              "documentation/cli-v2/configuration",
-              "documentation/cli-v2/troubleshooting"
-            ]
-          },
-          {
-            "group": "SDKs",
-            "pages": [
-              "documentation/sdks/helix-py",
-              "documentation/sdks/helix-rs",
-              "documentation/sdks/helix-ts",
-              "documentation/sdks/helix-go"
-            ]
-          },
-          {
-            "group": "Other Features",
-            "pages": [
-              "features/mcp/helix-mcp",
-              "features/chunking/helix-chunking"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Helix Enterprise",
-        "pages": [
-          "enterprise/introduction",
-          "enterprise/working-with-enterprise",
-          "enterprise/architecture",
-          "enterprise/concepts",
-          "enterprise/guarantees",
-          "enterprise/multi-tenancy",
-          "enterprise/security",
-          "enterprise/tradeoffs",
-          "enterprise/limits"
-        ]
-      },
-      {
-        "tab": "HelixQL",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
               "documentation/hql/hql",
-              "documentation/hql/types"
+              "documentation/hql/types",
+              "documentation/hql/language-reference"
             ]
           },
+         
           {
             "group": "Schema",
             "pages": [
@@ -328,50 +295,110 @@
                 ]
               }
             ]
+          },
+          {
+            "group": "Other Features",
+            "pages": [
+              "features/mcp/helix-mcp",
+              "features/chunking/helix-chunking"
+            ]
           }
         ]
       },
       {
-        "tab": "Guides",
+        "tab": "HelixDB Enterprise",
         "groups": [
           {
-            "group": "Guides",
+            "group": "Getting Started",
             "pages": [
-              "guides/overview",
-              "guides/mcp-guide",
-              "guides/helixir",
-              "guides/dashboard",
-              "guides/code-index"
+              "enterprise/introduction",
+              "enterprise/working-with-enterprise",
+              "enterprise/architecture",
+              "enterprise/concepts",
+              "enterprise/guarantees",
+              "enterprise/multi-tenancy",
+              "enterprise/security",
+              "enterprise/tradeoffs",
+              "enterprise/limits"
             ]
           },
           {
-            "group": "Use Cases",
+            "group": "Changelog & Roadmap",
             "pages": [
-              "guides/social-network",
+              "change-log/roadmap",
+              "change-log/helix-enterprise",
+              "change-log/helixdb"
+            ]
+          },
+          {
+            "group": "Tooling",
+            "pages": [
+              "documentation/cli-v2/command-reference",
               {
-                "group": "Professor Search",
+                "group": "SDKs",
                 "pages": [
-                  "guides/professors/prof",
-                  "guides/professors/helixdb_setup",
-                  "guides/professors/backend_setup"
-                ],
-                "icon": "user-graduate"
+                  "documentation/sdks/helix-rs",
+                  "documentation/sdks/helix-ts",
+                  "documentation/sdks/helix-py",
+                  "documentation/sdks/helix-go"
+                ]
               }
+
+            ]
+          },
+          {
+            "group": "Benchmarks",
+            "pages": [
+              "benchmarks/v1"
+            ]
+          }
+          
+        ]
+      },
+      {
+        "tab": "CLI Reference", 
+        "groups": [
+          {
+            "group": "Using the helix CLI",
+            "pages": [
+              "documentation/cli-v2/getting-started",
+              "documentation/cli-v2/workflows/local",
+              "documentation/cli-v2/workflows/helix_cloud",
+              "documentation/cli-v2/workflows/fly",
+              "documentation/cli-v2/workflows/ecr",
+              "documentation/cli-v2/configuration",
+              "documentation/cli-v2/troubleshooting"
+            ]
+          },
+          {
+            "group": "CLI Command Reference",
+            "pages": [
+              "documentation/cli-v2/command-reference",
+              "documentation/cli-v2/command-reference/add",
+              "documentation/cli-v2/command-reference/auth",
+              "documentation/cli-v2/command-reference/backup",
+              "documentation/cli-v2/command-reference/build",
+              "documentation/cli-v2/command-reference/check",
+              "documentation/cli-v2/command-reference/compile",
+              "documentation/cli-v2/command-reference/dashboard",
+              "documentation/cli-v2/command-reference/delete",
+              "documentation/cli-v2/command-reference/feedback",
+              "documentation/cli-v2/command-reference/init",
+              "documentation/cli-v2/command-reference/logs",
+              "documentation/cli-v2/command-reference/metrics",
+              "documentation/cli-v2/command-reference/migrate",
+              "documentation/cli-v2/command-reference/prune",
+              "documentation/cli-v2/command-reference/push",
+              "documentation/cli-v2/command-reference/restart",
+              "documentation/cli-v2/command-reference/start",
+              "documentation/cli-v2/command-reference/status",
+              "documentation/cli-v2/command-reference/stop",
+              "documentation/cli-v2/command-reference/sync",
+              "documentation/cli-v2/command-reference/update"
             ]
           }
         ]
-      },
-      {
-        "tab": "Benchmarks",
-        "pages": ["benchmarks/v1"]
-      },
-      {
-        "tab": "Changelog",
-        "pages": [
-          "change-log/helixdb"
-        ]
       }
-      
 
     ]
   },

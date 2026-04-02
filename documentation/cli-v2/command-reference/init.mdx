@@ -1,0 +1,87 @@
+---
+title: "helix init"
+sidebarTitle: "init"
+---
+
+Initialize a new Helix project with a `helix.toml` configuration file.
+
+## Usage
+
+```bash
+helix init [OPTIONS] [SUBCOMMAND]
+```
+
+## Available sub-commands
+
+| Sub-command | Description |
+|-------------|-------------|
+| `cloud` | Initialize a Helix Cloud instance |
+| `ecr` | Initialize an AWS ECR instance |
+| `fly` | Initialize a Fly.io instance |
+| `local` | Initialize a local instance |
+
+## Available flags
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `-p`, `--path` | String | The path to the project | Current directory |
+| `-t`, `--template` | String | The template to use for the project | `empty` |
+| `-q`, `--queries-path` | String | The path to the query files | `./db/` |
+
+### `helix init cloud`
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--region` | String | The region the instance is deployed to | `us-east-1` |
+| `-n`, `--name` | String | The name of the instance | |
+
+### `helix init ecr`
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `-n`, `--name` | String | The name of the AWS ECR repository. Creates the repository if needed |
+
+### `helix init fly`
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `-n`, `--name` | String | The name of the Fly.io app | |
+| `--auth` | String | Authentication type | `cli` |
+| `--volume-size` | Number | The volume size in GB | `20` |
+| `--vm-size` | String | The VM size (see options below) | `shared-cpu-4x` |
+| `--private` | Boolean | Make instance private | `false` |
+
+Available `--vm-size` options:
+- `shared-cpu-1x` — 1 shared vCPU, 256MB RAM
+- `shared-cpu-2x` — 2 shared vCPUs, 512MB RAM
+- `shared-cpu-4x` — 4 shared vCPUs, 1GB RAM
+- `performance-4x` — 4 dedicated vCPUs, 8GB RAM
+- `performance-8x` — 8 dedicated vCPUs, 16GB RAM
+
+### `helix init local`
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `-n`, `--name` | String | The name of the local instance |
+
+## Examples
+
+```bash
+# Initialize a new local project (defaults to instance named 'dev')
+helix init
+
+# Initialize with a specific path
+helix init --path ./my-project
+
+# Initialize a Helix Cloud instance
+helix init cloud --name my-instance --region us-east-1
+
+# Initialize a Fly.io instance
+helix init fly --name my-app --vm-size shared-cpu-2x
+
+# Initialize an AWS ECR instance
+helix init ecr --name my-repo
+
+# Initialize a local instance with a custom name
+helix init local --name staging
+```

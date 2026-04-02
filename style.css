@@ -360,27 +360,34 @@ h5 {
     width: max-content;
     min-width: 100%;
     box-sizing: border-box;
-    line-height: 1;
+    line-height: 1.3;
     letter-spacing: 0;
     word-spacing: 0;
     tab-size: 4;
     font-size: 0.82rem;
     font-kerning: none;
     text-rendering: optimizeSpeed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .enterprise-diagram *,
+.enterprise-diagram pre,
+.enterprise-diagram code,
 .enterprise-diagram__pre,
 .enterprise-diagram__code {
-    font-family: 'JetBrains Mono', monospace !important;
+    font-family: 'Fira Code', 'Menlo', 'Consolas', 'DejaVu Sans Mono', monospace !important;
     font-feature-settings: "liga" 0, "calt" 0 !important;
     font-variant-ligatures: none !important;
+    font-variation-settings: normal !important;
     text-transform: none !important;
     font-synthesis-weight: none;
     font-synthesis-style: none;
 }
 
-.enterprise-diagram__code {
+.enterprise-diagram .enterprise-diagram__code {
     display: block;
     white-space: inherit;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
+    font-variant-ligatures: none !important;
 }
