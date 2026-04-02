@@ -14,14 +14,20 @@ This command:
 ## Usage
 
 ```bash
-helix push [INSTANCE]
+helix push [INSTANCE] [OPTIONS]
 ```
 
 ## Arguments
 
 | Argument | Description |
 |----------|-------------|
-| `INSTANCE` | The instance to deploy |
+| `INSTANCE` | The instance to deploy. If not provided, an interactive selection prompt will appear |
+
+## Available flags
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--dev` | Boolean | Use development profile for faster builds (Helix Cloud only) |
 
 ## Examples
 
@@ -31,4 +37,7 @@ helix push
 
 # Push a specific instance
 helix push production
+
+# Push with dev profile (Helix Cloud)
+helix push my-cloud-instance --dev
 ```

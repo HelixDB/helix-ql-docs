@@ -15,9 +15,15 @@ helix auth <SUBCOMMAND>
 
 | Sub-command | Description |
 |-------------|-------------|
-| `login` | Initiates browser-based authentication flow |
-| `logout` | Clears authentication tokens from `~/.helix/credentials` |
-| `create-key` | Generates a new API key for programmatic access |
+| `login` | Login to Helix Cloud via browser-based authentication |
+| `logout` | Logout and clear authentication tokens from `~/.helix/credentials` |
+| `createkey` | Rotate an API key for a cluster |
+
+### `helix auth createkey`
+
+| Argument | Description |
+|----------|-------------|
+| `CLUSTER` | The cluster ID to rotate the API key for (required) |
 
 ## Examples
 
@@ -27,7 +33,7 @@ helix auth <SUBCOMMAND>
 helix auth login
 ```
 
-Opens a browser window to authenticate with Helix Cloud.
+Opens a browser window to authenticate with Helix Cloud via GitHub OAuth.
 
 ### `helix auth logout`
 
@@ -37,10 +43,10 @@ helix auth logout
 
 Clears stored authentication tokens.
 
-### `helix auth create-key`
+### `helix auth createkey`
 
 ```bash
-helix auth create-key
+helix auth createkey my-cluster-id
 ```
 
-Generates a new API key for use in scripts and CI/CD pipelines.
+Rotates the API key for the specified cluster.

@@ -22,25 +22,26 @@ helix add <SUBCOMMAND>
 
 ### `helix add cloud`
 
-| Flag | Type | Description |
-|------|------|-------------|
-| `--region` | String | The region the instance is deployed to |
-| `--name` | String | The name of the instance |
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--region` | String | The region the instance is deployed to | `us-east-1` |
+| `-n`, `--name` | String | The name of the instance | |
 
 ### `helix add ecr`
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--name` | String | The name of the AWS ECR repository. Creates the repository if needed |
+| `-n`, `--name` | String | The name of the AWS ECR repository. Creates the repository if needed |
 
 ### `helix add fly`
 
-| Flag | Type | Description |
-|------|------|-------------|
-| `--name` | String | The name of the Fly.io app |
-| `--volume-size` | Number | The volume size in GB |
-| `--vm-size` | String | The VM size (see options below) |
-| `--public` | Boolean | Make instance public |
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `-n`, `--name` | String | The name of the Fly.io app | |
+| `--auth` | String | Authentication type | `cli` |
+| `--volume-size` | Number | The volume size in GB | `20` |
+| `--vm-size` | String | The VM size (see options below) | `shared-cpu-4x` |
+| `--private` | Boolean | Make instance private | `false` |
 
 Available `--vm-size` options:
 - `shared-cpu-1x` — 1 shared vCPU, 256MB RAM
@@ -53,7 +54,7 @@ Available `--vm-size` options:
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--name` | String | The name of the local instance |
+| `-n`, `--name` | String | The name of the local instance |
 
 ## Examples
 

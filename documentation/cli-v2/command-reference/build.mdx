@@ -14,21 +14,25 @@ This command:
 ## Usage
 
 ```bash
-helix build [INSTANCE]
+helix build [OPTIONS]
 ```
 
-## Arguments
+## Available flags
 
-| Argument | Description |
-|----------|-------------|
-| `INSTANCE` | The instance to build |
+| Flag | Type | Description |
+|------|------|-------------|
+| `-i`, `--instance` | String | The instance to build. If not provided, an interactive selection prompt will appear |
+| `--bin` | String | Build HelixDB into a binary at the specified directory location |
 
 ## Examples
 
 ```bash
-# Build the default instance
+# Build an instance (interactive selection)
 helix build
 
 # Build a specific instance
-helix build production
+helix build --instance production
+
+# Build into a binary
+helix build --instance dev --bin ./output
 ```

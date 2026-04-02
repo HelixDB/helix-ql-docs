@@ -14,31 +14,35 @@ These options are available for all commands:
 ```bash
 helix --help, -h      Show help information for the command
 helix --version, -V   Display the CLI version
+helix --quiet         Suppress output (errors and final result only)
+helix -v, --verbose   Show detailed output with timing information
 ```
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| [`helix init`](/documentation/cli-v2/command-reference/init) | Initialize a new Helix project |
-| [`helix add`](/documentation/cli-v2/command-reference/add) | Add a new instance to an existing project |
-| [`helix migrate`](/documentation/cli-v2/command-reference/migrate) | Migrate a v1 project to v2 format |
-| [`helix check`](/documentation/cli-v2/command-reference/check) | Validate project configuration and query syntax |
-| [`helix compile`](/documentation/cli-v2/command-reference/compile) | Compile project queries |
-| [`helix build`](/documentation/cli-v2/command-reference/build) | Build and prepare an instance for deployment |
-| [`helix push`](/documentation/cli-v2/command-reference/push) | Deploy or update a running instance |
-| [`helix sync`](/documentation/cli-v2/command-reference/sync) | Sync files from a deployed Helix Cloud instance |
-| [`helix start`](/documentation/cli-v2/command-reference/start) | Start a stopped instance |
-| [`helix stop`](/documentation/cli-v2/command-reference/stop) | Stop a running instance |
-| [`helix status`](/documentation/cli-v2/command-reference/status) | Show instance status |
-| [`helix backup`](/documentation/cli-v2/command-reference/backup) | Create a database backup |
-| [`helix prune`](/documentation/cli-v2/command-reference/prune) | Remove unused containers and files |
-| [`helix delete`](/documentation/cli-v2/command-reference/delete) | Permanently delete an instance |
-| [`helix auth`](/documentation/cli-v2/command-reference/auth) | Manage authentication for Helix Cloud |
-| [`helix metrics`](/documentation/cli-v2/command-reference/metrics) | Configure telemetry and metrics |
-| [`helix update`](/documentation/cli-v2/command-reference/update) | Update the CLI to the latest version |
-| [`helix logs`](/documentation/cli-v2/command-reference/logs) | View logs for a running instance |
-| [`helix dashboard`](/documentation/cli-v2/command-reference/dashboard) | Launch the Helix Dashboard |
+| Command | Subcommands | Flags | Product | Description |
+|:--------|:------------|:------|:--------|:------------|
+| [`helix add`](/documentation/cli-v2/command-reference/add) | `cloud`, `ecr`, `fly`, `local` | `-n` | Lite, Enterprise | Add a new instance to an existing project |
+| [`helix auth`](/documentation/cli-v2/command-reference/auth) | `login`, `logout`, `createkey` | | Lite, Enterprise | Manage authentication for Helix Cloud |
+| [`helix backup`](/documentation/cli-v2/command-reference/backup) | | `-o` | Lite | Create a backup of a local instance's database |
+| [`helix build`](/documentation/cli-v2/command-reference/build) | | `-i`, `--bin` | Lite, Enterprise | Build and prepare an instance for deployment |
+| [`helix check`](/documentation/cli-v2/command-reference/check) | | | Lite, Enterprise | Validate project configuration and query syntax |
+| [`helix compile`](/documentation/cli-v2/command-reference/compile) | | `-p`, `-o` | Lite, Enterprise | Compile project queries |
+| [`helix dashboard`](/documentation/cli-v2/command-reference/dashboard) | `start`, `stop`, `status` | `-p`, `--host`, `--helix-port`, `--attach`, `--restart` | Lite, Enterprise | Launch the Helix Dashboard |
+| [`helix delete`](/documentation/cli-v2/command-reference/delete) | | | Lite | Permanently delete an instance and all its data |
+| [`helix feedback`](/documentation/cli-v2/command-reference/feedback) | | | Lite, Enterprise | Send feedback to the Helix team |
+| [`helix init`](/documentation/cli-v2/command-reference/init) | `cloud`, `ecr`, `fly`, `local` | `-p`, `-t`, `-q`, `-n` | Lite, Enterprise | Initialize a new Helix project |
+| [`helix logs`](/documentation/cli-v2/command-reference/logs) | | `-l`, `-r`, `--start`, `--end` | Lite | View logs for a running instance |
+| [`helix metrics`](/documentation/cli-v2/command-reference/metrics) | `full`, `basic`, `off`, `status` | | Lite, Enterprise | Configure telemetry and metrics collection |
+| [`helix migrate`](/documentation/cli-v2/command-reference/migrate) | | `-p`, `-q`, `-i`, `--port`, `--dry-run`, `--no-backup` | Lite | Migrate a v1 project to v2 format |
+| [`helix prune`](/documentation/cli-v2/command-reference/prune) | | `-a` | Lite, Enterprise | Remove unused containers, images, and workspace files |
+| [`helix push`](/documentation/cli-v2/command-reference/push) | | `--dev` | Lite, Enterprise | Deploy or update a running instance |
+| [`helix restart`](/documentation/cli-v2/command-reference/restart) | | | Lite, Enterprise | Restart a running instance |
+| [`helix start`](/documentation/cli-v2/command-reference/start) | | | Lite, Enterprise | Start a stopped instance |
+| [`helix status`](/documentation/cli-v2/command-reference/status) | | | Lite, Enterprise | Show the status of all instances |
+| [`helix stop`](/documentation/cli-v2/command-reference/stop) | | | Lite, Enterprise | Stop a running instance |
+| [`helix sync`](/documentation/cli-v2/command-reference/sync) | | `-y` | Lite, Enterprise | Sync files from a deployed Helix Cloud instance |
+| [`helix update`](/documentation/cli-v2/command-reference/update) | | `--force` | Lite, Enterprise | Update the CLI to the latest version |
 
 ## Next Steps
 

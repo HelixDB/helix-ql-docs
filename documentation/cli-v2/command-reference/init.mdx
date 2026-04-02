@@ -3,7 +3,7 @@ title: "helix init"
 sidebarTitle: "init"
 ---
 
-Initialize a new Helix project with configuration and structure.
+Initialize a new Helix project with a `helix.toml` configuration file.
 
 ## Usage
 
@@ -22,33 +22,34 @@ helix init [OPTIONS] [SUBCOMMAND]
 
 ## Available flags
 
-| Flag | Type | Description |
-|------|------|-------------|
-| `--path`, `-p` | String | The path to the project |
-| `--template` | String | The template to use for the project |
-| `--queries-path`, `-q` | String | The path to the query files |
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `-p`, `--path` | String | The path to the project | Current directory |
+| `-t`, `--template` | String | The template to use for the project | `empty` |
+| `-q`, `--queries-path` | String | The path to the query files | `./db/` |
 
 ### `helix init cloud`
 
-| Flag | Type | Description |
-|------|------|-------------|
-| `--region` | String | The region the instance is deployed to |
-| `--name` | String | The name of the instance |
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--region` | String | The region the instance is deployed to | `us-east-1` |
+| `-n`, `--name` | String | The name of the instance | |
 
 ### `helix init ecr`
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--name` | String | The name of the AWS ECR repository. Creates the repository if needed |
+| `-n`, `--name` | String | The name of the AWS ECR repository. Creates the repository if needed |
 
 ### `helix init fly`
 
-| Flag | Type | Description |
-|------|------|-------------|
-| `--name` | String | The name of the Fly.io app |
-| `--volume-size` | Number | The volume size in GB |
-| `--vm-size` | String | The VM size (see options below) |
-| `--public` | Boolean | Make instance public |
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `-n`, `--name` | String | The name of the Fly.io app | |
+| `--auth` | String | Authentication type | `cli` |
+| `--volume-size` | Number | The volume size in GB | `20` |
+| `--vm-size` | String | The VM size (see options below) | `shared-cpu-4x` |
+| `--private` | Boolean | Make instance private | `false` |
 
 Available `--vm-size` options:
 - `shared-cpu-1x` — 1 shared vCPU, 256MB RAM
@@ -61,7 +62,7 @@ Available `--vm-size` options:
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--name` | String | The name of the local instance |
+| `-n`, `--name` | String | The name of the local instance |
 
 ## Examples
 
