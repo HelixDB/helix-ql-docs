@@ -73,14 +73,21 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "HelixDB",
+        "tab": "HelixDB Enterprise",
         "groups": [
           {
             "group": "Getting Started",
             "pages": [
               "documentation/getting-started/intro",
-              
-              "documentation/getting-started/helixdb"
+              "enterprise/introduction",
+              "enterprise/working-with-enterprise",
+              "enterprise/architecture",
+              "enterprise/concepts",
+              "enterprise/guarantees",
+              "enterprise/multi-tenancy",
+              "enterprise/security",
+              "enterprise/tradeoffs",
+              "enterprise/limits"
             ]
           },
           {
@@ -88,6 +95,23 @@
             "pages": [
               "change-log/helixdb",
               "change-log/roadmap"
+            ]
+          },
+          {
+            "group": "Tooling",
+            "pages": [
+              
+              {
+                "icon": "book-open",
+                "group": "SDKs",
+                "pages": [
+                  "documentation/sdks/helix-py",
+                  "documentation/sdks/helix-rs",
+                  "documentation/sdks/helix-ts",
+                  "documentation/sdks/helix-go"
+                ]
+              }
+
             ]
           },
           {
@@ -100,47 +124,18 @@
         ]
       },
       {
-        "tab": "Helix Lite",
+        "tab": "HelixDB Lite",
         "groups": [
           {
             "group": "Getting Started",
             "pages": [
-              "documentation/cli-v2/getting-started",
+              "documentation/getting-started/helixdb",
               "documentation/hql/hql",
               "documentation/hql/types",
               "documentation/hql/language-reference"
             ]
           },
-          {
-            "group": "Tooling",
-            "pages": [
-            {
-              "icon": "terminal",
-              "group": "CLI",
-              "pages": [
-              "documentation/cli-v2/getting-started",
-              "documentation/cli-v2/workflows/local",
-              "documentation/cli-v2/workflows/helix_cloud",
-              "documentation/cli-v2/workflows/fly",
-              "documentation/cli-v2/workflows/ecr",
-              "documentation/cli-v2/command-reference",
-              "documentation/cli-v2/configuration",
-              "documentation/cli-v2/troubleshooting"
-            ]
-            },
-            {
-              "icon": "book-open",
-              "group": "SDKs",
-              "pages": [
-                "documentation/sdks/helix-py",
-                "documentation/sdks/helix-rs",
-                "documentation/sdks/helix-ts",
-                "documentation/sdks/helix-go"
-              ]
-            }
-            
-          ]
-          },
+         
           {
             "group": "Schema",
             "pages": [
@@ -336,6 +331,29 @@
             "pages": [
               "features/mcp/helix-mcp",
               "features/chunking/helix-chunking"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI Reference", 
+        "groups": [
+          {
+            "group": "Using the helix CLI",
+            "pages": [
+              "documentation/cli-v2/getting-started",
+              "documentation/cli-v2/workflows/local",
+              "documentation/cli-v2/workflows/helix_cloud",
+              "documentation/cli-v2/workflows/fly",
+              "documentation/cli-v2/workflows/ecr",
+              "documentation/cli-v2/configuration",
+              "documentation/cli-v2/troubleshooting"
+            ]
+          },
+          {
+            "group": "CLI Command Reference",
+            "pages": [
+              "documentation/cli-v2/command-reference"
             ]
           }
         ]
