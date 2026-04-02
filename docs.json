@@ -78,7 +78,6 @@
           {
             "group": "Getting Started",
             "pages": [
-              "documentation/getting-started/intro",
               "enterprise/introduction",
               "enterprise/working-with-enterprise",
               "enterprise/architecture",
@@ -102,12 +101,11 @@
             "pages": [
               
               {
-                "icon": "book-open",
                 "group": "SDKs",
                 "pages": [
-                  "documentation/sdks/helix-py",
                   "documentation/sdks/helix-rs",
                   "documentation/sdks/helix-ts",
+                  "documentation/sdks/helix-py",
                   "documentation/sdks/helix-go"
                 ]
               }
@@ -129,6 +127,7 @@
           {
             "group": "Getting Started",
             "pages": [
+              "documentation/getting-started/intro",
               "documentation/getting-started/helixdb",
               "documentation/hql/hql",
               "documentation/hql/types",
