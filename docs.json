@@ -119,7 +119,7 @@
           {
             "group": "Tooling",
             "pages": [
-              
+              "documentation/cli-v2/command-reference",
               {
                 "group": "SDKs",
                 "pages": [
@@ -128,8 +128,7 @@
                   "documentation/sdks/helix-py",
                   "documentation/sdks/helix-go"
                 ]
-              },
-              "documentation/cli-v2/command-reference"
+              }
 
             ]
           },
