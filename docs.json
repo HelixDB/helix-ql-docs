@@ -71,6 +71,25 @@
     ]
   },
   "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Dashboard",
+          "icon": "desktop",
+          "href": "https://helix-db.com/login"
+        },
+        {
+          "anchor": "Status",
+          "icon": "signal",
+          "href": "https://status.helix-db.com"
+        },
+        {
+          "anchor": "GitHub",
+          "icon": "github",
+          "href": "https://github.com/HelixDB/helix-db"
+        }
+      ]
+    },
     "tabs": [
       {
         "tab": "HelixDB Enterprise",
@@ -92,8 +111,9 @@
           {
             "group": "Changelog & Roadmap",
             "pages": [
-              "change-log/helixdb",
-              "change-log/roadmap"
+              "change-log/roadmap",
+              "change-log/helix-enterprise",
+              "change-log/helixdb"
             ]
           },
           {
@@ -108,7 +128,8 @@
                   "documentation/sdks/helix-py",
                   "documentation/sdks/helix-go"
                 ]
-              }
+              },
+              "documentation/cli-v2/command-reference"
 
             ]
           },
