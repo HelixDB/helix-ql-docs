@@ -102,20 +102,9 @@
               "documentation/getting-started/helixdb",
               "documentation/hql/hql",
               "documentation/hql/types",
-              "documentation/hql/language-reference"
-            ]
-          },
-          {
-            "group": "Changelog & Roadmap",
-            "pages": [
+              "documentation/hql/language-reference",
               "change-log/roadmap",
-              "change-log/helixdb"
-            ]
-          },
-          {
-            "group": "Tooling",
-            "pages": [
-              "documentation/cli-v2/command-reference",
+              "change-log/helixdb",
               {
                 "group": "SDKs",
                 "pages": [
@@ -124,13 +113,7 @@
                   "documentation/sdks/helix-py",
                   "documentation/sdks/helix-go"
                 ]
-              }
-
-            ]
-          },
-          {
-            "group": "Benchmarks",
-            "pages": [
+              },
               "benchmarks/v1"
             ]
           },
