@@ -91,28 +91,24 @@
       ]
     },
     "tabs": [
+      
       {
-        "tab": "HelixDB Enterprise",
+        "tab": "HelixDB Lite",
         "groups": [
           {
             "group": "Getting Started",
             "pages": [
-              "enterprise/introduction",
-              "enterprise/working-with-enterprise",
-              "enterprise/architecture",
-              "enterprise/concepts",
-              "enterprise/guarantees",
-              "enterprise/multi-tenancy",
-              "enterprise/security",
-              "enterprise/tradeoffs",
-              "enterprise/limits"
+              "documentation/getting-started/intro",
+              "documentation/getting-started/helixdb",
+              "documentation/hql/hql",
+              "documentation/hql/types",
+              "documentation/hql/language-reference"
             ]
           },
           {
             "group": "Changelog & Roadmap",
             "pages": [
               "change-log/roadmap",
-              "change-log/helix-enterprise",
               "change-log/helixdb"
             ]
           },
@@ -136,22 +132,6 @@
             "group": "Benchmarks",
             "pages": [
               "benchmarks/v1"
-            ]
-          }
-          
-        ]
-      },
-      {
-        "tab": "HelixDB Lite",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "documentation/getting-started/intro",
-              "documentation/getting-started/helixdb",
-              "documentation/hql/hql",
-              "documentation/hql/types",
-              "documentation/hql/language-reference"
             ]
           },
          
@@ -352,6 +332,33 @@
               "features/chunking/helix-chunking"
             ]
           }
+        ]
+      },
+      {
+        "tab": "HelixDB Enterprise",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "enterprise/introduction",
+              "enterprise/working-with-enterprise",
+              "enterprise/architecture",
+              "enterprise/concepts",
+              "enterprise/guarantees",
+              "enterprise/multi-tenancy",
+              "enterprise/security",
+              "enterprise/tradeoffs",
+              "enterprise/limits"
+            ]
+          },
+          {
+            "group": "Changelog & Roadmap",
+            "pages": [
+              "change-log/roadmap",
+              "change-log/helix-enterprise"
+            ]
+          }
+          
         ]
       },
       {
