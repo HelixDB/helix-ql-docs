@@ -5,9 +5,14 @@ title: 'Architecture'
 import { EnterpriseDiagram } from "/snippets/enterprise-diagram.jsx"
 import { architectureDiagram } from "/snippets/diagrams.jsx"
 
-Helix Enterprise runs as a single writer and auto-scaling readers behind a routing gateway. Reads
+Helix Enterprise runs as a single writer node and multiple reader nodes behind a routing gateway. Reads
 scale horizontally. Writes are serialized through a dedicated writer process to maintain a simple
-consistency model.
+consistency model. 
+
+Helix Enterprise is a fundamentally different architecture and database compared to the opensource v1 
+version of HelixDB. That version used LMDB which was limited to sequential writes and could only handle 
+a relatively small amount of data. Helix Enterprise uses a new LSM based storage engine backed by object 
+storage that can handle concurrent writes to the writer node and allows for virtually unlimited data storage.  
 
 <EnterpriseDiagram diagram={architectureDiagram} />
 
