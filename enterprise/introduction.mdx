@@ -11,6 +11,11 @@ full-text search. It combines a property graph engine with approximate vector se
 full-text search on top of durable object storage, using SSD and in-memory caches for
 low-latency reads.
 
+Helix Enterprise is a fundamentally different architecture and database compared to the opensource v1 
+version of HelixDB. That version used LMDB which was limited to sequential writes and could only handle 
+a relatively small amount of data. Helix Enterprise uses a new LSM based storage engine backed by object 
+storage that can handle concurrent writes to the writer node and allows for virtually unlimited data storage.  
+
 ## System at a Glance
 
 <EnterpriseDiagram diagram={architectureDiagram} />
