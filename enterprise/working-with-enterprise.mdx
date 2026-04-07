@@ -114,3 +114,34 @@ Important details:
 | Data storage      | --          | Object storage              |
 | Caching           | --          | SSD + in-memory per process |
 | Scaling           | --          | Auto-scaling readers        |
+
+## Local Development
+
+For local development, Helix also ships a combined `enterprise-dev` image that runs a gateway and
+database together in a single container.
+
+<Warning>
+The local image is development-only and uses in-memory storage.
+Stopping or restarting the container wipes all data.
+</Warning>
+
+- If `PATH_TO_QUERIES` is unset, you can still use dynamic `POST /v1/query` requests.
+- If `PATH_TO_QUERIES` is set, the container loads stored queries from the mounted
+  `queries.json` file during startup.
+
+You can add this service to a local staging `docker-compose.yml`:
+
+```yaml
+services:
+  helix:
+    image: ghcr.io/helixdb/enterprise-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PATH_TO_QUERIES: /workspace/queries.json
+    volumes:
+      - ./queries.json:/workspace/queries.json:ro
+```
+
+If you only want dynamic queries, omit `PATH_TO_QUERIES` and the mounted `queries.json` volume.
