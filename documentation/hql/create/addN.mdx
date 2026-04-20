@@ -32,6 +32,14 @@ N::User {
     email: String,
 }
 ```
+
+```json Output
+{
+  "empty_user": {
+    "id": "c2ca233f-0cd8-4fae-8136-b40593792071"
+  }
+}
+```
 </CodeGroup>
 Here's how to run the query using the SDKs or curl
 
@@ -122,6 +130,17 @@ N::User {
     name: String,
     age: U8,
     email: String,
+}
+```
+
+```json Output
+{
+  "user": {
+    "id": "c2ca233f-0cd8-4fae-8136-b40593792071",
+    "name": "Alice",
+    "age": 25,
+    "email": "alice@example.com"
+  }
 }
 ```
 </CodeGroup>
@@ -240,6 +259,17 @@ N::User {
     name: String,
     age: U8,
     email: String,
+}
+```
+
+```json Output
+{
+  "predefined_user": {
+    "id": "d3db344g-1de9-5gbf-9247-c51604803082",
+    "name": "Alice Johnson",
+    "age": 30,
+    "email": "alice@example.com"
+  }
 }
 ```
 </CodeGroup>
