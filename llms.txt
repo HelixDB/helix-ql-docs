@@ -1,28 +1,195 @@
----
-title: HelixDB Guide
-last_updated: 2025-10-24
-audience: LLM agents
----
+# HelixDB
 
-# HelixDB Documentation
+> HelixDB is a high-performance graph-vector database with its own query language (HelixQL). It stores graph and vector data in the same engine, supports multi-hop traversals, vector search, keyword/BM25 search, and reranking, and ships SDKs for Python, TypeScript, Rust, and Go.
 
-If you have access to curl, you must curl the urls below to get the content that you need. If not, try to use a browser to access the urls or use similar tools to fetch the content.
+## HelixDB Lite — Getting Started
+- [HelixDB](https://docs.helix-db.com/documentation/getting-started/intro): A high-performance graph-vector database with its own query language designed for traversing and manipulating graph and vector data efficiently.
+- [What is HelixDB?](https://docs.helix-db.com/documentation/getting-started/helixdb): Learn about HelixDB architecture, features, and capabilities
+- [What is HelixQL?](https://docs.helix-db.com/documentation/hql/hql): Learn about HelixQL, a strongly typed compiled query language for graph and vector operations in HelixDB
+- [Helix Types](https://docs.helix-db.com/documentation/hql/types)
+- [HelixQL Language Reference](https://docs.helix-db.com/documentation/hql/language-reference): A complete reference of every HelixQL command, operator, and feature.
+- [Rust SDK](https://docs.helix-db.com/documentation/sdks/helix-rs): Getting started with HelixDBs Rust SDK.
+- [TypeScript SDK](https://docs.helix-db.com/documentation/sdks/helix-ts): Getting started with HelixDBs TypeScript SDK.
+- [Python SDK](https://docs.helix-db.com/documentation/sdks/helix-py): Complete guide to using the HelixDB Python SDK for graph and vector operations with code examples
+- [Go SDK](https://docs.helix-db.com/documentation/sdks/helix-go): Getting started with HelixDBs Go SDK.
 
-- [HelixDB Overview](https://docs.helix-db.com/documentation/getting-started/intro): Introduction to HelixDB, its features, and its use cases.
-- [Installation](https://docs.helix-db.com/documentation/getting-started/installation): Prerequisites, installation steps, and best practices.
-- [HelixDB CLI](https://docs.helix-db.com/documentation/cli-v2): CLI commands, project configurations, common workflows, and troubleshooting.
-- [HelixDB SDKs](https://docs.helix-db.com/documentation/sdks): SDKs for Python, TypeScript, Rust, and Go.
-- [HelixDB Query Language Introduction](https://docs.helix-db.com/documentation/hql/hql): Helix Query Language components, syntax, and types. Schema definition and rules.
-- [CRUD Operations](https://docs.helix-db.com/documentation/hql): HQL for creating, reading, updating, and deleting nodes, edges, and vectors.
-- [Graph Traversals](https://docs.helix-db.com/documentation/hql/traversals): HQL for traversing in and out of nodes, vectors, and edges.
-- [Result Operations](https://docs.helix-db.com/documentation/hql/result_ops): HQL for operating on traversal results.
-- [Properties Operations](https://docs.helix-db.com/documentation/hql/properties): HQL for operating on properties of nodes, edges, and vectors.
-- [Return Values](https://docs.helix-db.com/documentation/hql/output_values): Return values, rules, and formatting for HQL queries.
-- [Conditionals](https://docs.helix-db.com/documentation/hql/conditionals): HQL for filtering traversal results with conditionals.
-- [Vector Operations](https://docs.helix-db.com/documentation/hql/vectors): HQL for vector operations.
-- [Keyword Search](https://docs.helix-db.com/documentation/hql/keyword_search): HQL for keyword/BM25 search operations.
-- [Rerankers](https://docs.helix-db.com/documentation/hql/rerankers): HQL for reranking search results.
-- [Aggregation](https://docs.helix-db.com/documentation/hql/aggregation): HQL for aggregating search results.
-- [Macros](https://docs.helix-db.com/documentation/hql/macros): HQL macros (MCP endpoints) for custom queries.
-- [Shortest Path Algorithms](https://docs.helix-db.com/documentation/hql/traversals/shortest-paths): HQL for shortest path algorithms.
-- [HQL Errors](https://docs.helix-db.com/documentation/hql/errors): HQL error types and handling.
+## Schema
+- [Schema definition](https://docs.helix-db.com/documentation/hql/schema/schema-definition): How to define schemas for nodes, edges, and vectors in HelixDB with type-safe property definitions
+- [Secondary Indexing](https://docs.helix-db.com/documentation/hql/schema/indexing): Indexing a field of a node as a global secondary index.
+- [Unique Indexes](https://docs.helix-db.com/documentation/hql/schema/unique-index): Enforcing uniqueness constraints on node fields and edges.
+- [Default Values](https://docs.helix-db.com/documentation/hql/schema/default): Setting default schema.
+
+## Writing Data
+- [Create nodes](https://docs.helix-db.com/documentation/hql/create/addN): How to create nodes in your HelixDB graph with AddN including examples for empty nodes, parameterized nodes, and predefined properties
+- [Edges](https://docs.helix-db.com/documentation/hql/create/addE): Learn how to create edges in your graph.
+- [Vectors](https://docs.helix-db.com/documentation/hql/create/addV): Learn how to create vectors in your graph.
+- [Upsert Nodes](https://docs.helix-db.com/documentation/hql/create/upsertN): Learn how to upsert nodes in your graph using UpsertN for insert-or-update semantics.
+- [Upsert Edges](https://docs.helix-db.com/documentation/hql/create/upsertE): Learn how to upsert edges in your graph using UpsertE for insert-or-update semantics.
+- [Upsert Vectors](https://docs.helix-db.com/documentation/hql/create/upsertV): Learn how to upsert vectors in your graph using UpsertV for insert-or-update semantics.
+- [Updating Items](https://docs.helix-db.com/documentation/hql/updating)
+- [Delete Operation](https://docs.helix-db.com/documentation/hql/deleting)
+
+## Reading Data
+- [Nodes](https://docs.helix-db.com/documentation/hql/select/selectN): How to select and query nodes in your HelixDB graph by ID or type with code examples
+- [Edges](https://docs.helix-db.com/documentation/hql/select/selectE): Learn how to select edges in your graph.
+- [Vectors](https://docs.helix-db.com/documentation/hql/select/selectV): Learn how to select vectors in your graph.
+- [Conditional Steps](https://docs.helix-db.com/documentation/hql/conditionals/conditions): Filter and select specific elements from your graph based on conditions using WHERE clauses.
+- [Multiple Conditional Steps](https://docs.helix-db.com/documentation/hql/conditionals/mult-conditions): Combine multiple conditions using AND, OR, and NOT operators for complex filtering logic.
+- [Anonymous Traversals](https://docs.helix-db.com/documentation/hql/conditionals/anonymous): Use anonymous traversals for sub-queries and complex filtering without breaking the main traversal flow.
+- [Property Access](https://docs.helix-db.com/documentation/hql/properties/property-access): Access specific properties of nodes, edges, and vectors using property selection syntax.
+- [Property Additions](https://docs.helix-db.com/documentation/hql/properties/property-additions): Add computed properties and derived values to query results by combining schema fields and traversal results to enrich query responses
+- [Property Exclusion](https://docs.helix-db.com/documentation/hql/properties/property-exclusion): Exclude specific properties from query results while returning all other properties using the exclusion syntax.
+- [Property Remappings](https://docs.helix-db.com/documentation/hql/properties/property-remappings): Rename and restructure properties in query results using simple remappings and nested mappings with closure-style syntax.
+
+## Search
+- [Vector search](https://docs.helix-db.com/documentation/hql/vectors/searching): How to perform vector similarity search in HelixDB using cosine similarity with code examples
+- [Embedding Vectors](https://docs.helix-db.com/documentation/hql/vectors/embedding): Embed text directly into vectors using the built-in Embed function.
+- [Keyword Search](https://docs.helix-db.com/documentation/hql/keyword_search): Search for keywords in node properties using BM25 ranking algorithm.
+- [Rerankers Overview](https://docs.helix-db.com/documentation/hql/rerankers/overview): Improve search result quality by reordering results after initial retrieval.
+- [RerankRRF](https://docs.helix-db.com/documentation/hql/rerankers/rerank-rrf): Combine multiple ranked lists using Reciprocal Rank Fusion.
+- [RerankMMR](https://docs.helix-db.com/documentation/hql/rerankers/rerank-mmr): Diversify search results using Maximal Marginal Relevance.
+
+## Graph Traversals
+- [Traversals From Nodes](https://docs.helix-db.com/documentation/hql/traversals/steps_nodes): Navigate your graph from selected nodes using typed traversal steps.
+- [Traversals From Edges](https://docs.helix-db.com/documentation/hql/traversals/steps_edges): Move from an edge to its connected nodes or vectors.
+- [Shortest Path Algorithms](https://docs.helix-db.com/documentation/hql/traversals/shortest-paths/overview): Find shortest paths in your graph using BFS, Dijkstra, and A* algorithms.
+- [ShortestPathBFS](https://docs.helix-db.com/documentation/hql/traversals/shortest-paths/shortest-path-bfs): Find unweighted shortest paths using breadth-first search.
+- [ShortestPathDijkstras](https://docs.helix-db.com/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra): Find weighted shortest paths with custom weight calculations.
+- [ShortestPathAStar](https://docs.helix-db.com/documentation/hql/traversals/shortest-paths/shortest-path-astar): Find weighted shortest paths with heuristic optimization.
+- [Custom Weight Calculations](https://docs.helix-db.com/documentation/hql/traversals/shortest-paths/custom-weights): Use property contexts and expressions to create dynamic path weights.
+- [Advanced Weight Expressions](https://docs.helix-db.com/documentation/hql/traversals/shortest-paths/weight-expressions): Compose complex mathematical weight calculations for sophisticated routing.
+
+## Aggregation
+- [Aggregation](https://docs.helix-db.com/documentation/hql/aggregation): Group and aggregate graph data using `GROUP_BY` and `AGGREGATE_BY` operations to analyze patterns and summarize information across nodes and edges.
+- [Result Operations](https://docs.helix-db.com/documentation/hql/result_ops): Transform and organize traversal results using `COUNT`, `RANGE`, `ORDER`, and `FIRST` operations.
+- [Group By](https://docs.helix-db.com/documentation/hql/operations/group-by): Group results by property values to organize data.
+- [Aggregations](https://docs.helix-db.com/documentation/hql/operations/aggregate-by): Aggregate results by property values for summarization.
+- [Grouping and Aggregation Guide](https://docs.helix-db.com/documentation/hql/operations/grouping-guide): Understand when to use GROUP_BY vs AGGREGATE_BY.
+
+## Advanced Queries
+- [FOR Loops](https://docs.helix-db.com/documentation/hql/control-flow/for-loops): Iterate over collections and perform batch operations.
+- [Basic FOR Loops](https://docs.helix-db.com/documentation/hql/control-flow/for-basic): Iterate over collections with simple variable binding.
+- [FOR Loop Destructuring](https://docs.helix-db.com/documentation/hql/control-flow/for-destructuring): Extract multiple properties directly in loop variable binding.
+- [Nested FOR Loops](https://docs.helix-db.com/documentation/hql/control-flow/for-nested): Use multiple levels of iteration for complex operations.
+- [Math Functions](https://docs.helix-db.com/documentation/hql/functions/math-overview): Perform mathematical operations and calculations in your queries.
+- [Arithmetic Functions](https://docs.helix-db.com/documentation/hql/functions/arithmetic): Perform basic arithmetic operations like addition, subtraction, multiplication, division, power, and modulo.
+- [Unary Math Functions](https://docs.helix-db.com/documentation/hql/functions/unary-math): Single-argument mathematical functions for transformations and calculations.
+- [Trigonometric Functions](https://docs.helix-db.com/documentation/hql/functions/trigonometry): Trigonometric and inverse trigonometric functions for angular calculations.
+- [Mathematical Constants](https://docs.helix-db.com/documentation/hql/functions/constants): Mathematical constants PI and E for use in calculations.
+- [Aggregate Functions](https://docs.helix-db.com/documentation/hql/functions/aggregate-functions): Aggregate operations on collections: MIN, MAX, SUM, AVG, COUNT.
+- [Output Values](https://docs.helix-db.com/documentation/hql/output_values): What you can return from a query using RETURN.
+- [MCP Macro](https://docs.helix-db.com/documentation/hql/macros/mcp-macro): Learn how to turn any HelixQL query into an MCP endpoint using the #[mcp] macro.
+- [Model Macro](https://docs.helix-db.com/documentation/hql/macros/model-macro): Configure embedding models per-query using the #[model] macro for optimized vector operations.
+
+## Reference
+- [HelixQL Language Reference](https://docs.helix-db.com/documentation/hql/language-reference): A complete reference of every HelixQL command, operator, and feature.
+- [E101](https://docs.helix-db.com/documentation/hql/errors/E101)
+- [E102](https://docs.helix-db.com/documentation/hql/errors/E102)
+- [E103](https://docs.helix-db.com/documentation/hql/errors/E103)
+- [E104](https://docs.helix-db.com/documentation/hql/errors/E104)
+- [E105](https://docs.helix-db.com/documentation/hql/errors/E105)
+- [E106](https://docs.helix-db.com/documentation/hql/errors/E106)
+- [E107](https://docs.helix-db.com/documentation/hql/errors/E107)
+- [E108](https://docs.helix-db.com/documentation/hql/errors/E108)
+- [E109](https://docs.helix-db.com/documentation/hql/errors/E109)
+- [E110](https://docs.helix-db.com/documentation/hql/errors/E110)
+- [E201](https://docs.helix-db.com/documentation/hql/errors/E201)
+- [E202](https://docs.helix-db.com/documentation/hql/errors/E202)
+- [E203](https://docs.helix-db.com/documentation/hql/errors/E203)
+- [E204](https://docs.helix-db.com/documentation/hql/errors/E204)
+- [E205](https://docs.helix-db.com/documentation/hql/errors/E205)
+- [E206](https://docs.helix-db.com/documentation/hql/errors/E206)
+- [E207](https://docs.helix-db.com/documentation/hql/errors/E207)
+- [E208](https://docs.helix-db.com/documentation/hql/errors/E208)
+- [E209](https://docs.helix-db.com/documentation/hql/errors/E209)
+- [E210](https://docs.helix-db.com/documentation/hql/errors/E210)
+- [E301](https://docs.helix-db.com/documentation/hql/errors/E301)
+- [E302](https://docs.helix-db.com/documentation/hql/errors/E302)
+- [E303](https://docs.helix-db.com/documentation/hql/errors/E303)
+- [E304](https://docs.helix-db.com/documentation/hql/errors/E304)
+- [E305](https://docs.helix-db.com/documentation/hql/errors/E305)
+- [E306](https://docs.helix-db.com/documentation/hql/errors/E306)
+- [E401](https://docs.helix-db.com/documentation/hql/errors/E401)
+- [E501](https://docs.helix-db.com/documentation/hql/errors/E501)
+- [E601](https://docs.helix-db.com/documentation/hql/errors/E601)
+- [E602](https://docs.helix-db.com/documentation/hql/errors/E602)
+- [E603](https://docs.helix-db.com/documentation/hql/errors/E603)
+- [E604](https://docs.helix-db.com/documentation/hql/errors/E604)
+- [E611](https://docs.helix-db.com/documentation/hql/errors/E611)
+- [E612](https://docs.helix-db.com/documentation/hql/errors/E612)
+- [E621](https://docs.helix-db.com/documentation/hql/errors/E621)
+- [E622](https://docs.helix-db.com/documentation/hql/errors/E622)
+- [E623](https://docs.helix-db.com/documentation/hql/errors/E623)
+- [E624](https://docs.helix-db.com/documentation/hql/errors/E624)
+- [E625](https://docs.helix-db.com/documentation/hql/errors/E625)
+- [E626](https://docs.helix-db.com/documentation/hql/errors/E626)
+- [E627](https://docs.helix-db.com/documentation/hql/errors/E627)
+- [E628](https://docs.helix-db.com/documentation/hql/errors/E628)
+- [E631](https://docs.helix-db.com/documentation/hql/errors/E631)
+- [E632](https://docs.helix-db.com/documentation/hql/errors/E632)
+- [E633](https://docs.helix-db.com/documentation/hql/errors/E633)
+- [E641](https://docs.helix-db.com/documentation/hql/errors/E641)
+- [E642](https://docs.helix-db.com/documentation/hql/errors/E642)
+- [E643](https://docs.helix-db.com/documentation/hql/errors/E643)
+- [E644](https://docs.helix-db.com/documentation/hql/errors/E644)
+- [E645](https://docs.helix-db.com/documentation/hql/errors/E645)
+- [E646](https://docs.helix-db.com/documentation/hql/errors/E646)
+- [E651](https://docs.helix-db.com/documentation/hql/errors/E651)
+- [E652](https://docs.helix-db.com/documentation/hql/errors/E652)
+- [E653](https://docs.helix-db.com/documentation/hql/errors/E653)
+- [W101](https://docs.helix-db.com/documentation/hql/errors/W101)
+
+## Other Features
+- [HelixDB MCP](https://docs.helix-db.com/features/mcp/helix-mcp): Getting started with connecting HelixDB with LLMs via an MCP connection.
+- [HelixDB Chunking](https://docs.helix-db.com/features/chunking/helix-chunking): Getting started with chunking your text data
+
+## HelixDB Enterprise — Getting Started
+- [Introduction](https://docs.helix-db.com/enterprise/introduction)
+- [Working with Helix Enterprise](https://docs.helix-db.com/enterprise/working-with-enterprise)
+- [Architecture](https://docs.helix-db.com/enterprise/architecture)
+- [Concepts](https://docs.helix-db.com/enterprise/concepts)
+- [Guarantees](https://docs.helix-db.com/enterprise/guarantees)
+- [Multi-Tenancy](https://docs.helix-db.com/enterprise/multi-tenancy)
+- [Security](https://docs.helix-db.com/enterprise/security)
+- [Tradeoffs](https://docs.helix-db.com/enterprise/tradeoffs)
+- [Limits](https://docs.helix-db.com/enterprise/limits)
+
+## Using the helix CLI
+- [Getting started with HelixDB](https://docs.helix-db.com/documentation/cli-v2/getting-started): Step-by-step guide to install, configure, and deploy your first HelixDB instance with CLI v2
+- [Local Development](https://docs.helix-db.com/documentation/cli-v2/workflows/local): Practical examples and patterns for typical local development workflows
+- [Helix Cloud Deployment](https://docs.helix-db.com/documentation/cli-v2/workflows/helix_cloud): Practical examples and patterns for typical Helix Cloud deployment workflows
+- [Fly.io Deployment](https://docs.helix-db.com/documentation/cli-v2/workflows/fly): Practical examples and patterns for typical Fly.io deployment workflows
+- [AWS ECR Deployment](https://docs.helix-db.com/documentation/cli-v2/workflows/ecr): Practical examples and patterns for typical AWS ECR deployment workflows
+- [Configuration Guide](https://docs.helix-db.com/documentation/cli-v2/configuration): Complete guide to configuring Helix projects with helix.toml and environment settings
+- [Troubleshooting](https://docs.helix-db.com/documentation/cli-v2/troubleshooting): Solutions to common issues and error messages in Helix CLI v2
+
+## CLI Command Reference
+- [CLI Command Reference](https://docs.helix-db.com/documentation/cli-v2/command-reference): Complete reference for all Helix CLI v2 commands and options
+- [helix add](https://docs.helix-db.com/documentation/cli-v2/command-reference/add)
+- [helix auth](https://docs.helix-db.com/documentation/cli-v2/command-reference/auth)
+- [helix backup](https://docs.helix-db.com/documentation/cli-v2/command-reference/backup)
+- [helix build](https://docs.helix-db.com/documentation/cli-v2/command-reference/build)
+- [helix check](https://docs.helix-db.com/documentation/cli-v2/command-reference/check)
+- [helix compile](https://docs.helix-db.com/documentation/cli-v2/command-reference/compile)
+- [helix dashboard](https://docs.helix-db.com/documentation/cli-v2/command-reference/dashboard)
+- [helix delete](https://docs.helix-db.com/documentation/cli-v2/command-reference/delete)
+- [helix feedback](https://docs.helix-db.com/documentation/cli-v2/command-reference/feedback)
+- [helix init](https://docs.helix-db.com/documentation/cli-v2/command-reference/init)
+- [helix logs](https://docs.helix-db.com/documentation/cli-v2/command-reference/logs)
+- [helix metrics](https://docs.helix-db.com/documentation/cli-v2/command-reference/metrics)
+- [helix migrate](https://docs.helix-db.com/documentation/cli-v2/command-reference/migrate)
+- [helix prune](https://docs.helix-db.com/documentation/cli-v2/command-reference/prune)
+- [helix push](https://docs.helix-db.com/documentation/cli-v2/command-reference/push)
+- [helix restart](https://docs.helix-db.com/documentation/cli-v2/command-reference/restart)
+- [helix start](https://docs.helix-db.com/documentation/cli-v2/command-reference/start)
+- [helix status](https://docs.helix-db.com/documentation/cli-v2/command-reference/status)
+- [helix stop](https://docs.helix-db.com/documentation/cli-v2/command-reference/stop)
+- [helix sync](https://docs.helix-db.com/documentation/cli-v2/command-reference/sync)
+- [helix update](https://docs.helix-db.com/documentation/cli-v2/command-reference/update)
+
+## Optional
+- [Roadmap](https://docs.helix-db.com/change-log/roadmap): What we're building and what's coming next
+- [CLI & Lite](https://docs.helix-db.com/change-log/helixdb): CLI & HelixDB Lite Release Notes
+- [Python SDK](https://docs.helix-db.com/change-log/helix-py): Python SDK Release Notes
+- [Graph-Vector Database Performance Benchmarks (2025)](https://docs.helix-db.com/benchmarks/v1): Benchmark results for HelixDB, Neo4j, and Postgres on a realistic graph dataset.
+- [Enterprise](https://docs.helix-db.com/change-log/helix-enterprise): HelixDB Enterprise Release Notes

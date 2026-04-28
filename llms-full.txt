@@ -1,11 +1,6 @@
----
-title: HelixDB Guide Full
-last_updated: 2026-03-03
-audience: LLM agents
----
-
 # HelixDB Overview
-@tags: intro, architecture, helixdb, graph, vector
+
+> Comprehensive HelixDB reference for LLM agents — installation, HelixQL language, traversals, vector and keyword search, SDKs, CLI, and error codes.
 
 ## TL;DR
 - High Performance: Purpose-built storage engine optimized for both graph and vector operations
@@ -39,7 +34,6 @@ audience: LLM agents
 - **Scalability**: Better handling of complex relationship patterns
 
 # Installation
-@tags: install, cli, setup, docker, prerequisites, quickstart
 
 ## Prerequisites
 - Rust version 1.88.0 or higher (required)
@@ -108,7 +102,6 @@ audience: LLM agents
   - Use private instances for prod data
 
 # HelixDB CLI V2
-@tags: cli, commands, reference, v2, management
 
 ## TL;DR
 - Complete CLI: All commands for managing HelixDB instances and projects
@@ -319,7 +312,6 @@ Update the Helix CLI to the latest version.
 - **Email:** founders@helix-db.com
 
 ## Configurations
-@tags: config, toml, settings, deployment, reference
 
 ### TL;DR
 - Central config: Single `helix.toml` file manages all project settings
@@ -470,7 +462,6 @@ build_mode = "dev"      # For use with the dashboard UI
 4. **Memory limits**: Adjust `db_max_size_gb` based on available RAM
 
 ## Workflows
-@tags: workflows, development, deployment, devops, patterns
 
 ### TL;DR
 - Local-first: Start with local Docker development, scale to cloud
@@ -708,7 +699,6 @@ helix push production
 - Security: Use IAM roles with least privilege, enable lifecycle policies
 
 ## Migration from CLI V1 to CLI V2
-@tags: migration, upgrade, v1, v2, legacy
 
 ### TL;DR
 - One-command upgrade: `helix migrate` converts v1 projects automatically
@@ -769,7 +759,6 @@ helix migrate --dry-run
 
 
 ## Troubleshooting
-@tags: troubleshooting, errors, fixes, debug, logs, docker, auth, network, migration, performance, common-errors
 
 ### TL;DR
 - Installation issues: Ensure PATH is updated, use sudo if needed
@@ -1166,10 +1155,8 @@ Before reporting an issue, try these steps:
 10. Enable debug logging: `HELIX_LOG_LEVEL=debug`
 
 # Helix Software Development Kits (SDKs)
-@tags: sdk, python, api, client, integration
 
 ## Python SDK [helix-py](https://github.com/HelixDB/helix-py) [![PyPI](https://img.shields.io/pypi/v/helix-py.svg)](https://pypi.org/project/helix-py/)
-@tags: python, sdk, client, queries, pytorch, llm, provider, embedding, chunking, mcp, model context protocol, pydantic, cloud
 
 ### TL;DR
 - Install: `uv add helix-py` or `pip install helix-py`
@@ -1356,7 +1343,6 @@ batch_chunks = Chunk.sentence_chunk(texts)
 ```
 
 ## TypeScript SDK [helix-ts](https://github.com/HelixDB/helix-ts) [![npm](https://img.shields.io/npm/v/helix-ts.svg)](https://www.npmjs.com/package/helix-ts)
-@tags: typescript, sdk, client, queries, type-safe, graph, vector, knowledge-graph, search, llm-pipeline
 
 ### TL;DR
 - Install: `npm install helix-ts`
@@ -1435,7 +1421,6 @@ const results = await Promise.all(
 ```
 
 ## Rust SDK [helix-rs](https://github.com/HelixDB/helix-rs) [![crates.io](https://img.shields.io/crates/v/helix-rs.svg)](https://crates.io/crates/helix-rs)
-@tags: rust, sdk, client, queries, type-safe, graph, vector, knowledge-graph, search, llm-pipeline, async, serde, tokio
 
 ### TL;DR
 - Install: `cargo add helix-rs serde tokio`
@@ -1530,7 +1515,6 @@ let results: Vec<serde_json::Value> = futures::future::join_all(
 ```
 
 ## Go SDK [helix-go](https://github.com/HelixDB/helix-go) [![Go Reference](https://pkg.go.dev/badge/github.com/HelixDB/helix-go.svg)](https://pkg.go.dev/github.com/HelixDB/helix-go) 
-@tags: go, sdk, client, queries, type-safe, graph, vector, knowledge-graph, search, llm-pipeline, goroutines, context
 
 ### TL;DR
 - Install: `go get github.com/HelixDB/helix-go`
@@ -1634,7 +1618,6 @@ func createUsersConcurrently(users []map[string]any) []map[string]any {
 ```
 
 # Helix Query Language
-@tags: query, language, syntax, cypher, graph, vector, knowledge-graph, search, helixql, query.hx, schema.hx
 
 ### TL;DR
 - Strongly typed: All queries are type-checked at compile time
@@ -1666,7 +1649,6 @@ QUERY QueryName(param1: Type, param2: Type) =>
 - Query names are case-sensitive. SDK/cURL must match the query name in `query.hx` exactly.
 
 ## HelixQL Types
-@tags: types, id, date, string, boolean, i8, i16, i32, i64, f32, f64, u8, u16, u32, u64, u128, array
 
 - `ID`: UUID for nodes, edges and vectors
 - `Date`: Timestamp or RFC3339 string
@@ -1686,7 +1668,6 @@ QUERY QueryName(param1: Type, param2: Type) =>
 - `[T]`: Array of any type
 
 ## Schema Definition (schema.hx)
-@tags: schema, definition, nodes, edges, vectors, indexing, helixql, schema.hx, query.hx
 
 ### TL;DR
 - Schema defines graph structure: nodes, edges, vectors
@@ -1771,7 +1752,6 @@ QUERY GetByIndex(index_field: String) =>
 Note: Indexing currently only supported for nodes. Indexing for edges and vectors is not supported yet.
 
 ## CRUD Operations
-@tags: crud, create, read, update, delete, operations, nodes, edges, vectors
 
 ### Create
 
@@ -3692,7 +3672,6 @@ main().catch((err) => {
 ```
 
 ## Graph Traversals
-@tags: traversal, graph, navigation, out, in, outE, inE, fromN, toN, fromV, toV, relationships
 
 ### Traversal From Nodes and Vectors
 
@@ -4715,7 +4694,6 @@ main().catch((err) => {
 ```
 
 ## Result Operations
-@tags: results, count, limit, skip, sort, order, pagination, filtering
 
 ### Count Elements using `COUNT`
 
@@ -5176,7 +5154,6 @@ main().catch((err) => {
 ```
 
 ## Properties Operations
-@tags: properties, access, fields, attributes, projection, select
 
 ### Property Access
 
@@ -6200,7 +6177,6 @@ main().catch((err) => {
 ```
 
 ## Query Return Values
-@tags: return, output, response, results, projection, formatting
 
 ### TL;DR
 - Return a list of element: `RETURN users`
@@ -6501,7 +6477,6 @@ QUERY DeleteCityQuietly(city_id: ID) =>
 ```
 
 ## Conditionals
-@tags: conditionals, where, filter, eq, neq, gt, gte, lt, lte, contains, startswith, endswith, and, or, not, logic
 
 ### Anonymous Traversal
 
@@ -7543,7 +7518,6 @@ main().catch((err) => {
 ```
 
 ## Vector Operations
-@tags: vector, search, similarity, embedding, searchV, embed, cosine, euclidean, hnsw
 
 ### Vector Search using `SearchV`
 
@@ -8263,7 +8237,6 @@ main().catch((err) => {
 ```
 
 ## Keyword Search
-@tags: keyword, search, bm25, text-search, full-text, ranking
 
 Search for keywords in nodes using BM25 algorithm.
 
@@ -8522,7 +8495,6 @@ main().catch((err) => {
 ```
 
 ## Rerankers
-@tags: reranker, rerank, ranking, relevance, rrf, mmr, hybrid, diversify
 
 ### What are rerankers?
 - Combine results from multiple search strategies (hybrid search)
@@ -8624,7 +8596,6 @@ QUERY AdvancedSearch(query_vec: [F64]) =>
 ```
 
 ## Aggregation
-@tags: aggregation, group-by, count, statistics, analytics, grouping, distribution
 
 ### Group by Properties
 
@@ -8907,7 +8878,6 @@ main().catch((err) => {
 ```
 
 ## Macros
-@tags: macros, mcp, model-context-protocol, ai-agents, decorators, annotations
 
 ### Model Context Protocol (MCP) Macro
 
@@ -9011,7 +8981,6 @@ print(response)
 ```
 
 ## Shortest Path Algorithms
-@tags: shortest-path, algorithms, bfs, dijkstra, pathfinding, graph-algorithms
 
 ### Default Algorithm (BFS) using `::ShortestPath`
 
@@ -9220,7 +9189,6 @@ main().catch((err) => {
 ```
 
 ## Errors
-@tags: errors, error-codes, debugging, troubleshooting, validation, compile-errors, query, query-errors
 
 ### E101: Unknown Node Type
 Reference a node type that is not defined in `schema.hx`.

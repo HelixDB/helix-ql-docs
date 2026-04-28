@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "dev": "mintlify dev",
+    "generate-llms": "node scripts/generate-llms.mjs",
+    "check-llms": "node scripts/generate-llms.mjs --check"
+  },
   "dependencies": {
     "mintlify": "^4.2.245"
   }

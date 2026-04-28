@@ -45,6 +45,32 @@
         "rel": "stylesheet",
         "href": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=block"
       }
+    },
+    {
+      "tag": "link",
+      "attributes": {
+        "rel": "alternate",
+        "type": "text/markdown",
+        "href": "/llms-full.txt",
+        "title": "Full markdown corpus for AI agents"
+      }
+    },
+    {
+      "tag": "link",
+      "attributes": {
+        "rel": "alternate",
+        "type": "text/markdown",
+        "href": "/llms.txt",
+        "title": "Documentation index for AI agents"
+      }
+    },
+    {
+      "tag": "style",
+      "children": ".llms-pointer{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}"
+    },
+    {
+      "tag": "script",
+      "children": "document.addEventListener('DOMContentLoaded',function(){if(document.querySelector('.llms-pointer'))return;var p=document.createElement('blockquote');p.className='llms-pointer';p.innerHTML='For the complete documentation index optimized for AI agents, see <a href=\"/llms.txt\">llms.txt</a>.';document.body.insertBefore(p,document.body.firstChild);});"
     }
   ],
   "favicon": "/favicon.svg",
@@ -105,6 +131,7 @@
               "documentation/hql/language-reference",
               "change-log/roadmap",
               "change-log/helixdb",
+              "change-log/helix-py",
               {
                 "group": "SDKs",
                 "pages": [
@@ -275,24 +302,45 @@
                   "documentation/hql/errors/E101",
                   "documentation/hql/errors/E102",
                   "documentation/hql/errors/E103",
+                  "documentation/hql/errors/E104",
                   "documentation/hql/errors/E105",
+                  "documentation/hql/errors/E106",
+                  "documentation/hql/errors/E107",
+                  "documentation/hql/errors/E108",
+                  "documentation/hql/errors/E109",
+                  "documentation/hql/errors/E110",
+                  "documentation/hql/errors/E201",
                   "documentation/hql/errors/E202",
+                  "documentation/hql/errors/E203",
                   "documentation/hql/errors/E204",
                   "documentation/hql/errors/E205",
+                  "documentation/hql/errors/E206",
                   "documentation/hql/errors/E207",
+                  "documentation/hql/errors/E208",
+                  "documentation/hql/errors/E209",
+                  "documentation/hql/errors/E210",
                   "documentation/hql/errors/E301",
                   "documentation/hql/errors/E302",
+                  "documentation/hql/errors/E303",
                   "documentation/hql/errors/E304",
                   "documentation/hql/errors/E305",
+                  "documentation/hql/errors/E306",
                   "documentation/hql/errors/E401",
                   "documentation/hql/errors/E501",
                   "documentation/hql/errors/E601",
                   "documentation/hql/errors/E602",
+                  "documentation/hql/errors/E603",
                   "documentation/hql/errors/E604",
                   "documentation/hql/errors/E611",
                   "documentation/hql/errors/E612",
                   "documentation/hql/errors/E621",
                   "documentation/hql/errors/E622",
+                  "documentation/hql/errors/E623",
+                  "documentation/hql/errors/E624",
+                  "documentation/hql/errors/E625",
+                  "documentation/hql/errors/E626",
+                  "documentation/hql/errors/E627",
+                  "documentation/hql/errors/E628",
                   "documentation/hql/errors/E631",
                   "documentation/hql/errors/E632",
                   "documentation/hql/errors/E633",
@@ -301,9 +349,11 @@
                   "documentation/hql/errors/E643",
                   "documentation/hql/errors/E644",
                   "documentation/hql/errors/E645",
+                  "documentation/hql/errors/E646",
                   "documentation/hql/errors/E651",
                   "documentation/hql/errors/E652",
-                  "documentation/hql/errors/E653"
+                  "documentation/hql/errors/E653",
+                  "documentation/hql/errors/W101"
                 ]
               }
             ]
