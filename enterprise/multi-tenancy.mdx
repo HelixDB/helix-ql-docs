@@ -38,6 +38,43 @@ tenant-scoped search working sets smaller and allows cache residency to track ac
 closely. Tenants are still a data concern, not an infrastructure concern. Adding a new tenant is a
 write, not a provisioning event.
 
+### In Practice
+
+The pattern is the same regardless of node label: declare an equality index on the tenant
+property once, attach `tenant_id` to every node and edge that gets written, and filter every read
+by `tenant_id`.
+
+Declare the index once, as part of your schema setup write batch:
+
+```rust
+g().create_index_if_not_exists(
+    IndexSpec::node_equality("Doc", "tenant_id"),
+)
+```
+
+Attach `tenant_id` to every node when it is written:
+
+```rust
+g().add_n(
+    "Doc",
+    vec![
+        ("tenant_id", PropertyValue::from("acme")),
+        ("title", PropertyValue::from("Acme doc")),
+    ],
+)
+```
+
+Scope every read by the requesting tenant:
+
+```rust
+g().n_with_label("Doc")
+    .has("tenant_id", "acme")
+```
+
+The same `.has("tenant_id", ...)` filter applies to traversals from any starting node, so edges
+that fan out across the graph remain tenant-scoped as long as every step filters on the tenant
+property.
+
 ## What This Provides
 
 - **Data isolation.** Queries scoped to a tenant ID never observe another tenant's data. Isolation
@@ -65,6 +102,34 @@ land in different vector indexes. This keeps tenant-scoped search working sets s
 vector caches to warm, retain, and evict data at tenant granularity. Tenant-partitioned vector
 indexes are the preferred way to isolate vector search results when that behavior is required.
 
+The DSL surface for tenant-partitioned vector indexes:
+
+```rust
+// Declare the index. The third argument is the property name Helix
+// reads from each record to choose the tenant partition.
+g().create_vector_index_nodes("Doc", "embedding", Some("tenant_id"))
+
+// Insert a node with both the tenant property and the embedding.
+g().add_n(
+    "Doc",
+    vec![
+        ("tenant_id", PropertyValue::from("acme")),
+        ("title", PropertyValue::from("Acme doc")),
+        ("embedding", PropertyValue::from(vec![1.0f32, 0.0, 0.0])),
+    ],
+)
+
+// kNN search scoped to a tenant. The tenant value selects the partition;
+// no additional filtering is needed.
+g().vector_search_nodes(
+    "Doc",
+    "embedding",
+    vec![1.0f32, 0.0, 0.0],
+    5,
+    Some(PropertyValue::from("acme")),
+)
+```
+
 ### Text Indexes
 
 Text indexes provide the same model for full-text search. The tenant property still means the
@@ -73,6 +138,24 @@ requires that property name to be `tenant_id`, so Helix maintains a separate tex
 distinct `tenant_id` value. This keeps tenant-scoped full-text search working sets smaller and
 allows local text-search caches to track active tenants more closely. Tenant-partitioned text
 indexes are the preferred way to isolate full-text search results when that behavior is required.
+
+The DSL surface for tenant-partitioned text indexes:
+
+```rust
+// Declare the text index. Text indexes currently require the partition
+// property name to be `tenant_id`.
+g().create_text_index_nodes("Doc", "body", Some("tenant_id"))
+
+// Full-text search scoped to a tenant. The tenant value selects the
+// partition; the search runs only against that tenant's text index.
+g().text_search_nodes(
+    "Doc",
+    "body",
+    "search query string",
+    5,
+    Some(PropertyValue::from("acme")),
+)
+```
 
 ## Considerations
 
