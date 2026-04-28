@@ -33,6 +33,518 @@
 - **Intuitive**: More natural way to model connected data
 - **Scalability**: Better handling of complex relationship patterns
 
+# HelixDB Enterprise
+
+## Introduction
+
+Helix Enterprise is an object-storage-backed graph database with integrated vector search and full-text search. It combines a property graph engine with approximate vector search and BM25 full-text search on top of durable object storage, using SSD and in-memory caches for low-latency reads.
+
+Helix Enterprise is a fundamentally different architecture and database compared to the opensource v1 version of HelixDB. That version used LMDB which was limited to sequential writes and could only handle a relatively small amount of data. Helix Enterprise uses a new LSM based storage engine backed by object storage that can handle concurrent writes to the writer node and allows for virtually unlimited data storage.
+
+### System at a Glance
+
+A gateway routes all traffic. A single writer serializes mutations for consistency. Readers auto-scale horizontally to handle query load. Object storage is the durable system of record. Caches reduce steady-state latency and accelerate cold starts.
+
+### Key Properties
+
+- **Graph, vector, and text storage on object storage.** Nodes, edges, properties, vector indexes, and text index artifacts all persist durably in object storage. No local disk is required for correctness.
+- **Tiered caching.** Separate in-memory and SSD cache paths for graph data, vector data, and text search artifacts keep hot-path reads fast.
+- **Full ACID transactions.** Every query runs in a serializable snapshot isolation transaction. Concurrent reads and writes do not block each other.
+- **Stored query model.** Queries are authored in a Rust DSL, deployed as stored procedures, and invoked by name over HTTP. No query parsing at runtime.
+
+### Navigation
+
+| Chapter                                                          | Covers                                   |
+| ---------------------------------------------------------------- | ---------------------------------------- |
+| [Working with Helix Enterprise](#working-with-helix-enterprise)  | Deployment and query workflow            |
+| [Architecture](#architecture)                                    | Runtime topology, read and write paths   |
+| [Concepts](#concepts)                                            | Data model, indexes, transactions        |
+| [Guarantees](#guarantees)                                        | Consistency, durability, isolation       |
+| [Tradeoffs](#tradeoffs)                                          | Design choices and their implications    |
+| [Limits](#limits)                                                | Current constraints and practical limits |
+
+---
+
+## Working with Helix Enterprise
+
+Helix Enterprise separates deployment-time operations from runtime query execution. This boundary keeps the system easier to scale, secure, and operate.
+
+### End-to-End Workflow
+
+### Deploy-Time Workflow
+
+Deployment is a two-step process.
+
+1. **Author queries.** Define graph traversals, property filters, vector searches, text searches, and mutations using the Rust DSL. Queries are composable: a single query can chain multiple traversals, apply filters, and combine graph, vector, and text operations within one transaction.
+2. **Deploy with the CLI.** The Helix CLI compiles queries and pushes them to Helix Enterprise as stored procedures. Once deployed, queries are immediately available for invocation.
+
+Queries are the only artifact that moves from development to production. There is no schema migration step, no ORM configuration, and no SQL to manage. The data model is implicit in the queries themselves.
+
+### Runtime Workflow
+
+At runtime, applications interact with Helix Enterprise over HTTP.
+
+1. **Call by name.** An HTTP client sends a request to the gateway with a stored query name and any required parameters at `POST /v1/query/<query-name>`. Clients can also send an inline query at `POST /v1/query`.
+2. **Transaction execution.** The gateway routes the request to the appropriate process. The query runs inside a transaction with serializable snapshot isolation. Reads and writes within the same query see a consistent snapshot.
+3. **Result delivery.** Helix returns the query result as a JSON response. Reads are served by horizontally scaled readers. Writes are serialized through the single writer.
+
+Stored queries execute as pre-compiled procedures, keeping runtime overhead minimal. Dynamic queries deserialize the inline query JSON at request time, which makes them more flexible but less optimized than stored routes.
+
+### Dynamic Queries
+
+Helix supports inline queries for cases where you do not want to deploy the route ahead of time.
+
+- Send `POST /v1/query`.
+- Include a JSON body shaped like:
+
+```json
+{
+  "request_type": "read",
+  "query": {
+    "queries": [
+      {
+        "name": "user",
+        "steps": [
+          {
+            "NWhere": {
+              "Eq": ["username", { "String": "Alice" }]
+            }
+          }
+        ],
+        "condition": null
+      }
+    ],
+    "returns": ["user"]
+  },
+  "parameters": {}
+}
+```
+
+- `request_type` must be `read` or `write` so the gateway can route the request correctly.
+- `query` is the same JSON object that would otherwise live under `read_routes.<name>` or `write_routes.<name>` in `queries.json`.
+- `parameters` is optional and uses the same shape as stored-query calls.
+
+### Query Warming
+
+Helix supports built-in query warming for read queries.
+
+- Send the normal read request with the same parameters you would use for a real read:
+  - stored route: `POST /v1/query/<query-name>`
+  - dynamic route: `POST /v1/query`
+- Add `X-Helix-Warm: true` or `X-Helix-Warm: 1`.
+- Helix executes the query as a query warming request, discards the result body, and returns `204 No Content`.
+
+This is useful when you want to pre-populate the per-process caches that a known query touches before live traffic arrives.
+
+Important details:
+
+- Query warming is only supported for read queries. Warming a write query is rejected.
+- Helix sends the query warming request to all backends so every node can populate its local caches with the data fetched during query execution.
+- Query warming does not create a separate query-result cache. It warms the normal storage, vector, and text-search caches that the query touches during execution.
+
+### Separation of Concerns
+
+| Responsibility    | Deploy-time | Runtime                     |
+| ----------------- | ----------- | --------------------------- |
+| Query authoring   | Rust DSL    | --                          |
+| Query compilation | Helix CLI   | --                          |
+| Query execution   | --          | Gateway + Writer/Readers    |
+| Data storage      | --          | Object storage              |
+| Caching           | --          | SSD + in-memory per process |
+| Scaling           | --          | Auto-scaling readers        |
+
+### Local Development
+
+For local development, Helix also ships a combined `enterprise-dev` image that runs a gateway and database together in a single container.
+
+> **Warning:** The local image is development-only and uses in-memory storage. Stopping or restarting the container wipes all data.
+
+- If `PATH_TO_QUERIES` is unset, you can still use dynamic `POST /v1/query` requests.
+- If `PATH_TO_QUERIES` is set, the container loads stored queries from the mounted `queries.json` file during startup.
+
+You can add this service to a local staging `docker-compose.yml`:
+
+```yaml
+services:
+  helix:
+    image: ghcr.io/helixdb/enterprise-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PATH_TO_QUERIES: /workspace/queries.json
+    volumes:
+      - ./queries.json:/workspace/queries.json:ro
+```
+
+If you only want dynamic queries, omit `PATH_TO_QUERIES` and the mounted `queries.json` volume.
+
+---
+
+## Architecture
+
+Helix Enterprise runs as a single writer node and multiple reader nodes behind a routing gateway. Reads scale horizontally. Writes are serialized through a dedicated writer process to maintain a simple consistency model.
+
+Helix Enterprise is a fundamentally different architecture and database compared to the opensource v1 version of HelixDB. That version used LMDB which was limited to sequential writes and could only handle a relatively small amount of data. Helix Enterprise uses a new LSM based storage engine backed by object storage that can handle concurrent writes to the writer node and allows for virtually unlimited data storage.
+
+### Gateway
+
+The gateway is the entry point for all client traffic. For high availability, deploy at least three gateway instances per cluster. Smaller gateway fleets can be used for non-HA or test workloads, but they are not recommended for production. Gateways accept HTTP requests, authenticate the caller via Bearer token, resolve a stored query name or accept an inline query payload, and route the request to the writer or a reader. Mutations are always routed to the writer. Read-only queries are distributed across readers and the writer. Gateways handle connection management, load balancing, token validation, and the translation from HTTP requests to the backend query RPC.
+
+### Writer
+
+A single writer process handles all mutations. The writer supports concurrent write transactions through MVCC (multi-version concurrency control), allowing multiple writes to execute in parallel without blocking each other. Serializing the commit path through one process eliminates distributed coordination and simplifies the consistency model. The writer batches mutations for throughput and persists them durably to object storage before acknowledging.
+
+The writer also serves read-only queries. It maintains its own SSD and in-memory cache, giving it the most up-to-date view of the data. Reads routed to the writer see committed writes immediately, with no snapshot refresh delay.
+
+### Readers
+
+Readers serve all read-only queries. They are stateless with respect to writes and can be added or removed without coordination. Each reader maintains a local SSD and in-memory cache populated from object storage.
+
+Reader scaling is automatic. As query load increases, new readers are provisioned. As load decreases, excess readers are removed. This keeps cost proportional to actual query volume.
+
+### Object Storage
+
+Object storage is the durable system of record. All graph data, vector indexes, text index artifacts, and metadata persist here. No data lives exclusively on local disk. This means the system can recover from a full cache loss by reading from object storage, and storage capacity is effectively unbounded.
+
+### Cache Hierarchy
+
+Each process (writer and readers) maintains local cache tiers for the data and indexes it serves.
+
+- **In-memory cache.** Fastest access. Holds the most frequently accessed graph data, vector search state, and hot text-search generations. Bounded by available RAM.
+- **SSD cache.** Larger capacity, lower cost per byte. Holds warm graph data, vector data, and reusable text-search artifacts. Reads from SSD are significantly faster than reads from object storage.
+
+Graph, vector, and text workloads use specialized cache paths so hot working sets do not fully contend with one another.
+
+On cold start, caches warm progressively as queries execute. Frequently accessed data reaches steady-state cache residency quickly. For predictable latency from the first query, caches can be pre-warmed, including text index generations.
+
+### Read Path
+
+1. A read request arrives at the gateway and is routed to a reader or the writer.
+2. The reader resolves a consistent snapshot from object storage metadata.
+3. Data is read from the in-memory cache, SSD cache, or object storage (in that order).
+4. The query executes against the snapshot and returns results.
+
+Cache misses transparently fall through to object storage. The same query produces the same result regardless of cache state; caching affects latency, not correctness.
+
+### Write Path
+
+1. A write request arrives at the gateway and is routed to the writer.
+2. The writer executes the mutation within a serializable transaction. Multiple write transactions execute concurrently via MVCC; conflicts are resolved at commit time.
+3. The mutation is batched and persisted durably to object storage.
+4. Once durable, the write is acknowledged to the client.
+5. Readers observe the new data on their next snapshot refresh.
+
+---
+
+## Concepts
+
+### Data Model
+
+Helix Enterprise stores data as a labeled property graph. The graph consists of nodes and directed edges, each carrying typed properties.
+
+#### Nodes and Edges
+
+Nodes and edges are identified by 64-bit unsigned IDs. Edges are directed: each edge has a source node and a target node. Labels are stored as the reserved `$label` property and are used for type-based filtering and label-scoped secondary, vector, and text indexes.
+
+Properties are strongly typed. Supported types: boolean, integer, floating-point, string, bytes, and array variants of each.
+
+#### Multigraph
+
+Multiple edges between the same pair of nodes are supported. Each edge has a unique ID. The pair `(from, to)` maps to the set of all edge IDs connecting those nodes. This allows modeling relationships like "user A sent message B to user C" and "user A sent message D to user C" as distinct edges with distinct properties.
+
+### Indexes
+
+#### Secondary Indexes
+
+Optional secondary indexes accelerate property-based filtering on both nodes and edges.
+
+- **Equality indexes.** Map `property=value` to the set of matching node or edge IDs. Useful for exact-match lookups like "all users with `status=active`."
+- **Range indexes.** Provide ordered scans over numeric and string properties. Useful for queries like "all events with `timestamp > T`."
+
+Secondary indexes are opt-in. They speed up reads at the cost of additional write overhead and storage. Only index properties that are frequently filtered on.
+
+#### Vector Indexes
+
+Numeric array properties can be vector-indexed. Vector indexes enable approximate nearest neighbor (ANN) search and return the nodes or edges closest to a query vector.
+
+Values are normalized to float32 for indexing. Supported distance metrics: cosine, euclidean, and manhattan. Vectors must match the configured index dimension exactly.
+
+Vector search is approximate by design, trading a small amount of recall for significantly faster search over large datasets. Vector indexes can also partition physical search structures by a configured tenant property name when tenant-scoped isolation is required.
+
+#### Text Indexes
+
+Text indexes provide BM25 full-text search on node and edge properties. They are stored durably like other indexes rather than built transiently per query.
+
+Text indexes support `String` and `StringArray` values, configurable analyzer presets, and optional term positions. They can also partition physical search structures by tenant. Tenant-partitioned text indexes currently require the partition property name to be `tenant_id`.
+
+### Queries
+
+#### Traversal DSL
+
+Helix exposes a composable Rust DSL for defining queries. The DSL supports graph traversals, property filters, vector searches, text searches, variable bindings, conditional logic, and mutations within a single query. Multiple traversals can be chained and combined.
+
+#### Stored Queries
+
+Queries are deployed as stored procedures. Clients invoke them by name over HTTP at `POST /v1/query/<query-name>`, passing parameters as needed. Stored queries avoid runtime query deserialization because the route has already been registered in the deployed query bundle.
+
+Each stored query can compose graph traversals, property filters, vector search, text search, and mutations in one transaction. All operations within a query share the same consistent snapshot.
+
+#### Dynamic Queries
+
+Clients can also execute inline queries at `POST /v1/query` without pre-registering a route in the bundle. The request body carries:
+
+- `request_type`: `read` or `write`
+- `query`: the same JSON object that would otherwise appear under `read_routes.<name>` or `write_routes.<name>` in `queries.json`
+- `parameters`: optional runtime parameters
+
+Dynamic queries trade some runtime overhead for flexibility. Stored queries remain the preferred path when you want a stable API surface and minimal per-request overhead.
+
+For the authoring and deployment workflow, see [Working with Helix Enterprise](#working-with-helix-enterprise).
+
+### Transactions
+
+Every query executes as a single transaction with serializable snapshot isolation.
+
+- **Serializable.** Transactions behave as if they executed one at a time, even when running concurrently.
+- **Snapshot isolation.** Each transaction reads from a consistent point-in-time snapshot. Reads within a transaction are never affected by concurrent writes.
+- **Automatic.** Transactions are implicit. Every query invocation is a transaction. There is no manual `BEGIN` / `COMMIT` / `ROLLBACK`.
+
+Read-only queries never block writes. Write transactions are serialized through the single writer process for correctness without distributed locking.
+
+For consistency and durability details, see [Guarantees](#guarantees).
+
+---
+
+## Guarantees
+
+Helix Enterprise provides full ACID guarantees for every transaction.
+
+### Atomicity
+
+Each query executes as a single atomic transaction. All mutations within a query either commit together or roll back entirely. There are no partial writes. If any step of a multi-traversal query fails, the entire transaction is aborted and no data is modified.
+
+### Consistency
+
+The database transitions from one valid state to another on every committed transaction. All constraints (unique IDs, type safety on properties, vector dimension matching, and text index value constraints) are enforced at write time, not retroactively.
+
+### Isolation
+
+Transactions run with serializable snapshot isolation. Each transaction reads from a consistent point-in-time snapshot. Graph reads, vector search, and text search all observe that same snapshot. Write transactions also get read-your-writes, and indexed reads participate in normal conflict detection.
+
+- Read-only queries see a consistent snapshot and are never blocked by writes.
+- Write transactions commit through the single writer process, so conflicting writes are detected before commit.
+
+### Durability
+
+All committed data is persisted to object storage before the write is acknowledged to the client. Object storage provides the durability guarantee. Local caches (SSD and in-memory) are performance optimizations, not durability mechanisms. A full cache loss does not result in data loss.
+
+### High Availability
+
+Helix Enterprise can run with fewer than three gateway or database nodes, but those deployments are not high availability and are not recommended for production. For high availability, use at least three database nodes (one writer and two readers) and at least three gateway instances per cluster.
+
+This baseline ensures:
+
+- **Reader redundancy.** If a reader becomes unavailable, the remaining readers and the writer continue serving read traffic. A replacement reader is provisioned automatically.
+- **Gateway redundancy.** Gateway instances are stateless and interchangeable. Loss of one gateway has no impact on availability. Traffic is redistributed across the remaining instances.
+- **Writer recovery.** If the writer becomes unavailable, a new writer process is started and recovers its state from object storage. No committed data is lost. Write availability is restored once the new writer is running.
+- **Infrastructure redundancy.** All supporting services (load balancers, metadata stores, coordination layers) run with redundant infrastructure sized for high-availability clusters, eliminating single points of failure across the cluster.
+
+Object storage itself provides independent durability and availability guarantees. The database cluster can be fully rebuilt from object storage contents.
+
+### Service Level Agreements
+
+Custom SLAs covering uptime, latency percentiles, and support response times for enterprise clusters. Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss SLA terms for your deployment.
+
+### Consistency Model
+
+Helix Enterprise executes every query against a committed snapshot. The writer can serve newly committed state immediately.
+
+Readers observe new data on their next snapshot refresh. The refresh interval determines the upper bound on read staleness for read-only traffic after a write is acknowledged.
+
+---
+
+## Multi-Tenancy
+
+Multi-tenant architectures generally fall into one of three isolation levels.
+
+### Isolation Levels
+
+| Level                    | Description                                                                                                                 | Isolation                                                        | Resource efficiency                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **Infrastructure-level** | Separate database instance per tenant. Fully independent compute, storage, and networking.                                  | Strongest. No shared resources.                                  | Lowest. Each tenant pays the full cost of an idle cluster.           |
+| **Namespace-level**      | Shared infrastructure, separate logical partitions (databases, schemas, or namespaces) per tenant.                          | Strong. Logical separation with shared compute.                  | Moderate. Shared compute, but metadata and indexes scale per tenant. |
+| **Row-level**            | Shared infrastructure, shared data structures. Tenants distinguished by a property on every record, enforced at query time. | Application-enforced. Relies on consistent query-time filtering. | Highest. All tenants share indexes, caches, and storage.             |
+
+### Row-Level Isolation in Helix Enterprise
+
+Helix Enterprise focuses on row-level isolation. This is the fundamental building block for multi-tenancy. It provides full flexibility to implement any tenancy model at the application layer without imposing structural constraints on the database.
+
+Assign a tenant identifier as a property on every node and edge. Index that property with an equality index. All queries filter on the tenant property, ensuring that each request only accesses data belonging to the requesting tenant.
+
+This is the same mechanism used for any property-based filtering: secondary indexes make the lookup fast, and snapshot isolation guarantees that concurrent tenants do not interfere with each other.
+
+Row-level isolation keeps the architecture simple. The main model is still shared infrastructure: one writer fleet, one reader fleet, shared caches, and shared secondary indexes. Vector and text search can additionally use tenant-partitioned physical indexes when search isolation is needed. The tenant property in an index definition is the property name Helix reads from each node or edge to decide which tenant partition to use. When that property name is `tenant_id`, Helix maintains separate vector and text search structures for each distinct `tenant_id` value. This keeps tenant-scoped search working sets smaller and allows cache residency to track active tenants more closely. Tenants are still a data concern, not an infrastructure concern. Adding a new tenant is a write, not a provisioning event.
+
+### What This Provides
+
+- **Data isolation.** Queries scoped to a tenant ID never observe another tenant's data. Isolation is enforced by the query layer, not by network or infrastructure boundaries.
+- **Shared infrastructure.** All tenants share the same writer, readers, caches, and object storage. No per-tenant provisioning, no per-tenant scaling configuration.
+- **Uniform scaling.** Reader auto-scaling responds to aggregate query load across all tenants. A spike from one tenant benefits from the same scaling that serves all others.
+- **Index efficiency.** Equality indexes on the tenant property resolve tenant-scoped queries without scanning unrelated data.
+- **Full flexibility.** The application layer decides how tenancy is modeled, scoped, and enforced. Helix Enterprise provides the primitives; the application owns the policy.
+
+### Tenant-Partitioned Search Indexes
+
+Tenant-partitioned search indexes are optional. They supplement row-level filtering with separate physical search structures per tenant value.
+
+#### Vector Indexes
+
+Vector indexes can optionally partition by a configured tenant property name. Helix reads that property from each record and maintains a separate vector index for each distinct property value. For example, if the tenant property name is `tenant_id`, records with different `tenant_id` values land in different vector indexes. This keeps tenant-scoped search working sets smaller and allows vector caches to warm, retain, and evict data at tenant granularity. Tenant-partitioned vector indexes are the preferred way to isolate vector search results when that behavior is required.
+
+#### Text Indexes
+
+Text indexes provide the same model for full-text search. The tenant property still means the property name used to read the partition value from each record. Current text index validation requires that property name to be `tenant_id`, so Helix maintains a separate text index for each distinct `tenant_id` value. This keeps tenant-scoped full-text search working sets smaller and allows local text-search caches to track active tenants more closely. Tenant-partitioned text indexes are the preferred way to isolate full-text search results when that behavior is required.
+
+### Considerations
+
+- **Noisy neighbors.** Tenants share compute and cache resources. A tenant issuing a high volume of queries or large writes affects cache residency and query latency for other tenants. Monitoring per-tenant query volume and applying rate limiting on your infrastructure mitigates this.
+- **Shared search semantics.** Secondary indexes remain shared. Tenant-scoped vector and text searches require an explicit tenant value for the configured tenant property, and the system remains shared infrastructure even when search indexes are partitioned by tenant.
+
+### Stricter Isolation Requirements
+
+For workloads that require namespace-level or infrastructure-level tenant isolation (regulatory compliance, data residency, or dedicated-resource SLAs), contact us at [founders@helix-db.com](mailto:founders@helix-db.com) to discuss options.
+
+---
+
+## Security
+
+### Authentication
+
+All API requests to Helix Enterprise are authenticated with a Bearer token. Tokens are managed through the Helix dashboard. Include the token in the `Authorization` header of every request:
+
+```
+Authorization: Bearer <token>
+```
+
+Requests without a valid token are rejected at the gateway before reaching any database node. Token rotation and revocation are performed in the dashboard with immediate effect.
+
+### Role-Based Access Control
+
+Scoped API keys with role-based permissions - read-only, read-write, or restricted to specific stored queries - allowing least-privilege credentials for each service or environment.
+
+Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss RBAC requirements for your cluster.
+
+### SSO / SAML
+
+SSO and SAML integration for dashboard access, enabling teams to manage Helix users through an existing identity provider (Okta, Azure AD, Google Workspace, etc.) with centralized provisioning and deprovisioning.
+
+Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss SSO requirements for your organization.
+
+### Audit Logs
+
+Per-request audit logging covering timestamp, token identity, query name, source IP, and response status. Audit logs support compliance requirements (SOC 2, HIPAA, GDPR) and enable forensic analysis of access patterns.
+
+Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss audit logging requirements for your cluster.
+
+### Encryption
+
+All traffic between clients and the gateway is encrypted in transit via TLS. Data at rest in object storage is encrypted using the storage provider's server-side encryption.
+
+### AWS PrivateLink
+
+For workloads that require traffic to remain entirely within the AWS network, PrivateLink creates a private endpoint in your VPC that routes to Helix Enterprise without traversing the public internet. This eliminates exposure to internet-based threats and satisfies network isolation requirements common in regulated environments.
+
+Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss PrivateLink configuration for your cluster.
+
+---
+
+## Tradeoffs
+
+Every system makes design choices. Helix Enterprise optimizes for durable, cost-effective graph, vector, and text workloads with strong transactional guarantees. These choices have implications.
+
+### Excels At
+
+| Area                                        | Details                                                                                                                                                                            |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Durable storage**                         | All data persists in object storage. No risk of data loss from local disk failure. Storage capacity scales independently of compute.                                               |
+| **Read scalability**                        | Readers auto-scale horizontally. Doubling readers doubles read throughput with no coordination overhead.                                                                           |
+| **Serializable transactions**               | Every query runs against a stable snapshot with ACID semantics by default.                                                                                                         |
+| **Mixed graph, vector, and text workloads** | Graph traversals, vector search, and full-text search execute in the same transaction, against the same snapshot. No need to stitch together separate systems for those workloads. |
+| **Cost efficiency at scale**                | Object storage is significantly cheaper per GB than local SSDs or in-memory stores. Large datasets remain affordable.                                                              |
+| **Operational simplicity**                  | Single writer eliminates distributed consensus. No leader election, no split-brain, no quorum management.                                                                          |
+
+### Not Optimal For
+
+| Area                         | Details                                                                                                                                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Sub-millisecond reads**    | Cache hits are fast, but cold reads require an object storage round trip. Workloads that require guaranteed sub-millisecond latency on every read are better served by in-memory databases. |
+| **Ultra-low write latency**  | Writes incur object storage latency for durability. Write throughput is high, but individual write latency has a floor set by object storage round-trip time.                               |
+| **Exhaustive vector recall** | Vector search is approximate (ANN). Applications that require 100% exact nearest neighbor results should use brute-force search on smaller datasets.                                        |
+
+### Design Choices
+
+**Object storage as the system of record.** Caches accelerate reads but are not required for correctness. This means cold starts are slower than systems that keep all data on local disk, but durability and cost characteristics are superior.
+
+**Single writer.** Serializing all writes through one process avoids distributed coordination at the cost of write throughput being bounded by a single node. In practice, batching and the high throughput of the writer process make this sufficient for most workloads.
+
+**Specialized cache paths.** Helix maintains separate cache paths for graph data, vector indexes, and text search artifacts. The tradeoff is less flexibility in cache allocation when only one workload dominates.
+
+**Stored query model.** Pre-compiling queries eliminates runtime parsing overhead and limits the API surface to explicitly deployed operations. The tradeoff is that ad-hoc queries are not supported; all queries must be authored and deployed in advance.
+
+---
+
+## Limits
+
+Current constraints and practical limits. These reflect the current implementation, not fundamental architectural boundaries.
+
+### Data Model
+
+| Limit                  | Value                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| Node and edge ID range | 64-bit unsigned integer (max 2^63)                                                             |
+| Property value types   | boolean, integer, float, string, bytes, and array variants                                     |
+| Nested structures      | Not supported. Properties are flat key-value pairs.                                            |
+| Reserved property keys | `$label` (used for label-based filtering and label-scoped secondary, vector, and text indexes) |
+
+### Vector Indexes
+
+| Limit                    | Value                                                                                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope                    | Node and edge properties                                                                                                                 |
+| Supported property types | Numeric array properties (`float32[]`, `float64[]`, `int64[]`) normalized to `float32` for indexing                                      |
+| Tenant partitioning      | Optional by configured tenant property name. Tenant-scoped searches require a tenant value. Unknown tenant partitions return no results. |
+| Dimension matching       | Vectors must exactly match the configured index dimension                                                                                |
+| Distance metrics         | cosine, euclidean, manhattan                                                                                                             |
+| Search type              | Approximate nearest neighbor (ANN)                                                                                                       |
+
+### Text Indexes
+
+| Limit                    | Value                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope                    | Node and edge properties                                                                                                                                      |
+| Supported property types | `String` and `StringArray`                                                                                                                                    |
+| Unsupported values       | `null` and non-string values are rejected                                                                                                                     |
+| Analyzer config          | Preset analyzers: `standard`, `standard_stem_en`, `whitespace_lowercase`                                                                                      |
+| Term positions           | Optional                                                                                                                                                      |
+| Tenant partitioning      | Optional. Tenant-partitioned text indexes currently require the partition property name to be `tenant_id`, and tenant-scoped searches require a tenant value. |
+
+### Secondary Indexes
+
+| Limit            | Value                                                                                                      |
+| ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| Equality indexes | Supported on node and edge properties                                                                      |
+| Range indexes    | Supported on numeric and string properties                                                                 |
+| Encoding         | Range indexes use lexicographic string encoding. Values must be encoded consistently for correct ordering. |
+
+### Queries
+
+| Limit             | Value                                |
+| ----------------- | ------------------------------------ |
+| Query model       | Stored procedures and runtime queries|
+| Query language    | Rust DSL                             |
+| Transaction scope | One transaction per query invocation |
+
 # Installation
 
 ## Prerequisites
