@@ -2,7 +2,8 @@
   "scripts": {
     "dev": "mintlify dev",
     "generate-llms": "node scripts/generate-llms.mjs",
-    "check-llms": "node scripts/generate-llms.mjs --check"
+    "check-llms": "node scripts/generate-llms.mjs --check",
+    "add-llms-directive": "node scripts/add-llms-directive.mjs"
   },
   "dependencies": {
     "mintlify": "^4.2.245"
