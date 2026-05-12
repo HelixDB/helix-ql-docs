@@ -17,6 +17,35 @@ In both modes:
 - If `PATH_TO_QUERIES` is set, the container loads stored queries from the mounted
   `queries.json` file during startup.
 
+## Quick Start with the CLI
+
+The fastest way to get started is the Helix CLI, which wraps the `enterprise-dev` image and
+handles container lifecycle for you:
+
+```bash
+# Install the CLI
+curl -sSL "https://install.helix-db.com" | bash
+
+# Scaffold a new project (creates helix.toml and examples/request.json)
+mkdir my-helix-app && cd my-helix-app
+helix init local
+
+# Start the local in-memory runtime on port 8080
+helix run dev
+
+# Send a dynamic query
+helix query dev --file examples/request.json
+
+# Stop the instance when you're done
+helix stop dev
+```
+
+For installation details, V2 Cloud authentication, and the full command reference, see the
+[CLI Getting Started guide](/documentation/cli-v2/getting-started).
+
+If you'd rather manage the container yourself with Docker Compose, the in-memory and on-disk
+setups below show the raw image configuration.
+
 ## In-Memory
 
 <Warning>

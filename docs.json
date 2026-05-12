@@ -131,20 +131,20 @@
               "enterprise/introduction",
               "enterprise/local-development",
               "enterprise/working-with-enterprise",
-              "enterprise/data-model",
               "enterprise/architecture",
-              "enterprise/roadmap",
-              "enterprise/release-notes",
               "enterprise/guarantees",
               "enterprise/security",
               "enterprise/tradeoffs",
-              "enterprise/limits"
+              "enterprise/limits",
+              "enterprise/roadmap",
+              "enterprise/release-notes"
             ]
           },
 
           {
             "group": "Concepts & Examples",
             "pages": [
+              "enterprise/data-model",
               "enterprise/querying",
               "enterprise/indexing/secondary",
               "enterprise/indexing/vector",
