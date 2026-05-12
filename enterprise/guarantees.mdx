@@ -4,7 +4,7 @@ title: 'Guarantees'
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Helix Enterprise provides full ACID guarantees for every transaction.
+Helix Cloud provides full ACID guarantees for every transaction.
 
 ## Atomicity
 
@@ -38,7 +38,7 @@ loss.
 
 ## High Availability
 
-Helix Enterprise can run with fewer than three gateway or database nodes, but those deployments
+Helix Cloud can run with fewer than three gateway or database nodes, but those deployments
 are not high availability and are not recommended for production. For high availability, use at
 least three database nodes (one writer and two readers) and at least three gateway instances per
 cluster.
@@ -67,7 +67,7 @@ your deployment.
 
 ## Consistency Model
 
-Helix Enterprise executes every query against a committed snapshot. The writer can serve newly
+Helix Cloud executes every query against a committed snapshot. The writer can serve newly
 committed state immediately.
 
 Readers observe new data on their next snapshot refresh. The refresh interval determines the upper

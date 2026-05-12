@@ -14,9 +14,9 @@ Multi-tenant architectures generally fall into one of three isolation levels.
 | **Namespace-level**      | Shared infrastructure, separate logical partitions (databases, schemas, or namespaces) per tenant.                          | Strong. Logical separation with shared compute.                  | Moderate. Shared compute, but metadata and indexes scale per tenant. |
 | **Row-level**            | Shared infrastructure, shared data structures. Tenants distinguished by a property on every record, enforced at query time. | Application-enforced. Relies on consistent query-time filtering. | Highest. All tenants share indexes, caches, and storage.             |
 
-## Row-Level Isolation in Helix Enterprise
+## Row-Level Isolation in Helix Cloud
 
-Helix Enterprise focuses on row-level isolation. This is the fundamental building block for
+Helix Cloud focuses on row-level isolation. This is the fundamental building block for
 multi-tenancy. It provides full flexibility to implement any tenancy model at the application
 layer without imposing structural constraints on the database.
 
@@ -90,7 +90,7 @@ filters on the tenant property.
 - **Index efficiency.** Equality indexes on the tenant property resolve tenant-scoped queries
   without scanning unrelated data.
 - **Full flexibility.** The application layer decides how tenancy is modeled, scoped, and
-  enforced. Helix Enterprise provides the primitives; the application owns the policy.
+  enforced. Helix Cloud provides the primitives; the application owns the policy.
 
 ## Tenant-Partitioned Search Indexes
 

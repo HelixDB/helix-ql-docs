@@ -5,14 +5,14 @@
 
 # Introduction
 
-Helix Enterprise is an object-storage-backed graph database with integrated vector search and
+Helix Cloud is an object-storage-backed graph database with integrated vector search and
 full-text search. It combines a property graph engine with approximate vector search and BM25
 full-text search on top of durable object storage, using SSD and in-memory caches for
 low-latency reads.
 
-Helix Enterprise is a fundamentally different architecture and database compared to the opensource v1 
+Helix Cloud is a fundamentally different architecture and database compared to the opensource v1 
 version of HelixDB. That version used LMDB which was limited to sequential writes and could only handle 
-a relatively small amount of data. Helix Enterprise uses a new LSM based storage engine backed by object 
+a relatively small amount of data. Helix Cloud uses a new LSM based storage engine backed by object 
 storage that can handle concurrent writes to the writer node and allows for virtually unlimited data storage.  
 
 ## System at a Glance
@@ -143,7 +143,7 @@ itself. Drop `AWS_ENDPOINT` and `AWS_ALLOW_HTTP` to talk to real AWS S3.
 
 # Working with HelixDB
 
-Helix Enterprise separates deployment-time operations from runtime query execution. This boundary
+Helix Cloud separates deployment-time operations from runtime query execution. This boundary
 keeps the system easier to scale, secure, and operate.
 
 ## End-to-End Workflow
@@ -165,7 +165,7 @@ queries themselves.
 
 ## Runtime Workflow
 
-At runtime, applications interact with Helix Enterprise over HTTP.
+At runtime, applications interact with Helix Cloud over HTTP.
 
 1. **Call by name.** An HTTP client sends a request to the gateway with a stored query name and
    any required parameters at `POST /v1/query/<query-name>`. Clients can also send an inline query
@@ -259,7 +259,7 @@ image that runs a gateway and database together in a single container. See
 
 # Data Model
 
-Helix Enterprise stores data as a labeled property graph. The graph consists of nodes and directed
+Helix Cloud stores data as a labeled property graph. The graph consists of nodes and directed
 edges, each carrying typed properties.
 
 ## Nodes and Edges
@@ -283,13 +283,13 @@ read and mutated, see [Querying](/enterprise/querying).
 
 # Architecture
 
-Helix Enterprise runs as a single writer node and multiple reader nodes behind a routing gateway. Reads
+Helix Cloud runs as a single writer node and multiple reader nodes behind a routing gateway. Reads
 scale horizontally. Writes are serialized through a dedicated writer process to maintain a simple
 consistency model. 
 
-Helix Enterprise is a fundamentally different architecture and database compared to the opensource v1 
+Helix Cloud is a fundamentally different architecture and database compared to the opensource v1 
 version of HelixDB. That version used LMDB which was limited to sequential writes and could only handle 
-a relatively small amount of data. Helix Enterprise uses a new LSM based storage engine backed by object 
+a relatively small amount of data. Helix Cloud uses a new LSM based storage engine backed by object 
 storage that can handle concurrent writes to the writer node and allows for virtually unlimited data storage.  
 
 ## Gateway
@@ -390,7 +390,7 @@ Have a feature request? [Let us know on Discord](https://discord.com/invite/2stg
 
 # Guarantees
 
-Helix Enterprise provides full ACID guarantees for every transaction.
+Helix Cloud provides full ACID guarantees for every transaction.
 
 ## Atomicity
 
@@ -424,7 +424,7 @@ loss.
 
 ## High Availability
 
-Helix Enterprise can run with fewer than three gateway or database nodes, but those deployments
+Helix Cloud can run with fewer than three gateway or database nodes, but those deployments
 are not high availability and are not recommended for production. For high availability, use at
 least three database nodes (one writer and two readers) and at least three gateway instances per
 cluster.
@@ -453,7 +453,7 @@ your deployment.
 
 ## Consistency Model
 
-Helix Enterprise executes every query against a committed snapshot. The writer can serve newly
+Helix Cloud executes every query against a committed snapshot. The writer can serve newly
 committed state immediately.
 
 Readers observe new data on their next snapshot refresh. The refresh interval determines the upper
@@ -463,7 +463,7 @@ bound on read staleness for read-only traffic after a write is acknowledged.
 
 ## Authentication
 
-All API requests to Helix Enterprise are authenticated with a Bearer token. Tokens are managed
+All API requests to Helix Cloud are authenticated with a Bearer token. Tokens are managed
 through the Helix dashboard. Include the token in the `Authorization` header of every request:
 
 ```
@@ -507,7 +507,7 @@ object storage is encrypted using the storage provider's server-side encryption.
 ## AWS PrivateLink
 
 For workloads that require traffic to remain entirely within the AWS network, PrivateLink creates
-a private endpoint in your VPC that routes to Helix Enterprise without traversing the public
+a private endpoint in your VPC that routes to Helix Cloud without traversing the public
 internet. This eliminates exposure to internet-based threats and satisfies network isolation
 requirements common in regulated environments.
 
@@ -516,7 +516,7 @@ configuration for your cluster.
 
 # Tradeoffs
 
-Every system makes design choices. Helix Enterprise optimizes for durable, cost-effective graph,
+Every system makes design choices. Helix Cloud optimizes for durable, cost-effective graph,
 vector, and text workloads with strong transactional guarantees. These choices have implications.
 
 ## Excels At
@@ -610,7 +610,7 @@ fundamental architectural boundaries.
 
 # Indexing
 
-Helix Enterprise supports three index types over the labeled property graph: secondary indexes for
+Helix Cloud supports three index types over the labeled property graph: secondary indexes for
 property filters, vector indexes for ANN search, and text indexes for BM25 full-text search.
 
 ## Secondary Indexes
@@ -650,7 +650,7 @@ For how indexes are invoked from queries, see [Querying](/enterprise/querying).
 
 # Querying
 
-Helix Enterprise exposes a single query surface over HTTP. Queries can be deployed as stored
+Helix Cloud exposes a single query surface over HTTP. Queries can be deployed as stored
 procedures or sent inline, and every invocation executes as one serializable transaction.
 
 ## Traversal DSL
@@ -682,7 +682,7 @@ Dynamic queries trade some runtime overhead for flexibility. Stored queries rema
 path when you want a stable API surface and minimal per-request overhead.
 
 For the authoring and deployment workflow, see
-[Working with Helix Enterprise](/enterprise/working-with-enterprise).
+[Working with Helix Cloud](/enterprise/working-with-enterprise).
 
 ## Transactions
 
@@ -714,9 +714,9 @@ Multi-tenant architectures generally fall into one of three isolation levels.
 | **Namespace-level**      | Shared infrastructure, separate logical partitions (databases, schemas, or namespaces) per tenant.                          | Strong. Logical separation with shared compute.                  | Moderate. Shared compute, but metadata and indexes scale per tenant. |
 | **Row-level**            | Shared infrastructure, shared data structures. Tenants distinguished by a property on every record, enforced at query time. | Application-enforced. Relies on consistent query-time filtering. | Highest. All tenants share indexes, caches, and storage.             |
 
-## Row-Level Isolation in Helix Enterprise
+## Row-Level Isolation in Helix Cloud
 
-Helix Enterprise focuses on row-level isolation. This is the fundamental building block for
+Helix Cloud focuses on row-level isolation. This is the fundamental building block for
 multi-tenancy. It provides full flexibility to implement any tenancy model at the application
 layer without imposing structural constraints on the database.
 
@@ -790,7 +790,7 @@ filters on the tenant property.
 - **Index efficiency.** Equality indexes on the tenant property resolve tenant-scoped queries
   without scanning unrelated data.
 - **Full flexibility.** The application layer decides how tenancy is modeled, scoped, and
-  enforced. Helix Enterprise provides the primitives; the application owns the policy.
+  enforced. Helix Cloud provides the primitives; the application owns the policy.
 
 ## Tenant-Partitioned Search Indexes
 

@@ -8,14 +8,14 @@ import { architectureDiagram } from "/snippets/diagrams.jsx"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Helix Enterprise is an object-storage-backed graph database with integrated vector search and
+Helix Cloud is an object-storage-backed graph database with integrated vector search and
 full-text search. It combines a property graph engine with approximate vector search and BM25
 full-text search on top of durable object storage, using SSD and in-memory caches for
 low-latency reads.
 
-Helix Enterprise is a fundamentally different architecture and database compared to the opensource v1 
+Helix Cloud is a fundamentally different architecture and database compared to the opensource v1 
 version of HelixDB. That version used LMDB which was limited to sequential writes and could only handle 
-a relatively small amount of data. Helix Enterprise uses a new LSM based storage engine backed by object 
+a relatively small amount of data. Helix Cloud uses a new LSM based storage engine backed by object 
 storage that can handle concurrent writes to the writer node and allows for virtually unlimited data storage.  
 
 ## System at a Glance
@@ -41,7 +41,7 @@ Caches reduce steady-state latency and accelerate cold starts.
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Working with Helix Enterprise" icon="rocket" href="/enterprise/working-with-enterprise">
+  <Card title="Working with Helix Cloud" icon="rocket" href="/enterprise/working-with-enterprise">
     Deploy-time and runtime workflow for stored and dynamic queries.
   </Card>
   <Card title="Architecture" icon="sitemap" href="/enterprise/architecture">

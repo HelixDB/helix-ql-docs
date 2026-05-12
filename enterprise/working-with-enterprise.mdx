@@ -7,7 +7,7 @@ title: 'Working with HelixDB'
 import { EnterpriseDiagram } from "/snippets/enterprise-diagram.jsx"
 import { workflowDiagram } from "/snippets/diagrams.jsx"
 
-Helix Enterprise separates deployment-time operations from runtime query execution. This boundary
+Helix Cloud separates deployment-time operations from runtime query execution. This boundary
 keeps the system easier to scale, secure, and operate.
 
 
@@ -34,7 +34,7 @@ queries themselves.
 
 ## Runtime Workflow
 
-At runtime, applications interact with Helix Enterprise over HTTP.
+At runtime, applications interact with Helix Cloud over HTTP.
 
 1. **Call by name.** An HTTP client sends a request to the gateway with a stored query name and
    any required parameters at `POST /v1/query/<query-name>`. Clients can also send an inline query
