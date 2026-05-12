@@ -123,6 +123,35 @@
     },
     "tabs": [
       {
+        "tab": "Platform",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              {
+                "group": "Dashboard",
+                "pages": [
+                  "platform/dashboard/overview",
+                  "platform/dashboard/creating-db",
+                  "platform/dashboard/metrics",
+                  "platform/dashboard/query-insights",
+                  "platform/dashboard/settings"
+                ]
+              },
+              {
+                "group": "Explorer",
+                "pages": [
+                  "platform/explorer/querying",
+                  "platform/explorer/schemas",
+                  "platform/explorer/ai-chat"
+                ]
+              }
+
+            ]
+          }
+        ]
+      },
+      {
         "tab": "HelixDB",
         "groups": [
           {
