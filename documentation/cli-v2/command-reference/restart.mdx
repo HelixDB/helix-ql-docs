@@ -5,7 +5,9 @@ sidebarTitle: "restart"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Restart a running instance. This stops and then starts the instance.
+Restart a background local instance. If the container still exists, it is restarted in place. If the container has been removed (for example after `helix prune`), `helix restart` falls back to a fresh [`helix run`](/documentation/cli-v2/command-reference/run).
+
+Local data is in-memory and is wiped by every restart.
 
 ## Usage
 
@@ -17,14 +19,14 @@ helix restart [INSTANCE]
 
 | Argument | Description |
 |----------|-------------|
-| `INSTANCE` | The instance to restart. If not provided, an interactive selection prompt will appear |
+| `INSTANCE` | Local instance to restart. If omitted in a TTY with multiple instances, the CLI prompts. Defaults to `dev` when present. |
 
 ## Examples
 
 ```bash
-# Restart an instance (interactive selection)
-helix restart
-
-# Restart a specific instance
+# Restart the default 'dev' instance
 helix restart dev
+
+# Restart with interactive picker
+helix restart
 ```

@@ -92,3 +92,20 @@ regardless of cache state; caching affects latency, not correctness.
 3. The mutation is batched and persisted durably to object storage.
 4. Once durable, the write is acknowledged to the client.
 5. Readers observe the new data on their next snapshot refresh.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Model" icon="diagram-project" href="/enterprise/data-model">
+    Nodes, edges, properties, and the labeled multigraph model.
+  </Card>
+  <Card title="Indexing" icon="layer-group" href="/enterprise/indexing">
+    Secondary, vector, and text indexes over the property graph.
+  </Card>
+  <Card title="Querying" icon="magnifying-glass" href="/enterprise/querying">
+    Traversal DSL, stored queries, dynamic queries, and transactions.
+  </Card>
+  <Card title="Guarantees" icon="shield-check" href="/enterprise/guarantees">
+    Consistency, durability, and isolation under this architecture.
+  </Card>
+</CardGroup>

@@ -5,44 +5,46 @@ description: "Complete reference for all Helix CLI v2 commands and options"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-This page provides a comprehensive reference for all commands available in Helix CLI v2.
+This page lists every command in Helix CLI v2. Click any command for full flag and example details.
 
 ## Global Options
 
-These options are available for all commands:
+These options are available for every command:
 
 ```bash
-helix --help, -h      Show help information for the command
-helix --version, -V   Display the CLI version
-helix --quiet         Suppress output (errors and final result only)
-helix -v, --verbose   Show detailed output with timing information
+helix --help, -h        Show help for the command
+helix --version, -V     Print the CLI version
+helix --quiet           Suppress output (errors and final result only)
+helix -v, --verbose     Show detailed output with timing information
 ```
 
 ## Commands
 
-| Command | Subcommands | Flags | Product | Description |
-|:--------|:------------|:------|:--------|:------------|
-| [`helix add`](/documentation/cli-v2/command-reference/add) | `cloud`, `ecr`, `fly`, `local` | `-n` | Lite, Enterprise | Add a new instance to an existing project |
-| [`helix auth`](/documentation/cli-v2/command-reference/auth) | `login`, `logout`, `createkey` | | Lite, Enterprise | Manage authentication for Helix Cloud |
-| [`helix backup`](/documentation/cli-v2/command-reference/backup) | | `-o` | Lite | Create a backup of a local instance's database |
-| [`helix build`](/documentation/cli-v2/command-reference/build) | | `-i`, `--bin` | Lite, Enterprise | Build and prepare an instance for deployment |
-| [`helix check`](/documentation/cli-v2/command-reference/check) | | | Lite, Enterprise | Validate project configuration and query syntax |
-| [`helix compile`](/documentation/cli-v2/command-reference/compile) | | `-p`, `-o` | Lite, Enterprise | Compile project queries |
-| [`helix dashboard`](/documentation/cli-v2/command-reference/dashboard) | `start`, `stop`, `status` | `-p`, `--host`, `--helix-port`, `--attach`, `--restart` | Lite, Enterprise | Launch the Helix Dashboard |
-| [`helix delete`](/documentation/cli-v2/command-reference/delete) | | | Lite | Permanently delete an instance and all its data |
-| [`helix feedback`](/documentation/cli-v2/command-reference/feedback) | | | Lite, Enterprise | Send feedback to the Helix team |
-| [`helix init`](/documentation/cli-v2/command-reference/init) | `cloud`, `ecr`, `fly`, `local` | `-p`, `-t`, `-q`, `-n` | Lite, Enterprise | Initialize a new Helix project |
-| [`helix logs`](/documentation/cli-v2/command-reference/logs) | | `-l`, `-r`, `--start`, `--end` | Lite | View logs for a running instance |
-| [`helix metrics`](/documentation/cli-v2/command-reference/metrics) | `full`, `basic`, `off`, `status` | | Lite, Enterprise | Configure telemetry and metrics collection |
-| [`helix migrate`](/documentation/cli-v2/command-reference/migrate) | | `-p`, `-q`, `-i`, `--port`, `--dry-run`, `--no-backup` | Lite | Migrate a v1 project to v2 format |
-| [`helix prune`](/documentation/cli-v2/command-reference/prune) | | `-a` | Lite, Enterprise | Remove unused containers, images, and workspace files |
-| [`helix push`](/documentation/cli-v2/command-reference/push) | | `--dev` | Lite, Enterprise | Deploy or update a running instance |
-| [`helix restart`](/documentation/cli-v2/command-reference/restart) | | | Lite, Enterprise | Restart a running instance |
-| [`helix start`](/documentation/cli-v2/command-reference/start) | | | Lite, Enterprise | Start a stopped instance |
-| [`helix status`](/documentation/cli-v2/command-reference/status) | | | Lite, Enterprise | Show the status of all instances |
-| [`helix stop`](/documentation/cli-v2/command-reference/stop) | | | Lite, Enterprise | Stop a running instance |
-| [`helix sync`](/documentation/cli-v2/command-reference/sync) | | `-y` | Lite, Enterprise | Sync files from a deployed Helix Cloud instance |
-| [`helix update`](/documentation/cli-v2/command-reference/update) | | `--force` | Lite, Enterprise | Update the CLI to the latest version |
+| Command | Subcommands | Flags | Scope | Description |
+|:--------|:------------|:------|:------|:------------|
+| [`helix init`](/documentation/cli-v2/command-reference/init) | `local`, `enterprise` | `-p`/`--path` | Local, V2 Cloud | Initialize a v2 Helix project |
+| [`helix add`](/documentation/cli-v2/command-reference/add) | `local`, `enterprise` | | Local, V2 Cloud | Add an instance to an existing project |
+| [`helix run`](/documentation/cli-v2/command-reference/run) | | `--foreground`, `--port` | Local | Run a local instance (background by default) |
+| [`helix stop`](/documentation/cli-v2/command-reference/stop) | | | Local | Stop a background local instance |
+| [`helix restart`](/documentation/cli-v2/command-reference/restart) | | | Local | Restart a background local instance |
+| [`helix status`](/documentation/cli-v2/command-reference/status) | | | Local, V2 Cloud | Show instance status |
+| [`helix logs`](/documentation/cli-v2/command-reference/logs) | | `-f`/`--follow`, `-r`/`--range`, `--start`, `--end` | Local, V2 Cloud | View instance logs |
+| [`helix query`](/documentation/cli-v2/command-reference/query) | | `-f`/`--file`, `--warm`, `--host`, `--port`, `--compact` | Local, V2 Cloud | Send a dynamic query to `POST /v1/query` |
+| [`helix auth`](/documentation/cli-v2/command-reference/auth) | `login`, `logout`, `create-key` | | V2 Cloud | Manage V2 Cloud authentication |
+| [`helix workspace`](/documentation/cli-v2/command-reference/workspace) | `list`, `show`, `switch` | `--format`, `--id` | V2 Cloud | Manage active workspace selection |
+| [`helix project`](/documentation/cli-v2/command-reference/project) | `list`, `show`, `switch` | `--format`, `--id`, `--workspace-id` | V2 Cloud | Manage linked project selection |
+| [`helix cluster`](/documentation/cli-v2/command-reference/cluster) | `list` | `--format`, `--workspace-id`, `--project-id` | V2 Cloud | List V2 Cloud clusters |
+| [`helix sync`](/documentation/cli-v2/command-reference/sync) | | | V2 Cloud | Refresh V2 Cloud instance metadata in `helix.toml` |
+| [`helix prune`](/documentation/cli-v2/command-reference/prune) | | `-a`/`--all`, `-y`/`--yes` | Local | Remove Helix-owned local containers and workspaces |
+| [`helix delete`](/documentation/cli-v2/command-reference/delete) | | `-y`/`--yes` | Local, V2 Cloud | Delete an instance from `helix.toml` and local state |
+| [`helix metrics`](/documentation/cli-v2/command-reference/metrics) | `full`, `basic`, `off`, `status` | | Local, V2 Cloud | Configure CLI telemetry |
+| [`helix dashboard`](/documentation/cli-v2/command-reference/dashboard) | `start`, `stop`, `status` | `-p`/`--port`, `--host`, `--helix-port`, `--attach`, `--restart` | Local, V2 Cloud | Launch the Helix Dashboard |
+| [`helix update`](/documentation/cli-v2/command-reference/update) | | `--force` | — | Update the CLI to the latest version |
+| [`helix feedback`](/documentation/cli-v2/command-reference/feedback) | | | — | Send feedback to the Helix team |
+
+<Note>
+`helix config` is retained as a hidden compatibility alias. Use [`helix workspace`](/documentation/cli-v2/command-reference/workspace), [`helix project`](/documentation/cli-v2/command-reference/project), and [`helix cluster`](/documentation/cli-v2/command-reference/cluster) directly — they're the canonical commands.
+</Note>
 
 ## Next Steps
 
@@ -52,28 +54,13 @@ helix -v, --verbose   Show detailed output with timing information
     icon="computer"
     href="/documentation/cli-v2/workflows/local"
   >
-    Learn how to develop locally
+    The local init/run/query loop
   </Card>
   <Card
-    title="Helix Cloud"
-    icon="dna"
+    title="V2 Cloud"
+    icon="cloud"
     href="/documentation/cli-v2/workflows/helix_cloud"
   >
-    Learn how to deploy to Helix Cloud
-  </Card>
-
-  <Card
-    title="Fly.io"
-    icon="fly"
-    href="/documentation/cli-v2/workflows/fly"
-  >
-    Learn how to deploy to Fly.io
-  </Card>
-  <Card
-    title="AWS ECR"
-    icon="aws"
-    href="/documentation/cli-v2/workflows/ecr"
-  >
-    Learn how to deploy to AWS ECR
+    Authenticate, link a project, and query an V2 Cloud cluster
   </Card>
 </CardGroup>

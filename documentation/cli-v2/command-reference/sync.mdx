@@ -5,44 +5,52 @@ sidebarTitle: "sync"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Sync `.hx` source files and `helix.toml` configuration from a deployed Helix Cloud instance back to your local project.
+Refresh V2 Cloud instance metadata in `helix.toml`. `helix sync` fetches the latest gateway URL, auth header/env contract, and node-type information from Helix Cloud and writes it back to the local `[enterprise.<instance>]` block so subsequent [`helix query`](/documentation/cli-v2/command-reference/query), [`helix logs`](/documentation/cli-v2/command-reference/logs), and other V2 Cloud commands can target the instance.
 
-This command:
-1. Authenticates with Helix Cloud
-2. Resolves your workspace and cluster (interactive prompts if needed)
-3. Downloads `.hx` query files and `helix.toml` from the remote instance
-4. Prompts before overwriting any local files that differ
-5. Merges the remote `helix.toml` — updates `[project]` and the specific `[cloud.<instance>]` block while preserving `[local.*]` and other cloud entries
-
-Only supported for Helix Cloud instances (standard and enterprise). Requires authentication via `helix auth login`.
+Requires V2 Cloud authentication. Run [`helix auth login`](/documentation/cli-v2/command-reference/auth) first.
 
 ## Usage
 
 ```bash
-helix sync [INSTANCE] [OPTIONS]
+helix sync [INSTANCE]
 ```
 
 ## Arguments
 
 | Argument | Description |
 |----------|-------------|
-| `INSTANCE` | Instance name to sync from. If omitted, an interactive selection prompt will appear |
+| `INSTANCE` | V2 Cloud instance name to sync. If omitted, every `[enterprise.*]` instance in `helix.toml` is synced. |
 
-## Available flags
+## What gets updated
 
-| Flag | Type | Description |
-|------|------|-------------|
-| `--yes`, `-y` | Boolean | Overwrite local files without confirmation prompts |
+For each matched V2 Cloud instance, `helix sync` overwrites these fields in `helix.toml` from the cloud-side configuration:
+
+- `gateway_url`
+- `query_auth_header` (defaults to `Authorization`)
+- `query_auth_env` (defaults to `HELIX_API_KEY`)
+- `availability_mode`
+- `gateway_node_type`
+- `db_node_type`
+
+If the cloud response does not include a `gateway_url`, the CLI prints:
+
+```
+Enterprise instance '<name>' is synced, but gateway_url is still missing.
+Set it in helix.toml before using 'helix query <name>'.
+```
 
 ## Examples
 
 ```bash
-# Sync from a specific cloud instance
-helix sync my-instance
+# Sync a single V2 Cloud instance
+helix sync production
 
-# Interactive instance selection
+# Sync every V2 Cloud instance defined in helix.toml
 helix sync
-
-# Skip confirmation prompts
-helix sync my-instance --yes
 ```
+
+## Related
+
+- [`helix auth`](/documentation/cli-v2/command-reference/auth) — authenticate with V2 Cloud
+- [`helix query`](/documentation/cli-v2/command-reference/query) — uses the synced `gateway_url` and auth contract
+- [`helix cluster`](/documentation/cli-v2/command-reference/cluster) — list available clusters

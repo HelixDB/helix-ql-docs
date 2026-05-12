@@ -38,13 +38,20 @@ Caches reduce steady-state latency and accelerate cold starts.
 - **Stored query model.** Queries are authored in a Rust DSL, deployed as stored procedures, and
   invoked by name over HTTP. No query parsing at runtime.
 
-## Navigation
+## Next Steps
 
-| Chapter                                                     | Covers                                   |
-| ----------------------------------------------------------- | ---------------------------------------- |
-| [Working with Helix Enterprise](/enterprise/working-with-enterprise) | Deployment and query workflow            |
-| [Architecture](/enterprise/architecture)                             | Runtime topology, read and write paths   |
-| [Concepts](/enterprise/concepts)                                     | Data model, indexes, transactions        |
-| [Guarantees](/enterprise/guarantees)                                 | Consistency, durability, isolation       |
-| [Tradeoffs](/enterprise/tradeoffs)                                   | Design choices and their implications    |
-| [Limits](/enterprise/limits)                                         | Current constraints and practical limits |
+<CardGroup cols={2}>
+  <Card title="Working with Helix Enterprise" icon="rocket" href="/enterprise/working-with-enterprise">
+    Deploy-time and runtime workflow for stored and dynamic queries.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/enterprise/architecture">
+    Gateway, writer, readers, object storage, and the cache hierarchy.
+  </Card>
+  <Card title="Developing Locally" icon="laptop-code" href="/enterprise/local-development">
+    Run the `enterprise-dev` image in-memory or against MinIO.
+  </Card>
+  <Card title="Querying" icon="magnifying-glass" href="/enterprise/querying">
+    Traversal DSL, stored queries, dynamic queries, and transactions.
+  </Card>
+</CardGroup>
+

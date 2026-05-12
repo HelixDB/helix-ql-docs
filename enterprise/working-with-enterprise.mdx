@@ -1,5 +1,5 @@
 ---
-title: 'Working with Helix Enterprise'
+title: 'Working with HelixDB'
 ---
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
@@ -19,14 +19,14 @@ keeps the system easier to scale, secure, and operate.
 
 ## Deploy-Time Workflow
 
-Deployment is a two-step process.
+Stored queries are authored as a single `queries.json` artifact — graph traversals, property
+filters, vector searches, text searches, and mutations all expressed as JSON. A single query can
+chain multiple traversals, apply filters, and combine graph, vector, and text operations within
+one transaction.
 
-1. **Author queries.** Define graph traversals, property filters, vector searches, text searches,
-   and mutations using the Rust DSL. Queries are composable: a single query can chain multiple
-   traversals, apply filters, and combine graph, vector, and text operations within one
-   transaction.
-2. **Deploy with the CLI.** The Helix CLI compiles queries and pushes them to Helix Enterprise as
-   stored procedures. Once deployed, queries are immediately available for invocation.
+`queries.json` is deployed to the cluster through the Helix control plane. The Helix CLI is not
+involved in stored-procedure deployment in v2 — its job at runtime is to send dynamic queries,
+fetch logs, and synchronize per-instance metadata via [`helix sync`](/documentation/cli-v2/command-reference/sync).
 
 Queries are the only artifact that moves from development to production. There is no schema
 migration step, no ORM configuration, and no SQL to manage. The data model is implicit in the
@@ -108,42 +108,35 @@ Important details:
 
 ## Separation of Concerns
 
-| Responsibility    | Deploy-time | Runtime                     |
-| ----------------- | ----------- | --------------------------- |
-| Query authoring   | Rust DSL    | --                          |
-| Query compilation | Helix CLI   | --                          |
-| Query execution   | --          | Gateway + Writer/Readers    |
-| Data storage      | --          | Object storage              |
-| Caching           | --          | SSD + in-memory per process |
-| Scaling           | --          | Auto-scaling readers        |
+| Responsibility       | Deploy-time   | Runtime                     |
+| -------------------- | ------------- | --------------------------- |
+| Query authoring      | `queries.json` | --                         |
+| Stored-query loading | Control plane | --                          |
+| Dynamic queries      | --            | `helix query` + Gateway     |
+| Query execution      | --            | Gateway + Writer/Readers    |
+| Data storage         | --            | Object storage              |
+| Caching              | --            | SSD + in-memory per process |
+| Scaling              | --            | Auto-scaling readers        |
 
 ## Local Development
 
-For local development, Helix also ships a combined `enterprise-dev` image that runs a gateway and
-database together in a single container.
+For iterating locally without provisioning a full cluster, Helix ships a combined `enterprise-dev`
+image that runs a gateway and database together in a single container. See
+[Developing with HelixDB Locally](/enterprise/local-development) for in-memory and on-disk setups.
 
-<Warning>
-The local image is development-only and uses in-memory storage.
-Stopping or restarting the container wipes all data.
-</Warning>
+## Next Steps
 
-- If `PATH_TO_QUERIES` is unset, you can still use dynamic `POST /v1/query` requests.
-- If `PATH_TO_QUERIES` is set, the container loads stored queries from the mounted
-  `queries.json` file during startup.
-
-You can add this service to a local staging `docker-compose.yml`:
-
-```yaml
-services:
-  helix:
-    image: ghcr.io/helixdb/enterprise-dev
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      PATH_TO_QUERIES: /workspace/queries.json
-    volumes:
-      - ./queries.json:/workspace/queries.json:ro
-```
-
-If you only want dynamic queries, omit `PATH_TO_QUERIES` and the mounted `queries.json` volume.
+<CardGroup cols={2}>
+  <Card title="Querying" icon="magnifying-glass" href="/enterprise/querying">
+    Traversal DSL, stored queries, dynamic queries, and transactions.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/enterprise/architecture">
+    Gateway, writer, readers, object storage, and the cache hierarchy.
+  </Card>
+  <Card title="Data Model" icon="diagram-project" href="/enterprise/data-model">
+    Nodes, edges, properties, and the labeled multigraph model.
+  </Card>
+  <Card title="Developing Locally" icon="laptop-code" href="/enterprise/local-development">
+    Run the `enterprise-dev` image in-memory or against MinIO.
+  </Card>
+</CardGroup>

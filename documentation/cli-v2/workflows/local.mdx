@@ -1,112 +1,126 @@
 ---
 title: "Local Development"
-description: "Practical examples and patterns for typical local development workflows"
+description: "Run a local v2 instance and iterate on dynamic JSON queries"
 icon: "computer"
 ---
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-This guide walks through common workflows and best practices for developing with Helix CLI v2 locally.
+Local development runs the prebuilt `ghcr.io/helixdb/enterprise-dev:latest` container and exposes the gateway at `POST /v1/query`. You author queries as JSON request files and send them with [`helix query`](/documentation/cli-v2/command-reference/query).
 
-### Initial Setup
+## Prerequisites
+
+- **Docker** or **Podman** on `PATH`.
+- The Helix CLI: `curl -sSL "https://install.helix-db.com" | bash`.
+
+## Initial setup
 
 <Steps>
-  <Step title="Create project">
+  <Step title="Scaffold a project">
     ```bash
-    mkdir my-app && cd my-app
+    mkdir my-helix-app
+    cd my-helix-app
     helix init
     ```
-    Note that `helix init` with no arguments defaults to making a local instance called `dev`.
+
+    `helix init` creates `helix.toml`, `.helix/`, and `examples/request.json`.
   </Step>
 
-  <Step title="Define schema">
-    Edit `db/schema.hx`:
-    ```js
-    N::User {
-      name: String,
-      INDEX email: String,
-      created_at: Date DEFAULT NOW
-    }
-
-    N::Post {
-      title: String,
-      content: String,
-      published: Boolean DEFAULT true,
-      created_at: Date DEFAULT NOW
-    }
-    ```
-  </Step>
-
-  <Step title="Create queries">
-    Edit `db/queries.hx`:
-    ```js
-    QUERY createUser(name: String, email: String) =>
-      user <- AddN<User>({
-        name: name,
-        email: email,
-      })
-      RETURN user
-
-    QUERY getUserByEmail(email: String) =>
-      user <- N<User>({email: email})
-      RETURN user
-    ```
-  </Step>
-
-  <Step title="Validate">
+  <Step title="Start the local runtime">
     ```bash
-    helix check
+    helix run dev
     ```
+
+    Starts a background container named `helix-my-helix-app-dev` on port `8080`. The CLI waits until the gateway accepts `POST /v1/query` before returning.
+
+    For attached log streaming use `helix run dev --foreground` and stop with Ctrl-C.
   </Step>
 
-  <Step title="Build and deploy">
+  <Step title="Send the example query">
     ```bash
-    helix push dev
+    helix query dev --file examples/request.json
     ```
+
+    The example counts `User` nodes. Try `--compact` to print on one line, or `--warm` to populate caches without printing a response.
   </Step>
 </Steps>
 
-### Development Iteration
+<Warning>
+Local storage is in-memory. `helix stop` or `helix restart` wipes all data — keep your seed data in JSON request files so you can replay it.
+</Warning>
 
-When making changes during development:
+## Iteration loop
 
 ```bash
-# Edit your .hx files
-vim db/queries.hx
+# Edit a request file (or write a new one)
+$EDITOR examples/request.json
 
-# Validate changes
-helix check
+# Send the request
+helix query dev --file examples/request.json
 
-# Deploy changes (rebuilds automatically if needed)
-helix push dev
+# Tail container logs in another shell
+helix logs dev --follow
 
-# Check status
-helix status
-
-# View logs
-docker logs helix_my-app_dev
-
-# Stop when done
-helix stop dev
+# Stop and restart from a clean state
+helix restart dev
 ```
 
-### Working with Multiple Instances
+`helix restart` falls back to a fresh `helix run` if the container has been removed.
 
-Create different instances for different purposes:
+## Multiple local instances
 
 ```bash
-# Add a testing instance
-helix add local --name testing
+# Add a second local instance on a different port
+helix add local --name staging --port 9090
 
-# Configure different port in helix.toml
-# [local.testing]
-# port = 7070
+# Run them independently
+helix run dev
+helix run staging
 
-# Run both instances
-helix push dev
-helix push testing
-
-# Status shows all instances
+# See what's running
 helix status
 ```
 
+Each instance is an isolated container named `helix-<project>-<instance>` listening on its own host port. Container port `8080` is fixed internally.
+
+## Inspecting logs
+
+```bash
+helix logs dev               # one-shot dump from docker/podman logs
+helix logs dev --follow      # stream
+```
+
+`--range`, `--start`, and `--end` are V2 Cloud-only and rejected for local instances.
+
+## Cleaning up
+
+| Goal | Command |
+|------|---------|
+| Stop one instance | `helix stop <instance>` |
+| Restart one instance | `helix restart <instance>` |
+| Remove containers and workspace state for one instance | `helix prune <instance>` |
+| Remove everything Helix-owned, for every local instance | `helix prune --all` (`--yes` in non-TTY) |
+| Permanently delete an instance from `helix.toml` | `helix delete <instance>` (`--yes` in non-TTY) |
+
+[`helix prune`](/documentation/cli-v2/command-reference/prune) only touches Helix-managed containers (`helix-<project>-<instance>`) and the per-instance `.helix/<instance>` directory. It never runs a broad `docker/podman system prune`.
+
+## Authoring dynamic queries
+
+A request JSON file must contain:
+
+- `request_type`: lowercase `"read"` or `"write"`.
+- `query`: the query object — `queries[]` with `name`, `steps`, and optional `condition`, plus a `returns[]` list.
+- `parameters` (optional): named parameter values.
+
+The first step must be a source step (for example `NWhere`) before any terminal step like `Count`. See [`helix query`](/documentation/cli-v2/command-reference/query) for the validation rules.
+
+## What next?
+
+<CardGroup cols={2}>
+  <Card title="V2 Cloud workflow" icon="cloud" href="/documentation/cli-v2/workflows/helix_cloud">
+    Authenticate, link a project, and query a remote cluster
+  </Card>
+  <Card title="CLI Command Reference" icon="terminal" href="/documentation/cli-v2/command-reference">
+    Every command, subcommand, and flag
+  </Card>
+</CardGroup>

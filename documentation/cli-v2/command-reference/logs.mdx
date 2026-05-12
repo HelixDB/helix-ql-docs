@@ -5,9 +5,10 @@ sidebarTitle: "logs"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-View logs for a running instance. Opens an interactive terminal UI by default, or use flags for non-interactive modes.
+View logs for a local or V2 Cloud instance.
 
-For local instances, Docker or Podman must be running. For cloud instances, you must be authenticated via `helix auth login`.
+- For **local** instances, logs come from `docker logs` / `podman logs`.
+- For **V2 Cloud** instances, logs are fetched over a time range from Helix Cloud and require `helix auth login`.
 
 ## Usage
 
@@ -19,63 +20,45 @@ helix logs [INSTANCE] [OPTIONS]
 
 | Argument | Description |
 |----------|-------------|
-| `INSTANCE` | The instance to view logs for. If omitted, an interactive selection prompt will appear |
+| `INSTANCE` | Instance name. If omitted in a TTY with multiple instances, the CLI prompts. Defaults to `dev` when present and no prompt is needed. |
 
 ## Available flags
 
-| Flag | Type | Description |
-|------|------|-------------|
-| `--live`, `-l` | Boolean | Stream live logs non-interactively to stdout. Press Ctrl+C to stop |
-| `--range`, `-r` | Boolean | Query historical logs within a time range. Requires `--start` and/or `--end` |
-| `--start` | String | Start time for range query (ISO 8601, e.g. `2024-01-15T10:00:00Z`). Defaults to 15 minutes before end time |
-| `--end` | String | End time for range query (ISO 8601, e.g. `2024-01-15T11:00:00Z`). Defaults to now |
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `-f`, `--follow` | Boolean | Stream live logs. **Local only** — rejected for V2 Cloud instances. | `false` |
+| `-r`, `--range` | Boolean | Query historical logs from Helix Cloud over a time range. **V2 Cloud only**. | `false` |
+| `--start` | RFC 3339 timestamp | Start of the range. Requires `--range`. | `--end` minus 1 hour |
+| `--end` | RFC 3339 timestamp | End of the range. Requires `--range`. | Now (UTC) |
 
-Maximum range duration is 1 hour. Start time must be before end time.
+`--range`, `--start`, and `--end` are rejected for local instances with:
 
-## Interactive TUI mode
+```
+--range, --start, and --end are only supported for Enterprise logs;
+local logs use docker/podman logs
+```
 
-When run without flags, `helix logs` opens an interactive terminal UI with vim-style navigation:
+`--follow` against a V2 Cloud instance is rejected with:
 
-**Navigation:**
-
-| Key | Action |
-|-----|--------|
-| `Down Arrow` | Scroll down one line |
-| `Up Arrow` | Scroll up one line |
-| `j` | Scroll down one page |
-| `k` | Scroll up one page |
-| `zt` | Jump to top of logs |
-| `zb` | Jump to bottom of logs |
-
-**Mode switching:**
-
-| Key | Action |
-|-----|--------|
-| `l` | Switch to live streaming mode |
-| `r` | Switch to range mode (select time presets or custom range) |
-| `Esc` | Quit |
-
-**Range mode presets:**
-- Last 15 minutes
-- Last 30 minutes
-- Last hour
-- Custom range (date/time picker)
+```
+live Enterprise logs are not supported yet; use --range instead
+```
 
 ## Examples
 
 ```bash
-# Open interactive log viewer (will prompt for instance selection)
-helix logs
+# Dump local container logs once
+helix logs dev
 
-# Open interactive log viewer for a specific instance
-helix logs my-instance
+# Stream local logs
+helix logs dev --follow
 
-# Stream live logs non-interactively
-helix logs my-instance --live
+# Last hour of V2 Cloud logs (defaults: end=now, start=end-1h)
+helix logs production --range
 
-# Query logs from a specific time range
-helix logs my-instance --range --start 2024-01-15T10:00:00Z --end 2024-01-15T11:00:00Z
-
-# Query last 15 minutes (end defaults to now)
-helix logs my-instance --range --start 2024-01-15T10:45:00Z
+# Fixed V2 Cloud log range
+helix logs production \
+  --range \
+  --start 2026-05-12T10:00:00Z \
+  --end   2026-05-12T11:00:00Z
 ```

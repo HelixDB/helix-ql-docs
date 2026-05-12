@@ -58,22 +58,26 @@ Attach `tenant_id` to every node when it is written:
 g().add_n(
     "Doc",
     vec![
-        ("tenant_id", PropertyValue::from("acme")),
-        ("title", PropertyValue::from("Acme doc")),
+        ("tenant_id", PropertyInput::from("acme")),
+        ("title", PropertyInput::from("Acme doc")),
     ],
 )
 ```
 
-Scope every read by the requesting tenant:
+Scope every read by the requesting tenant. Use the source-predicate form so the equality index
+on `tenant_id` is hit directly:
 
 ```rust
-g().n_with_label("Doc")
-    .has("tenant_id", "acme")
+g().n_with_label_where(
+    "Doc",
+    SourcePredicate::eq("tenant_id", "acme"),
+)
 ```
 
-The same `.has("tenant_id", ...)` filter applies to traversals from any starting node, so edges
-that fan out across the graph remain tenant-scoped as long as every step filters on the tenant
-property.
+When the tenant predicate sits mid-traversal — for example after walking edges from a known
+starting node — use `.where_(Predicate::eq("tenant_id", "acme"))`. The same scope rule applies
+at every hop: edges that fan out across the graph remain tenant-scoped as long as every step
+filters on the tenant property.
 
 ## What This Provides
 
@@ -113,9 +117,9 @@ g().create_vector_index_nodes("Doc", "embedding", Some("tenant_id"))
 g().add_n(
     "Doc",
     vec![
-        ("tenant_id", PropertyValue::from("acme")),
-        ("title", PropertyValue::from("Acme doc")),
-        ("embedding", PropertyValue::from(vec![1.0f32, 0.0, 0.0])),
+        ("tenant_id", PropertyInput::from("acme")),
+        ("title", PropertyInput::from("Acme doc")),
+        ("embedding", PropertyInput::from(vec![1.0f32, 0.0, 0.0])),
     ],
 )
 

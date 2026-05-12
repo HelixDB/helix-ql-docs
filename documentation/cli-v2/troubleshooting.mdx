@@ -8,135 +8,73 @@ mode: "wide"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-This guide helps you resolve common issues when using the Helix CLI v2.
+This guide helps you resolve common issues with the Helix CLI v2.
 
-## Installation Issues
+## Installation issues
 
-### Command not found: helix
+### `command not found: helix`
 
-**Problem**: After installation, `helix` command is not recognized.
+The CLI installs to `~/.helix/bin/helix`. If your shell can't find it after running the installer:
 
-**Solutions:**
-
-1. Ensure PATH is updated:
-   ```bash
-   echo 'export PATH="$HOME/.helix/bin:$PATH"' >> ~/.bashrc
-   source ~/.bashrc
-   ```
-
-2. For Zsh users:
-   ```bash
-   echo 'export PATH="$HOME/.helix/bin:$PATH"' >> ~/.zshrc
-   source ~/.zshrc
-   ```
-
-3. Verify installation:
-   ```bash
-   ls -la ~/.helix/bin/helix
-   ```
-
-### Permission denied during installation
-
-**Problem**: Installation fails with permission errors.
-
-**Solution**: Use system-wide installation with sudo:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/HelixDB/helix-db/main/install.sh | sudo bash -- --system
+# Bash
+echo 'export PATH="$HOME/.helix/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Zsh
+echo 'export PATH="$HOME/.helix/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 ```
 
-## Project Configuration Issues
+Verify the binary exists with `ls -la ~/.helix/bin/helix`.
 
-### Not in a Helix project directory
+### Updating the CLI
 
-**Error:**
+```bash
+helix update          # update to the latest release
+helix update --force  # reinstall even if already on the latest version
+```
+
+## Project configuration issues
+
+### `Not in a Helix project directory`
+
 ```
 Not in a Helix project directory. Run 'helix init' to create one.
 ```
 
-**Solutions:**
+Either run `helix init` to scaffold a new project, or `cd` into a directory that contains `helix.toml`.
 
-1. Initialize a new project:
-   ```bash
-   helix init
-   ```
+### `helix.toml` validation errors
 
-2. Navigate to project directory:
-   ```bash
-   cd /path/to/your/project
-   ```
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `project name is empty in <path>` | `[project] name` is blank. | Set a non-empty `name`. |
+| `<path> has no instances configured` | No `[local.*]` or `[enterprise.*]` blocks. | Run [`helix add local`](/documentation/cli-v2/command-reference/add) or `helix add enterprise`. |
+| `instance name is empty in <path>` | Empty key like `[local.""]`. | Give the instance a name. |
+| `cluster_id is empty for '<name>' in <path>` | Missing required V2 Cloud field. | Set `cluster_id` under `[enterprise.<name>]`. |
+| `Failed to parse helix.toml: invalid type` | Numbers quoted as strings. | Use bare numbers — `port = 8080`, not `port = "8080"`. |
 
-3. Check for `helix.toml`:
-   ```bash
-   ls helix.toml
-   ```
+### `Instance '<name>' not found`
 
-### Invalid configuration in helix.toml
+The instance is not listed in `helix.toml`. Check with `helix status` and add it with [`helix add`](/documentation/cli-v2/command-reference/add).
 
-**Error:**
-```
-Failed to parse helix.toml: invalid type: string "6969", expected u16
-```
-
-**Solution**: Ensure port numbers are integers without quotes:
-```toml
-# Wrong
-[local.dev]
-port = "6969"
-
-# Correct
-[local.dev]
-port = 6969
-```
-
-### Instance not found
-
-**Error:**
-```
-Instance 'production' not found in configuration
-```
-
-**Solutions:**
-
-1. Check available instances:
-   ```bash
-   helix status
-   ```
-
-2. Add the missing instance:
-   ```bash
-   helix add cloud --name production
-   ```
-
-## Docker Issues
+## Docker / Podman issues
 
 ### Docker daemon not running
 
-**Error:**
 ```
-Cannot connect to Docker daemon. Is the Docker daemon running?
+Docker is not available. Install/start docker and try again
 ```
 
-**Solutions:**
+Start Docker Desktop, or on Linux run `sudo systemctl start docker`. Verify with `docker info`. For Podman users, ensure `podman` is on `PATH` and `[project] container_runtime = "podman"` in `helix.toml`.
 
-1. Start Docker Desktop
-2. On Linux, start Docker service:
-   ```bash
-   sudo systemctl start docker
-   ```
+### Permission denied on Docker socket
 
-3. Check Docker status:
-   ```bash
-   docker info
-   ```
-
-### Permission denied for Docker socket
-
-**Error:**
 ```
 permission denied while trying to connect to the Docker daemon socket
 ```
 
-**Solution**: Add user to docker group:
 ```bash
 sudo usermod -aG docker $USER
 newgrp docker
@@ -144,343 +82,155 @@ newgrp docker
 
 ### Port already in use
 
-**Error:**
 ```
 bind: address already in use
 ```
 
-**Solutions:**
+```bash
+lsof -i :8080
+```
 
-1. Find process using the port:
-   ```bash
-   lsof -i :6969
-   ```
+Either stop the conflicting process or override the port for this run:
 
-2. Stop conflicting service or use different port:
-   ```toml
-   [local.dev]
-   port = 7070
-   ```
+```bash
+helix run dev --port 9090
+```
+
+Or change `[local.<instance>] port` in `helix.toml` permanently.
 
 ### Container name conflict
 
-**Error:**
-```
-Container name "/helix_my-app_dev" is already in use
-```
+The CLI names containers `helix-<project>-<instance>`. If a stale container exists, remove it:
 
-**Solution**: Remove old container:
 ```bash
-docker rm helix_my-app_dev
-# Or force remove
-docker rm -f helix_my-app_dev
+docker rm -f helix-my-helix-app-dev
 ```
 
-## Authentication Issues
+`helix run` removes prior containers with the same name automatically, but a foreign container outside the CLI's control may need manual cleanup.
 
-### Helix Cloud authentication failed
+### Local runtime did not become ready in time
 
-**Error:**
 ```
-Credentials file not found. Please run 'helix auth login' first.
-```
-
-**Solution:**
-```bash
-helix auth login
+local Helix did not become ready in time
+hint: check logs with 'helix logs' or verify port 8080 is reachable
 ```
 
-### Expired credentials
+The `enterprise-dev` container started but did not accept `POST /v1/query` within ~30 seconds. Tail the container with `helix logs <instance> --follow` to investigate.
 
-**Error:**
+## Authentication issues
+
+### `Authentication required`
+
 ```
-Authentication token expired
+Authentication required. Run 'helix auth login' first.
 ```
 
-**Solution**: Re-authenticate:
+Run [`helix auth login`](/documentation/cli-v2/command-reference/auth). Credentials are stored in `~/.helix/credentials`.
+
+### Stale credentials
+
 ```bash
 helix auth logout
 helix auth login
 ```
 
-### Fly.io authentication issues
+### Rotating a cluster API key
 
-**Error:**
-```
-Error authenticating with Fly.io
-```
-
-**Solutions:**
-
-1. For CLI auth:
-   ```bash
-   flyctl auth login
-   ```
-
-### AWS ECR authentication failed
-
-**Error:**
-```
-no basic auth credentials
-```
-
-**Solutions:**
-
-1. Configure AWS CLI:
-   ```bash
-   aws configure
-   ```
-
-2. Login to ECR:
-   ```bash
-   aws ecr get-login-password --region us-west-2 | \
-     docker login --username AWS --password-stdin \
-     123456789.dkr.ecr.us-west-2.amazonaws.com
-   ```
-
-## Build & Deployment Issues
-
-### Build fails with missing files
-
-**Error:**
-```
-Failed to copy queries: No such file or directory
-```
-
-**Solution**: Ensure queries directory exists:
 ```bash
-mkdir -p db
-touch db/schema.hx db/queries.hx
+helix auth create-key <cluster-id>
 ```
 
-### Push fails for cloud instance
+The new key prints once. Update `HELIX_API_KEY` (or whatever `query_auth_env` resolves to) in your environment before running [`helix query`](/documentation/cli-v2/command-reference/query).
 
-**Error:**
+## V2 Cloud query issues
+
+### `gateway_url is not configured`
+
 ```
-Failed to upload to cloud: network timeout
-```
-
-**Solutions:**
-
-1. Check internet connection
-2. Verify authentication:
-   ```bash
-   helix auth login
-   ```
-3. Check cloud service status
-
-### Instance won't start
-
-**Problem**: `helix push dev` succeeds but instance isn't accessible.
-
-**Debugging steps:**
-
-1. Check container status:
-   ```bash
-   docker ps -a | grep helix
-   ```
-
-2. View container logs:
-   ```bash
-   docker logs helix_my-app_dev
-   ```
-
-3. Test connection:
-   ```bash
-   curl http://localhost:6969/health
-   ```
-
-4. Check port binding:
-   ```bash
-   docker port helix_my-app_dev
-   ```
-
-## Migration Issues
-
-### v1 project detected
-
-**Error:**
-```
-Found v1 project configuration. Run 'helix migrate' to upgrade to v2.
+Enterprise gateway URL is not configured for '<instance>'.
+Run 'helix sync <instance>' or set gateway_url in helix.toml.
 ```
 
-**Solution:**
+Run [`helix sync <instance>`](/documentation/cli-v2/command-reference/sync) to fetch the latest metadata. If `helix sync` reports `gateway_url is still missing`, the cluster's gateway hasn't been published yet — set `gateway_url` manually under `[enterprise.<instance>]` once you know it.
+
+### `Environment variable HELIX_API_KEY is required`
+
+The auth env var named by `query_auth_env` is unset.
+
 ```bash
-helix migrate --dry-run  # Preview changes
-helix migrate            # Execute migration
+export HELIX_API_KEY="..."
 ```
 
-### Migration backup failed
+### `--warm is only valid for read requests`
 
-**Error:**
-```
-Failed to create backup directory
-```
+`helix query --warm` is rejected for write requests. Remove `--warm` or change `request_type` to `"read"`.
 
-**Solution**: Create backup manually:
+### `request_type must be lowercase 'read' or 'write'`
+
+`request_type` must be either `"read"` or `"write"`. Capitalized or alternative values are rejected.
+
+### `dynamic query request must include query`
+
+The JSON file is missing the top-level `query` object. See [`helix query`](/documentation/cli-v2/command-reference/query) for the request shape.
+
+## Logs issues
+
+### `--range, --start, and --end are only supported for Enterprise logs`
+
+Range queries are V2 Cloud-only. For local instances, use `helix logs <instance> --follow` to tail the container.
+
+### `live Enterprise logs are not supported yet`
+
+`helix logs --follow` on a V2 Cloud instance is rejected. Use `--range --start <rfc3339> --end <rfc3339>` instead.
+
+## Destructive command issues
+
+### `Refusing to delete '<instance>' non-interactively`
+
 ```bash
-cp -r . ../project-backup
-helix migrate --no-backup
+helix delete <instance> --yes
 ```
 
-## Performance Issues
+### `Refusing to prune all instances non-interactively`
 
-### Slow build times
+```bash
+helix prune --all --yes
+```
 
-**Solutions:**
+[`helix prune`](/documentation/cli-v2/command-reference/prune) only removes Helix-owned containers and per-instance workspace directories — it never runs a broad `docker/podman system prune`.
 
-1. Use release mode for production only:
-   ```toml
-   [local.dev]
-   build_mode = "dev"  # Faster builds
-   ```
+## Interactive vs scripted use
 
-2. Reduce vector config for development:
-   ```toml
-   [local.dev.vector_config]
-   m = 8                 # Lower for dev
-   ef_construction = 64  # Lower for dev
-   ```
+The CLI uses `cliclack` prompts when stdin is a TTY and a required choice is missing — for example, `helix init` with no subcommand, or `helix run` when multiple local instances exist and no instance is passed.
 
-3. Clean Docker cache:
-   ```bash
-   docker system prune -a
-   ```
+In non-interactive contexts (CI, pipes, scripts):
 
-### High memory usage
+- Pass subcommands and required flags explicitly.
+- Use `--yes` for [`helix delete`](/documentation/cli-v2/command-reference/delete) and [`helix prune --all`](/documentation/cli-v2/command-reference/prune).
+- The CLI fails clearly when a required choice cannot be resolved — it never silently picks a default.
 
-**Solutions:**
+## Quick checks before reporting an issue
 
-1. Limit database size:
-   ```toml
-   [local.dev.vector_config]
-   db_max_size_gb = 5  # Reduce for local dev
-   ```
-
-2. Adjust Docker resources in Docker Desktop settings
-
-### Container crashes
-
-**Debugging steps:**
-
-1. Check logs:
-   ```bash
-   docker logs helix_my-app_dev --tail 100
-   ```
-
-2. Inspect exit code:
-   ```bash
-   docker inspect helix_my-app_dev --format='{{.State.ExitCode}}'
-   ```
-
-3. Increase memory limits:
-   ```toml
-   [local.dev.limits]
-   max_memory_gb = 8
-   ```
-
-## Network Issues
-
-### Cannot connect to instance
-
-**Debugging steps:**
-
-1. Check if container is running:
-   ```bash
-   docker ps | grep helix
-   ```
-
-2. Test localhost connection:
-   ```bash
-   telnet localhost 6969
-   ```
-
-3. Check firewall settings:
-   ```bash
-   # macOS
-   sudo pfctl -s rules
-
-   # Linux
-   sudo iptables -L
-   ```
-
-### Connection refused
-
-**Solutions:**
-
-1. Verify port configuration:
-   ```bash
-   grep port helix.toml
-   ```
-
-2. Check port forwarding:
-   ```bash
-   docker inspect helix_my-app_dev | grep -A 10 "Ports"
-   ```
-
-3. Try different port:
-   ```toml
-   [local.dev]
-   port = 7070
-   ```
-
-## Common Error Messages
-
-### "ENOENT: no such file or directory"
-
-**Cause**: Missing required files
-**Solution**: Run `helix init` to create project structure
-
-### "EADDRINUSE: address already in use"
-
-**Cause**: Port conflict
-**Solution**: Use different port or stop conflicting service
-
-### "EPERM: operation not permitted"
-
-**Cause**: Permission issue
-**Solution**: Check file permissions or run with appropriate privileges
-
-### "ECONNREFUSED: Connection refused"
-
-**Cause**: Service not running
-**Solution**: Start the instance with `helix push <instance>`
-
-### "ETIMEDOUT: operation timed out"
-
-**Cause**: Network or performance issue
-**Solution**: Check network connection and increase timeout settings
-
-## Getting Help
-
-If you're still experiencing issues:
-
-1. **Check the documentation**: [https://docs.helix-db.com](https://docs.helix-db.com)
-
-2. **Search GitHub issues**: [https://github.com/HelixDB/helix-db/issues](https://github.com/HelixDB/helix-db/issues)
-
-3. **Join Discord**: [https://discord.gg/2stgMPr5BD](https://discord.gg/2stgMPr5BD)
-
-4. **Contact support**: founders@helix-db.com
-
-When reporting issues, include:
-- Helix CLI version (`helix --version`)
-- Operating system and version
-- Docker version (`docker --version`)
-- Error messages and logs
-- Steps to reproduce the issue
-- `helix.toml` configuration (remove sensitive data)
-
-## Quick Fixes Checklist
-
-<Accordion title="Before reporting an issue, try these steps">
-  - [ ] Update CLI: `helix update`
-  - [ ] Validate configuration: `helix check`
-  - [ ] Restart Docker Desktop
-  - [ ] Clean up resources: `helix prune`
+<Accordion title="Run these first">
+  - [ ] Update the CLI: `helix update`
+  - [ ] Check instances and runtime state: `helix status`
+  - [ ] Tail container logs: `helix logs <instance> --follow`
+  - [ ] Restart Docker / Podman
+  - [ ] Clean up Helix-owned resources: `helix prune`
   - [ ] Check disk space: `df -h`
-  - [ ] Verify network connectivity
-  - [ ] Review recent changes to `.hx` files
-  - [ ] Check file permissions
-  - [ ] Try with a fresh project: `helix init` in a new directory
+  - [ ] Confirm `helix.toml` parses: re-run the failing command — config errors print the offending path
 </Accordion>
+
+## Getting help
+
+- Documentation: [docs.helix-db.com](https://docs.helix-db.com)
+- GitHub issues: [github.com/HelixDB/helix-db/issues](https://github.com/HelixDB/helix-db/issues)
+- Discord: [discord.gg/2stgMPr5BD](https://discord.gg/2stgMPr5BD)
+- Email: founders@helix-db.com
+
+When reporting an issue, include:
+
+- `helix --version`
+- Operating system + container runtime version
+- The exact command and full error output
+- A scrubbed `helix.toml` (remove cluster IDs, gateway URLs, auth env names if sensitive)

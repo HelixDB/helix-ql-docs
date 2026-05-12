@@ -5,17 +5,28 @@ sidebarTitle: "status"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Show the status of all instances in the project.
+Show the status of local and V2 Cloud instances configured in `helix.toml`.
+
+For local instances, status comes from `docker ps -a` / `podman ps -a` filtered on `helix-<project>-<instance>`. For V2 Cloud instances, status reflects the cluster configuration recorded in `helix.toml`.
 
 ## Usage
 
 ```bash
-helix status
+helix status [INSTANCE]
 ```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `INSTANCE` | Show status for a specific instance. If omitted, shows every instance in the project. In a TTY with multiple instances, the CLI may offer a single-instance picker. |
 
 ## Examples
 
 ```bash
-# Show status of all instances
+# Show every instance
 helix status
+
+# Show one instance
+helix status dev
 ```
