@@ -145,10 +145,11 @@
           {
             "group": "Concepts & Examples",
             "pages": [
-              "enterprise/indexing",
               "enterprise/querying",
+              "enterprise/indexing/secondary",
+              "enterprise/indexing/vector",
+              "enterprise/indexing/text",
               "enterprise/multi-tenancy"
-            
             ]
           }
           
