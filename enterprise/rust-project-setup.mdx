@@ -1,0 +1,104 @@
+---
+title: 'Rust Project Setup'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Stored queries for HelixDB are authored in Rust using the
+[`helix-enterprise-ql`](https://crates.io/crates/helix-enterprise-ql) crate (imported as
+`helix_dsl`). This page covers bootstrapping a Rust project that builds your queries into the
+`queries.json` bundle that the runtime consumes. For the traversal model and query patterns
+themselves, see [Querying](/enterprise/querying) and the
+[docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/).
+
+## Prerequisites
+
+- A recent stable Rust toolchain — install via [rustup](https://rustup.rs/) if you don't already
+  have it.
+- Optional: the [Helix CLI](/documentation/cli-v2/getting-started) for running the resulting
+  bundle against a local instance.
+
+## Create a new Rust project
+
+`generate_to_path` is invoked from `main`, so a binary crate is the simplest layout:
+
+```bash
+cargo new helix-queries
+cd helix-queries
+```
+
+You can also add this as a binary inside an existing Cargo workspace if you'd rather keep your
+queries alongside the rest of your service code.
+
+## Add the dependency
+
+```bash
+cargo add helix-enterprise-ql
+```
+
+Or add it directly to `Cargo.toml`:
+
+```toml
+[dependencies]
+helix-enterprise-ql = "0.1.7"
+```
+
+The crate is published on crates.io as `helix-enterprise-ql` but its module path is `helix_dsl`,
+so all imports look like `use helix_dsl::...`.
+
+## Set up `src/main.rs`
+
+```rust
+fn main() {
+    let path = helix_dsl::generate_to_path("queries.json").expect("generate queries bundle");
+    println!("generated {}", path.display());
+}
+```
+
+`generate_to_path` collects every query you've defined in the crate and writes a single
+`queries.json` bundle to the path you pass. It returns the resolved path so you can log it or
+hand it to a downstream deploy step.
+
+## Importing the DSL
+
+Inside the modules where you author queries, bring the DSL into scope with the prelude:
+
+```rust
+use helix_dsl::prelude::*;
+```
+
+The prelude re-exports the common building blocks — `read_batch`, `write_batch`, the traversal
+builder `g()`, sub-traversal `sub()`, `NodeRef`/`EdgeRef`, `Predicate`/`SourcePredicate`, the
+projection helpers (`PropertyProjection`, `ExprProjection`), and `AggregateFunction`. See the
+[docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) for the full surface
+and [Querying](/enterprise/querying) for how the pieces fit together.
+
+## Generate the bundle
+
+```bash
+cargo run
+```
+
+This produces `queries.json` in the project root. From here you can:
+
+- Mount it into the local `enterprise-dev` runtime as `PATH_TO_QUERIES` — see
+  [Local Development](/enterprise/local-development).
+- Deploy it to HelixDB through the control plane — see
+  [Working with HelixDB](/enterprise/working-with-enterprise).
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Querying" icon="magnifying-glass" href="/enterprise/querying">
+    Traversal DSL, stored queries, dynamic queries, and transactions.
+  </Card>
+  <Card title="Working with HelixDB" icon="rocket" href="/enterprise/working-with-enterprise">
+    Deploy `queries.json` and the runtime workflow.
+  </Card>
+  <Card title="Local Development" icon="laptop-code" href="/enterprise/local-development">
+    Run the bundle locally with the `enterprise-dev` image.
+  </Card>
+  <Card title="DSL API Reference" icon="code" href="https://docs.rs/helix-enterprise-ql/latest/helix_dsl/">
+    Full `helix_dsl` API on docs.rs.
+  </Card>
+</CardGroup>

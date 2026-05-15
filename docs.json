@@ -130,17 +130,22 @@
             "pages": [
               "enterprise/introduction",
               "enterprise/local-development",
+              "enterprise/rust-project-setup",
+              "enterprise/roadmap",
+              "enterprise/release-notes"
+            ]
+          },
+          {
+            "group": "HelixDB Cloud",
+            "pages": [
               "enterprise/working-with-enterprise",
               "enterprise/architecture",
               "enterprise/guarantees",
               "enterprise/security",
               "enterprise/tradeoffs",
-              "enterprise/limits",
-              "enterprise/roadmap",
-              "enterprise/release-notes"
+              "enterprise/limits"
             ]
           },
-
           {
             "group": "Concepts & Examples",
             "pages": [
