@@ -1,0 +1,27 @@
+---
+title: 'Data Model'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Helix Cloud stores data as a labeled property graph. The graph consists of nodes and directed
+edges, each carrying typed properties.
+
+## Nodes and Edges
+
+Nodes and edges are identified by 64-bit unsigned IDs. Edges are directed: each edge has a source
+node and a target node. Labels are stored as the reserved `$label` property and are used for
+type-based filtering and label-scoped secondary, vector, and text indexes.
+
+Properties are strongly typed. Supported types: boolean, integer, floating-point, string, bytes,
+and array variants of each.
+
+## Multigraph
+
+Multiple edges between the same pair of nodes are supported. Each edge has a unique ID. The pair
+`(from, to)` maps to the set of all edge IDs connecting those nodes. This allows modeling
+relationships like "user A sent message B to user C" and "user A sent message D to user C" as
+distinct edges with distinct properties.
+
+For how this data is filtered and searched, see [Indexing](/enterprise/indexing/secondary). For
+how it is read and mutated, see [Querying](/enterprise/querying).

@@ -1,0 +1,72 @@
+---
+title: 'Querying'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Helix Cloud exposes a single query surface over HTTP. Queries can be deployed as stored
+procedures or sent inline, and every invocation executes as one serializable transaction.
+
+## Traversal DSL
+
+Helix exposes a composable Rust DSL for defining queries. The DSL supports graph traversals,
+property filters, vector searches, text searches, variable bindings, conditional logic, and
+mutations within a single query. Multiple traversals can be chained and combined.
+
+## Stored Queries
+
+Queries are deployed as stored procedures. Clients invoke them by name over HTTP at
+`POST /v1/query/<query-name>`, passing parameters as needed. Stored queries avoid runtime query
+deserialization because the route has already been registered in the deployed query bundle.
+
+Each stored query can compose graph traversals, property filters, vector search, text search, and
+mutations in one transaction. All operations within a query share the same consistent snapshot.
+
+## Dynamic Queries
+
+Clients can also execute inline queries at `POST /v1/query` without pre-registering a route in the
+bundle. The request body carries:
+
+- `request_type`: `read` or `write`
+- `query`: the same JSON object that would otherwise appear under `read_routes.<name>` or
+  `write_routes.<name>` in `queries.json`
+- `parameters`: optional runtime parameters
+
+Dynamic queries trade some runtime overhead for flexibility. Stored queries remain the preferred
+path when you want a stable API surface and minimal per-request overhead.
+
+For the authoring and deployment workflow, see
+[Working with Helix Cloud](/enterprise/working-with-enterprise).
+
+## Transactions
+
+Every query executes as a single transaction with serializable snapshot isolation.
+
+- **Serializable.** Transactions behave as if they executed one at a time, even when running
+  concurrently.
+- **Snapshot isolation.** Each transaction reads from a consistent point-in-time snapshot. Reads
+  within a transaction are never affected by concurrent writes.
+- **Automatic.** Transactions are implicit. Every query invocation is a transaction. There is no
+  manual `BEGIN` / `COMMIT` / `ROLLBACK`.
+
+Read-only queries never block writes. Write transactions are serialized through the single writer
+process for correctness without distributed locking.
+
+For consistency and durability details, see [Guarantees](/enterprise/guarantees).
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Working with Helix Cloud" icon="rocket" href="/enterprise/working-with-enterprise">
+    Deploy-time and runtime workflow for stored and dynamic queries.
+  </Card>
+  <Card title="Data Model" icon="diagram-project" href="/enterprise/data-model">
+    Nodes, edges, properties, and the labeled multigraph model.
+  </Card>
+  <Card title="Indexing" icon="layer-group" href="/enterprise/indexing/secondary">
+    Secondary, vector, and text indexes over the property graph.
+  </Card>
+  <Card title="Guarantees" icon="shield-check" href="/enterprise/guarantees">
+    Consistency, durability, and isolation guarantees per query.
+  </Card>
+</CardGroup>

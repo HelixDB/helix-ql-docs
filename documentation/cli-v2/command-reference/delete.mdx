@@ -5,29 +5,42 @@ sidebarTitle: "delete"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Permanently delete an instance and all its data.
+Delete an instance from `helix.toml` and clean up any local runtime state for it.
 
-This command removes:
-- Container and images
-- All data volumes
-- Workspace files
-- Configuration entries
+For local instances, Helix-owned containers, networks, disk-mode volumes, and the per-instance directory under `.helix/` are deleted. For V2 Cloud instances, only the `[enterprise.<name>]` block in `helix.toml` and any local workspace state are removed — the cluster itself is untouched.
 
 ## Usage
 
 ```bash
-helix delete [INSTANCE]
+helix delete <INSTANCE> [OPTIONS]
 ```
 
 ## Arguments
 
 | Argument | Description |
 |----------|-------------|
-| `INSTANCE` | The instance to delete |
+| `INSTANCE` | Instance to delete. Required. |
+
+## Available flags
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `-y`, `--yes` | Boolean | Skip confirmation prompts. Required in non-TTY environments. |
+
+## Confirmation behavior
+
+In a TTY, `helix delete` prints a warning and asks for confirmation. In non-TTY environments it refuses to run without `--yes`:
+
+```
+Refusing to delete '<instance>' non-interactively. Re-run with --yes to confirm.
+```
 
 ## Examples
 
 ```bash
-# Delete a specific instance
-helix delete dev
+# Delete a local instance (TTY)
+helix delete staging
+
+# Delete non-interactively
+helix delete staging --yes
 ```

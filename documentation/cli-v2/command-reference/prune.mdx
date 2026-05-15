@@ -5,32 +5,45 @@ sidebarTitle: "prune"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Remove unused containers, images, and workspace files.
+Remove Helix-owned local containers, networks, disk-mode volumes, and per-instance workspace state.
 
-This command removes:
-- Stopped containers
-- Unused Docker images
-- Workspace files
+`helix prune` only touches resources the CLI manages:
 
-Data volumes are preserved.
+- The container named `helix-<project>-<instance>`.
+- The disk-mode MinIO sidecar, network, and persistent volume when present.
+- The per-instance directory under `.helix/`.
+
+It never runs a broad `docker system prune` or `podman system prune`.
 
 ## Usage
 
 ```bash
-helix prune [OPTIONS] [INSTANCE]
+helix prune [INSTANCE] [OPTIONS]
 ```
 
 ## Arguments
 
 | Argument | Description |
 |----------|-------------|
-| `INSTANCE` | The instance to prune |
+| `INSTANCE` | Local instance to prune. If omitted, the CLI prompts in a TTY or requires `--all`. |
 
 ## Available flags
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--all`, `-a` | Boolean | Prune all instances in the project |
+| `-a`, `--all` | Boolean | Prune every local instance in the project. |
+| `-y`, `--yes` | Boolean | Skip confirmation prompts. Required with `--all` in non-TTY environments. |
+
+## Confirmation behavior
+
+- `helix prune <instance>` removes resources without confirmation, including persisted disk-mode data.
+- `helix prune --all` prints a warning and asks for confirmation in a TTY. In non-TTY environments, it refuses to run without `--yes`:
+
+  ```
+  Refusing to prune all instances non-interactively. Re-run with --yes to confirm.
+  ```
+
+If nothing was found to prune for an instance, the CLI prints `No local runtime resources found for '<instance>'` and exits successfully.
 
 ## Examples
 
@@ -38,6 +51,12 @@ helix prune [OPTIONS] [INSTANCE]
 # Prune a specific instance
 helix prune dev
 
-# Prune all instances
+# Interactive selection (TTY)
+helix prune
+
+# Prune everything Helix-owned for every local instance
 helix prune --all
+
+# Same, non-interactively
+helix prune --all --yes
 ```

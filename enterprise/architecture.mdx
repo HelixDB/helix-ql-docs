@@ -7,13 +7,13 @@ title: 'Architecture'
 import { EnterpriseDiagram } from "/snippets/enterprise-diagram.jsx"
 import { architectureDiagram } from "/snippets/diagrams.jsx"
 
-Helix Enterprise runs as a single writer node and multiple reader nodes behind a routing gateway. Reads
+Helix Cloud runs as a single writer node and multiple reader nodes behind a routing gateway. Reads
 scale horizontally. Writes are serialized through a dedicated writer process to maintain a simple
 consistency model. 
 
-Helix Enterprise is a fundamentally different architecture and database compared to the opensource v1 
+Helix Cloud is a fundamentally different architecture and database compared to the opensource v1 
 version of HelixDB. That version used LMDB which was limited to sequential writes and could only handle 
-a relatively small amount of data. Helix Enterprise uses a new LSM based storage engine backed by object 
+a relatively small amount of data. Helix Cloud uses a new LSM based storage engine backed by object 
 storage that can handle concurrent writes to the writer node and allows for virtually unlimited data storage.  
 
 <EnterpriseDiagram diagram={architectureDiagram} />
@@ -92,3 +92,20 @@ regardless of cache state; caching affects latency, not correctness.
 3. The mutation is batched and persisted durably to object storage.
 4. Once durable, the write is acknowledged to the client.
 5. Readers observe the new data on their next snapshot refresh.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Model" icon="diagram-project" href="/enterprise/data-model">
+    Nodes, edges, properties, and the labeled multigraph model.
+  </Card>
+  <Card title="Indexing" icon="layer-group" href="/enterprise/indexing/secondary">
+    Secondary, vector, and text indexes over the property graph.
+  </Card>
+  <Card title="Querying" icon="magnifying-glass" href="/enterprise/querying">
+    Traversal DSL, stored queries, dynamic queries, and transactions.
+  </Card>
+  <Card title="Guarantees" icon="shield-check" href="/enterprise/guarantees">
+    Consistency, durability, and isolation under this architecture.
+  </Card>
+</CardGroup>

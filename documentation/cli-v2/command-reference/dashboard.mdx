@@ -5,9 +5,9 @@ sidebarTitle: "dashboard"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Launch the Helix Dashboard in a container to visualize and interact with your database.
+Launch the Helix Dashboard in a container to visualize and interact with a local or V2 Cloud instance.
 
-Docker or Podman must be installed and running. `build_mode` must be set to `dev` in your `helix.toml` configuration.
+Docker or Podman must be installed and running.
 
 ## Usage
 
@@ -19,9 +19,9 @@ helix dashboard <SUBCOMMAND>
 
 | Sub-command | Description |
 |-------------|-------------|
-| `start` | Start the dashboard |
-| `stop` | Stop the running dashboard |
-| `status` | Show dashboard status and connection info |
+| `start` | Start the dashboard container. |
+| `stop` | Stop and remove the dashboard container. |
+| `status` | Show whether the dashboard container is running. |
 
 ### `helix dashboard start`
 
@@ -29,32 +29,58 @@ helix dashboard <SUBCOMMAND>
 helix dashboard start [INSTANCE] [OPTIONS]
 ```
 
+| Argument | Description |
+|----------|-------------|
+| `INSTANCE` | Instance to connect to. Defaults to `dev`. Ignored when `--host` is set. |
+
 | Flag | Type | Description | Default |
 |------|------|-------------|---------|
-| `--port`, `-p` | Number | Port to run dashboard on | `3000` |
-| `--host` | String | Helix host to connect to (e.g. `localhost`). Bypasses project config | |
-| `--helix-port` | Number | Helix port to connect to. Used with `--host` | `6969` |
-| `--attach` | Boolean | Run dashboard in foreground with logs | |
-| `--restart` | Boolean | Restart if dashboard is already running | |
+| `-p`, `--port` | Number | Host port to publish the dashboard on. | `3000` |
+| `--host` | String | Helix host to connect to. Bypasses `helix.toml` instance lookup. | `localhost` (resolved from `[local.<instance>] port`) |
+| `--helix-port` | Number | Helix port the dashboard talks to. Only used with `--host`. | `8080` |
+| `--attach` | Boolean | Run the dashboard in the foreground with logs. | `false` |
+| `--restart` | Boolean | Remove and recreate the dashboard container if one already exists. | `false` |
+
+Background runs print `Dashboard started at http://localhost:<port>` when the container is up.
+
+### `helix dashboard stop`
+
+```bash
+helix dashboard stop
+```
+
+- Prints `Dashboard stopped` when an existing container is removed.
+- Prints `Dashboard was not running` if no dashboard container exists.
+
+### `helix dashboard status`
+
+```bash
+helix dashboard status
+```
+
+- Prints `Dashboard not running` when no container is found.
+- Otherwise prints the container name, status, and port mapping.
+
+<Note>
+Image pulls are quiet by default. Pass the global `--verbose` flag to stream pull progress: `helix --verbose dashboard start`.
+</Note>
 
 ## Examples
 
 ```bash
-# Start dashboard for default instance
+# Start the dashboard against the default 'dev' instance on port 3000
 helix dashboard start
 
-# Start dashboard on a specific port
-helix dashboard start --port 8080
+# Use a non-default port and a named instance
+helix dashboard start staging --port 4000
 
-# Start dashboard for a specific instance
-helix dashboard start my-instance
+# Point at an arbitrary host (e.g. a tunneled remote)
+helix dashboard start --host tunnel.example.com --helix-port 8080
 
-# Connect to a specific host directly
-helix dashboard start --host localhost --helix-port 6969
+# Recreate the dashboard container if one is already running
+helix dashboard start --restart
 
-# Check dashboard status
-helix dashboard status
-
-# Stop the dashboard
+# Stop and check status
 helix dashboard stop
+helix dashboard status
 ```

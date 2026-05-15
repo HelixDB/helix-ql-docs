@@ -5,7 +5,7 @@ sidebarTitle: "metrics"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Configure telemetry and usage metrics collection.
+Configure CLI telemetry and usage metrics collection. Settings are stored in the per-user metrics config.
 
 ## Usage
 
@@ -17,23 +17,35 @@ helix metrics <SUBCOMMAND>
 
 | Sub-command | Description |
 |-------------|-------------|
-| `full` | Enable full metrics collection (requires email) |
-| `basic` | Enable minimal anonymous metrics |
-| `off` | Disable all metrics collection |
-| `status` | Show current metrics configuration |
+| `full` | Enable full metrics collection (prompts for an email address). |
+| `basic` | Enable minimal anonymous metrics. |
+| `off` | Disable all metrics collection. |
+| `status` | Show current metrics configuration and when it was last updated. |
+
+## `helix metrics status` output
+
+`status` prints the metrics level, your user ID (if logged in), and a relative `Last updated` time:
+
+| Age | Format |
+|-----|--------|
+| 0–4 seconds | `just now` |
+| 5–59 seconds | `<n>s ago` |
+| 1–59 minutes | `<n>m ago` |
+| 1–23 hours | `<n>h ago` |
+| 1+ days | `<n>d ago` |
 
 ## Examples
 
 ```bash
-# Enable full metrics
+# Enable full metrics (prompts for email)
 helix metrics full
 
-# Enable basic anonymous metrics
+# Enable anonymous basic metrics
 helix metrics basic
 
 # Disable all metrics
 helix metrics off
 
-# Check current metrics configuration
+# Show current state
 helix metrics status
 ```

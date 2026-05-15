@@ -1,0 +1,95 @@
+---
+title: 'Text Indexes'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Text indexes provide BM25 full-text search on node and edge properties. They are stored durably
+like other indexes rather than rebuilt transiently per query. Indexed values can be `String` or
+`StringArray`, with configurable analyzer presets and optional term positions.
+
+The third argument to the index-creation builders is an optional tenant property name; pass
+`None::<&str>` for a global index. Tenant-partitioned text indexes currently require the
+partition property name to be `tenant_id` — see [Multi-Tenancy](/enterprise/multi-tenancy) for the
+partitioned variant.
+
+The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
+or `write_batch()` route as shown in [Querying](/enterprise/querying).
+
+## Text Index — Nodes
+
+Declare the index. The second argument is the text property:
+
+```rust
+g().create_text_index_nodes("Doc", "body", None::<&str>)
+```
+
+Insert a node carrying the indexed text:
+
+```rust
+g().add_n(
+    "Doc",
+    vec![
+        ("title", PropertyInput::from("Distributed databases")),
+        ("body", PropertyInput::from("CAP theorem and consensus protocols")),
+    ],
+)
+```
+
+Run a BM25 search. The third argument is the query string, the fourth is `k`:
+
+```rust
+g().text_search_nodes(
+    "Doc",
+    "body",
+    "consensus protocols",
+    10,
+    None::<PropertyValue>,
+)
+```
+
+## Text Index — Edges
+
+Edges can be text-indexed when the relationship carries searchable content — for example a
+reviewer's comment on a paper:
+
+```rust
+g().create_text_index_edges("Reviewed", "comment", None::<&str>)
+```
+
+```rust
+g().n(NodeRef::param("source"))
+    .add_e(
+        "Reviewed",
+        NodeRef::param("target"),
+        vec![("comment", PropertyInput::from("Thorough write-up"))],
+    )
+```
+
+```rust
+g().text_search_edges(
+    "Reviewed",
+    "comment",
+    "thorough write-up",
+    10,
+    None::<PropertyValue>,
+)
+```
+
+## Parameterized Searches
+
+For routes that receive the query string and limit from request parameters, use the `_with`
+variants. They accept `PropertyInput::param(...)` for the query text and `Expr::param(...)` for
+`k`:
+
+```rust
+g().text_search_nodes_with(
+    "Doc",
+    "body",
+    PropertyInput::param("query"),
+    Expr::param("limit"),
+    None::<PropertyInput>,
+)
+```
+
+The same pattern applies to `text_search_edges_with`.

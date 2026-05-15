@@ -6,7 +6,7 @@ title: 'Security'
 
 ## Authentication
 
-All API requests to Helix Enterprise are authenticated with a Bearer token. Tokens are managed
+All API requests to Helix Cloud are authenticated with a Bearer token. Tokens are managed
 through the Helix dashboard. Include the token in the `Authorization` header of every request:
 
 ```
@@ -50,7 +50,7 @@ object storage is encrypted using the storage provider's server-side encryption.
 ## AWS PrivateLink
 
 For workloads that require traffic to remain entirely within the AWS network, PrivateLink creates
-a private endpoint in your VPC that routes to Helix Enterprise without traversing the public
+a private endpoint in your VPC that routes to Helix Cloud without traversing the public
 internet. This eliminates exposure to internet-based threats and satisfies network isolation
 requirements common in regulated environments.
 

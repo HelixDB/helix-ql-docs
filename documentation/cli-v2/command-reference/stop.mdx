@@ -5,7 +5,11 @@ sidebarTitle: "stop"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Stop a running instance.
+Stop a background local instance and remove its containers.
+
+`helix stop` is idempotent — if the instance is not running, the CLI exits successfully without error.
+
+For disk-mode instances, `helix stop` removes the Helix and MinIO containers but keeps the persistent local volume. Use [`helix prune`](/documentation/cli-v2/command-reference/prune) to delete disk-mode data.
 
 ## Usage
 
@@ -17,14 +21,23 @@ helix stop [INSTANCE]
 
 | Argument | Description |
 |----------|-------------|
-| `INSTANCE` | The instance to stop |
+| `INSTANCE` | Local instance to stop. If omitted in a TTY with multiple instances, the CLI prompts. Defaults to `dev` when present. |
 
 ## Examples
 
 ```bash
-# Stop the default instance
+# Stop the default 'dev' instance
+helix stop dev
+
+# Stop with interactive picker
 helix stop
 
-# Stop a specific instance
-helix stop dev
+# Safe to call in scripts even if the instance is already stopped
+helix stop staging || true
 ```
+
+## Related
+
+- [`helix run`](/documentation/cli-v2/command-reference/run) — start a local instance
+- [`helix restart`](/documentation/cli-v2/command-reference/restart) — restart a local instance
+- [`helix prune`](/documentation/cli-v2/command-reference/prune) — remove all Helix-owned local state for an instance

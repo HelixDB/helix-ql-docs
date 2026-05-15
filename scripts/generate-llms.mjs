@@ -11,7 +11,7 @@ const BASE_URL = 'https://docs.helix-db.com';
 
 const TITLE = '# HelixDB';
 const SUMMARY =
-  '> HelixDB is a high-performance graph-vector database with its own query language (HelixQL). It stores graph and vector data in the same engine, supports multi-hop traversals, vector search, keyword/BM25 search, and reranking, and ships SDKs for Python, TypeScript, Rust, and Go.';
+  '> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored in a Rust DSL, deployed as stored procedures via the `helix` CLI, and invoked over HTTP.';
 
 const OPTIONAL_PREFIXES = ['change-log/', 'benchmarks/'];
 
