@@ -73,6 +73,77 @@ projection helpers (`PropertyProjection`, `ExprProjection`), and `AggregateFunct
 [docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) for the full surface
 and [Querying](/enterprise/querying) for how the pieces fit together.
 
+## Setting up your queries
+
+Queries are defined as top-level `pub fn` items annotated with `#[register]`. Each function
+returns either a `WriteBatch` (for mutations) or a `ReadBatch` (for read-only traversals), and
+`generate_to_path` picks them up automatically when the bundle is built. The function arguments
+become the query's named parameters at the HTTP edge.
+
+For a small project you can keep everything in `src/main.rs` alongside `fn main()`; once you
+have more than a handful of queries, move them into their own modules.
+
+```rust expandable
+use helix_dsl::prelude::*;
+
+// Write query: insert a new User node.
+#[register]
+pub fn add_user(userId: String, name: String) -> WriteBatch {
+    let _ = (&userId, &name);
+    write_batch()
+        .var_as(
+            "newUser",
+            g().add_n(
+                "User",
+                vec![
+                    ("userId", PropertyInput::param("userId")),
+                    ("name",   PropertyInput::param("name")),
+                ],
+            )
+            .project(vec![PropertyProjection::renamed("$id", "id")]),
+        )
+        .returning(["newUser"])
+}
+
+// Read query: fetch a single User by id.
+#[register]
+pub fn user_by_id(userId: String) -> ReadBatch {
+    let _ = &userId;
+    read_batch()
+        .var_as(
+            "user",
+            g().n_with_label("User")
+                .where_(Predicate::eq_param("userId", "userId"))
+                .project(vec![
+                    PropertyProjection::renamed("$id", "id"),
+                    PropertyProjection::new("name"),
+                ]),
+        )
+        .returning(["user"])
+}
+
+fn main() {
+    let path = helix_dsl::generate_to_path("queries.json").expect("generate queries bundle");
+    println!("generated {}", path.display());
+}
+```
+
+A few things to know about this snippet:
+
+- `#[register]` registers the function with the global query bundle so `generate_to_path` will
+  include it in `queries.json`. No manual list to maintain.
+- The function name becomes the route name. Once deployed, callers invoke
+  `POST /v1/query/add_user` with a JSON body like `{"userId": "u-1", "name": "Alice"}`.
+- The `let _ = (&userId, &name);` line silences Rust's unused-variable warning — the macro reads
+  the parameter *names* at compile time to wire them into the JSON schema, so the values
+  themselves aren't used in the body.
+- `var_as("name", traversal)` binds a sub-result, and `.returning([...])` chooses which bound
+  names appear in the response payload.
+
+For the full builder catalog — edges, richer predicates, vector and text search, sub-traversals,
+and aggregations — see the [docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/)
+and [Querying](/enterprise/querying).
+
 ## Generate the bundle
 
 ```bash
