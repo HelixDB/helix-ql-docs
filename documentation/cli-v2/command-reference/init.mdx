@@ -34,6 +34,9 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 |------|------|-------------|---------|
 | `-n`, `--name` | String | Local instance name. | `dev` |
 | `--port` | Number | Host port for the local gateway. The container always listens on `8080` internally. | `8080` |
+| `--disk` | Boolean | Persist local data with on-disk storage backed by a CLI-managed MinIO volume. | `false` |
+
+Interactive local init prompts for the storage mode and defaults to in-memory.
 
 ### `helix init enterprise`
 
@@ -85,6 +88,9 @@ helix init --path ./my-helix-app local
 
 # Local with a custom instance name and port
 helix init local --name staging --port 9090
+
+# Local with persistent on-disk storage by default
+helix init local --disk
 
 # V2 Cloud project linked to an existing cluster
 helix init enterprise --cluster-id ec_01HX... --gateway-url https://gateway.example.com

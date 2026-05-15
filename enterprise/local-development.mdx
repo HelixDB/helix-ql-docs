@@ -28,10 +28,13 @@ curl -sSL "https://install.helix-db.com" | bash
 
 # Scaffold a new project (creates helix.toml and examples/request.json)
 mkdir my-helix-app && cd my-helix-app
-helix init local
+helix init local --name dev
 
 # Start the local in-memory runtime on port 8080
 helix run dev
+
+# Or start with persistent local storage backed by MinIO
+helix run dev --disk
 
 # Send a dynamic query
 helix query dev --file examples/request.json
@@ -43,8 +46,18 @@ helix stop dev
 For installation details, V2 Cloud authentication, and the full command reference, see the
 [CLI Getting Started guide](/documentation/cli-v2/getting-started).
 
-If you'd rather manage the container yourself with Docker Compose, the in-memory and on-disk
-setups below show the raw image configuration.
+To make disk mode the default for a local instance, initialize or add it with `--disk`:
+
+```bash
+helix init local --disk
+helix add local --name persistent --disk
+```
+
+The CLI-managed disk mode starts a MinIO sidecar, creates the `helix-db` bucket, and keeps the
+MinIO volume across `helix stop`. Use `helix prune <instance>` to delete the persisted local data.
+
+If you'd rather manage the containers yourself with Docker Compose, the in-memory and on-disk
+setups below show the raw image configuration that the CLI disk mode mirrors.
 
 ## In-Memory
 

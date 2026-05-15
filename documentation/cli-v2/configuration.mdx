@@ -25,6 +25,8 @@ name = "my-helix-app"
 port = 8080
 image = "ghcr.io/helixdb/enterprise-dev"
 tag = "latest"
+# Optional; defaults to in-memory when omitted.
+# storage = "disk"
 
 [enterprise.production]
 cluster_id = "ec_01HX..."
@@ -51,6 +53,7 @@ One block per local instance. The instance name is the table key (e.g. `[local.d
 | `port` | Number | `8080` | Host port published to container port `8080`. |
 | `image` | String | `ghcr.io/helixdb/enterprise-dev` | Container image used by [`helix run`](/documentation/cli-v2/command-reference/run). |
 | `tag` | String | `latest` | Image tag. |
+| `storage` | `memory` \| `disk` | `memory` | Local storage mode. `disk` uses a CLI-managed MinIO container and persistent volume. |
 
 You can define as many local instances as you want, each on a different port:
 
@@ -60,7 +63,10 @@ port = 8080
 
 [local.staging]
 port = 9090
+storage = "disk"
 ```
+
+You can also use `helix run <instance> --disk` as a one-off disk-mode run without changing `helix.toml`.
 
 ### `[enterprise.<instance>]`
 

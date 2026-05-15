@@ -50,6 +50,35 @@ In both modes:
 - If `PATH_TO_QUERIES` is set, the container loads stored queries from the mounted
   `queries.json` file during startup.
 
+## Quick Start with the CLI
+
+The fastest way to get started is the Helix CLI, which wraps the `enterprise-dev` image and
+handles container lifecycle for you:
+
+```bash
+# Install the CLI
+curl -sSL "https://install.helix-db.com" | bash
+
+# Scaffold a new project (creates helix.toml and examples/request.json)
+mkdir my-helix-app && cd my-helix-app
+helix init local --name dev
+
+# Start the local in-memory runtime on port 8080
+helix run dev
+
+# Send a dynamic query
+helix query dev --file examples/request.json
+
+# Stop the instance when you're done
+helix stop dev
+```
+
+For installation details, V2 Cloud authentication, and the full command reference, see the
+[CLI Getting Started guide](/documentation/cli-v2/getting-started).
+
+If you'd rather manage the container yourself with Docker Compose, the in-memory and on-disk
+setups below show the raw image configuration.
+
 ## In-Memory
 
 You can add this service to a local `docker-compose.yml`:
@@ -257,30 +286,6 @@ image that runs a gateway and database together in a single container. See
 
 ## Next Steps
 
-# Data Model
-
-Helix Cloud stores data as a labeled property graph. The graph consists of nodes and directed
-edges, each carrying typed properties.
-
-## Nodes and Edges
-
-Nodes and edges are identified by 64-bit unsigned IDs. Edges are directed: each edge has a source
-node and a target node. Labels are stored as the reserved `$label` property and are used for
-type-based filtering and label-scoped secondary, vector, and text indexes.
-
-Properties are strongly typed. Supported types: boolean, integer, floating-point, string, bytes,
-and array variants of each.
-
-## Multigraph
-
-Multiple edges between the same pair of nodes are supported. Each edge has a unique ID. The pair
-`(from, to)` maps to the set of all edge IDs connecting those nodes. This allows modeling
-relationships like "user A sent message B to user C" and "user A sent message D to user C" as
-distinct edges with distinct properties.
-
-For how this data is filtered and searched, see [Indexing](/enterprise/indexing). For how it is
-read and mutated, see [Querying](/enterprise/querying).
-
 # Architecture
 
 Helix Cloud runs as a single writer node and multiple reader nodes behind a routing gateway. Reads
@@ -368,25 +373,6 @@ regardless of cache state; caching affects latency, not correctness.
 5. Readers observe the new data on their next snapshot refresh.
 
 ## Next Steps
-
-# Roadmap
-
-## Currently In Progress
-
-- **Local docker deployment**
-- **More intelligent cache warming**
-- **Dashboard improvements**
-- **Supporting non-HA clusters**
-- **Reliability and availability improvements**
-- **Backups and point in time recovery**
-
-## Up Next
-
-- **SSO and SAML**
-- **RBAC and fine-grained api key permissions**
-- **AWS PrivateLink**
-
-Have a feature request? [Let us know on Discord](https://discord.com/invite/2stgMPr5BD) or [email us](mailto:founders@helix-db.com).
 
 # Guarantees
 
@@ -608,45 +594,52 @@ fundamental architectural boundaries.
 | Query language    | Rust DSL                             |
 | Transaction scope | One transaction per query invocation |
 
-# Indexing
+# Roadmap
 
-Helix Cloud supports three index types over the labeled property graph: secondary indexes for
-property filters, vector indexes for ANN search, and text indexes for BM25 full-text search.
+## Currently In Progress
 
-## Secondary Indexes
+- **Local docker deployment**
+- **More intelligent cache warming**
+- **Dashboard improvements**
+- **Supporting non-HA clusters**
+- **Reliability and availability improvements**
+- **Backups and point in time recovery**
 
-Optional secondary indexes accelerate property-based filtering on both nodes and edges.
+## Up Next
 
-- **Equality indexes.** Map `property=value` to the set of matching node or edge IDs. Useful for
-  exact-match lookups like "all users with `status=active`."
-- **Range indexes.** Provide ordered scans over numeric and string properties. Useful for queries
-  like "all events with `timestamp > T`."
+- **SSO and SAML**
+- **RBAC and fine-grained api key permissions**
+- **AWS PrivateLink**
 
-Secondary indexes are opt-in. They speed up reads at the cost of additional write overhead and
-storage. Only index properties that are frequently filtered on.
+Have a feature request? [Let us know on Discord](https://discord.com/invite/2stgMPr5BD) or [email us](mailto:founders@helix-db.com).
 
-## Vector Indexes
+# Enterprise
 
-Numeric array properties can be vector-indexed. Vector indexes enable approximate nearest
-neighbor (ANN) search and return the nodes or edges closest to a query vector.
 
-Values are normalized to float32 for indexing. Supported distance metrics: cosine, euclidean, and
-manhattan. Vectors must match the configured index dimension exactly.
 
-Vector search is approximate by design, trading a small amount of recall for significantly faster
-search over large datasets. Vector indexes can also partition physical search structures by a
-configured tenant property name when tenant-scoped isolation is required.
+# Data Model
 
-## Text Indexes
+Helix Cloud stores data as a labeled property graph. The graph consists of nodes and directed
+edges, each carrying typed properties.
 
-Text indexes provide BM25 full-text search on node and edge properties. They are stored durably
-like other indexes rather than built transiently per query.
+## Nodes and Edges
 
-Text indexes support `String` and `StringArray` values, configurable analyzer presets, and
-optional term positions. They can also partition physical search structures by tenant.
-Tenant-partitioned text indexes currently require the partition property name to be `tenant_id`.
+Nodes and edges are identified by 64-bit unsigned IDs. Edges are directed: each edge has a source
+node and a target node. Labels are stored as the reserved `$label` property and are used for
+type-based filtering and label-scoped secondary, vector, and text indexes.
 
-For how indexes are invoked from queries, see [Querying](/enterprise/querying).
+Properties are strongly typed. Supported types: boolean, integer, floating-point, string, bytes,
+and array variants of each.
+
+## Multigraph
+
+Multiple edges between the same pair of nodes are supported. Each edge has a unique ID. The pair
+`(from, to)` maps to the set of all edge IDs connecting those nodes. This allows modeling
+relationships like "user A sent message B to user C" and "user A sent message D to user C" as
+distinct edges with distinct properties.
+
+For how this data is filtered and searched, see [Indexing](/enterprise/indexing/secondary). For
+how it is read and mutated, see [Querying](/enterprise/querying).
 
 # Querying
 
@@ -701,6 +694,315 @@ process for correctness without distributed locking.
 For consistency and durability details, see [Guarantees](/enterprise/guarantees).
 
 ## Next Steps
+
+# Secondary Indexes
+
+Secondary indexes accelerate property-based filtering on the labeled property graph. Two flavors
+are available, each on both nodes and edges:
+
+- **Equality indexes** map `property = value` to the set of matching IDs. Use them for exact-match
+  lookups like "all users with `status = active`."
+- **Range indexes** provide ordered scans over numeric and string properties. Use them for
+  comparisons like `timestamp > T` or `score >= 4`.
+
+Secondary indexes are opt-in. They speed up reads at the cost of additional write overhead and
+storage. Only index properties that are frequently filtered on. Unindexed properties remain
+queryable via `.where_(Predicate::...)`, but the route will scan the label rather than seek the
+index.
+
+The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
+or `write_batch()` route as shown in [Querying](/enterprise/querying).
+
+## Equality Index — Nodes
+
+Declare the index as part of your schema setup write batch:
+
+```rust
+g().create_index_if_not_exists(
+    IndexSpec::node_equality("User", "status"),
+)
+```
+
+Insert a node carrying the indexed property:
+
+```rust
+g().add_n(
+    "User",
+    vec![
+        ("userId", PropertyInput::from("u-42")),
+        ("status", PropertyInput::from("active")),
+    ],
+)
+```
+
+Query through the index using the source-predicate form. `n_with_label_where` pushes the
+predicate down to the index so the route never scans the full label:
+
+```rust
+g().n_with_label_where(
+    "User",
+    SourcePredicate::eq("status", "active"),
+)
+```
+
+## Equality Index — Edges
+
+Declare an equality index on an edge property:
+
+```rust
+g().create_index_if_not_exists(
+    IndexSpec::edge_equality("FOLLOWS", "since_year"),
+)
+```
+
+Create an edge between two known nodes. `add_e` is called from a node-state traversal — the
+current node is the edge's source, and the second argument is the target:
+
+```rust
+g().n(NodeRef::param("source"))
+    .add_e(
+        "FOLLOWS",
+        NodeRef::param("target"),
+        vec![("since_year", PropertyInput::from(2024i64))],
+    )
+```
+
+Query the edge index directly with `e_with_label_where`:
+
+```rust
+g().e_with_label_where(
+    "FOLLOWS",
+    SourcePredicate::eq("since_year", 2024i64),
+)
+```
+
+## Range Index — Nodes
+
+Declare a range index on a numeric or string property:
+
+```rust
+g().create_index_if_not_exists(
+    IndexSpec::node_range("Event", "timestamp"),
+)
+```
+
+Range indexes use the same insert path as equality indexes; the property values are simply
+ordered by the index. Query with any of `gt`, `gte`, `lt`, `lte`, or `between`:
+
+```rust
+g().n_with_label_where(
+    "Event",
+    SourcePredicate::gt("timestamp", 1_700_000_000i64),
+)
+```
+
+## Range Index — Edges
+
+```rust
+g().create_index_if_not_exists(
+    IndexSpec::edge_range("RATED", "score"),
+)
+```
+
+```rust
+g().e_with_label_where(
+    "RATED",
+    SourcePredicate::gte("score", 4i64),
+)
+```
+
+## See Also
+
+For tenant-scoped equality lookups using the same secondary-index machinery, see
+[Multi-Tenancy](/enterprise/multi-tenancy).
+
+# Vector Indexes
+
+Vector indexes enable approximate nearest neighbor (ANN) search on numeric array properties.
+Helix supports vector indexes on both nodes and edges. Values are normalized to float32 for
+indexing, and supported distance metrics are cosine, euclidean, and manhattan. The query vector
+must match the configured index dimension exactly.
+
+Vector search is approximate by design, trading a small amount of recall for significantly faster
+search over large datasets. The third argument to the index-creation builders is an optional
+tenant property name; pass `None::<&str>` for a global index, or see
+[Multi-Tenancy](/enterprise/multi-tenancy) for the partitioned variant.
+
+The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
+or `write_batch()` route as shown in [Querying](/enterprise/querying).
+
+## Vector Index — Nodes
+
+Declare the index. The second argument is the property that holds the embedding:
+
+```rust
+g().create_vector_index_nodes("Doc", "embedding", None::<&str>)
+```
+
+Insert a node with both the application data and the embedding. `PropertyInput::from(Vec<f32>)`
+works through the generic conversion path from any type that `PropertyValue` accepts:
+
+```rust
+g().add_n(
+    "Doc",
+    vec![
+        ("title", PropertyInput::from("Intro to vector search")),
+        ("embedding", PropertyInput::from(vec![0.12f32, 0.85, -0.04])),
+    ],
+)
+```
+
+kNN search returns the top `k` nearest nodes. Pass `None::<PropertyValue>` for the tenant
+argument when the index is not partitioned:
+
+```rust
+g().vector_search_nodes(
+    "Doc",
+    "embedding",
+    vec![0.12f32, 0.85, -0.04],
+    10,
+    None::<PropertyValue>,
+)
+```
+
+## Vector Index — Edges
+
+Edges can carry embeddings too — useful when the relationship itself is what you want to retrieve
+by similarity (e.g., citation context, relation-typed embeddings).
+
+```rust
+g().create_vector_index_edges("CITES", "embedding", None::<&str>)
+```
+
+```rust
+g().n(NodeRef::param("source"))
+    .add_e(
+        "CITES",
+        NodeRef::param("target"),
+        vec![("embedding", PropertyInput::from(vec![0.12f32, 0.85, -0.04]))],
+    )
+```
+
+```rust
+g().vector_search_edges(
+    "CITES",
+    "embedding",
+    vec![0.12f32, 0.85, -0.04],
+    10,
+    None::<PropertyValue>,
+)
+```
+
+## Parameterized Searches
+
+The plain `vector_search_nodes` / `vector_search_edges` builders take a literal `Vec<f32>` and a
+`usize` for `k`. For routes that receive the query vector and limit from request parameters, use
+the `_with` variants. They accept `PropertyInput::param(...)` for the vector and `Expr::param(...)`
+for `k`:
+
+```rust
+g().vector_search_nodes_with(
+    "Doc",
+    "embedding",
+    PropertyInput::param("queryVector"),
+    Expr::param("limit"),
+    None::<PropertyInput>,
+)
+```
+
+The same pattern applies to `vector_search_edges_with`.
+
+# Text Indexes
+
+Text indexes provide BM25 full-text search on node and edge properties. They are stored durably
+like other indexes rather than rebuilt transiently per query. Indexed values can be `String` or
+`StringArray`, with configurable analyzer presets and optional term positions.
+
+The third argument to the index-creation builders is an optional tenant property name; pass
+`None::<&str>` for a global index. Tenant-partitioned text indexes currently require the
+partition property name to be `tenant_id` — see [Multi-Tenancy](/enterprise/multi-tenancy) for the
+partitioned variant.
+
+The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
+or `write_batch()` route as shown in [Querying](/enterprise/querying).
+
+## Text Index — Nodes
+
+Declare the index. The second argument is the text property:
+
+```rust
+g().create_text_index_nodes("Doc", "body", None::<&str>)
+```
+
+Insert a node carrying the indexed text:
+
+```rust
+g().add_n(
+    "Doc",
+    vec![
+        ("title", PropertyInput::from("Distributed databases")),
+        ("body", PropertyInput::from("CAP theorem and consensus protocols")),
+    ],
+)
+```
+
+Run a BM25 search. The third argument is the query string, the fourth is `k`:
+
+```rust
+g().text_search_nodes(
+    "Doc",
+    "body",
+    "consensus protocols",
+    10,
+    None::<PropertyValue>,
+)
+```
+
+## Text Index — Edges
+
+Edges can be text-indexed when the relationship carries searchable content — for example a
+reviewer's comment on a paper:
+
+```rust
+g().create_text_index_edges("Reviewed", "comment", None::<&str>)
+```
+
+```rust
+g().n(NodeRef::param("source"))
+    .add_e(
+        "Reviewed",
+        NodeRef::param("target"),
+        vec![("comment", PropertyInput::from("Thorough write-up"))],
+    )
+```
+
+```rust
+g().text_search_edges(
+    "Reviewed",
+    "comment",
+    "thorough write-up",
+    10,
+    None::<PropertyValue>,
+)
+```
+
+## Parameterized Searches
+
+For routes that receive the query string and limit from request parameters, use the `_with`
+variants. They accept `PropertyInput::param(...)` for the query text and `Expr::param(...)` for
+`k`:
+
+```rust
+g().text_search_nodes_with(
+    "Doc",
+    "body",
+    PropertyInput::param("query"),
+    Expr::param("limit"),
+    None::<PropertyInput>,
+)
+```
+
+The same pattern applies to `text_search_edges_with`.
 
 # Multi-Tenancy
 
@@ -1144,6 +1446,7 @@ Verify the binary exists with `ls -la ~/.helix/bin/helix`.
 ```bash
 helix update          # update to the latest release
 helix update --force  # reinstall even if already on the latest version
+helix update --v1     # update to v2.3.5 for v1 projects
 ```
 
 ## Project configuration issues
@@ -1372,7 +1675,7 @@ helix -v, --verbose     Show detailed output with timing information
 | [`helix delete`](/documentation/cli-v2/command-reference/delete) | | `-y`/`--yes` | Local, V2 Cloud | Delete an instance from `helix.toml` and local state |
 | [`helix metrics`](/documentation/cli-v2/command-reference/metrics) | `full`, `basic`, `off`, `status` | | Local, V2 Cloud | Configure CLI telemetry |
 | [`helix dashboard`](/documentation/cli-v2/command-reference/dashboard) | `start`, `stop`, `status` | `-p`/`--port`, `--host`, `--helix-port`, `--attach`, `--restart` | Local, V2 Cloud | Launch the Helix Dashboard |
-| [`helix update`](/documentation/cli-v2/command-reference/update) | | `--force` | — | Update the CLI to the latest version |
+| [`helix update`](/documentation/cli-v2/command-reference/update) | | `--force`, `--v1` | — | Update the CLI to the latest version |
 | [`helix feedback`](/documentation/cli-v2/command-reference/feedback) | | | — | Send feedback to the Helix team |
 
 ## Next Steps
@@ -2305,7 +2608,7 @@ helix sync
 
 # helix update
 
-Update the Helix CLI to the latest version.
+Update the Helix CLI to the latest version. Use `--v1` to update to `v2.3.5`, the last CLI release for v1 projects.
 
 ## Usage
 
@@ -2318,6 +2621,7 @@ helix update [OPTIONS]
 | Flag | Type | Description |
 |------|------|-------------|
 | `--force` | Boolean | Force update even if already on latest version |
+| `--v1` | Boolean | Update to `v2.3.5`, the last CLI release for v1 projects |
 
 ## Examples
 
@@ -2327,6 +2631,9 @@ helix update
 
 # Force update
 helix update --force
+
+# Update to the last v1-compatible CLI release
+helix update --v1
 ```
 
 # helix workspace

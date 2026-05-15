@@ -28,6 +28,9 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 |------|------|----------|-------------|---------|
 | `-n`, `--name` | String | Yes | Local instance name (must be unique in `helix.toml`). | — |
 | `--port` | Number | No | Host port for the local gateway. | `8080` |
+| `--disk` | Boolean | No | Persist local data with on-disk storage backed by a CLI-managed MinIO volume. | `false` |
+
+Interactive local add prompts for the storage mode and defaults to in-memory.
 
 ### `helix add enterprise`
 
@@ -44,6 +47,9 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 ```bash
 # Add a second local instance on a different port
 helix add local --name staging --port 9090
+
+# Add a local instance that uses persistent on-disk storage by default
+helix add local --name disk-dev --disk
 
 # Add an V2 Cloud instance with a known cluster ID
 helix add enterprise --name production --cluster-id ec_01HX...

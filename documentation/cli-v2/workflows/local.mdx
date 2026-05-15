@@ -6,7 +6,7 @@ icon: "computer"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Local development runs the prebuilt `ghcr.io/helixdb/enterprise-dev:latest` container and exposes the gateway at `POST /v1/query`. You author queries as JSON request files and send them with [`helix query`](/documentation/cli-v2/command-reference/query).
+Local development runs the prebuilt `ghcr.io/helixdb/enterprise-dev:latest` container and exposes the gateway at `POST /v1/query`. By default, storage is in-memory. Use `--disk` when you want persistent local data backed by a CLI-managed MinIO volume.
 
 ## Prerequisites
 
@@ -34,6 +34,8 @@ Local development runs the prebuilt `ghcr.io/helixdb/enterprise-dev:latest` cont
     Starts a background container named `helix-my-helix-app-dev` on port `8080`. The CLI waits until the gateway accepts `POST /v1/query` before returning.
 
     For attached log streaming use `helix run dev --foreground` and stop with Ctrl-C.
+
+    For persistent local storage use `helix run dev --disk`, or initialize the project with `helix init local --disk` to make disk mode the default for that instance.
   </Step>
 
   <Step title="Send the example query">
@@ -46,8 +48,21 @@ Local development runs the prebuilt `ghcr.io/helixdb/enterprise-dev:latest` cont
 </Steps>
 
 <Warning>
-Local storage is in-memory. `helix stop` or `helix restart` wipes all data — keep your seed data in JSON request files so you can replay it.
+Default local storage is in-memory. `helix stop` or `helix restart` wipes in-memory data — keep your seed data in JSON request files so you can replay it, or use `--disk` for persistent local storage.
 </Warning>
+
+## Persistent local storage
+
+```bash
+# One-off disk mode for this run
+helix run dev --disk
+
+# Persist disk mode in helix.toml for a new local instance
+helix add local --name persistent --disk
+helix run persistent
+```
+
+Disk mode starts a MinIO sidecar, creates the `helix-db` bucket, and stores data in a Helix-managed Docker/Podman volume. `helix stop` removes the containers but keeps the volume. `helix prune <instance>` removes the volume and deletes the persisted local data.
 
 ## Iteration loop
 
@@ -81,7 +96,7 @@ helix run staging
 helix status
 ```
 
-Each instance is an isolated container named `helix-<project>-<instance>` listening on its own host port. Container port `8080` is fixed internally.
+Each instance is isolated by container name and host port. Disk-mode instances also get their own MinIO container, network, and volume.
 
 ## Inspecting logs
 
@@ -98,11 +113,11 @@ helix logs dev --follow      # stream
 |------|---------|
 | Stop one instance | `helix stop <instance>` |
 | Restart one instance | `helix restart <instance>` |
-| Remove containers and workspace state for one instance | `helix prune <instance>` |
+| Remove containers, workspace state, and disk-mode volume for one instance | `helix prune <instance>` |
 | Remove everything Helix-owned, for every local instance | `helix prune --all` (`--yes` in non-TTY) |
 | Permanently delete an instance from `helix.toml` | `helix delete <instance>` (`--yes` in non-TTY) |
 
-[`helix prune`](/documentation/cli-v2/command-reference/prune) only touches Helix-managed containers (`helix-<project>-<instance>`) and the per-instance `.helix/<instance>` directory. It never runs a broad `docker/podman system prune`.
+[`helix prune`](/documentation/cli-v2/command-reference/prune) only touches Helix-managed containers (`helix-<project>-<instance>` and disk-mode MinIO sidecars), networks, volumes, and the per-instance `.helix/<instance>` directory. It never runs a broad `docker/podman system prune`.
 
 ## Authoring dynamic queries
 

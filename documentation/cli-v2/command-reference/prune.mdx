@@ -5,11 +5,12 @@ sidebarTitle: "prune"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Remove Helix-owned local containers and per-instance workspace state.
+Remove Helix-owned local containers, networks, disk-mode volumes, and per-instance workspace state.
 
 `helix prune` only touches resources the CLI manages:
 
 - The container named `helix-<project>-<instance>`.
+- The disk-mode MinIO sidecar, network, and persistent volume when present.
 - The per-instance directory under `.helix/`.
 
 It never runs a broad `docker system prune` or `podman system prune`.
@@ -35,7 +36,7 @@ helix prune [INSTANCE] [OPTIONS]
 
 ## Confirmation behavior
 
-- `helix prune <instance>` removes resources without confirmation.
+- `helix prune <instance>` removes resources without confirmation, including persisted disk-mode data.
 - `helix prune --all` prints a warning and asks for confirmation in a TTY. In non-TTY environments, it refuses to run without `--yes`:
 
   ```

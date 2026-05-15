@@ -6,17 +6,20 @@
 - [Introduction](https://docs.helix-db.com/enterprise/introduction)
 - [Local Development](https://docs.helix-db.com/enterprise/local-development)
 - [Working with HelixDB](https://docs.helix-db.com/enterprise/working-with-enterprise)
-- [Data Model](https://docs.helix-db.com/enterprise/data-model)
 - [Architecture](https://docs.helix-db.com/enterprise/architecture)
-- [Roadmap](https://docs.helix-db.com/enterprise/roadmap): What we're building and what's coming next
 - [Guarantees](https://docs.helix-db.com/enterprise/guarantees)
 - [Security](https://docs.helix-db.com/enterprise/security)
 - [Tradeoffs](https://docs.helix-db.com/enterprise/tradeoffs)
 - [Limits](https://docs.helix-db.com/enterprise/limits)
+- [Roadmap](https://docs.helix-db.com/enterprise/roadmap): What we're building and what's coming next
+- [Enterprise](https://docs.helix-db.com/enterprise/release-notes): HelixDB Enterprise Release Notes
 
 ## Concepts & Examples
-- [Indexing](https://docs.helix-db.com/enterprise/indexing)
+- [Data Model](https://docs.helix-db.com/enterprise/data-model)
 - [Querying](https://docs.helix-db.com/enterprise/querying)
+- [Secondary Indexes](https://docs.helix-db.com/enterprise/indexing/secondary)
+- [Vector Indexes](https://docs.helix-db.com/enterprise/indexing/vector)
+- [Text Indexes](https://docs.helix-db.com/enterprise/indexing/text)
 - [Multi-Tenancy](https://docs.helix-db.com/enterprise/multi-tenancy)
 
 ## Using the helix CLI

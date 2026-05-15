@@ -25,18 +25,22 @@ helix run [INSTANCE] [OPTIONS]
 |------|------|-------------|---------|
 | `--foreground` | Boolean | Run attached and stop the container on Ctrl-C. Useful for streaming startup logs. | `false` |
 | `--port` | Number | Override the host port for this run. The container always listens on `8080` internally. | Value from `[local.<instance>] port` (default `8080`) |
+| `--disk` | Boolean | Use on-disk storage backed by a CLI-managed MinIO container for this run. | `false` |
 
 ## Behavior
 
 - Pulls `ghcr.io/helixdb/enterprise-dev:latest` (or the image/tag set in `[local.<instance>]`).
 - Names the container `helix-<project>-<instance>` and publishes the configured port to container port `8080`.
 - Uses Docker or Podman based on `[project] container_runtime` in `helix.toml`.
+- Default storage is in-memory. Passing `--disk` starts a MinIO sidecar, creates the `helix-db` bucket, and runs `enterprise-dev` with S3-compatible storage environment variables.
 - Background mode (`-d`, `--restart unless-stopped`) waits up to ~30 seconds for `POST /v1/query` readiness and prints the URL and container name when ready.
 - Foreground mode (`--rm`) streams the container's stdout/stderr until Ctrl-C, then removes the container.
 
 <Warning>
-The `enterprise-dev` image uses in-memory storage. Stopping or restarting the container wipes all local data.
+The default `enterprise-dev` storage mode is in-memory. Stopping or restarting an in-memory instance wipes all local data.
 </Warning>
+
+With `--disk`, `helix stop` removes the Helix and MinIO containers but keeps the persistent local volume. `helix prune` removes that volume and deletes the persisted local data.
 
 ## Examples
 
@@ -52,6 +56,9 @@ helix run dev --foreground
 
 # Override the host port for this run only
 helix run dev --port 9090
+
+# Start with persistent local storage for this run
+helix run dev --disk
 ```
 
 ## Related

@@ -33,6 +33,7 @@ Verify the binary exists with `ls -la ~/.helix/bin/helix`.
 ```bash
 helix update          # update to the latest release
 helix update --force  # reinstall even if already on the latest version
+helix update --v1     # update to v2.3.5 for v1 projects
 ```
 
 ## Project configuration issues
@@ -197,7 +198,7 @@ helix delete <instance> --yes
 helix prune --all --yes
 ```
 
-[`helix prune`](/documentation/cli-v2/command-reference/prune) only removes Helix-owned containers and per-instance workspace directories — it never runs a broad `docker/podman system prune`.
+[`helix prune`](/documentation/cli-v2/command-reference/prune) only removes Helix-owned containers, networks, disk-mode volumes, and per-instance workspace directories — it never runs a broad `docker/podman system prune`.
 
 ## Interactive vs scripted use
 

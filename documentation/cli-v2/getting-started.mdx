@@ -51,8 +51,10 @@ helix run dev
 
 To stream logs in the foreground instead, use `helix run dev --foreground` and stop the container with Ctrl-C.
 
+For persistent local data, use `helix run dev --disk`. Disk mode starts a CLI-managed MinIO sidecar and keeps data across `helix stop`.
+
 <Warning>
-The `enterprise-dev` image uses in-memory storage. Stopping or restarting the container wipes all local data.
+The default `enterprise-dev` storage mode is in-memory. Stopping or restarting an in-memory instance wipes all local data.
 </Warning>
 </Step>
 
@@ -135,7 +137,7 @@ helix query production --file examples/request.json
   </Accordion>
   <Accordion title="Cleaning up">
     - `helix stop <instance>` stops a running container.
-    - [`helix prune`](/documentation/cli-v2/command-reference/prune) removes Helix-owned containers and workspace state. It never runs a broad `docker system prune`.
+    - [`helix prune`](/documentation/cli-v2/command-reference/prune) removes Helix-owned containers, workspace state, and disk-mode volumes. It never runs a broad `docker system prune`.
     - [`helix delete <instance>`](/documentation/cli-v2/command-reference/delete) removes the instance from `helix.toml` and cleans up local runtime state.
   </Accordion>
   <Accordion title="Version control">

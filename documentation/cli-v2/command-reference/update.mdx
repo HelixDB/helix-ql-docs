@@ -5,7 +5,7 @@ sidebarTitle: "update"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Update the Helix CLI to the latest version.
+Update the Helix CLI to the latest version. Use `--v1` to update to `v2.3.5`, the last CLI release for v1 projects.
 
 ## Usage
 
@@ -18,6 +18,7 @@ helix update [OPTIONS]
 | Flag | Type | Description |
 |------|------|-------------|
 | `--force` | Boolean | Force update even if already on latest version |
+| `--v1` | Boolean | Update to `v2.3.5`, the last CLI release for v1 projects |
 
 ## Examples
 
@@ -27,4 +28,7 @@ helix update
 
 # Force update
 helix update --force
+
+# Update to the last v1-compatible CLI release
+helix update --v1
 ```
