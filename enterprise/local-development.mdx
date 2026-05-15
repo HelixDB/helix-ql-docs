@@ -46,6 +46,25 @@ helix stop dev
 For installation details, V2 Cloud authentication, and the full command reference, see the
 [CLI Getting Started guide](/documentation/cli-v2/getting-started).
 
+### AI-assisted query authoring
+
+If you're developing with a coding agent, install the Helix skills bundle to get specialized agents for writing,
+optimizing, and translating HelixDB queries:
+
+```bash
+npx skills add HelixDB/skills
+```
+
+This installs skills such as `helix-query-authoring`, `helix-query-optimize`,
+`helix-query-json-dynamic`, `helix-query-from-cypher`, and `helix-query-from-gremlin`. Once
+installed, Claude will load the relevant skill automatically when you ask it to write a query,
+tune a slow traversal, or translate a Cypher/Gremlin query into the Helix Rust DSL.
+
+Run the command from the root of your Helix project so the skills can inspect your local schema,
+edges, and existing queries when generating new ones.
+
+### Configuring disk mode
+
 To make disk mode the default for a local instance, initialize or add it with `--disk`:
 
 ```bash
