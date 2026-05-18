@@ -1,0 +1,38 @@
+---
+title: 'E203'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Cannot Access Properties on the Type
+
+## Erroneous Code Example
+
+This error occurs when you try to access properties on a type that doesn't support property access, such as primitive types or certain intermediate query results.
+
+<CodeGroup>
+```helixql queries.hx
+QUERY getValue(count: I32) =>
+    result <- count::{value}
+    RETURN result
+```
+</CodeGroup>
+
+## Solution
+
+Ensure you are accessing properties on a node, edge, or vector type that has defined fields.
+
+<CodeGroup>
+```helixql queries.hx
+QUERY getUser(id: ID) =>
+    user <- N<User>(id)
+    result <- user::{name}
+    RETURN result
+```
+
+```helixql schema.hx
+N::User {
+    name: String,
+}
+```
+</CodeGroup>

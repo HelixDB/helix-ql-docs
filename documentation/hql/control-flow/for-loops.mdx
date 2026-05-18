@@ -1,0 +1,74 @@
+---
+title: "FOR Loops"
+description: "Iterate over collections and perform batch operations."
+---
+
+<Warning>
+**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) and dispatched as JSON — see the [Querying](/enterprise/querying) guide. This section is kept as a reference for legacy HelixQL projects.
+</Warning>
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+## Overview
+
+FOR loops enable you to iterate over collections and perform operations on each element. They are essential for batch processing, data transformation, and building complex graph structures.
+
+```helixql
+FOR variable IN collection {
+    // Operations on each element
+}
+
+FOR {field1, field2} IN collection {
+    // Operations with destructured fields
+}
+```
+
+<Note>
+FOR loops are executed sequentially, making them ideal for operations that need to maintain order or have dependencies between iterations.
+</Note>
+
+## When to use FOR loops
+
+- **Batch data loading**: Insert multiple nodes or edges from a collection
+- **Data transformation**: Process and update multiple records
+- **Graph construction**: Build relationships between collections of nodes
+- **Nested iterations**: Create connections between all pairs of elements
+
+## Quick examples
+
+### Basic iteration
+```helixql
+FOR user IN users {
+    AddN<User>({ name: user.name, age: user.age })
+}
+```
+
+### Destructuring
+```helixql
+FOR {name, age, email} IN user_data {
+    AddN<User>({ name: name, age: age, email: email })
+}
+```
+
+### Nested loops
+```helixql
+FOR user1 IN users {
+    FOR user2 IN users {
+        AddE<Knows>::From(user1)::To(user2)
+    }
+}
+```
+
+## Detailed guides
+
+<CardGroup cols={3}>
+  <Card title="Basic FOR Loops" icon="arrows-rotate" href="/documentation/hql/control-flow/for-basic">
+    Iterate over collections with simple variable binding
+  </Card>
+  <Card title="FOR Loop Destructuring" icon="code-branch" href="/documentation/hql/control-flow/for-destructuring">
+    Extract multiple properties directly in loop variable binding
+  </Card>
+  <Card title="Nested FOR Loops" icon="diagram-nested" href="/documentation/hql/control-flow/for-nested">
+    Use multiple levels of iteration for complex operations
+  </Card>
+</CardGroup>

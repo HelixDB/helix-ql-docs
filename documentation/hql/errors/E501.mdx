@@ -1,0 +1,37 @@
+---
+title: 'E501'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Invalid Date
+
+## Example
+
+This error occurs when you provide a date value that cannot be parsed or is in an invalid format.
+
+In this example, the date value is invalid and cannot be parsed.
+
+<CodeGroup>
+```helixql queries.hx
+Query addEvent() =>
+    AddN<Event>({date: "2023-99-99"})
+```
+
+```helixql schema.hx
+N::Event {
+    date: Date,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Ensure the date value is in the correct format.
+
+<CodeGroup>
+```helixql queries.hx
+Query addEvent() =>
+    AddN<Event>({date: "2023-01-01"})
+```
+</CodeGroup>

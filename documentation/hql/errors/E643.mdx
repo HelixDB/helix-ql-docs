@@ -1,0 +1,34 @@
+---
+title: 'E643'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Field Previously Excluded
+
+## Erroneous Code Example
+
+This error occurs when you try to access or include a field that has been previously excluded in the traversal.
+
+In this example, the `email` field is excluded in the traversal, but is being accessed.
+
+<CodeGroup>
+
+```helixql queries.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)::!{email}
+    RETURN user::{email}
+```
+</CodeGroup>
+
+## Solution
+
+Remove the exclusion or access the field after the exclusion.
+
+<CodeGroup>
+```helixql queries.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::{email}
+```
+</CodeGroup>

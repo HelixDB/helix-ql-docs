@@ -1,0 +1,36 @@
+---
+title: 'E632'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Invalid Range Order
+
+## Erroneous Code Example
+
+This error occurs when the start value of a range is greater than or equal to the end value.
+This error is only emitted by the compiler when both start and end values are provided as literals. 
+A runtime error will be emitted if the range is not valid at runtime.
+
+In this example, the start value is greater than the end value.
+
+<CodeGroup>
+
+```helixql queries.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(100, 10)
+    RETURN subset_of_users
+```
+</CodeGroup>
+
+## Solution
+
+Ensure range start value is less than end value.
+
+<CodeGroup>
+```helixql queries.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(10, 100)
+    RETURN subset_of_users
+```
+</CodeGroup>

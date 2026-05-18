@@ -1,0 +1,418 @@
+---
+title: "Upsert Nodes"
+description: "Learn how to upsert nodes in your graph using UpsertN for insert-or-update semantics."
+---
+
+<Warning>
+**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) and dispatched as JSON — see the [Querying](/enterprise/querying) guide. This section is kept as a reference for legacy HelixQL projects.
+</Warning>
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+## Upsert Nodes using `UpsertN` &nbsp;
+
+Create new nodes or update existing ones with insert-or-update semantics.
+
+```helixql
+::UpsertN({properties})
+```
+
+<Info>
+`UpsertN` is a traversal step that operates on an existing traversal context. The type comes from the preceding traversal (`N<Type>`), not from the upsert call itself. If the traversal returns existing nodes, they are updated; if no nodes are found, a new node is created.
+</Info>
+
+<Warning>
+When using the SDKs or curling the endpoint, the query name must match what is defined in the `queries.hx` file exactly.
+</Warning>
+
+### Example 1: Basic node upsert with properties
+
+<CodeGroup>
+```helixql Query focus={2-3}
+QUERY UpsertPerson(name: String, age: U32) =>
+    existing <- N<Person>::WHERE(_::{name}::EQ(name))
+    person <- existing::UpsertN({name: name, age: age})
+    RETURN person
+```
+
+```helixql Schema
+N::Person {
+    INDEX name: String,
+    age: U32,
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# First call creates a new person
+person = client.query("UpsertPerson", {
+    "name": "Alice",
+    "age": 25,
+})
+
+print("Created person:", person)
+
+# Subsequent calls with same data update the existing person
+updated = client.query("UpsertPerson", {
+    "name": "Alice",
+    "age": 26,
+})
+
+print("Updated person:", updated)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // First call creates a new person
+    let person: serde_json::Value = client.query("UpsertPerson", &json!({
+        "name": "Alice",
+        "age": 25,
+    })).await?;
+
+    println!("Created person: {person:#?}");
+
+    // Subsequent calls update the existing person
+    let updated: serde_json::Value = client.query("UpsertPerson", &json!({
+        "name": "Alice",
+        "age": 26,
+    })).await?;
+
+    println!("Updated person: {updated:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // First call creates a new person
+    payload := map[string]any{
+        "name": "Alice",
+        "age":  uint32(25),
+    }
+
+    var person map[string]any
+    if err := client.Query("UpsertPerson", helix.WithData(payload)).Scan(&person); err != nil {
+        log.Fatalf("UpsertPerson failed: %s", err)
+    }
+
+    fmt.Printf("Created person: %#v\n", person)
+
+    // Subsequent calls update the existing person
+    payload["age"] = uint32(26)
+
+    var updated map[string]any
+    if err := client.Query("UpsertPerson", helix.WithData(payload)).Scan(&updated); err != nil {
+        log.Fatalf("UpsertPerson failed: %s", err)
+    }
+
+    fmt.Printf("Updated person: %#v\n", updated)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // First call creates a new person
+    const person = await client.query("UpsertPerson", {
+        name: "Alice",
+        age: 25,
+    });
+
+    console.log("Created person:", person);
+
+    // Subsequent calls update the existing person
+    const updated = await client.query("UpsertPerson", {
+        name: "Alice",
+        age: 26,
+    });
+
+    console.log("Updated person:", updated);
+}
+
+main().catch((err) => {
+    console.error("UpsertPerson query failed:", err);
+});
+```
+
+```bash Curl [expandable]
+# First call creates a new person
+curl -X POST \
+  http://localhost:6969/UpsertPerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":25}'
+
+# Subsequent calls update the existing person
+curl -X POST \
+  http://localhost:6969/UpsertPerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","age":26}'
+```
+</CodeGroup>
+
+
+### Example 2: Upsert from a pre-fetched node by ID
+
+When you already have a node ID, you can fetch it directly and apply the upsert.
+
+<CodeGroup>
+```helixql Query focus={2-3}
+QUERY UpsertPersonById(id: ID, new_age: U32) =>
+    existing <- N<Person>(id)
+    person <- existing::UpsertN({age: new_age})
+    RETURN person
+```
+
+```helixql Schema
+N::Person {
+    INDEX name: String,
+    age: U32,
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+result = client.query("UpsertPersonById", {
+    "id": "<person_id>",
+    "new_age": 30,
+})
+print("Upserted person:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    let result: serde_json::Value = client.query("UpsertPersonById", &json!({
+        "id": "<person_id>",
+        "new_age": 30,
+    })).await?;
+    println!("Upserted person: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    payload := map[string]any{
+        "id":      "<person_id>",
+        "new_age": uint32(30),
+    }
+
+    var result map[string]any
+    if err := client.Query("UpsertPersonById", helix.WithData(payload)).Scan(&result); err != nil {
+        log.Fatalf("UpsertPersonById failed: %s", err)
+    }
+
+    fmt.Printf("Upserted person: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    const result = await client.query("UpsertPersonById", {
+        id: "<person_id>",
+        new_age: 30,
+    });
+    console.log("Upserted person:", result);
+}
+
+main().catch((err) => {
+    console.error("UpsertPersonById query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/UpsertPersonById \
+  -H 'Content-Type: application/json' \
+  -d '{"id":"<person_id>","new_age":30}'
+```
+</CodeGroup>
+
+
+### Example 3: Upsert with WHERE filter
+
+Find existing nodes with a WHERE clause and update or create if not found.
+
+<CodeGroup>
+```helixql Query focus={2-4}
+QUERY UpdateOrCreatePerson(name: String, new_age: U32) =>
+    existing <- N<Person>::WHERE(_::{name}::EQ(name))
+    person <- existing::UpsertN({name: name, age: new_age})
+    RETURN person
+```
+
+```helixql Schema
+N::Person {
+    INDEX name: String,
+    age: U32,
+}
+```
+</CodeGroup>
+
+Here's how to run the query using the SDKs or curl
+
+<CodeGroup>
+```python Python [expandable]
+from helix.client import Client
+
+client = Client(local=True, port=6969)
+
+# If "Alice" exists, updates her age; otherwise creates a new person
+result = client.query("UpdateOrCreatePerson", {
+    "name": "Alice",
+    "new_age": 30,
+})
+
+print("Upserted person:", result)
+```
+
+```rust Rust [expandable]
+use helix_rs::{HelixDB, HelixDBClient};
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HelixDB::new(Some("http://localhost"), Some(6969), None);
+
+    // If "Alice" exists, updates her age; otherwise creates a new person
+    let result: serde_json::Value = client.query("UpdateOrCreatePerson", &json!({
+        "name": "Alice",
+        "new_age": 30,
+    })).await?;
+
+    println!("Upserted person: {result:#?}");
+
+    Ok(())
+}
+```
+
+```go Go [expandable]
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/HelixDB/helix-go"
+)
+
+func main() {
+    client := helix.NewClient("http://localhost:6969")
+
+    // If "Alice" exists, updates her age; otherwise creates a new person
+    payload := map[string]any{
+        "name":    "Alice",
+        "new_age": uint32(30),
+    }
+
+    var result map[string]any
+    if err := client.Query("UpdateOrCreatePerson", helix.WithData(payload)).Scan(&result); err != nil {
+        log.Fatalf("UpdateOrCreatePerson failed: %s", err)
+    }
+
+    fmt.Printf("Upserted person: %#v\n", result)
+}
+```
+
+```typescript TypeScript [expandable]
+import HelixDB from "helix-ts";
+
+async function main() {
+    const client = new HelixDB("http://localhost:6969");
+
+    // If "Alice" exists, updates her age; otherwise creates a new person
+    const result = await client.query("UpdateOrCreatePerson", {
+        name: "Alice",
+        new_age: 30,
+    });
+
+    console.log("Upserted person:", result);
+}
+
+main().catch((err) => {
+    console.error("UpdateOrCreatePerson query failed:", err);
+});
+```
+
+```bash Curl
+curl -X POST \
+  http://localhost:6969/UpdateOrCreatePerson \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alice","new_age":30}'
+```
+</CodeGroup>
+
+
+## How Upsert differs from Add and Update
+
+| Operation | Behavior |
+|-----------|----------|
+| `AddN` | Always creates a new node |
+| `UPDATE` | Only modifies existing nodes (fails if node doesn't exist) |
+| `UpsertN` | Operates on traversal context: updates if nodes found, creates if empty |
+
+<Tip>
+When updating, `UpsertN` merges properties: it updates specified properties while preserving any existing properties that aren't included in the upsert.
+</Tip>
+
+## Related operations
+
+- [Create nodes](/documentation/hql/create/addN) - Always create new nodes with AddN
+- [Update nodes](/documentation/hql/updating) - Modify existing node properties
+- [Upsert edges](/documentation/hql/create/upsertE) - Insert-or-update edges
+- [Upsert vectors](/documentation/hql/create/upsertV) - Insert-or-update vectors

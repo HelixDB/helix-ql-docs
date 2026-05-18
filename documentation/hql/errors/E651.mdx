@@ -1,0 +1,38 @@
+---
+title: 'E651'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Non-Iterable Variable
+
+## Erroneous Code Example
+
+This error occurs when you try to use a non-iterable variable in an iteration context.
+
+In this example, the parameter `name` is not a collection, so it cannot be used in an iteration context.
+
+<CodeGroup>
+
+```helixql queries.hx
+Query addUser(name: String) =>
+    FOR n IN name {
+        AddN<User>({name: n})
+    }
+    RETURN "User added"
+```
+</CodeGroup>
+
+## Solution
+
+Ensure variables used in iterations are collections or arrays.
+
+<CodeGroup>
+```helixql queries.hx
+Query addUser(names: [String]) =>
+    FOR n IN names {
+        AddN<User>({name: n})
+    }
+    RETURN "Users added"
+```
+</CodeGroup>

@@ -1,0 +1,33 @@
+---
+title: 'E631'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Incomplete Range
+
+## Erroneous Code Example
+
+This error occurs when you define a range without both start and end values.
+
+In this example, the range is incomplete because it is missing the end value.
+
+<CodeGroup>
+```helixql queries.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(0)
+    RETURN subset_of_users
+```
+</CodeGroup>
+
+## Solution
+
+Provide both start and end values for ranges.
+
+<CodeGroup>
+```helixql queries.hx
+Query getUser() =>
+    subset_of_users <- N<User>::RANGE(0, 100)
+    RETURN subset_of_users
+```
+</CodeGroup>

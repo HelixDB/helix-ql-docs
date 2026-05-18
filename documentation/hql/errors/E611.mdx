@@ -1,0 +1,31 @@
+---
+title: 'E611'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Missing To ID
+
+## Erroneous Code Example
+
+This error occurs when you try to create an edge without specifying the target node ID.
+
+In this example, the `AddE` step is used without specifying the `To` parameter.
+
+<CodeGroup>
+```helixql queries.hx
+Query addEdge(from: ID, to: ID) =>
+    AddE<Follows>::From(from)
+```
+</CodeGroup>
+
+## Solution
+
+Provide both 'from' and 'to' node IDs when creating edges.
+
+<CodeGroup>
+```helixql queries.hx
+Query addEdge(from: ID, to: ID) =>
+    AddE<Follows>::From(from)::To(to)
+```
+</CodeGroup>

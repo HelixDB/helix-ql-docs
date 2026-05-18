@@ -1,0 +1,55 @@
+---
+title: "Schema definition"
+description: "How to define schemas for nodes, edges, and vectors in HelixDB with type-safe property definitions"
+icon: "sitemap"
+---
+
+<Warning>
+**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) and dispatched as JSON — see the [Querying](/enterprise/querying) guide. This section is kept as a reference for legacy HelixQL projects.
+</Warning>
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+## How do I define schemas in HelixDB?
+
+Define the structure of your graph using HelixQL schema definitions. Every node, edge, and vector automatically includes an implicit `ID` field.
+
+### Node schemas
+
+Define node types and their properties:
+
+```helixql
+N::NodeType {
+  field1: String,
+  field2: U32
+}
+```
+
+---
+
+### Edge schemas
+
+Define relationships between nodes with properties:
+
+```helixql
+E::EdgeType {
+  From: NodeType,
+  To: NodeType,
+  Properties: {
+    field1: String,
+    field2: U32
+  }
+}
+```
+
+---
+
+### Vector schemas
+
+Define vector types with metadata properties:
+
+```helixql
+V::VectorType {
+  field1: String
+}
+```
