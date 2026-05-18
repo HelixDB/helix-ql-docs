@@ -5,14 +5,17 @@
 ## Getting Started
 - [Introduction](https://docs.helix-db.com/enterprise/introduction)
 - [Local Development](https://docs.helix-db.com/enterprise/local-development)
-- [Working with HelixDB](https://docs.helix-db.com/enterprise/working-with-enterprise)
+- [Rust Project Setup](https://docs.helix-db.com/enterprise/rust-project-setup)
+- [Roadmap](https://docs.helix-db.com/enterprise/roadmap): What we're building and what's coming next
+- [HelixDB Cloud Release Notes](https://docs.helix-db.com/enterprise/release-notes): HelixDB Cloud Release Notes
+
+## HelixDB Cloud
+- [Working with HelixDB Cloud](https://docs.helix-db.com/enterprise/working-with-enterprise)
 - [Architecture](https://docs.helix-db.com/enterprise/architecture)
 - [Guarantees](https://docs.helix-db.com/enterprise/guarantees)
 - [Security](https://docs.helix-db.com/enterprise/security)
 - [Tradeoffs](https://docs.helix-db.com/enterprise/tradeoffs)
 - [Limits](https://docs.helix-db.com/enterprise/limits)
-- [Roadmap](https://docs.helix-db.com/enterprise/roadmap): What we're building and what's coming next
-- [Enterprise](https://docs.helix-db.com/enterprise/release-notes): HelixDB Enterprise Release Notes
 
 ## Concepts & Examples
 - [Data Model](https://docs.helix-db.com/enterprise/data-model)
@@ -23,7 +26,7 @@
 - [Multi-Tenancy](https://docs.helix-db.com/enterprise/multi-tenancy)
 
 ## Using the helix CLI
-- [Getting started with HelixDB](https://docs.helix-db.com/documentation/cli-v2/getting-started): Install the Helix CLI v2, scaffold a project, run a local instance, and send your first dynamic query
+- [Getting started with HelixDB CLI](https://docs.helix-db.com/documentation/cli-v2/getting-started): Install the Helix CLI v2, bootstrap a first app, run a local instance, and send your first dynamic query
 - [Local Development](https://docs.helix-db.com/documentation/cli-v2/workflows/local): Run a local v2 instance and iterate on dynamic JSON queries
 - [V2 Cloud](https://docs.helix-db.com/documentation/cli-v2/workflows/helix_cloud): Authenticate, link a project, and query a V2 Cloud cluster from the CLI
 - [Configuration Guide](https://docs.helix-db.com/documentation/cli-v2/configuration): Reference for helix.toml, ~/.helix/config, and credentials
@@ -37,6 +40,7 @@
 - [helix dashboard](https://docs.helix-db.com/documentation/cli-v2/command-reference/dashboard)
 - [helix delete](https://docs.helix-db.com/documentation/cli-v2/command-reference/delete)
 - [helix feedback](https://docs.helix-db.com/documentation/cli-v2/command-reference/feedback)
+- [helix go](https://docs.helix-db.com/documentation/cli-v2/command-reference/go)
 - [helix init](https://docs.helix-db.com/documentation/cli-v2/command-reference/init)
 - [helix logs](https://docs.helix-db.com/documentation/cli-v2/command-reference/logs)
 - [helix metrics](https://docs.helix-db.com/documentation/cli-v2/command-reference/metrics)

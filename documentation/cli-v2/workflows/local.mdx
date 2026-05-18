@@ -15,6 +15,14 @@ Local development runs the prebuilt `ghcr.io/helixdb/enterprise-dev:latest` cont
 
 ## Initial setup
 
+For an agent-assisted first app, [`helix go`](/documentation/cli-v2/command-reference/go) can run this setup end-to-end: it installs Helix skills and the docs MCP, initializes `~/my-first-helix-project`, starts `dev`, seeds starter data, and opens the dashboard.
+
+```bash
+helix go
+```
+
+Use the manual flow below when you want to scaffold and run each step yourself.
+
 <Steps>
   <Step title="Scaffold a project">
     ```bash

@@ -1,6 +1,6 @@
 ---
 title: "Getting started with HelixDB CLI"
-description: "Install the Helix CLI v2, scaffold a project, run a local instance, and send your first dynamic query"
+description: "Install the Helix CLI v2, bootstrap a first app, run a local instance, and send your first dynamic query"
 icon: "rocket"
 ---
 
@@ -11,8 +11,27 @@ icon: "rocket"
 
 - **Docker** or **Podman** (for the local `enterprise-dev` runtime)
 - **Git** (recommended for version-controlling your project)
+- **Node.js/npm** if you use [`helix go`](/documentation/cli-v2/command-reference/go), which runs `npx` for agent skills and MCP setup
 - A V2 Cloud account is only required if you want to query a V2 Cloud cluster from the CLI.
 </Warning>
+
+## Agent quickstart
+
+If you are starting a new project inside a coding-agent environment, use `helix go`:
+
+```bash
+helix go
+```
+
+`helix go` asks what you want to build, then lets you choose automatic or manual setup. Automatic setup installs the Helix skills, connects the Helix docs MCP at `https://docs.helix-db.com/mcp`, creates `~/my-first-helix-project`, starts `dev`, writes starter dynamic query files, seeds example data, and opens the dashboard.
+
+To skip prompts and run the automatic flow directly:
+
+```bash
+helix go --auto
+```
+
+The command writes `HELIX_GO_PROMPT.md` into the new project. This is a placeholder for the active coding agent to replace the starter JSON requests with app-specific Helix queries based on your build idea.
 
 ## Local quickstart
 
