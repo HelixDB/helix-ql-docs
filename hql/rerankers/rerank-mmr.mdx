@@ -4,7 +4,7 @@ description: "Diversify search results using Maximal Marginal Relevance."
 ---
 
 <Warning>
-**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) and dispatched as JSON — see the [Querying](/enterprise/querying) guide. This section is kept as a reference for legacy HelixQL projects.
+**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) and dispatched as JSON — see the [Querying](/database/querying) guide. This section is kept as a reference for legacy HelixQL projects.
 </Warning>
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
@@ -971,6 +971,6 @@ SearchV<Document>(query_vec, 100)::RerankMMR(lambda: 0.6)::RANGE(0, 10)
 
 ## Related
 
-- [RerankRRF](/documentation/hql/rerankers/rerank-rrf) - For combining multiple search results
-- [Rerankers Overview](/documentation/hql/rerankers/overview) - General reranking concepts
-- [Vector Search](/documentation/hql/vectors/searching) - Basic vector search operations
+- [RerankRRF](/hql/rerankers/rerank-rrf) - For combining multiple search results
+- [Rerankers Overview](/hql/rerankers/overview) - General reranking concepts
+- [Vector Search](/hql/vectors/searching) - Basic vector search operations

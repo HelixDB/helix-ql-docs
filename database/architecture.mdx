@@ -4,7 +4,7 @@ title: 'Architecture'
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-import { EnterpriseDiagram } from "/snippets/enterprise-diagram.jsx"
+import { EnterpriseDiagram } from "/snippets/database-diagram.jsx"
 import { architectureDiagram } from "/snippets/diagrams.jsx"
 
 Helix Cloud runs as a single writer node and multiple reader nodes behind a routing gateway. Reads
@@ -96,16 +96,16 @@ regardless of cache state; caching affects latency, not correctness.
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Data Model" icon="diagram-project" href="/enterprise/data-model">
+  <Card title="Data Model" icon="diagram-project" href="/database/data-model">
     Nodes, edges, properties, and the labeled multigraph model.
   </Card>
-  <Card title="Indexing" icon="layer-group" href="/enterprise/indexing/secondary">
+  <Card title="Indexing" icon="layer-group" href="/database/indexing/secondary">
     Secondary, vector, and text indexes over the property graph.
   </Card>
-  <Card title="Querying" icon="magnifying-glass" href="/enterprise/querying">
+  <Card title="Querying" icon="magnifying-glass" href="/database/querying">
     Traversal DSL, stored queries, dynamic queries, and transactions.
   </Card>
-  <Card title="Guarantees" icon="shield-check" href="/enterprise/guarantees">
+  <Card title="Guarantees" icon="shield-check" href="/database/guarantees">
     Consistency, durability, and isolation under this architecture.
   </Card>
 </CardGroup>

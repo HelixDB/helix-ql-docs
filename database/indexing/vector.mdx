@@ -12,10 +12,10 @@ must match the configured index dimension exactly.
 Vector search is approximate by design, trading a small amount of recall for significantly faster
 search over large datasets. The third argument to the index-creation builders is an optional
 tenant property name; pass `None::<&str>` for a global index, or see
-[Multi-Tenancy](/enterprise/multi-tenancy) for the partitioned variant.
+[Multi-Tenancy](/database/multi-tenancy) for the partitioned variant.
 
 The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
-or `write_batch()` route as shown in [Querying](/enterprise/querying).
+or `write_batch()` route as shown in [Querying](/database/querying).
 
 ## Vector Index — Nodes
 

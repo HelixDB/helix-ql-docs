@@ -9,7 +9,7 @@ Stop a background local instance and remove its containers.
 
 `helix stop` is idempotent — if the instance is not running, the CLI exits successfully without error.
 
-For disk-mode instances, `helix stop` removes the Helix and MinIO containers but keeps the persistent local volume. Use [`helix prune`](/documentation/cli-v2/command-reference/prune) to delete disk-mode data.
+For disk-mode instances, `helix stop` removes the Helix and MinIO containers but keeps the persistent local volume. Use [`helix prune`](/cli/command-reference/prune) to delete disk-mode data.
 
 ## Usage
 
@@ -38,6 +38,6 @@ helix stop staging || true
 
 ## Related
 
-- [`helix run`](/documentation/cli-v2/command-reference/run) — start a local instance
-- [`helix restart`](/documentation/cli-v2/command-reference/restart) — restart a local instance
-- [`helix prune`](/documentation/cli-v2/command-reference/prune) — remove all Helix-owned local state for an instance
+- [`helix run`](/cli/command-reference/run) — start a local instance
+- [`helix restart`](/cli/command-reference/restart) — restart a local instance
+- [`helix prune`](/cli/command-reference/prune) — remove all Helix-owned local state for an instance

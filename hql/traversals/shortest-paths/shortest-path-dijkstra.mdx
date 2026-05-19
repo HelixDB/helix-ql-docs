@@ -4,7 +4,7 @@ description: "Find weighted shortest paths with custom weight calculations."
 ---
 
 <Warning>
-**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) and dispatched as JSON — see the [Querying](/enterprise/querying) guide. This section is kept as a reference for legacy HelixQL projects.
+**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) and dispatched as JSON — see the [Querying](/database/querying) guide. This section is kept as a reference for legacy HelixQL projects.
 </Warning>
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
@@ -1013,7 +1013,7 @@ Use these functions in weight expressions:
 - **Trigonometric**: SIN, COS, TAN
 - **Constants**: PI()
 
-See [Advanced Weight Expressions](/documentation/hql/traversals/shortest-paths/weight-expressions) for more details.
+See [Advanced Weight Expressions](/hql/traversals/shortest-paths/weight-expressions) for more details.
 
 ## Performance Considerations
 
@@ -1029,16 +1029,16 @@ Complex weight expressions may impact query performance. Profile your queries an
 ## Related Topics
 
 <CardGroup cols={2}>
-  <Card title="Custom Weights" icon="scale-balanced" href="/documentation/hql/traversals/shortest-paths/custom-weights">
+  <Card title="Custom Weights" icon="scale-balanced" href="/hql/traversals/shortest-paths/custom-weights">
     Deep dive into property contexts and weight patterns
   </Card>
-  <Card title="Weight Expressions" icon="function" href="/documentation/hql/traversals/shortest-paths/weight-expressions">
+  <Card title="Weight Expressions" icon="function" href="/hql/traversals/shortest-paths/weight-expressions">
     Advanced mathematical weight calculations
   </Card>
-  <Card title="ShortestPathAStar" icon="star" href="/documentation/hql/traversals/shortest-paths/shortest-path-astar">
+  <Card title="ShortestPathAStar" icon="star" href="/hql/traversals/shortest-paths/shortest-path-astar">
     Faster pathfinding with heuristics
   </Card>
-  <Card title="Mathematical Functions" icon="calculator" href="/documentation/hql/functions">
+  <Card title="Mathematical Functions" icon="calculator" href="/hql/functions">
     All available math functions
   </Card>
 </CardGroup>

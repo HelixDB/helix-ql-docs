@@ -4,7 +4,7 @@ description: "Use property contexts and expressions to create dynamic path weigh
 ---
 
 <Warning>
-**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) and dispatched as JSON — see the [Querying](/enterprise/querying) guide. This section is kept as a reference for legacy HelixQL projects.
+**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) and dispatched as JSON — see the [Querying](/database/querying) guide. This section is kept as a reference for legacy HelixQL projects.
 </Warning>
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
@@ -14,7 +14,7 @@ description: "Use property contexts and expressions to create dynamic path weigh
 Helix's shortest path algorithms support sophisticated weight calculations that can reference properties from edges, source nodes, and destination nodes. This enables real-world routing scenarios where path costs depend on multiple factors and contexts.
 
 <Note>
-Custom weights are available in both [ShortestPathDijkstras](/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra) and [ShortestPathAStar](/documentation/hql/traversals/shortest-paths/shortest-path-astar).
+Custom weights are available in both [ShortestPathDijkstras](/hql/traversals/shortest-paths/shortest-path-dijkstra) and [ShortestPathAStar](/hql/traversals/shortest-paths/shortest-path-astar).
 </Note>
 
 ## Property Contexts
@@ -1154,16 +1154,16 @@ Verify weights produce expected behavior:
 ## Related Topics
 
 <CardGroup cols={2}>
-  <Card title="Weight Expressions" icon="function" href="/documentation/hql/traversals/shortest-paths/weight-expressions">
+  <Card title="Weight Expressions" icon="function" href="/hql/traversals/shortest-paths/weight-expressions">
     Advanced mathematical weight calculations
   </Card>
-  <Card title="ShortestPathDijkstras" icon="route" href="/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra">
+  <Card title="ShortestPathDijkstras" icon="route" href="/hql/traversals/shortest-paths/shortest-path-dijkstra">
     Full Dijkstra algorithm documentation
   </Card>
-  <Card title="Mathematical Functions" icon="calculator" href="/documentation/hql/functions">
+  <Card title="Mathematical Functions" icon="calculator" href="/hql/functions">
     All available math functions
   </Card>
-  <Card title="Overview" icon="route" href="/documentation/hql/traversals/shortest-paths/overview">
+  <Card title="Overview" icon="route" href="/hql/traversals/shortest-paths/overview">
     Compare all shortest path algorithms
   </Card>
 </CardGroup>

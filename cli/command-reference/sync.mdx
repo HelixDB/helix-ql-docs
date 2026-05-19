@@ -5,9 +5,9 @@ sidebarTitle: "sync"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Refresh V2 Cloud instance metadata in `helix.toml`. `helix sync` fetches the latest gateway URL, auth header/env contract, and node-type information from Helix Cloud and writes it back to the local `[enterprise.<instance>]` block so subsequent [`helix query`](/documentation/cli-v2/command-reference/query), [`helix logs`](/documentation/cli-v2/command-reference/logs), and other V2 Cloud commands can target the instance.
+Refresh V2 Cloud instance metadata in `helix.toml`. `helix sync` fetches the latest gateway URL, auth header/env contract, and node-type information from Helix Cloud and writes it back to the local `[enterprise.<instance>]` block so subsequent [`helix query`](/cli/command-reference/query), [`helix logs`](/cli/command-reference/logs), and other V2 Cloud commands can target the instance.
 
-Requires V2 Cloud authentication. Run [`helix auth login`](/documentation/cli-v2/command-reference/auth) first.
+Requires V2 Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
 
 ## Usage
 
@@ -51,6 +51,6 @@ helix sync
 
 ## Related
 
-- [`helix auth`](/documentation/cli-v2/command-reference/auth) — authenticate with V2 Cloud
-- [`helix query`](/documentation/cli-v2/command-reference/query) — uses the synced `gateway_url` and auth contract
-- [`helix cluster`](/documentation/cli-v2/command-reference/cluster) — list available clusters
+- [`helix auth`](/cli/command-reference/auth) — authenticate with V2 Cloud
+- [`helix query`](/cli/command-reference/query) — uses the synced `gateway_url` and auth contract
+- [`helix cluster`](/cli/command-reference/cluster) — list available clusters

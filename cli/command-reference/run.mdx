@@ -29,7 +29,7 @@ helix run [INSTANCE] [OPTIONS]
 
 ## Behavior
 
-- Pulls `ghcr.io/helixdb/enterprise-dev:latest` (or the image/tag set in `[local.<instance>]`).
+- Pulls `ghcr.io/helixdb/database-dev:latest` (or the image/tag set in `[local.<instance>]`).
 - Names the container `helix-<project>-<instance>` and publishes the configured port to container port `8080`.
 - Uses Docker or Podman based on `[project] container_runtime` in `helix.toml`.
 - Default storage is in-memory. Passing `--disk` starts a MinIO sidecar, creates the `helix-db` bucket, and runs `enterprise-dev` with S3-compatible storage environment variables.
@@ -63,7 +63,7 @@ helix run dev --disk
 
 ## Related
 
-- [`helix stop`](/documentation/cli-v2/command-reference/stop) — stop a background instance
-- [`helix restart`](/documentation/cli-v2/command-reference/restart) — restart a background instance
-- [`helix query`](/documentation/cli-v2/command-reference/query) — send a dynamic query to a running instance
-- [`helix logs`](/documentation/cli-v2/command-reference/logs) — view container logs
+- [`helix stop`](/cli/command-reference/stop) — stop a background instance
+- [`helix restart`](/cli/command-reference/restart) — restart a background instance
+- [`helix query`](/cli/command-reference/query) — send a dynamic query to a running instance
+- [`helix logs`](/cli/command-reference/logs) — view container logs

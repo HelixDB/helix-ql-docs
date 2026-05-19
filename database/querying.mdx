@@ -36,7 +36,7 @@ Dynamic queries trade some runtime overhead for flexibility. Stored queries rema
 path when you want a stable API surface and minimal per-request overhead.
 
 For the authoring and deployment workflow, see
-[Working with Helix Cloud](/enterprise/working-with-enterprise).
+[Working with Helix Cloud](/database/working-with-enterprise).
 
 ## Transactions
 
@@ -52,21 +52,21 @@ Every query executes as a single transaction with serializable snapshot isolatio
 Read-only queries never block writes. Write transactions are serialized through the single writer
 process for correctness without distributed locking.
 
-For consistency and durability details, see [Guarantees](/enterprise/guarantees).
+For consistency and durability details, see [Guarantees](/database/guarantees).
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Working with Helix Cloud" icon="rocket" href="/enterprise/working-with-enterprise">
+  <Card title="Working with Helix Cloud" icon="rocket" href="/database/working-with-enterprise">
     Deploy-time and runtime workflow for stored and dynamic queries.
   </Card>
-  <Card title="Data Model" icon="diagram-project" href="/enterprise/data-model">
+  <Card title="Data Model" icon="diagram-project" href="/database/data-model">
     Nodes, edges, properties, and the labeled multigraph model.
   </Card>
-  <Card title="Indexing" icon="layer-group" href="/enterprise/indexing/secondary">
+  <Card title="Indexing" icon="layer-group" href="/database/indexing/secondary">
     Secondary, vector, and text indexes over the property graph.
   </Card>
-  <Card title="Guarantees" icon="shield-check" href="/enterprise/guarantees">
+  <Card title="Guarantees" icon="shield-check" href="/database/guarantees">
     Consistency, durability, and isolation guarantees per query.
   </Card>
 </CardGroup>

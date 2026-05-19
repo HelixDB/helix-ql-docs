@@ -10,11 +10,11 @@ like other indexes rather than rebuilt transiently per query. Indexed values can
 
 The third argument to the index-creation builders is an optional tenant property name; pass
 `None::<&str>` for a global index. Tenant-partitioned text indexes currently require the
-partition property name to be `tenant_id` — see [Multi-Tenancy](/enterprise/multi-tenancy) for the
+partition property name to be `tenant_id` — see [Multi-Tenancy](/database/multi-tenancy) for the
 partitioned variant.
 
 The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
-or `write_batch()` route as shown in [Querying](/enterprise/querying).
+or `write_batch()` route as shown in [Querying](/database/querying).
 
 ## Text Index — Nodes
 

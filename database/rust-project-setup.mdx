@@ -8,14 +8,14 @@ Stored queries for HelixDB are authored in Rust using the
 [`helix-enterprise-ql`](https://crates.io/crates/helix-enterprise-ql) crate (imported as
 `helix_dsl`). This page covers bootstrapping a Rust project that builds your queries into the
 `queries.json` bundle that the runtime consumes. For the traversal model and query patterns
-themselves, see [Querying](/enterprise/querying) and the
+themselves, see [Querying](/database/querying) and the
 [docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/).
 
 ## Prerequisites
 
 - A recent stable Rust toolchain — install via [rustup](https://rustup.rs/) if you don't already
   have it.
-- Optional: the [Helix CLI](/documentation/cli-v2/getting-started) for running the resulting
+- Optional: the [Helix CLI](/cli/getting-started) for running the resulting
   bundle against a local instance.
 
 ## Create a new Rust project
@@ -71,7 +71,7 @@ The prelude re-exports the common building blocks — `read_batch`, `write_batch
 builder `g()`, sub-traversal `sub()`, `NodeRef`/`EdgeRef`, `Predicate`/`SourcePredicate`, the
 projection helpers (`PropertyProjection`, `ExprProjection`), and `AggregateFunction`. See the
 [docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) for the full surface
-and [Querying](/enterprise/querying) for how the pieces fit together.
+and [Querying](/database/querying) for how the pieces fit together.
 
 ## Setting up your queries
 
@@ -142,7 +142,7 @@ A few things to know about this snippet:
 
 For the full builder catalog — edges, richer predicates, vector and text search, sub-traversals,
 and aggregations — see the [docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/)
-and [Querying](/enterprise/querying).
+and [Querying](/database/querying).
 
 ## Generate the bundle
 
@@ -153,20 +153,20 @@ cargo run
 This produces `queries.json` in the project root. From here you can:
 
 - Mount it into the local `enterprise-dev` runtime as `PATH_TO_QUERIES` — see
-  [Local Development](/enterprise/local-development).
+  [Local Development](/database/local-development).
 - Deploy it to HelixDB through the control plane — see
-  [Working with HelixDB](/enterprise/working-with-enterprise).
+  [Working with HelixDB](/database/working-with-enterprise).
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Querying" icon="magnifying-glass" href="/enterprise/querying">
+  <Card title="Querying" icon="magnifying-glass" href="/database/querying">
     Traversal DSL, stored queries, dynamic queries, and transactions.
   </Card>
-  <Card title="Working with HelixDB" icon="rocket" href="/enterprise/working-with-enterprise">
+  <Card title="Working with HelixDB" icon="rocket" href="/database/working-with-enterprise">
     Deploy `queries.json` and the runtime workflow.
   </Card>
-  <Card title="Local Development" icon="laptop-code" href="/enterprise/local-development">
+  <Card title="Local Development" icon="laptop-code" href="/database/local-development">
     Run the bundle locally with the `enterprise-dev` image.
   </Card>
   <Card title="DSL API Reference" icon="code" href="https://docs.rs/helix-enterprise-ql/latest/helix_dsl/">

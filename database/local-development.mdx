@@ -44,7 +44,7 @@ helix stop dev
 ```
 
 For installation details, V2 Cloud authentication, and the full command reference, see the
-[CLI Getting Started guide](/documentation/cli-v2/getting-started).
+[CLI Getting Started guide](/cli/getting-started).
 
 ### AI-assisted query authoring
 
@@ -89,7 +89,7 @@ You can add this service to a local `docker-compose.yml`:
 ```yaml expandable
 services:
   helix:
-    image: ghcr.io/helixdb/enterprise-dev
+    image: ghcr.io/helixdb/database-dev
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -133,7 +133,7 @@ services:
         mc mb --ignore-existing local/helix-db
 
   helix:
-    image: ghcr.io/helixdb/enterprise-dev:v0.1.0
+    image: ghcr.io/helixdb/database-dev:v0.1.0
     restart: unless-stopped
     depends_on:
       minio-init:
@@ -174,16 +174,16 @@ itself. Drop `AWS_ENDPOINT` and `AWS_ALLOW_HTTP` to talk to real AWS S3.
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Working with Helix Cloud" icon="rocket" href="/enterprise/working-with-enterprise">
+  <Card title="Working with Helix Cloud" icon="rocket" href="/database/working-with-enterprise">
     Authoring `queries.json`, deploying stored queries, and the runtime workflow.
   </Card>
-  <Card title="Querying" icon="magnifying-glass" href="/enterprise/querying">
+  <Card title="Querying" icon="magnifying-glass" href="/database/querying">
     Traversal DSL, stored queries, dynamic queries, and transactions.
   </Card>
-  <Card title="CLI Getting Started" icon="terminal" href="/documentation/cli-v2/getting-started">
+  <Card title="CLI Getting Started" icon="terminal" href="/cli/getting-started">
     Install the Helix CLI, scaffold a project, and send your first query.
   </Card>
-  <Card title="Local Workflow" icon="code" href="/documentation/cli-v2/workflows/local">
+  <Card title="Local Workflow" icon="code" href="/cli/workflows/local">
     Iterate on dynamic JSON queries against a local v2 instance.
   </Card>
 </CardGroup>

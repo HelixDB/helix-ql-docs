@@ -18,7 +18,7 @@ queryable via `.where_(Predicate::...)`, but the route will scan the label rathe
 index.
 
 The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
-or `write_batch()` route as shown in [Querying](/enterprise/querying).
+or `write_batch()` route as shown in [Querying](/database/querying).
 
 ## Equality Index — Nodes
 
@@ -121,4 +121,4 @@ g().e_with_label_where(
 ## See Also
 
 For tenant-scoped equality lookups using the same secondary-index machinery, see
-[Multi-Tenancy](/enterprise/multi-tenancy).
+[Multi-Tenancy](/database/multi-tenancy).

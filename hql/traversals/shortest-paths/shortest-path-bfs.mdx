@@ -4,7 +4,7 @@ description: "Find unweighted shortest paths using breadth-first search."
 ---
 
 <Warning>
-**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) and dispatched as JSON — see the [Querying](/enterprise/querying) guide. This section is kept as a reference for legacy HelixQL projects.
+**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) and dispatched as JSON — see the [Querying](/database/querying) guide. This section is kept as a reference for legacy HelixQL projects.
 </Warning>
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
@@ -43,7 +43,7 @@ Use BFS when you want to:
 - **Fast performance**: Need the fastest shortest path algorithm
 
 <Note>
-If edges have different weights (distance, cost, time), use [ShortestPathDijkstras](/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra) instead.
+If edges have different weights (distance, cost, time), use [ShortestPathDijkstras](/hql/traversals/shortest-paths/shortest-path-dijkstra) instead.
 </Note>
 
 ## Example 1: Basic shortest path by hop count
@@ -636,16 +636,16 @@ BFS is the fastest shortest path algorithm for unweighted graphs. For weighted g
 ## Related Topics
 
 <CardGroup cols={2}>
-  <Card title="ShortestPathDijkstras" icon="route" href="/documentation/hql/traversals/shortest-paths/shortest-path-dijkstra">
+  <Card title="ShortestPathDijkstras" icon="route" href="/hql/traversals/shortest-paths/shortest-path-dijkstra">
     Find weighted shortest paths with custom calculations
   </Card>
-  <Card title="ShortestPathAStar" icon="star" href="/documentation/hql/traversals/shortest-paths/shortest-path-astar">
+  <Card title="ShortestPathAStar" icon="star" href="/hql/traversals/shortest-paths/shortest-path-astar">
     Heuristic-guided pathfinding
   </Card>
-  <Card title="Overview" icon="route" href="/documentation/hql/traversals/shortest-paths/overview">
+  <Card title="Overview" icon="route" href="/hql/traversals/shortest-paths/overview">
     Compare all shortest path algorithms
   </Card>
-  <Card title="Graph Traversals" icon="project-diagram" href="/documentation/hql/traversals/steps_edges">
+  <Card title="Graph Traversals" icon="project-diagram" href="/hql/traversals/steps_edges">
     Other traversal operations
   </Card>
 </CardGroup>

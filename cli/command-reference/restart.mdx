@@ -5,7 +5,7 @@ sidebarTitle: "restart"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Restart a background local instance. If the container still exists, it is restarted in place. If the container has been removed (for example after `helix prune`), `helix restart` falls back to a fresh [`helix run`](/documentation/cli-v2/command-reference/run).
+Restart a background local instance. If the container still exists, it is restarted in place. If the container has been removed (for example after `helix prune`), `helix restart` falls back to a fresh [`helix run`](/cli/command-reference/run).
 
 Default local data is in-memory and is wiped by every restart. Disk-mode instances preserve data in their local MinIO volume.
 

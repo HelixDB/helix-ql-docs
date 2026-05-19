@@ -51,14 +51,14 @@ Either run `helix init` to scaffold a new project, or `cd` into a directory that
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `project name is empty in <path>` | `[project] name` is blank. | Set a non-empty `name`. |
-| `<path> has no instances configured` | No `[local.*]` or `[enterprise.*]` blocks. | Run [`helix add local`](/documentation/cli-v2/command-reference/add) or `helix add enterprise`. |
+| `<path> has no instances configured` | No `[local.*]` or `[enterprise.*]` blocks. | Run [`helix add local`](/cli/command-reference/add) or `helix add enterprise`. |
 | `instance name is empty in <path>` | Empty key like `[local.""]`. | Give the instance a name. |
 | `cluster_id is empty for '<name>' in <path>` | Missing required V2 Cloud field. | Set `cluster_id` under `[enterprise.<name>]`. |
 | `Failed to parse helix.toml: invalid type` | Numbers quoted as strings. | Use bare numbers — `port = 8080`, not `port = "8080"`. |
 
 ### `Instance '<name>' not found`
 
-The instance is not listed in `helix.toml`. Check with `helix status` and add it with [`helix add`](/documentation/cli-v2/command-reference/add).
+The instance is not listed in `helix.toml`. Check with `helix status` and add it with [`helix add`](/cli/command-reference/add).
 
 ## Docker / Podman issues
 
@@ -126,7 +126,7 @@ The `enterprise-dev` container started but did not accept `POST /v1/query` withi
 Authentication required. Run 'helix auth login' first.
 ```
 
-Run [`helix auth login`](/documentation/cli-v2/command-reference/auth). Credentials are stored in `~/.helix/credentials`.
+Run [`helix auth login`](/cli/command-reference/auth). Credentials are stored in `~/.helix/credentials`.
 
 ### Stale credentials
 
@@ -141,7 +141,7 @@ helix auth login
 helix auth create-key <cluster-id>
 ```
 
-The new key prints once. Update `HELIX_API_KEY` (or whatever `query_auth_env` resolves to) in your environment before running [`helix query`](/documentation/cli-v2/command-reference/query).
+The new key prints once. Update `HELIX_API_KEY` (or whatever `query_auth_env` resolves to) in your environment before running [`helix query`](/cli/command-reference/query).
 
 ## V2 Cloud query issues
 
@@ -152,7 +152,7 @@ Enterprise gateway URL is not configured for '<instance>'.
 Run 'helix sync <instance>' or set gateway_url in helix.toml.
 ```
 
-Run [`helix sync <instance>`](/documentation/cli-v2/command-reference/sync) to fetch the latest metadata. If `helix sync` reports `gateway_url is still missing`, the cluster's gateway hasn't been published yet — set `gateway_url` manually under `[enterprise.<instance>]` once you know it.
+Run [`helix sync <instance>`](/cli/command-reference/sync) to fetch the latest metadata. If `helix sync` reports `gateway_url is still missing`, the cluster's gateway hasn't been published yet — set `gateway_url` manually under `[enterprise.<instance>]` once you know it.
 
 ### `Environment variable HELIX_API_KEY is required`
 
@@ -172,7 +172,7 @@ export HELIX_API_KEY="..."
 
 ### `dynamic query request must include query`
 
-The JSON file is missing the top-level `query` object. See [`helix query`](/documentation/cli-v2/command-reference/query) for the request shape.
+The JSON file is missing the top-level `query` object. See [`helix query`](/cli/command-reference/query) for the request shape.
 
 ## Logs issues
 
@@ -198,7 +198,7 @@ helix delete <instance> --yes
 helix prune --all --yes
 ```
 
-[`helix prune`](/documentation/cli-v2/command-reference/prune) only removes Helix-owned containers, networks, disk-mode volumes, and per-instance workspace directories — it never runs a broad `docker/podman system prune`.
+[`helix prune`](/cli/command-reference/prune) only removes Helix-owned containers, networks, disk-mode volumes, and per-instance workspace directories — it never runs a broad `docker/podman system prune`.
 
 ## Interactive vs scripted use
 
@@ -207,7 +207,7 @@ The CLI uses `cliclack` prompts when stdin is a TTY and a required choice is mis
 In non-interactive contexts (CI, pipes, scripts):
 
 - Pass subcommands and required flags explicitly.
-- Use `--yes` for [`helix delete`](/documentation/cli-v2/command-reference/delete) and [`helix prune --all`](/documentation/cli-v2/command-reference/prune).
+- Use `--yes` for [`helix delete`](/cli/command-reference/delete) and [`helix prune --all`](/cli/command-reference/prune).
 - The CLI fails clearly when a required choice cannot be resolved — it never silently picks a default.
 
 ## Quick checks before reporting an issue

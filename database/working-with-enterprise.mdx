@@ -4,7 +4,7 @@ title: 'Working with HelixDB Cloud'
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-import { EnterpriseDiagram } from "/snippets/enterprise-diagram.jsx"
+import { EnterpriseDiagram } from "/snippets/database-diagram.jsx"
 import { workflowDiagram } from "/snippets/diagrams.jsx"
 
 Helix Cloud separates deployment-time operations from runtime query execution. This boundary
@@ -26,7 +26,7 @@ one transaction.
 
 `queries.json` is deployed to the cluster through the Helix control plane. The Helix CLI is not
 involved in stored-procedure deployment in v2 — its job at runtime is to send dynamic queries,
-fetch logs, and synchronize per-instance metadata via [`helix sync`](/documentation/cli-v2/command-reference/sync).
+fetch logs, and synchronize per-instance metadata via [`helix sync`](/cli/command-reference/sync).
 
 Queries are the only artifact that moves from development to production. There is no schema
 migration step, no ORM configuration, and no SQL to manage. The data model is implicit in the
@@ -122,21 +122,21 @@ Important details:
 
 For iterating locally without provisioning a full cluster, Helix ships a combined `enterprise-dev`
 image that runs a gateway and database together in a single container. See
-[Developing with HelixDB Locally](/enterprise/local-development) for in-memory and on-disk setups.
+[Developing with HelixDB Locally](/database/local-development) for in-memory and on-disk setups.
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Querying" icon="magnifying-glass" href="/enterprise/querying">
+  <Card title="Querying" icon="magnifying-glass" href="/database/querying">
     Traversal DSL, stored queries, dynamic queries, and transactions.
   </Card>
-  <Card title="Architecture" icon="sitemap" href="/enterprise/architecture">
+  <Card title="Architecture" icon="sitemap" href="/database/architecture">
     Gateway, writer, readers, object storage, and the cache hierarchy.
   </Card>
-  <Card title="Data Model" icon="diagram-project" href="/enterprise/data-model">
+  <Card title="Data Model" icon="diagram-project" href="/database/data-model">
     Nodes, edges, properties, and the labeled multigraph model.
   </Card>
-  <Card title="Developing Locally" icon="laptop-code" href="/enterprise/local-development">
+  <Card title="Developing Locally" icon="laptop-code" href="/database/local-development">
     Run the `enterprise-dev` image in-memory or against MinIO.
   </Card>
 </CardGroup>

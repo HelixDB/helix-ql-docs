@@ -128,33 +128,33 @@
           {
             "group": "Getting Started",
             "pages": [
-              "enterprise/introduction",
-              "enterprise/local-development",
-              "enterprise/rust-project-setup",
-              "enterprise/roadmap",
-              "enterprise/release-notes"
+              "database/introduction",
+              "database/local-development",
+              "database/rust-project-setup",
+              "database/roadmap",
+              "database/release-notes"
             ]
           },
           {
             "group": "HelixDB Cloud",
             "pages": [
-              "enterprise/working-with-enterprise",
-              "enterprise/architecture",
-              "enterprise/guarantees",
-              "enterprise/security",
-              "enterprise/tradeoffs",
-              "enterprise/limits"
+              "database/working-with-enterprise",
+              "database/architecture",
+              "database/guarantees",
+              "database/security",
+              "database/tradeoffs",
+              "database/limits"
             ]
           },
           {
             "group": "Concepts & Examples",
             "pages": [
-              "enterprise/data-model",
-              "enterprise/querying",
-              "enterprise/indexing/secondary",
-              "enterprise/indexing/vector",
-              "enterprise/indexing/text",
-              "enterprise/multi-tenancy"
+              "database/data-model",
+              "database/querying",
+              "database/indexing/secondary",
+              "database/indexing/vector",
+              "database/indexing/text",
+              "database/multi-tenancy"
             ]
           },
           {
@@ -162,52 +162,52 @@
             "icon": "triangle-exclamation",
             "expanded": false,
             "pages": [
-              "documentation/hql/hql",
-              "documentation/hql/types",
-              "documentation/hql/language-reference",
+              "hql/hql",
+              "hql/types",
+              "hql/language-reference",
               {
                 "group": "Schema",
                 "pages": [
-                  "documentation/hql/schema/schema-definition",
-                  "documentation/hql/schema/indexing",
-                  "documentation/hql/schema/unique-index",
-                  "documentation/hql/schema/default"
+                  "hql/schema/schema-definition",
+                  "hql/schema/indexing",
+                  "hql/schema/unique-index",
+                  "hql/schema/default"
                 ]
               },
               {
                 "group": "Writing Data",
                 "pages": [
-                  "documentation/hql/create/addN",
-                  "documentation/hql/create/addE",
-                  "documentation/hql/create/addV",
+                  "hql/create/addN",
+                  "hql/create/addE",
+                  "hql/create/addV",
                   {
                     "group": "Upsert Operations",
                     "icon": "rotate",
                     "expanded": false,
                     "pages": [
-                      "documentation/hql/create/upsertN",
-                      "documentation/hql/create/upsertE",
-                      "documentation/hql/create/upsertV"
+                      "hql/create/upsertN",
+                      "hql/create/upsertE",
+                      "hql/create/upsertV"
                     ]
                   },
-                  "documentation/hql/updating",
-                  "documentation/hql/deleting"
+                  "hql/updating",
+                  "hql/deleting"
                 ]
               },
               {
                 "group": "Reading Data",
                 "pages": [
-                  "documentation/hql/select/selectN",
-                  "documentation/hql/select/selectE",
-                  "documentation/hql/select/selectV",
+                  "hql/select/selectN",
+                  "hql/select/selectE",
+                  "hql/select/selectV",
                   {
                     "group": "Filtering",
                     "icon": "filter",
                     "expanded": false,
                     "pages": [
-                      "documentation/hql/conditionals/conditions",
-                      "documentation/hql/conditionals/mult-conditions",
-                      "documentation/hql/conditionals/anonymous"
+                      "hql/conditionals/conditions",
+                      "hql/conditionals/mult-conditions",
+                      "hql/conditionals/anonymous"
                     ]
                   },
                   {
@@ -215,10 +215,10 @@
                     "icon": "tags",
                     "expanded": false,
                     "pages": [
-                      "documentation/hql/properties/property-access",
-                      "documentation/hql/properties/property-additions",
-                      "documentation/hql/properties/property-exclusion",
-                      "documentation/hql/properties/property-remappings"
+                      "hql/properties/property-access",
+                      "hql/properties/property-additions",
+                      "hql/properties/property-exclusion",
+                      "hql/properties/property-remappings"
                     ]
                   }
                 ]
@@ -226,17 +226,17 @@
               {
                 "group": "Search",
                 "pages": [
-                  "documentation/hql/vectors/searching",
-                  "documentation/hql/vectors/embedding",
-                  "documentation/hql/keyword_search",
+                  "hql/vectors/searching",
+                  "hql/vectors/embedding",
+                  "hql/keyword_search",
                   {
                     "group": "Reranking",
                     "icon": "arrows-up-down",
                     "expanded": false,
                     "pages": [
-                      "documentation/hql/rerankers/overview",
-                      "documentation/hql/rerankers/rerank-rrf",
-                      "documentation/hql/rerankers/rerank-mmr"
+                      "hql/rerankers/overview",
+                      "hql/rerankers/rerank-rrf",
+                      "hql/rerankers/rerank-mmr"
                     ]
                   }
                 ]
@@ -244,19 +244,19 @@
               {
                 "group": "Graph Traversals",
                 "pages": [
-                  "documentation/hql/traversals/steps_nodes",
-                  "documentation/hql/traversals/steps_edges",
+                  "hql/traversals/steps_nodes",
+                  "hql/traversals/steps_edges",
                   {
                     "group": "Shortest Paths",
                     "icon": "route",
                     "expanded": false,
                     "pages": [
-                      "documentation/hql/traversals/shortest-paths/overview",
-                      "documentation/hql/traversals/shortest-paths/shortest-path-bfs",
-                      "documentation/hql/traversals/shortest-paths/shortest-path-dijkstra",
-                      "documentation/hql/traversals/shortest-paths/shortest-path-astar",
-                      "documentation/hql/traversals/shortest-paths/custom-weights",
-                      "documentation/hql/traversals/shortest-paths/weight-expressions"
+                      "hql/traversals/shortest-paths/overview",
+                      "hql/traversals/shortest-paths/shortest-path-bfs",
+                      "hql/traversals/shortest-paths/shortest-path-dijkstra",
+                      "hql/traversals/shortest-paths/shortest-path-astar",
+                      "hql/traversals/shortest-paths/custom-weights",
+                      "hql/traversals/shortest-paths/weight-expressions"
                     ]
                   }
                 ]
@@ -264,11 +264,11 @@
               {
                 "group": "Aggregation",
                 "pages": [
-                  "documentation/hql/aggregation",
-                  "documentation/hql/result_ops",
-                  "documentation/hql/operations/group-by",
-                  "documentation/hql/operations/aggregate-by",
-                  "documentation/hql/operations/grouping-guide"
+                  "hql/aggregation",
+                  "hql/result_ops",
+                  "hql/operations/group-by",
+                  "hql/operations/aggregate-by",
+                  "hql/operations/grouping-guide"
                 ]
               },
               {
@@ -279,10 +279,10 @@
                     "icon": "repeat",
                     "expanded": false,
                     "pages": [
-                      "documentation/hql/control-flow/for-loops",
-                      "documentation/hql/control-flow/for-basic",
-                      "documentation/hql/control-flow/for-destructuring",
-                      "documentation/hql/control-flow/for-nested"
+                      "hql/control-flow/for-loops",
+                      "hql/control-flow/for-basic",
+                      "hql/control-flow/for-destructuring",
+                      "hql/control-flow/for-nested"
                     ]
                   },
                   {
@@ -290,22 +290,22 @@
                     "icon": "calculator",
                     "expanded": false,
                     "pages": [
-                      "documentation/hql/functions/math-overview",
-                      "documentation/hql/functions/arithmetic",
-                      "documentation/hql/functions/unary-math",
-                      "documentation/hql/functions/trigonometry",
-                      "documentation/hql/functions/constants",
-                      "documentation/hql/functions/aggregate-functions"
+                      "hql/functions/math-overview",
+                      "hql/functions/arithmetic",
+                      "hql/functions/unary-math",
+                      "hql/functions/trigonometry",
+                      "hql/functions/constants",
+                      "hql/functions/aggregate-functions"
                     ]
                   },
-                  "documentation/hql/output_values",
+                  "hql/output_values",
                   {
                     "group": "Macros",
                     "icon": "wand-magic-sparkles",
                     "expanded": false,
                     "pages": [
-                      "documentation/hql/macros/mcp-macro",
-                      "documentation/hql/macros/model-macro"
+                      "hql/macros/mcp-macro",
+                      "hql/macros/model-macro"
                     ]
                   }
                 ]
@@ -314,61 +314,61 @@
                 "group": "Error Codes",
                 "expanded": false,
                 "pages": [
-                  "documentation/hql/errors/E101",
-                  "documentation/hql/errors/E102",
-                  "documentation/hql/errors/E103",
-                  "documentation/hql/errors/E104",
-                  "documentation/hql/errors/E105",
-                  "documentation/hql/errors/E106",
-                  "documentation/hql/errors/E107",
-                  "documentation/hql/errors/E108",
-                  "documentation/hql/errors/E109",
-                  "documentation/hql/errors/E110",
-                  "documentation/hql/errors/E201",
-                  "documentation/hql/errors/E202",
-                  "documentation/hql/errors/E203",
-                  "documentation/hql/errors/E204",
-                  "documentation/hql/errors/E205",
-                  "documentation/hql/errors/E206",
-                  "documentation/hql/errors/E207",
-                  "documentation/hql/errors/E208",
-                  "documentation/hql/errors/E209",
-                  "documentation/hql/errors/E210",
-                  "documentation/hql/errors/E301",
-                  "documentation/hql/errors/E302",
-                  "documentation/hql/errors/E303",
-                  "documentation/hql/errors/E304",
-                  "documentation/hql/errors/E305",
-                  "documentation/hql/errors/E306",
-                  "documentation/hql/errors/E401",
-                  "documentation/hql/errors/E501",
-                  "documentation/hql/errors/E601",
-                  "documentation/hql/errors/E602",
-                  "documentation/hql/errors/E603",
-                  "documentation/hql/errors/E604",
-                  "documentation/hql/errors/E611",
-                  "documentation/hql/errors/E612",
-                  "documentation/hql/errors/E621",
-                  "documentation/hql/errors/E622",
-                  "documentation/hql/errors/E623",
-                  "documentation/hql/errors/E624",
-                  "documentation/hql/errors/E625",
-                  "documentation/hql/errors/E626",
-                  "documentation/hql/errors/E627",
-                  "documentation/hql/errors/E628",
-                  "documentation/hql/errors/E631",
-                  "documentation/hql/errors/E632",
-                  "documentation/hql/errors/E633",
-                  "documentation/hql/errors/E641",
-                  "documentation/hql/errors/E642",
-                  "documentation/hql/errors/E643",
-                  "documentation/hql/errors/E644",
-                  "documentation/hql/errors/E645",
-                  "documentation/hql/errors/E646",
-                  "documentation/hql/errors/E651",
-                  "documentation/hql/errors/E652",
-                  "documentation/hql/errors/E653",
-                  "documentation/hql/errors/W101"
+                  "hql/errors/E101",
+                  "hql/errors/E102",
+                  "hql/errors/E103",
+                  "hql/errors/E104",
+                  "hql/errors/E105",
+                  "hql/errors/E106",
+                  "hql/errors/E107",
+                  "hql/errors/E108",
+                  "hql/errors/E109",
+                  "hql/errors/E110",
+                  "hql/errors/E201",
+                  "hql/errors/E202",
+                  "hql/errors/E203",
+                  "hql/errors/E204",
+                  "hql/errors/E205",
+                  "hql/errors/E206",
+                  "hql/errors/E207",
+                  "hql/errors/E208",
+                  "hql/errors/E209",
+                  "hql/errors/E210",
+                  "hql/errors/E301",
+                  "hql/errors/E302",
+                  "hql/errors/E303",
+                  "hql/errors/E304",
+                  "hql/errors/E305",
+                  "hql/errors/E306",
+                  "hql/errors/E401",
+                  "hql/errors/E501",
+                  "hql/errors/E601",
+                  "hql/errors/E602",
+                  "hql/errors/E603",
+                  "hql/errors/E604",
+                  "hql/errors/E611",
+                  "hql/errors/E612",
+                  "hql/errors/E621",
+                  "hql/errors/E622",
+                  "hql/errors/E623",
+                  "hql/errors/E624",
+                  "hql/errors/E625",
+                  "hql/errors/E626",
+                  "hql/errors/E627",
+                  "hql/errors/E628",
+                  "hql/errors/E631",
+                  "hql/errors/E632",
+                  "hql/errors/E633",
+                  "hql/errors/E641",
+                  "hql/errors/E642",
+                  "hql/errors/E643",
+                  "hql/errors/E644",
+                  "hql/errors/E645",
+                  "hql/errors/E646",
+                  "hql/errors/E651",
+                  "hql/errors/E652",
+                  "hql/errors/E653",
+                  "hql/errors/W101"
                 ]
               }
             ]
@@ -382,37 +382,37 @@
           {
             "group": "Using the helix CLI",
             "pages": [
-              "documentation/cli-v2/getting-started",
-              "documentation/cli-v2/workflows/local",
-              "documentation/cli-v2/workflows/helix_cloud",
-              "documentation/cli-v2/configuration",
-              "documentation/cli-v2/troubleshooting"
+              "cli/getting-started",
+              "cli/workflows/local",
+              "cli/workflows/helix_cloud",
+              "cli/configuration",
+              "cli/troubleshooting"
             ]
           },
           {
             "group": "CLI Command Reference",
             "pages": [
-              "documentation/cli-v2/command-reference",
-              "documentation/cli-v2/command-reference/add",
-              "documentation/cli-v2/command-reference/auth",
-              "documentation/cli-v2/command-reference/cluster",
-              "documentation/cli-v2/command-reference/dashboard",
-              "documentation/cli-v2/command-reference/delete",
-              "documentation/cli-v2/command-reference/feedback",
-              "documentation/cli-v2/command-reference/go",
-              "documentation/cli-v2/command-reference/init",
-              "documentation/cli-v2/command-reference/logs",
-              "documentation/cli-v2/command-reference/metrics",
-              "documentation/cli-v2/command-reference/project",
-              "documentation/cli-v2/command-reference/prune",
-              "documentation/cli-v2/command-reference/query",
-              "documentation/cli-v2/command-reference/restart",
-              "documentation/cli-v2/command-reference/run",
-              "documentation/cli-v2/command-reference/status",
-              "documentation/cli-v2/command-reference/stop",
-              "documentation/cli-v2/command-reference/sync",
-              "documentation/cli-v2/command-reference/update",
-              "documentation/cli-v2/command-reference/workspace"
+              "cli/command-reference",
+              "cli/command-reference/add",
+              "cli/command-reference/auth",
+              "cli/command-reference/chef",
+              "cli/command-reference/cluster",
+              "cli/command-reference/dashboard",
+              "cli/command-reference/delete",
+              "cli/command-reference/feedback",
+              "cli/command-reference/init",
+              "cli/command-reference/logs",
+              "cli/command-reference/metrics",
+              "cli/command-reference/project",
+              "cli/command-reference/prune",
+              "cli/command-reference/query",
+              "cli/command-reference/restart",
+              "cli/command-reference/run",
+              "cli/command-reference/status",
+              "cli/command-reference/stop",
+              "cli/command-reference/sync",
+              "cli/command-reference/update",
+              "cli/command-reference/workspace"
             ]
           }
         ]
