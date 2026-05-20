@@ -1,0 +1,588 @@
+---
+title: 'Filtering, ordering, paging'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+This page covers the steps that *narrow* a stream rather than walking the graph:
+property and label filters, the full `Predicate` catalog, ordering, and slicing the
+result with `limit` / `skip` / `range`.
+
+## `.has`, `.hasLabel`, `.hasKey`
+
+The simplest filters are equality checks on a single property. They work on both
+node and edge streams.
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch } from "@helixdb/enterprise-ql";
+
+const proUsers = readBatch()
+  .varAs(
+    "users",
+    g().nWithLabel("User").has("tier", "pro").valueMap(["$id", "username"]),
+  )
+  .returning(["users"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn pro_users() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "users",
+            g().n_with_label("User")
+                .has("tier", "pro")
+                .value_map(Some(vec!["$id", "username"])),
+        )
+        .returning(["users"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "users",
+        "steps": [
+          { "NWhere":   { "Eq": ["$label", { "String": "User" }] } },
+          { "Has":      ["tier", { "String": "pro" }] },
+          { "ValueMap": ["$id", "username"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["users"]
+}
+```
+</CodeGroup>
+
+- `.has(property, value)` — property equals the given value.
+- `.hasLabel(label)` — node/edge label equals.
+- `.hasKey(property)` — property exists (any non-null value).
+
+These are convenience wrappers; under the hood they could all be expressed via
+`.where(...)`.
+
+## `.where(Predicate.*)`
+
+For anything richer than equality, use `.where(Predicate.*)`. `Predicate` exposes the
+full set:
+
+| Group | Builders |
+|---|---|
+| Comparison | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `between` |
+| String | `startsWith`, `endsWith`, `contains` |
+| Collection | `isIn`, `isInExpr` |
+| Property presence | `hasKey`, `isNull`, `isNotNull` |
+| Logical | `and([...])`, `or([...])`, `not(p)` |
+| Parameter-bound | `eqParam`, `neqParam`, `gtParam`, `gteParam`, `ltParam`, `lteParam`, `isInParam`, `containsParam` |
+| Expression | `compare(left, op, right)` — for arithmetic on either side |
+
+A typical multi-predicate filter:
+
+<CodeGroup>
+```ts TypeScript
+import { g, Predicate, readBatch } from "@helixdb/enterprise-ql";
+
+const recentProPosts = readBatch()
+  .varAs(
+    "posts",
+    g()
+      .nWithLabel("Post")
+      .where(
+        Predicate.and([
+          Predicate.gte("createdAt", "2026-01-01"),
+          Predicate.or([
+            Predicate.contains("title", "graph"),
+            Predicate.contains("title", "database"),
+          ]),
+          Predicate.isNotNull("body"),
+        ]),
+      )
+      .valueMap(["$id", "title", "createdAt"]),
+  )
+  .returning(["posts"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn recent_pro_posts() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "posts",
+            g().n_with_label("Post")
+                .where_(Predicate::and(vec![
+                    Predicate::gte("createdAt", "2026-01-01"),
+                    Predicate::or(vec![
+                        Predicate::contains("title", "graph"),
+                        Predicate::contains("title", "database"),
+                    ]),
+                    Predicate::is_not_null("body"),
+                ]))
+                .value_map(Some(vec!["$id", "title", "createdAt"])),
+        )
+        .returning(["posts"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "posts",
+        "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "Post" }] } },
+          {
+            "Where": {
+              "And": [
+                { "Gte": ["createdAt", { "String": "2026-01-01" }] },
+                {
+                  "Or": [
+                    { "Contains": ["title", "graph"] },
+                    { "Contains": ["title", "database"] }
+                  ]
+                },
+                { "IsNotNull": "body" }
+              ]
+            }
+          },
+          { "ValueMap": ["$id", "title", "createdAt"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["posts"]
+}
+```
+</CodeGroup>
+
+### `SourcePredicate` vs `Predicate`
+
+Source steps (`nWhere`, `eWhere`, `nWithLabelWhere`, `eWithLabelWhere`) accept a
+*`SourcePredicate`*, which is deliberately smaller: comparison + `between` + `hasKey`
++ `startsWith` + `and` / `or`. These are the predicates the storage layer can push
+down into an index lookup.
+
+Use a `SourcePredicate` when you want the filter to participate in index selection at
+the source step. Use `.where(Predicate.*)` when you need anything outside that set,
+or when you want the filter to run *after* a graph traversal step.
+
+## Parameter-bound predicates
+
+To filter by a value the caller supplies at request time, use the `*Param` family.
+Pass the parameter *name* as a string; the runtime substitutes the value at execution.
+Full parameter declaration via `defineParams` is covered on
+[Parameters & bundles](/database/querying-guide/parameters-bundles); this page focuses
+on the predicate shape.
+
+<CodeGroup>
+```ts TypeScript
+import {
+  g,
+  Predicate,
+  defineParams,
+  param,
+  readBatch,
+} from "@helixdb/enterprise-ql";
+
+const params = defineParams({ username: param.string() });
+
+function userByUsername(p = params) {
+  return readBatch()
+    .varAs(
+      "user",
+      g()
+        .nWithLabel("User")
+        .where(Predicate.eqParam("username", "username"))
+        .valueMap(["$id", "username", "tier"]),
+    )
+    .returning(["user"]);
+}
+
+const body = userByUsername().toDynamicJson(params, { username: "alice" });
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn user_by_username(username: String) -> ReadBatch {
+    let _ = &username;
+    read_batch()
+        .var_as(
+            "user",
+            g().n_with_label("User")
+                .where_(Predicate::eq_param("username", "username"))
+                .value_map(Some(vec!["$id", "username", "tier"])),
+        )
+        .returning(["user"])
+}
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query": {
+    "queries": [
+      {
+        "Query": {
+          "name": "user",
+          "steps": [
+            { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+            {
+              "Where": {
+                "Compare": {
+                  "left":  { "Property": "username" },
+                  "op":    "Eq",
+                  "right": { "Param": "username" }
+                }
+              }
+            },
+            { "ValueMap": ["$id", "username", "tier"] }
+          ],
+          "condition": null
+        }
+      }
+    ],
+    "returns": ["user"]
+  },
+  "parameters":      { "username": "alice" },
+  "parameter_types": { "username": "String" }
+}
+```
+</CodeGroup>
+
+A few wire-format details worth noting:
+
+- `Predicate.eqParam(prop, name)` desugars to a generic `Compare` predicate with a
+  `Property` on the left and a `Param` on the right. The same shape applies to
+  `neqParam`, `gtParam`, `gteParam`, `ltParam`, `lteParam` (the `op` field varies).
+- `Predicate.isInParam("status", "statuses")` becomes
+  `{"IsInExpr": ["status", {"Param": "statuses"}]}` — a `Param`-valued expression,
+  not a `Compare`.
+- `Predicate.containsParam("body", "needle")` becomes
+  `{"ContainsExpr": ["body", {"Param": "needle"}]}`.
+
+## Filtering edges in the middle of a traversal
+
+When you're walking through an edge stream and want to filter on edge properties
+without leaving the stream, use `.edgeHas(prop, value)` or `.edgeHasLabel(label)`.
+
+<CodeGroup>
+```ts TypeScript
+import { g, NodeRef, PropertyInput, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+
+const aliceStrongFollows = readBatch()
+  .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAs(
+    "strong_following",
+    g()
+      .n(NodeRef.var("user"))
+      .outE("FOLLOWS")
+      .edgeHas("weight", PropertyInput.value(0.8))
+      .inN()
+      .valueMap(["$id", "username"]),
+  )
+  .returning(["strong_following"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn alice_strong_follows() -> ReadBatch {
+    read_batch()
+        .var_as("user", g().n_where(SourcePredicate::eq("username", "alice")))
+        .var_as(
+            "strong_following",
+            g().n(NodeRef::var("user"))
+                .out_e(Some("FOLLOWS"))
+                .edge_has("weight", PropertyInput::from(0.8))
+                .in_n()
+                .value_map(Some(vec!["$id", "username"])),
+        )
+        .returning(["strong_following"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "user",
+        "steps": [
+          { "NWhere": { "Eq": ["username", { "String": "alice" }] } }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "strong_following",
+        "steps": [
+          { "N":           { "Var": "user" } },
+          { "OutE":        "FOLLOWS" },
+          { "EdgeHas":     ["weight", { "Value": { "F64": 0.8 } }] },
+          "InN",
+          { "ValueMap":    ["$id", "username"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["strong_following"]
+}
+```
+</CodeGroup>
+
+## Ordering
+
+`.orderBy(property, Order.Asc | Order.Desc)` sorts by a single property.
+`.orderByMultiple([[prop, order], ...])` sorts by several at once with explicit
+direction per key.
+
+<CodeGroup>
+```ts TypeScript
+import { g, Order, readBatch } from "@helixdb/enterprise-ql";
+
+const recentPosts = readBatch()
+  .varAs(
+    "posts",
+    g()
+      .nWithLabel("Post")
+      .orderBy("createdAt", Order.Desc)
+      .limit(20)
+      .valueMap(["$id", "title", "createdAt"]),
+  )
+  .returning(["posts"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn recent_posts() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "posts",
+            g().n_with_label("Post")
+                .order_by("createdAt", Order::Desc)
+                .limit(20usize)
+                .value_map(Some(vec!["$id", "title", "createdAt"])),
+        )
+        .returning(["posts"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "posts",
+        "steps": [
+          { "NWhere":   { "Eq": ["$label", { "String": "Post" }] } },
+          { "OrderBy":  ["createdAt", "Desc"] },
+          { "Limit":    20 },
+          { "ValueMap": ["$id", "title", "createdAt"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["posts"]
+}
+```
+</CodeGroup>
+
+For multi-key ordering:
+
+```ts
+g()
+  .nWithLabel("Post")
+  .orderByMultiple([
+    ["createdAt", Order.Desc],
+    ["title", Order.Asc],
+  ]);
+```
+
+which serializes as:
+
+```json
+{ "OrderByMultiple": [["createdAt", "Desc"], ["title", "Asc"]] }
+```
+
+## Paging: `.limit`, `.skip`, `.range`
+
+The three slicing steps all accept either a literal number / `bigint` or a
+`StreamBound` for parameter-bound bounds.
+
+- `.limit(n)` — keep the first `n`.
+- `.skip(n)` — drop the first `n`.
+- `.range(start, end)` — keep the half-open `[start, end)` slice.
+
+### Literal bounds
+
+<CodeGroup>
+```ts TypeScript
+import { g, Order, readBatch } from "@helixdb/enterprise-ql";
+
+const secondPage = readBatch()
+  .varAs(
+    "posts",
+    g()
+      .nWithLabel("Post")
+      .orderBy("createdAt", Order.Desc)
+      .range(20, 40)
+      .valueMap(["$id", "title"]),
+  )
+  .returning(["posts"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn second_page() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "posts",
+            g().n_with_label("Post")
+                .order_by("createdAt", Order::Desc)
+                .range(20usize, 40usize)
+                .value_map(Some(vec!["$id", "title"])),
+        )
+        .returning(["posts"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "posts",
+        "steps": [
+          { "NWhere":   { "Eq": ["$label", { "String": "Post" }] } },
+          { "OrderBy":  ["createdAt", "Desc"] },
+          { "Range":    [20, 40] },
+          { "ValueMap": ["$id", "title"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["posts"]
+}
+```
+</CodeGroup>
+
+### Parameter-bound limits
+
+For request-time pagination, wrap the bound in `StreamBound.expr(Expr.param("..."))`.
+The JSON variant changes too: `Limit` becomes `LimitBy`, `Skip` becomes `SkipBy`,
+`Range` becomes `RangeBy`.
+
+<CodeGroup>
+```ts TypeScript
+import {
+  defineParams,
+  Expr,
+  g,
+  Order,
+  param,
+  readBatch,
+  StreamBound,
+} from "@helixdb/enterprise-ql";
+
+const params = defineParams({ page_size: param.i64() });
+
+function recentPostsPaged(p = params) {
+  return readBatch()
+    .varAs(
+      "posts",
+      g()
+        .nWithLabel("Post")
+        .orderBy("createdAt", Order.Desc)
+        .limit(StreamBound.expr(Expr.param("page_size")))
+        .valueMap(["$id", "title"]),
+    )
+    .returning(["posts"]);
+}
+
+const body = recentPostsPaged().toDynamicJson(params, { page_size: 25n });
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn recent_posts_paged(page_size: i64) -> ReadBatch {
+    let _ = &page_size;
+    read_batch()
+        .var_as(
+            "posts",
+            g().n_with_label("Post")
+                .order_by("createdAt", Order::Desc)
+                .limit(Expr::param("page_size"))
+                .value_map(Some(vec!["$id", "title"])),
+        )
+        .returning(["posts"])
+}
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query": {
+    "queries": [
+      {
+        "Query": {
+          "name": "posts",
+          "steps": [
+            { "NWhere":   { "Eq": ["$label", { "String": "Post" }] } },
+            { "OrderBy":  ["createdAt", "Desc"] },
+            { "LimitBy":  { "Param": "page_size" } },
+            { "ValueMap": ["$id", "title"] }
+          ],
+          "condition": null
+        }
+      }
+    ],
+    "returns": ["posts"]
+  },
+  "parameters":      { "page_size": 25 },
+  "parameter_types": { "page_size": "I64" }
+}
+```
+</CodeGroup>
+
+The `Range` parameter-bound variant looks like:
+
+```json
+{ "RangeBy": [{ "Literal": 0 }, { "Expr": { "Param": "end" } }] }
+```
+
+— each bound is independently a `Literal` or an `Expr`, so you can mix-and-match a
+constant start with a parameterized end.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Projections" icon="table-columns" href="/database/querying-guide/projections">
+    Choose what the caller sees: `values`, `valueMap`, `project`, terminal aggregations.
+  </Card>
+  <Card title="Mutations" icon="pen-to-square" href="/database/querying-guide/mutations">
+    `addN`, `addE`, `setProperty`, `drop` — write batches end-to-end.
+  </Card>
+</CardGroup>

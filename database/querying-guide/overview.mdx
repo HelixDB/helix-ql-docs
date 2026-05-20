@@ -1,0 +1,304 @@
+---
+title: 'Querying Guide: Overview'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+This guide is a tutorial walkthrough of the HelixDB query language. Each page builds
+on the last, starting from the simplest possible read and ending at parameter-bound
+stored bundles. Every example shows the **TypeScript**, **Rust**, and **JSON** form
+side by side, so you can pick a client and follow along — or skim across all three to
+see how the surfaces relate.
+
+The three forms are not three different query languages; they are three encodings of
+the same query AST. The TypeScript and Rust DSLs are typed builders that emit the JSON
+shape directly. If you copy the JSON column into a `POST /v1/query` body, it will
+execute the same query as the DSL above it.
+
+## The running example
+
+Every page in this guide uses one small social-graph schema, so each new step plugs
+into a domain you already know.
+
+- **Nodes:** `User` (`username`, `tier`, `createdAt`), `Post` (`title`, `body`,
+  `embedding`, `createdAt`), `Tag` (`name`).
+- **Edges:** `FOLLOWS` (User → User), `AUTHORED` (User → Post), `LIKED` (User → Post),
+  `TAGGED` (Post → Tag).
+- **Indexes:** a unique-equality index on `User.username`, a vector index on
+  `Post.embedding`, a text index on `Post.body`.
+
+Index setup itself is covered on the [Search](/database/querying-guide/search) page;
+for now assume they exist.
+
+## How a query is shaped
+
+Every query — read or write — is a small pipeline:
+
+1. Open a batch with `readBatch()` or `writeBatch()`.
+2. Bind one or more named sub-results with `.varAs("name", traversal)`. A traversal
+   always starts from `g()` and chains steps until it produces nodes, edges, or a
+   terminal value.
+3. Choose which bound names to surface to the caller with `.returning([...])`.
+
+The TypeScript shell:
+
+```ts
+readBatch()
+  .varAs("name", g().someSource().someStep())
+  .varAs("other", g().someSource().someStep())
+  .returning(["name", "other"]);
+```
+
+The Rust shell is identical except for naming conventions (`read_batch`, `var_as`,
+`returning`). The JSON shell is what the batch serializes to: a top-level
+`{queries: [...], returns: [...]}` object, with each `varAs` producing one
+`{Query: {name, steps, condition}}` entry. The
+[Reading nodes](/database/querying-guide/reading-nodes) page covers the shell step by
+step; this overview just shows the finished product.
+
+## A full first example
+
+Fetch a user by `username` and the ten most recent posts they authored. This example
+takes no parameters; it hard-codes `"alice"` and a limit of `10` so the JSON column is
+unambiguous. Parameter binding is introduced on the
+[Filtering](/database/querying-guide/filtering) and
+[Parameters & bundles](/database/querying-guide/parameters-bundles) pages.
+
+<CodeGroup>
+```ts TypeScript
+import {
+  g,
+  NodeRef,
+  Order,
+  PropertyProjection,
+  SourcePredicate,
+  readBatch,
+} from "@helixdb/enterprise-ql";
+
+const aliceFeed = readBatch()
+  .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAs(
+    "posts",
+    g()
+      .n(NodeRef.var("user"))
+      .out("AUTHORED")
+      .orderBy("createdAt", Order.Desc)
+      .limit(10)
+      .project([
+        PropertyProjection.renamed("$id", "post_id"),
+        PropertyProjection.new("title"),
+        PropertyProjection.new("createdAt"),
+      ]),
+  )
+  .returning(["user", "posts"]);
+
+const body = aliceFeed.toDynamicJson(); // POST body for /v1/query
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn alice_feed() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "user",
+            g().n_where(SourcePredicate::eq("username", "alice")),
+        )
+        .var_as(
+            "posts",
+            g().n(NodeRef::var("user"))
+                .out(Some("AUTHORED"))
+                .order_by("createdAt", Order::Desc)
+                .limit(10usize)
+                .project(vec![
+                    PropertyProjection::renamed("$id", "post_id"),
+                    PropertyProjection::new("title"),
+                    PropertyProjection::new("createdAt"),
+                ]),
+        )
+        .returning(["user", "posts"])
+}
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query": {
+    "queries": [
+      {
+        "Query": {
+          "name": "user",
+          "steps": [
+            { "NWhere": { "Eq": ["username", { "String": "alice" }] } }
+          ],
+          "condition": null
+        }
+      },
+      {
+        "Query": {
+          "name": "posts",
+          "steps": [
+            { "N": { "Var": "user" } },
+            { "Out": "AUTHORED" },
+            { "OrderBy": ["createdAt", "Desc"] },
+            { "Limit": 10 },
+            {
+              "Project": [
+                { "source": "$id",       "alias": "post_id"   },
+                { "source": "title",     "alias": "title"     },
+                { "source": "createdAt", "alias": "createdAt" }
+              ]
+            }
+          ],
+          "condition": null
+        }
+      }
+    ],
+    "returns": ["user", "posts"]
+  }
+}
+```
+</CodeGroup>
+
+Two things to notice:
+
+- The `posts` traversal starts from `NodeRef.var("user")` — that's how one named
+  binding feeds into the next. The same name appears as `{"N": {"Var": "user"}}` in
+  the JSON.
+- The TypeScript and Rust DSLs surface a friendly `nWithLabel` / `n_with_label`
+  alias, but this example uses `nWhere(SourcePredicate.eq("username", "alice"))`
+  directly because the read is anchored on a unique property, not a label scan. The
+  next page covers when to use each anchor.
+
+## Sending the request
+
+The JSON above is the actual body for `POST /v1/query`. Below are the same request
+in three transports — TypeScript using `fetch`, Rust using `reqwest`, and `curl`
+straight from the shell. All three are interchangeable; pick whichever fits your
+environment.
+
+<CodeGroup>
+```ts TypeScript
+// Continuing from the snippet above.
+const response = await fetch("https://helix.example.com/v1/query", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: aliceFeed.toDynamicJson(),
+});
+
+if (!response.ok) {
+  throw new Error(`Helix returned ${response.status}`);
+}
+
+const { user, posts } = await response.json();
+```
+
+```rust Rust
+// alice_feed() returns a ReadBatch; build a DynamicQueryRequest and post it.
+use helix_dsl::prelude::*;
+
+let body = DynamicQueryRequest::read(alice_feed()).to_json_string()?;
+
+let response = reqwest::Client::new()
+    .post("https://helix.example.com/v1/query")
+    .header("content-type", "application/json")
+    .body(body)
+    .send()
+    .await?
+    .error_for_status()?
+    .json::<serde_json::Value>()
+    .await?;
+
+let user = &response["user"];
+let posts = &response["posts"];
+```
+
+```bash curl
+# Save the JSON envelope to a file (or inline it with --data-raw '...').
+cat > /tmp/alice-feed.json <<'EOF'
+{
+  "request_type": "read",
+  "query": {
+    "queries": [
+      { "Query": { "name": "user", "steps": [
+        { "NWhere": { "Eq": ["username", { "String": "alice" }] } }
+      ], "condition": null } },
+      { "Query": { "name": "posts", "steps": [
+        { "N": { "Var": "user" } },
+        { "Out": "AUTHORED" },
+        { "OrderBy": ["createdAt", "Desc"] },
+        { "Limit": 10 },
+        { "Project": [
+          { "source": "$id",       "alias": "post_id"   },
+          { "source": "title",     "alias": "title"     },
+          { "source": "createdAt", "alias": "createdAt" }
+        ] }
+      ], "condition": null } }
+    ],
+    "returns": ["user", "posts"]
+  }
+}
+EOF
+
+curl -sS -X POST https://helix.example.com/v1/query \
+  -H "content-type: application/json" \
+  --data-binary @/tmp/alice-feed.json
+```
+</CodeGroup>
+
+The response is a JSON object keyed by the names from `.returning([...])` — here
+`{ "user": [...], "posts": [...] }`. Each value is the list of rows produced by that
+named binding.
+
+If this query were deployed as a *stored* route under the name `alice_feed`, the
+client would hit `POST /v1/query/alice_feed` with a much smaller body (just the
+parameters object — empty `{}` here, since this query takes none). The
+[Parameters and bundles](/database/querying-guide/parameters-bundles) page walks
+through both shapes.
+
+## How to read this guide
+
+Each page follows the same template:
+
+1. A short prose intro to the concept.
+2. One or more `<CodeGroup>` blocks. The **TypeScript** tab is the lead — every
+   example is written there first.
+3. The **Rust** tab mirrors the TypeScript exactly, with snake-case method names and
+   the trailing-underscore convention for Rust keywords (`where_`, `in_`, `as_`).
+4. The **JSON** tab is the serialized AST that either DSL produces. It is the body
+   you would POST to `/v1/query` for a dynamic request; the same object appears
+   inside `queries.json` under `read_routes.<name>` or `write_routes.<name>` for a
+   stored route.
+
+You can also jump straight to any topic from the list below; the pages do not assume
+strict sequential reading, but anything earlier in the list is fair game later on.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Reading nodes and edges" icon="circle-nodes" href="/database/querying-guide/reading-nodes">
+    Source anchors: `n` by id, `nWithLabel`, `nWhere`, and the edge equivalents.
+  </Card>
+  <Card title="Traversals" icon="diagram-project" href="/database/querying-guide/traversals">
+    Walking the graph: `out`, `in`, `both`, edge variants, multi-hop chains.
+  </Card>
+  <Card title="Filtering, ordering, paging" icon="filter" href="/database/querying-guide/filtering">
+    Predicates, ordering, and slicing the result stream.
+  </Card>
+  <Card title="Projections" icon="table-columns" href="/database/querying-guide/projections">
+    Shaping the output: `values`, `valueMap`, `project`, aggregations.
+  </Card>
+  <Card title="Mutations" icon="pen-to-square" href="/database/querying-guide/mutations">
+    `writeBatch`, `addN`, `addE`, `setProperty`, `drop`.
+  </Card>
+  <Card title="Vector and text search" icon="magnifying-glass" href="/database/querying-guide/search">
+    `vectorSearchNodes`, `textSearchNodes`, follow-on traversal from hits.
+  </Card>
+  <Card title="Advanced patterns" icon="code-branch" href="/database/querying-guide/advanced">
+    `repeat`, `union`, `choose`, `coalesce`, `optional`, `varAsIf`, `forEachParam`.
+  </Card>
+  <Card title="Parameters and bundles" icon="gear" href="/database/querying-guide/parameters-bundles">
+    `defineParams`, stored bundles, dynamic requests, typed call helpers.
+  </Card>
+</CardGroup>

@@ -1,0 +1,660 @@
+---
+title: 'Vector and text search'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+The DSL exposes two kinds of search source steps that return scored hits instead of a
+plain label scan: **vector search** (approximate k-NN over a float-array property) and
+**text search** (BM25 over a string property). Both are available on nodes and edges,
+both expose a literal form and a parameter-bound `_with` form, and both can be the
+first step of a longer traversal — once you have hits, you can keep walking the graph.
+
+This page assumes the indexes exist. Index creation is covered first, then queries.
+
+## Creating indexes
+
+Indexes are graph mutations, so they live in a `writeBatch`. The unified
+`createIndexIfNotExists(IndexSpec.*)` step covers every variant and is idempotent —
+safe to run on each deploy.
+
+<CodeGroup>
+```ts TypeScript
+import { g, IndexSpec, writeBatch } from "@helixdb/enterprise-ql";
+
+const createIndexes = writeBatch()
+  .varAs(
+    "username_uniq",
+    g().createIndexIfNotExists(
+      IndexSpec.nodeUniqueEquality("User", "username"),
+    ),
+  )
+  .varAs(
+    "post_embedding",
+    g().createIndexIfNotExists(
+      IndexSpec.nodeVector("Post", "embedding"),
+    ),
+  )
+  .varAs(
+    "post_body",
+    g().createIndexIfNotExists(
+      IndexSpec.nodeText("Post", "body"),
+    ),
+  );
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn create_indexes() -> WriteBatch {
+    write_batch()
+        .var_as(
+            "username_uniq",
+            g().create_index_if_not_exists(
+                IndexSpec::node_unique_equality("User", "username"),
+            ),
+        )
+        .var_as(
+            "post_embedding",
+            g().create_index_if_not_exists(
+                IndexSpec::node_vector("Post", "embedding", None::<&str>),
+            ),
+        )
+        .var_as(
+            "post_body",
+            g().create_index_if_not_exists(
+                IndexSpec::node_text("Post", "body", None::<&str>),
+            ),
+        )
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "username_uniq",
+        "steps": [
+          {
+            "CreateIndex": {
+              "spec": {
+                "NodeEquality": {
+                  "label": "User",
+                  "property": "username",
+                  "unique": true
+                }
+              },
+              "if_not_exists": true
+            }
+          }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "post_embedding",
+        "steps": [
+          {
+            "CreateIndex": {
+              "spec": {
+                "NodeVector": {
+                  "label": "Post",
+                  "property": "embedding"
+                }
+              },
+              "if_not_exists": true
+            }
+          }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "post_body",
+        "steps": [
+          {
+            "CreateIndex": {
+              "spec": {
+                "NodeText": {
+                  "label": "Post",
+                  "property": "body"
+                }
+              },
+              "if_not_exists": true
+            }
+          }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": []
+}
+```
+</CodeGroup>
+
+`IndexSpec` covers every shape the runtime supports:
+
+| Spec | What it is |
+|---|---|
+| `nodeEquality(label, prop)` | Secondary equality index. |
+| `nodeUniqueEquality(label, prop)` | Equality index with a uniqueness constraint. |
+| `nodeRange(label, prop)` | Range / ordering index. |
+| `nodeVector(label, prop, tenant?)` | ANN vector index. |
+| `nodeText(label, prop, tenant?)` | BM25 text index. |
+| `edgeEquality` / `edgeRange` / `edgeVector` / `edgeText` | Same shapes for edges. |
+
+`tenant?` is the multi-tenancy partition key — see the bottom of this page.
+
+## Vector search
+
+`vectorSearchNodes(label, property, queryVector, k, tenantValue?)` returns the top
+`k` nodes whose `property` is closest to `queryVector`. Hits arrive in ascending
+distance order with a virtual `$distance` field projected onto each result.
+
+<CodeGroup>
+```ts TypeScript
+import { g, PropertyProjection, readBatch } from "@helixdb/enterprise-ql";
+
+const similarPosts = readBatch()
+  .varAs(
+    "hits",
+    g()
+      .vectorSearchNodes("Post", "embedding", [0.12, 0.85, -0.04], 5, null)
+      .project([
+        PropertyProjection.renamed("$id", "post_id"),
+        PropertyProjection.renamed("$distance", "distance"),
+        PropertyProjection.new("title"),
+      ]),
+  )
+  .returning(["hits"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn similar_posts() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "hits",
+            g().vector_search_nodes(
+                "Post",
+                "embedding",
+                vec![0.12f32, 0.85, -0.04],
+                5,
+                None::<PropertyValue>,
+            )
+            .project(vec![
+                PropertyProjection::renamed("$id", "post_id"),
+                PropertyProjection::renamed("$distance", "distance"),
+                PropertyProjection::new("title"),
+            ]),
+        )
+        .returning(["hits"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "hits",
+        "steps": [
+          {
+            "VectorSearchNodes": {
+              "label": "Post",
+              "property": "embedding",
+              "query_vector": { "Value": { "F32Array": [0.12, 0.85, -0.04] } },
+              "k": { "Literal": 5 }
+            }
+          },
+          {
+            "Project": [
+              { "source": "$id",       "alias": "post_id" },
+              { "source": "$distance", "alias": "distance" },
+              { "source": "title",     "alias": "title" }
+            ]
+          }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["hits"]
+}
+```
+</CodeGroup>
+
+`$distance` is only present on the direct hit stream. The instant you step off it
+with `.out()`, `.in()`, `.both()`, `.outN()`, etc., the score is gone — project it
+*before* you traverse.
+
+## Following the graph from a hit
+
+Vector hits are a normal node stream, so the next step can keep walking. The example
+below finds posts similar to a query vector, then returns their authors with the
+post's distance projected as an annotation.
+
+<CodeGroup>
+```ts TypeScript
+import { g, PropertyProjection, readBatch } from "@helixdb/enterprise-ql";
+
+const authorsOfSimilar = readBatch()
+  .varAs(
+    "hits",
+    g()
+      .vectorSearchNodes("Post", "embedding", [0.12, 0.85, -0.04], 10, null)
+      .project([
+        PropertyProjection.renamed("$id", "post_id"),
+        PropertyProjection.renamed("$distance", "distance"),
+        PropertyProjection.new("title"),
+      ]),
+  )
+  .varAs(
+    "authors",
+    g()
+      .vectorSearchNodes("Post", "embedding", [0.12, 0.85, -0.04], 10, null)
+      .in("AUTHORED")
+      .dedup()
+      .valueMap(["$id", "username"]),
+  )
+  .returning(["hits", "authors"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn authors_of_similar() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "hits",
+            g().vector_search_nodes(
+                "Post",
+                "embedding",
+                vec![0.12f32, 0.85, -0.04],
+                10,
+                None::<PropertyValue>,
+            )
+            .project(vec![
+                PropertyProjection::renamed("$id", "post_id"),
+                PropertyProjection::renamed("$distance", "distance"),
+                PropertyProjection::new("title"),
+            ]),
+        )
+        .var_as(
+            "authors",
+            g().vector_search_nodes(
+                "Post",
+                "embedding",
+                vec![0.12f32, 0.85, -0.04],
+                10,
+                None::<PropertyValue>,
+            )
+            .in_(Some("AUTHORED"))
+            .dedup()
+            .value_map(Some(vec!["$id", "username"])),
+        )
+        .returning(["hits", "authors"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "hits",
+        "steps": [
+          {
+            "VectorSearchNodes": {
+              "label": "Post",
+              "property": "embedding",
+              "query_vector": { "Value": { "F32Array": [0.12, 0.85, -0.04] } },
+              "k": { "Literal": 10 }
+            }
+          },
+          {
+            "Project": [
+              { "source": "$id",       "alias": "post_id" },
+              { "source": "$distance", "alias": "distance" },
+              { "source": "title",     "alias": "title" }
+            ]
+          }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "authors",
+        "steps": [
+          {
+            "VectorSearchNodes": {
+              "label": "Post",
+              "property": "embedding",
+              "query_vector": { "Value": { "F32Array": [0.12, 0.85, -0.04] } },
+              "k": { "Literal": 10 }
+            }
+          },
+          { "In": "AUTHORED" },
+          "Dedup",
+          { "ValueMap": ["$id", "username"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["hits", "authors"]
+}
+```
+</CodeGroup>
+
+The two `varAs` blocks duplicate the search step because each is a fresh traversal
+binding. If you only want the authors and don't need the hits themselves in the
+response, drop the first `varAs` and remove `"hits"` from `returning(...)`.
+
+## Text search (BM25)
+
+`textSearchNodes(label, property, queryText, k, tenantValue?)` runs BM25 over the
+named text-indexed property and returns the top `k` matching nodes. The interface
+mirrors `vectorSearchNodes` exactly, including the `$distance` virtual field (here it
+represents an inverted relevance score — smaller is more relevant, just like vector
+distance).
+
+<CodeGroup>
+```ts TypeScript
+import { g, PropertyProjection, readBatch } from "@helixdb/enterprise-ql";
+
+const postsAboutGraphs = readBatch()
+  .varAs(
+    "hits",
+    g()
+      .textSearchNodes("Post", "body", "graph database storage engine", 10, null)
+      .project([
+        PropertyProjection.renamed("$id", "post_id"),
+        PropertyProjection.renamed("$distance", "score"),
+        PropertyProjection.new("title"),
+      ]),
+  )
+  .returning(["hits"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn posts_about_graphs() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "hits",
+            g().text_search_nodes(
+                "Post",
+                "body",
+                "graph database storage engine",
+                10,
+                None::<PropertyValue>,
+            )
+            .project(vec![
+                PropertyProjection::renamed("$id", "post_id"),
+                PropertyProjection::renamed("$distance", "score"),
+                PropertyProjection::new("title"),
+            ]),
+        )
+        .returning(["hits"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "hits",
+        "steps": [
+          {
+            "TextSearchNodes": {
+              "label": "Post",
+              "property": "body",
+              "query_text": { "Value": { "String": "graph database storage engine" } },
+              "k": { "Literal": 10 }
+            }
+          },
+          {
+            "Project": [
+              { "source": "$id",       "alias": "post_id" },
+              { "source": "$distance", "alias": "score" },
+              { "source": "title",     "alias": "title" }
+            ]
+          }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["hits"]
+}
+```
+</CodeGroup>
+
+## Parameter-bound search
+
+For routes that take the query vector / text and `k` from the request, switch to the
+`_with` siblings. They accept `PropertyInput.param(...)` for the query and a
+`StreamBound` (literal or `Expr`-wrapped) for `k`.
+
+<CodeGroup>
+```ts TypeScript
+import {
+  defineParams,
+  Expr,
+  g,
+  param,
+  PropertyInput,
+  PropertyProjection,
+  readBatch,
+  StreamBound,
+} from "@helixdb/enterprise-ql";
+
+const params = defineParams({
+  query_vector: param.array(param.f32()),
+  k:            param.i64(),
+});
+
+function semanticSearch(p = params) {
+  return readBatch()
+    .varAs(
+      "hits",
+      g()
+        .vectorSearchNodesWith(
+          "Post",
+          "embedding",
+          PropertyInput.param("query_vector"),
+          StreamBound.expr(Expr.param("k")),
+          null,
+        )
+        .project([
+          PropertyProjection.renamed("$id", "post_id"),
+          PropertyProjection.renamed("$distance", "distance"),
+          PropertyProjection.new("title"),
+        ]),
+    )
+    .returning(["hits"]);
+}
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn semantic_search(query_vector: Vec<f32>, k: i64) -> ReadBatch {
+    let _ = (&query_vector, &k);
+    read_batch()
+        .var_as(
+            "hits",
+            g().vector_search_nodes_with(
+                "Post",
+                "embedding",
+                PropertyInput::param("query_vector"),
+                Expr::param("k"),
+                None::<PropertyInput>,
+            )
+            .project(vec![
+                PropertyProjection::renamed("$id", "post_id"),
+                PropertyProjection::renamed("$distance", "distance"),
+                PropertyProjection::new("title"),
+            ]),
+        )
+        .returning(["hits"])
+}
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query": {
+    "queries": [
+      {
+        "Query": {
+          "name": "hits",
+          "steps": [
+            {
+              "VectorSearchNodes": {
+                "label": "Post",
+                "property": "embedding",
+                "query_vector": { "Expr": { "Param": "query_vector" } },
+                "k":            { "Expr": { "Param": "k" } }
+              }
+            },
+            {
+              "Project": [
+                { "source": "$id",       "alias": "post_id" },
+                { "source": "$distance", "alias": "distance" },
+                { "source": "title",     "alias": "title" }
+              ]
+            }
+          ],
+          "condition": null
+        }
+      }
+    ],
+    "returns": ["hits"]
+  },
+  "parameters": {
+    "query_vector": [0.12, 0.85, -0.04],
+    "k": 10
+  },
+  "parameter_types": {
+    "query_vector": { "Array": "F32" },
+    "k": "I64"
+  }
+}
+```
+</CodeGroup>
+
+`textSearchNodesWith(...)` has the identical shape — just replace
+`PropertyInput.param("query_vector")` with `PropertyInput.param("query_text")` and
+declare the parameter as `param.string()`.
+
+## Multi-tenancy
+
+If the index was created with a `tenantProperty`, every search must supply a matching
+`tenantValue` (the partition key). Pass it as the fifth argument to
+`vectorSearchNodes` / `textSearchNodes`, or wrap it in `PropertyInput.param("...")`
+inside the `_with` variants.
+
+<CodeGroup>
+```ts TypeScript
+import { g, IndexSpec, PropertyValue, readBatch, writeBatch } from "@helixdb/enterprise-ql";
+
+// Create a tenant-scoped vector index.
+const createTenantIndex = writeBatch().varAs(
+  "idx",
+  g().createIndexIfNotExists(IndexSpec.nodeVector("Post", "embedding", "tenant_id")),
+);
+
+// Query inside one tenant.
+const tenantSearch = readBatch().varAs(
+  "hits",
+  g().vectorSearchNodes(
+    "Post",
+    "embedding",
+    [0.12, 0.85, -0.04],
+    5,
+    PropertyValue.string("acme"),
+  ),
+);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+pub fn create_tenant_index() -> WriteBatch {
+    write_batch().var_as(
+        "idx",
+        g().create_index_if_not_exists(
+            IndexSpec::node_vector("Post", "embedding", Some("tenant_id")),
+        ),
+    )
+}
+
+pub fn tenant_search() -> ReadBatch {
+    read_batch().var_as(
+        "hits",
+        g().vector_search_nodes(
+            "Post",
+            "embedding",
+            vec![0.12f32, 0.85, -0.04],
+            5,
+            Some(PropertyValue::String("acme".to_string())),
+        ),
+    )
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "hits",
+        "steps": [
+          {
+            "VectorSearchNodes": {
+              "label": "Post",
+              "property": "embedding",
+              "tenant_value": { "Value": { "String": "acme" } },
+              "query_vector": { "Value": { "F32Array": [0.12, 0.85, -0.04] } },
+              "k": { "Literal": 5 }
+            }
+          }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": []
+}
+```
+</CodeGroup>
+
+A search that omits the tenant against a tenant-scoped index will fail to find any
+rows even if the data exists. See [Multi-Tenancy](/database/multi-tenancy) for the
+full partitioning model.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Advanced patterns" icon="code-branch" href="/database/querying-guide/advanced">
+    `repeat`, `union`, `choose`, `coalesce`, `optional`, `forEachParam`.
+  </Card>
+  <Card title="Parameters and bundles" icon="gear" href="/database/querying-guide/parameters-bundles">
+    Declare parameters once, then expose them via dynamic requests or stored bundles.
+  </Card>
+</CardGroup>

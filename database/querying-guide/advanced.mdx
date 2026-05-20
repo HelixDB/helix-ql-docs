@@ -1,0 +1,468 @@
+---
+title: 'Advanced patterns'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+This page covers the steps that branch, repeat, or fan-out inside a single
+traversal: `repeat`, `union`, `choose`, `coalesce`, `optional`, and — at the batch
+level — `forEachParam`. All five sub-traversal-shaped steps share one helper:
+`sub()`, which opens a fresh traversal builder that does not start with `g()`.
+
+`sub()` is to in-line traversals what `g()` is to top-level ones. It has the same
+chainable surface (`out`, `where`, `dedup`, etc.) but it is not a complete query on
+its own — it is always passed into a parent step.
+
+## `repeat`: variable-length traversal
+
+`.repeat(RepeatConfig.new(sub()...).times(n))` walks the same sub-traversal `n`
+times, threading the output of each iteration into the input of the next. By
+default, only the final frontier is emitted. Add `.emitAll()` to keep every
+intermediate frontier; add `.emitBefore()` / `.emitAfter()` to keep only one side.
+
+A two-hop reachability example: from Alice, who is followed-of-followed-by within
+three hops?
+
+<CodeGroup>
+```ts TypeScript
+import {
+  g,
+  NodeRef,
+  readBatch,
+  RepeatConfig,
+  SourcePredicate,
+  sub,
+} from "@helixdb/enterprise-ql";
+
+const aliceReach = readBatch()
+  .varAs("alice", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAs(
+    "within_3",
+    g()
+      .n(NodeRef.var("alice"))
+      .repeat(RepeatConfig.new(sub().out("FOLLOWS")).times(3).emitAll())
+      .dedup()
+      .valueMap(["$id", "username"]),
+  )
+  .returning(["within_3"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn alice_reach() -> ReadBatch {
+    read_batch()
+        .var_as("alice", g().n_where(SourcePredicate::eq("username", "alice")))
+        .var_as(
+            "within_3",
+            g().n(NodeRef::var("alice"))
+                .repeat(
+                    RepeatConfig::new(sub().out(Some("FOLLOWS")))
+                        .times(3)
+                        .emit_all(),
+                )
+                .dedup()
+                .value_map(Some(vec!["$id", "username"])),
+        )
+        .returning(["within_3"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "alice",
+        "steps": [
+          { "NWhere": { "Eq": ["username", { "String": "alice" }] } }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "within_3",
+        "steps": [
+          { "N": { "Var": "alice" } },
+          {
+            "Repeat": {
+              "traversal":       { "steps": [{ "Out": "FOLLOWS" }] },
+              "times":           3,
+              "until":           null,
+              "emit":            "All",
+              "emit_predicate":  null,
+              "max_depth":       100
+            }
+          },
+          "Dedup",
+          { "ValueMap": ["$id", "username"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["within_3"]
+}
+```
+</CodeGroup>
+
+The `max_depth: 100` field in the JSON is a safety ceiling — change it by chaining
+`.maxDepth(n)` on the `RepeatConfig`. To stop early when a predicate is satisfied
+instead of after `n` steps, swap `.times(3)` for `.until(predicate)`.
+
+## `union`: combine multiple sub-traversals
+
+`.union([sub()..., sub()...])` runs each sub-traversal from the current stream and
+emits the concatenation. Use it when "the result is either A or B" — e.g. a personal
+feed that mixes posts you authored *and* posts you liked.
+
+<CodeGroup>
+```ts TypeScript
+import { g, NodeRef, readBatch, SourcePredicate, sub } from "@helixdb/enterprise-ql";
+
+const feed = readBatch()
+  .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAs(
+    "posts",
+    g()
+      .n(NodeRef.var("user"))
+      .union([sub().out("AUTHORED"), sub().out("LIKED")])
+      .dedup()
+      .valueMap(["$id", "title"]),
+  )
+  .returning(["posts"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn feed() -> ReadBatch {
+    read_batch()
+        .var_as("user", g().n_where(SourcePredicate::eq("username", "alice")))
+        .var_as(
+            "posts",
+            g().n(NodeRef::var("user"))
+                .union(vec![sub().out(Some("AUTHORED")), sub().out(Some("LIKED"))])
+                .dedup()
+                .value_map(Some(vec!["$id", "title"])),
+        )
+        .returning(["posts"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "user",
+        "steps": [
+          { "NWhere": { "Eq": ["username", { "String": "alice" }] } }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "posts",
+        "steps": [
+          { "N": { "Var": "user" } },
+          {
+            "Union": [
+              { "steps": [{ "Out": "AUTHORED" }] },
+              { "steps": [{ "Out": "LIKED" }] }
+            ]
+          },
+          "Dedup",
+          { "ValueMap": ["$id", "title"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["posts"]
+}
+```
+</CodeGroup>
+
+## `choose`: per-item if/else
+
+`.choose(predicate, thenSub, elseSub?)` evaluates the predicate per item and routes
+each item through the matching sub-traversal. The optional `else` arm defaults to
+"drop the item" — pass `null` (or omit it in Rust) for that.
+
+Surface different fields for free-tier vs paid-tier users:
+
+<CodeGroup>
+```ts TypeScript
+import { g, Predicate, readBatch, sub } from "@helixdb/enterprise-ql";
+
+const usersAnnotated = readBatch()
+  .varAs(
+    "users",
+    g()
+      .nWithLabel("User")
+      .choose(
+        Predicate.eq("tier", "pro"),
+        sub().valueMap(["$id", "username", "tier"]),
+        sub().valueMap(["$id", "username"]),
+      ),
+  )
+  .returning(["users"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn users_annotated() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "users",
+            g().n_with_label("User").choose(
+                Predicate::eq("tier", "pro"),
+                sub().value_map(Some(vec!["$id", "username", "tier"])),
+                Some(sub().value_map(Some(vec!["$id", "username"]))),
+            ),
+        )
+        .returning(["users"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "users",
+        "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+          {
+            "Choose": {
+              "condition":       { "Eq": ["tier", { "String": "pro" }] },
+              "then_traversal":  { "steps": [{ "ValueMap": ["$id", "username", "tier"] }] },
+              "else_traversal":  { "steps": [{ "ValueMap": ["$id", "username"] }] }
+            }
+          }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["users"]
+}
+```
+</CodeGroup>
+
+## `coalesce`: first non-empty branch wins
+
+`.coalesce([sub()..., sub()..., sub()...])` tries each sub-traversal in order per
+item and returns the first one that produces results. Useful for "prefer A, fall
+back to B".
+
+```ts
+g()
+  .n(NodeRef.var("user"))
+  .coalesce([
+    sub().out("PRIMARY_FEED"),
+    sub().out("DEFAULT_FEED"),
+  ])
+```
+
+The JSON form:
+
+```json
+{
+  "Coalesce": [
+    { "steps": [{ "Out": "PRIMARY_FEED" }] },
+    { "steps": [{ "Out": "DEFAULT_FEED" }] }
+  ]
+}
+```
+
+## `optional`: keep the input even if the sub-traversal is empty
+
+`.optional(sub())` runs the sub-traversal and lets each item through unchanged if the
+sub-traversal produced no result. Think SQL `LEFT JOIN`: you get the original row
+whether or not the optional walk matched anything.
+
+```ts
+g().nWithLabel("User").optional(sub().out("POSTED"));
+```
+
+```json
+{ "Optional": { "steps": [{ "Out": "POSTED" }] } }
+```
+
+## Batch-level conditionals: `varAsIf`
+
+Inside a `readBatch` / `writeBatch`, `.varAsIf(name, BatchCondition.*, traversal)`
+makes a whole `varAs` step conditional on the result of an earlier one. This is the
+upsert pattern from the [Mutations](/database/querying-guide/mutations#conditional-writes-with-varasif)
+page, but it's just as useful on the read side — fetch related rows only if the
+primary lookup produced something.
+
+```ts
+readBatch()
+  .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAsIf(
+    "posts",
+    BatchCondition.varNotEmpty("user"),
+    g().n(NodeRef.var("user")).out("AUTHORED").valueMap(["$id", "title"]),
+  )
+  .returning(["user", "posts"]);
+```
+
+In the JSON, the `condition` field on the conditional `Query` entry carries the
+constraint:
+
+```json
+{
+  "Query": {
+    "name": "posts",
+    "steps": [
+      { "N":         { "Var": "user" } },
+      { "Out":       "AUTHORED" },
+      { "ValueMap": ["$id", "title"] }
+    ],
+    "condition": { "VarNotEmpty": "user" }
+  }
+}
+```
+
+## Fan-out over array parameters: `forEachParam`
+
+`.forEachParam("paramName", body)` iterates over an array-of-object parameter and
+runs `body` once per element. Inside `body`, each object's keys are addressable as
+plain `PropertyInput.param(key)` references. This is the standard shape for
+bulk-insert routes.
+
+<CodeGroup>
+```ts TypeScript
+import {
+  defineParams,
+  g,
+  param,
+  PropertyInput,
+  writeBatch,
+} from "@helixdb/enterprise-ql";
+
+const params = defineParams({
+  users: param.array(param.object(param.string())),
+});
+
+function bulkAddUsers(p = params) {
+  return writeBatch()
+    .forEachParam(
+      "users",
+      writeBatch().varAs(
+        "created",
+        g().addN("User", {
+          username: PropertyInput.param("username"),
+          tier:     PropertyInput.param("tier"),
+        }),
+      ),
+    )
+    .returning(["created"]);
+}
+
+const body = bulkAddUsers().toDynamicJson(params, {
+  users: [
+    { username: "alice", tier: "pro" },
+    { username: "bob",   tier: "free" },
+  ],
+});
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn bulk_add_users(users: ParamValue) -> WriteBatch {
+    let _ = &users;
+    write_batch()
+        .for_each_param(
+            "users",
+            write_batch().var_as(
+                "created",
+                g().add_n(
+                    "User",
+                    vec![
+                        ("username", PropertyInput::param("username")),
+                        ("tier",     PropertyInput::param("tier")),
+                    ],
+                ),
+            ),
+        )
+        .returning(["created"])
+}
+```
+
+```json JSON
+{
+  "request_type": "write",
+  "query": {
+    "queries": [
+      {
+        "ForEach": {
+          "param": "users",
+          "body": [
+            {
+              "Query": {
+                "name": "created",
+                "steps": [
+                  {
+                    "AddN": {
+                      "label": "User",
+                      "properties": [
+                        ["username", { "Expr": { "Param": "username" } }],
+                        ["tier",     { "Expr": { "Param": "tier" } }]
+                      ]
+                    }
+                  }
+                ],
+                "condition": null
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "returns": ["created"]
+  },
+  "parameters": {
+    "users": [
+      { "username": "alice", "tier": "pro" },
+      { "username": "bob",   "tier": "free" }
+    ]
+  },
+  "parameter_types": {
+    "users": { "Array": "Object" }
+  }
+}
+```
+</CodeGroup>
+
+A few notes specific to `forEachParam`:
+
+- The body is a *whole* batch (`readBatch()` / `writeBatch()`), not a sub-traversal.
+  This lets you bind multiple variables per iteration if needed.
+- Bindings inside the loop body are *per-iteration*. The outer `returning([...])`
+  receives the per-iteration results collected into one array.
+- The parameter must be typed `{"Array": "Object"}` — an array of plain JSON
+  objects. `defineParams({ users: param.array(param.object(...)) })` produces this
+  shape automatically.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Parameters and bundles" icon="gear" href="/database/querying-guide/parameters-bundles">
+    `defineParams`, dynamic requests, stored bundles, typed call helpers.
+  </Card>
+  <Card title="Querying overview" icon="book-open" href="/database/querying">
+    The conceptual story: stored vs dynamic queries, transactions, and how the bundle is deployed.
+  </Card>
+</CardGroup>

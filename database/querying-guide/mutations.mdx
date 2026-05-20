@@ -1,0 +1,636 @@
+---
+title: 'Mutations'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+`readBatch()` only accepts read traversals — the TypeScript type system rejects any
+mutating step. To create nodes, add edges, or update properties, switch to
+`writeBatch()`.
+
+Inside a `writeBatch`, every `varAs` may chain any read step *or* any write step. The
+typestate machinery flips into "write" mode the moment a mutation appears, so a write
+batch can also do plain reads (look up an existing user, then update them).
+
+## Adding nodes
+
+`g().addN(label, properties)` inserts a new node and emits a single-item stream — the
+new node. Property values can be passed as a plain object (most common) or as a list
+of `[name, PropertyInput]` tuples (matches the Rust `vec![("name", value)]` shape).
+
+<CodeGroup>
+```ts TypeScript
+import { g, PropertyProjection, writeBatch } from "@helixdb/enterprise-ql";
+
+const addAlice = writeBatch()
+  .varAs(
+    "alice",
+    g()
+      .addN("User", {
+        username: "alice",
+        tier: "pro",
+        createdAt: "2026-05-19T00:00:00Z",
+      })
+      .project([PropertyProjection.renamed("$id", "id")]),
+  )
+  .returning(["alice"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn add_alice() -> WriteBatch {
+    write_batch()
+        .var_as(
+            "alice",
+            g().add_n(
+                "User",
+                vec![
+                    ("username",  PropertyInput::from("alice")),
+                    ("tier",      PropertyInput::from("pro")),
+                    ("createdAt", PropertyInput::from("2026-05-19T00:00:00Z")),
+                ],
+            )
+            .project(vec![PropertyProjection::renamed("$id", "id")]),
+        )
+        .returning(["alice"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "alice",
+        "steps": [
+          {
+            "AddN": {
+              "label": "User",
+              "properties": [
+                ["username",  { "Value": { "String": "alice" } }],
+                ["tier",      { "Value": { "String": "pro" } }],
+                ["createdAt", { "Value": { "String": "2026-05-19T00:00:00Z" } }]
+              ]
+            }
+          },
+          { "Project": [{ "source": "$id", "alias": "id" }] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["alice"]
+}
+```
+</CodeGroup>
+
+A few wire-format details:
+
+- The `properties` array preserves insertion order — `Map`-style, not `Object`-style.
+- Each value is wrapped in a `PropertyInput`. A literal becomes
+  `{"Value": {"String": ...}}`; a parameter becomes `{"Expr": {"Param": "..."}}`
+  (covered in [Parameters & bundles](/database/querying-guide/parameters-bundles)).
+- The result of `addN` is a node stream, so the same chain can keep going —
+  here, `.project([...])` collects the new id.
+
+## Adding edges between bound nodes
+
+`addE` joins two nodes by label. The `to` argument is a `NodeRef` — most often
+`NodeRef.var("...")` pointing at a node bound earlier in the same batch.
+
+<CodeGroup>
+```ts TypeScript
+import { g, NodeRef, PropertyProjection, writeBatch } from "@helixdb/enterprise-ql";
+
+const seedFollow = writeBatch()
+  .varAs(
+    "alice",
+    g().addN("User", { username: "alice", tier: "pro" })
+       .project([PropertyProjection.renamed("$id", "id")]),
+  )
+  .varAs(
+    "bob",
+    g().addN("User", { username: "bob", tier: "free" })
+       .project([PropertyProjection.renamed("$id", "id")]),
+  )
+  .varAs(
+    "edge",
+    g()
+      .n(NodeRef.var("alice"))
+      .addE("FOLLOWS", NodeRef.var("bob"), { since: "2026-05-01" })
+      .count(),
+  )
+  .returning(["alice", "bob", "edge"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn seed_follow() -> WriteBatch {
+    write_batch()
+        .var_as(
+            "alice",
+            g().add_n(
+                "User",
+                vec![
+                    ("username", PropertyInput::from("alice")),
+                    ("tier",     PropertyInput::from("pro")),
+                ],
+            )
+            .project(vec![PropertyProjection::renamed("$id", "id")]),
+        )
+        .var_as(
+            "bob",
+            g().add_n(
+                "User",
+                vec![
+                    ("username", PropertyInput::from("bob")),
+                    ("tier",     PropertyInput::from("free")),
+                ],
+            )
+            .project(vec![PropertyProjection::renamed("$id", "id")]),
+        )
+        .var_as(
+            "edge",
+            g().n(NodeRef::var("alice"))
+                .add_e(
+                    "FOLLOWS",
+                    NodeRef::var("bob"),
+                    vec![("since", PropertyInput::from("2026-05-01"))],
+                )
+                .count(),
+        )
+        .returning(["alice", "bob", "edge"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "alice",
+        "steps": [
+          {
+            "AddN": {
+              "label": "User",
+              "properties": [
+                ["username", { "Value": { "String": "alice" } }],
+                ["tier",     { "Value": { "String": "pro" } }]
+              ]
+            }
+          },
+          { "Project": [{ "source": "$id", "alias": "id" }] }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "bob",
+        "steps": [
+          {
+            "AddN": {
+              "label": "User",
+              "properties": [
+                ["username", { "Value": { "String": "bob" } }],
+                ["tier",     { "Value": { "String": "free" } }]
+              ]
+            }
+          },
+          { "Project": [{ "source": "$id", "alias": "id" }] }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "edge",
+        "steps": [
+          { "N": { "Var": "alice" } },
+          {
+            "AddE": {
+              "label": "FOLLOWS",
+              "to":    { "Var": "bob" },
+              "properties": [
+                ["since", { "Value": { "String": "2026-05-01" } }]
+              ]
+            }
+          },
+          "Count"
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["alice", "bob", "edge"]
+}
+```
+</CodeGroup>
+
+Every entry in a `writeBatch` shares the same transaction — either all three writes
+above land, or none do. There is no manual `BEGIN`/`COMMIT`; see
+[Transactions](/database/querying#transactions) for details.
+
+## Updating properties
+
+Two single-property steps update an existing node or edge:
+
+- `.setProperty(name, value)` — set or overwrite.
+- `.removeProperty(name)` — unset.
+
+Both expect a node or edge stream (so you anchor first, then call), and both leave
+the stream unchanged so you can keep chaining or call `.count()` to confirm how many
+rows were touched.
+
+<CodeGroup>
+```ts TypeScript
+import {
+  g,
+  Predicate,
+  PropertyInput,
+  defineParams,
+  param,
+  writeBatch,
+} from "@helixdb/enterprise-ql";
+
+const params = defineParams({
+  username: param.string(),
+  tier:     param.string(),
+});
+
+function updateTier(p = params) {
+  return writeBatch()
+    .varAs(
+      "updated",
+      g()
+        .nWithLabel("User")
+        .where(Predicate.eqParam("username", "username"))
+        .setProperty("tier", PropertyInput.param("tier"))
+        .count(),
+    )
+    .returning(["updated"]);
+}
+
+const body = updateTier().toDynamicJson(params, {
+  username: "alice",
+  tier: "enterprise",
+});
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn update_tier(username: String, tier: String) -> WriteBatch {
+    let _ = (&username, &tier);
+    write_batch()
+        .var_as(
+            "updated",
+            g().n_with_label("User")
+                .where_(Predicate::eq_param("username", "username"))
+                .set_property("tier", PropertyInput::param("tier"))
+                .count(),
+        )
+        .returning(["updated"])
+}
+```
+
+```json JSON
+{
+  "request_type": "write",
+  "query": {
+    "queries": [
+      {
+        "Query": {
+          "name": "updated",
+          "steps": [
+            { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+            {
+              "Where": {
+                "Compare": {
+                  "left":  { "Property": "username" },
+                  "op":    "Eq",
+                  "right": { "Param": "username" }
+                }
+              }
+            },
+            { "SetProperty": ["tier", { "Expr": { "Param": "tier" } }] },
+            "Count"
+          ],
+          "condition": null
+        }
+      }
+    ],
+    "returns": ["updated"]
+  },
+  "parameters":      { "username": "alice", "tier": "enterprise" },
+  "parameter_types": { "username": "String", "tier": "String" }
+}
+```
+</CodeGroup>
+
+The envelope's `request_type` is `"write"`. Any mutation step anywhere in the AST
+makes the request a write — `.toDynamicJson` on a `writeBatch` picks the right value
+automatically.
+
+## Deleting nodes and edges
+
+Three drop steps cover the common cases. All require an anchored stream first.
+
+- `.drop()` — delete the current nodes (and the edges they participate in).
+- `.dropEdge(to)` — from a node stream, delete edges going to a specific other node
+  (`NodeRef`). Optionally label-scoped via `.dropEdgeLabeled(to, label)`.
+- `.dropEdgeById(EdgeRef)` — delete edges by id; the safe choice when the same node
+  pair could have multiple parallel edges (multigraph mode).
+
+<CodeGroup>
+```ts TypeScript
+import {
+  g,
+  NodeRef,
+  Predicate,
+  defineParams,
+  param,
+  writeBatch,
+} from "@helixdb/enterprise-ql";
+
+const params = defineParams({
+  follower: param.string(),
+  followee: param.string(),
+});
+
+function unfollow(p = params) {
+  return writeBatch()
+    .varAs(
+      "follower_node",
+      g().nWithLabel("User").where(Predicate.eqParam("username", "follower")),
+    )
+    .varAs(
+      "followee_node",
+      g().nWithLabel("User").where(Predicate.eqParam("username", "followee")),
+    )
+    .varAs(
+      "dropped",
+      g()
+        .n(NodeRef.var("follower_node"))
+        .dropEdgeLabeled(NodeRef.var("followee_node"), "FOLLOWS")
+        .count(),
+    )
+    .returning(["dropped"]);
+}
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn unfollow(follower: String, followee: String) -> WriteBatch {
+    let _ = (&follower, &followee);
+    write_batch()
+        .var_as(
+            "follower_node",
+            g().n_with_label("User").where_(Predicate::eq_param("username", "follower")),
+        )
+        .var_as(
+            "followee_node",
+            g().n_with_label("User").where_(Predicate::eq_param("username", "followee")),
+        )
+        .var_as(
+            "dropped",
+            g().n(NodeRef::var("follower_node"))
+                .drop_edge_labeled(NodeRef::var("followee_node"), "FOLLOWS")
+                .count(),
+        )
+        .returning(["dropped"])
+}
+```
+
+```json JSON
+{
+  "request_type": "write",
+  "query": {
+    "queries": [
+      {
+        "Query": {
+          "name": "follower_node",
+          "steps": [
+            { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+            {
+              "Where": {
+                "Compare": {
+                  "left":  { "Property": "username" },
+                  "op":    "Eq",
+                  "right": { "Param": "follower" }
+                }
+              }
+            }
+          ],
+          "condition": null
+        }
+      },
+      {
+        "Query": {
+          "name": "followee_node",
+          "steps": [
+            { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+            {
+              "Where": {
+                "Compare": {
+                  "left":  { "Property": "username" },
+                  "op":    "Eq",
+                  "right": { "Param": "followee" }
+                }
+              }
+            }
+          ],
+          "condition": null
+        }
+      },
+      {
+        "Query": {
+          "name": "dropped",
+          "steps": [
+            { "N": { "Var": "follower_node" } },
+            {
+              "DropEdgeLabeled": {
+                "to":    { "Var": "followee_node" },
+                "label": "FOLLOWS"
+              }
+            },
+            "Count"
+          ],
+          "condition": null
+        }
+      }
+    ],
+    "returns": ["dropped"]
+  },
+  "parameters": {},
+  "parameter_types": { "follower": "String", "followee": "String" }
+}
+```
+</CodeGroup>
+
+The same pattern works for `.drop()` to remove a node entirely — `.nWithLabel("Post").where(...).drop()`
+will remove matching posts plus every edge incident to them.
+
+## Conditional writes with `varAsIf`
+
+Sometimes a write should only run when a previous step did or did not produce
+results. `.varAsIf(name, condition, traversal)` attaches a `BatchCondition` to a step
+so it only executes when the named variable is non-empty, empty, or has at least N
+items.
+
+The most common pattern is upsert: load the row, update if found, create if not.
+
+<CodeGroup>
+```ts TypeScript
+import {
+  BatchCondition,
+  defineParams,
+  g,
+  NodeRef,
+  param,
+  Predicate,
+  PropertyInput,
+  writeBatch,
+} from "@helixdb/enterprise-ql";
+
+const params = defineParams({
+  username: param.string(),
+  tier:     param.string(),
+});
+
+function upsertUser(p = params) {
+  return writeBatch()
+    .varAs(
+      "existing",
+      g().nWithLabel("User").where(Predicate.eqParam("username", "username")),
+    )
+    .varAsIf(
+      "updated",
+      BatchCondition.varNotEmpty("existing"),
+      g()
+        .n(NodeRef.var("existing"))
+        .setProperty("tier", PropertyInput.param("tier")),
+    )
+    .varAsIf(
+      "created",
+      BatchCondition.varEmpty("existing"),
+      g().addN("User", {
+        username: PropertyInput.param("username"),
+        tier:     PropertyInput.param("tier"),
+      }),
+    )
+    .returning(["updated", "created"]);
+}
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn upsert_user(username: String, tier: String) -> WriteBatch {
+    let _ = (&username, &tier);
+    write_batch()
+        .var_as(
+            "existing",
+            g().n_with_label("User").where_(Predicate::eq_param("username", "username")),
+        )
+        .var_as_if(
+            "updated",
+            BatchCondition::VarNotEmpty("existing".to_string()),
+            g().n(NodeRef::var("existing"))
+                .set_property("tier", PropertyInput::param("tier")),
+        )
+        .var_as_if(
+            "created",
+            BatchCondition::VarEmpty("existing".to_string()),
+            g().add_n(
+                "User",
+                vec![
+                    ("username", PropertyInput::param("username")),
+                    ("tier",     PropertyInput::param("tier")),
+                ],
+            ),
+        )
+        .returning(["updated", "created"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "existing",
+        "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+          {
+            "Where": {
+              "Compare": {
+                "left":  { "Property": "username" },
+                "op":    "Eq",
+                "right": { "Param": "username" }
+              }
+            }
+          }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "updated",
+        "steps": [
+          { "N": { "Var": "existing" } },
+          { "SetProperty": ["tier", { "Expr": { "Param": "tier" } }] }
+        ],
+        "condition": { "VarNotEmpty": "existing" }
+      }
+    },
+    {
+      "Query": {
+        "name": "created",
+        "steps": [
+          {
+            "AddN": {
+              "label": "User",
+              "properties": [
+                ["username", { "Expr": { "Param": "username" } }],
+                ["tier",     { "Expr": { "Param": "tier" } }]
+              ]
+            }
+          }
+        ],
+        "condition": { "VarEmpty": "existing" }
+      }
+    }
+  ],
+  "returns": ["updated", "created"]
+}
+```
+</CodeGroup>
+
+The full set of conditions:
+
+- `BatchCondition.varNotEmpty(name)` — run when `name` produced ≥ 1 result.
+- `BatchCondition.varEmpty(name)` — run when `name` produced 0 results.
+- `BatchCondition.varMinSize(name, n)` — run when `name` produced ≥ `n` results.
+- `BatchCondition.prevNotEmpty()` — same as `varNotEmpty` but for the immediately
+  preceding step, useful when you don't want to name it.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Vector and text search" icon="magnifying-glass" href="/database/querying-guide/search">
+    Create indexes, run vector / BM25 searches, and traverse from hits.
+  </Card>
+  <Card title="Advanced patterns" icon="code-branch" href="/database/querying-guide/advanced">
+    `repeat`, `union`, `choose`, `coalesce`, `optional`, `forEachParam`.
+  </Card>
+</CardGroup>

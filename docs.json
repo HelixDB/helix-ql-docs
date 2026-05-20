@@ -131,6 +131,7 @@
               "database/introduction",
               "database/local-development",
               "database/rust-project-setup",
+              "database/typescript-project-setup",
               "database/roadmap",
               "database/release-notes"
             ]
@@ -151,6 +152,20 @@
             "pages": [
               "database/data-model",
               "database/querying",
+              {
+                "group": "Querying Guide",
+                "pages": [
+                  "database/querying-guide/overview",
+                  "database/querying-guide/reading-nodes",
+                  "database/querying-guide/traversals",
+                  "database/querying-guide/filtering",
+                  "database/querying-guide/projections",
+                  "database/querying-guide/mutations",
+                  "database/querying-guide/search",
+                  "database/querying-guide/advanced",
+                  "database/querying-guide/parameters-bundles"
+                ]
+              },
               "database/indexing/secondary",
               "database/indexing/vector",
               "database/indexing/text",

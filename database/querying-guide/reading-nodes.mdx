@@ -1,0 +1,388 @@
+---
+title: 'Reading nodes and edges'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Every traversal in the DSL starts with `g()` — a fresh, empty graph cursor — followed
+by a *source* step that produces nodes or edges. This page covers the source steps:
+how to anchor on an id, a label, or an indexed property, and the difference between a
+`SourcePredicate` and a full `Predicate`.
+
+## The batch shell
+
+Before any source step, you need a batch to hold the traversal. Reads use
+`readBatch()`; writes use `writeBatch()`. Inside, every named result is introduced
+with `varAs("name", traversal)`, and `returning([...])` chooses which names the caller
+receives.
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch } from "@helixdb/enterprise-ql";
+
+const countUsers = readBatch()
+  .varAs("user_count", g().nWithLabel("User").count())
+  .returning(["user_count"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn count_users() -> ReadBatch {
+    read_batch()
+        .var_as("user_count", g().n_with_label("User").count())
+        .returning(["user_count"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "user_count",
+        "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+          "Count"
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["user_count"]
+}
+```
+</CodeGroup>
+
+Two things worth noting from the JSON column:
+
+- `nWithLabel("User")` is a DSL convenience. On the wire it becomes a label-filtered
+  source: `{"NWhere": {"Eq": ["$label", {"String": "User"}]}}`. The virtual `$label`
+  field is implicit on every node.
+- `count()` is a *unit* step — it carries no payload — so it serializes as the bare
+  string `"Count"` rather than a `{Count: ...}` object.
+
+## Anchoring on a node id
+
+When you already have a node id (returned by an earlier query, or stored alongside
+your application data), pass it to `g().n(...)` to skip any index lookup at all.
+
+<CodeGroup>
+```ts TypeScript
+import { g, NodeRef, readBatch } from "@helixdb/enterprise-ql";
+
+const oneUser = readBatch()
+  .varAs("user", g().n(NodeRef.id(42n)).valueMap(["$id", "username", "tier"]))
+  .returning(["user"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn one_user() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "user",
+            g().n(NodeRef::id(42))
+                .value_map(Some(vec!["$id", "username", "tier"])),
+        )
+        .returning(["user"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "user",
+        "steps": [
+          { "N": { "Ids": [42] } },
+          { "ValueMap": ["$id", "username", "tier"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["user"]
+}
+```
+</CodeGroup>
+
+`NodeRef` has several useful constructors:
+
+- `NodeRef.id(42n)` / `NodeRef.ids([1n, 2n, 3n])` — one or many concrete ids.
+- `NodeRef.var("name")` — the result of an earlier `varAs` binding.
+- `NodeRef.param("name")` — a value supplied at request time (covered in
+  [Parameters & bundles](/database/querying-guide/parameters-bundles)).
+- `NodeRef.all()` — every node in the graph; rarely what you want.
+
+Node ids fit in `i64` and can exceed `Number.MAX_SAFE_INTEGER`. Use `BigInt` literals
+(`42n`) in TypeScript when authoring queries that touch ids directly.
+
+## Anchoring on a label
+
+`nWithLabel(label)` selects every node of a given label. Without a follow-up filter
+this is a full label scan, so reach for it only when you genuinely want every node of
+that label.
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch } from "@helixdb/enterprise-ql";
+
+const allTags = readBatch()
+  .varAs("tags", g().nWithLabel("Tag").valueMap(["name"]))
+  .returning(["tags"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn all_tags() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "tags",
+            g().n_with_label("Tag").value_map(Some(vec!["name"])),
+        )
+        .returning(["tags"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "tags",
+        "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "Tag" }] } },
+          { "ValueMap": ["name"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["tags"]
+}
+```
+</CodeGroup>
+
+## Anchoring on a unique property
+
+The most common starting shape: look up a node by an indexed property. Use
+`nWhere(SourcePredicate.eq(...))` when there is no label scope, or
+`nWithLabelWhere(label, SourcePredicate)` when you want both at the source step.
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+
+const aliceByUsername = readBatch()
+  .varAs(
+    "user",
+    g().nWhere(SourcePredicate.eq("username", "alice")),
+  )
+  .returning(["user"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn alice_by_username() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "user",
+            g().n_where(SourcePredicate::eq("username", "alice")),
+        )
+        .returning(["user"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "user",
+        "steps": [
+          { "NWhere": { "Eq": ["username", { "String": "alice" }] } }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["user"]
+}
+```
+</CodeGroup>
+
+### `SourcePredicate` vs `Predicate`
+
+Source steps (`nWhere`, `eWhere`, etc.) accept a `SourcePredicate`, which is a
+deliberately smaller set: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `between`, `hasKey`,
+`startsWith`, plus `and` / `or`. These are the predicates the storage layer can push
+down into an index lookup.
+
+For richer post-filtering — collection membership, regex-ish contains/endsWith,
+`isNull`, `not`, parameter-bound comparisons — use a `.where(Predicate.*)` step *after*
+the source. That's covered in [Filtering](/database/querying-guide/filtering).
+
+If you've already built a `SourcePredicate` and need to lift it into a full
+`Predicate`, every `SourcePredicate` exposes `.toPredicate()`.
+
+## Anchoring on label plus a predicate
+
+When the source step is both label-scoped and predicate-filtered, `nWithLabelWhere`
+collapses the two into one step. It produces the same JSON as `nWhere(And[$label, ...])`
+but reads more clearly.
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+
+const proUsers = readBatch()
+  .varAs(
+    "pro_users",
+    g().nWithLabelWhere("User", SourcePredicate.eq("tier", "pro")),
+  )
+  .returning(["pro_users"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn pro_users() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "pro_users",
+            g().n_with_label_where("User", SourcePredicate::eq("tier", "pro")),
+        )
+        .returning(["pro_users"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "pro_users",
+        "steps": [
+          {
+            "NWhere": {
+              "And": [
+                { "Eq": ["$label", { "String": "User" }] },
+                { "Eq": ["tier",   { "String": "pro" }] }
+              ]
+            }
+          }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["pro_users"]
+}
+```
+</CodeGroup>
+
+## Anchoring on edges
+
+Edges have a parallel set of source steps:
+
+- `g().e(EdgeRef.id(...))` / `EdgeRef.ids([...])` — by id.
+- `g().eWithLabel("FOLLOWS")` — by edge label (e.g. every `FOLLOWS` edge in the graph).
+- `g().eWhere(SourcePredicate.gt("weight", 0.5))` — by indexed edge property.
+- `g().eWithLabelWhere("FOLLOWS", SourcePredicate.gte("since", "2026-01-01"))` —
+  label + predicate.
+
+Edge streams support `.outN()` / `.inN()` / `.otherN()` to walk back to a node — see
+[Traversals](/database/querying-guide/traversals) for the full edge story.
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+
+const recentFollows = readBatch()
+  .varAs(
+    "edges",
+    g().eWithLabelWhere(
+      "FOLLOWS",
+      SourcePredicate.gte("since", "2026-01-01"),
+    ),
+  )
+  .returning(["edges"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn recent_follows() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "edges",
+            g().e_with_label_where(
+                "FOLLOWS",
+                SourcePredicate::gte("since", "2026-01-01"),
+            ),
+        )
+        .returning(["edges"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "edges",
+        "steps": [
+          {
+            "EWhere": {
+              "And": [
+                { "Eq":  ["$label", { "String": "FOLLOWS" }] },
+                { "Gte": ["since",  { "String": "2026-01-01" }] }
+              ]
+            }
+          }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["edges"]
+}
+```
+</CodeGroup>
+
+## Picking the right anchor
+
+Order of preference, narrowest first:
+
+1. **Node or edge id** (`g().n(NodeRef.id(...))`). No index lookup at all.
+2. **Unique-indexed property** (`g().nWhere(SourcePredicate.eq("username", ...))`).
+3. **Equality-indexed property** (same shape, non-unique index).
+4. **Label-scoped predicate scan** (`g().nWithLabelWhere(...)`).
+5. **Plain label scan** (`g().nWithLabel(...)`). Last resort.
+
+If your route accepts an id or other indexed identifier from the request, use it as
+the anchor — never start from a broad label scan when an indexed identifier is
+available. [Parameters & bundles](/database/querying-guide/parameters-bundles) shows
+the parameterized versions of every shape above.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Traversals" icon="diagram-project" href="/database/querying-guide/traversals">
+    Walking the graph from your anchor: `out`, `in`, `both`, edge variants.
+  </Card>
+  <Card title="Filtering, ordering, paging" icon="filter" href="/database/querying-guide/filtering">
+    Predicates, `.where`, ordering, and `.limit`/`.skip`/`.range`.
+  </Card>
+</CardGroup>

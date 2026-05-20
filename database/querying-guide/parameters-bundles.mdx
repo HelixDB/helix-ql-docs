@@ -1,0 +1,506 @@
+---
+title: 'Parameters and bundles'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+So far every parameterized example on the prior pages has shown
+`p = paramsObject` / `Predicate.eqParam("prop", "name")` / `toDynamicJson(params, values)`
+without dwelling on the parameter system itself. This page is the dedicated treatment:
+how to declare parameters, how to refer to them in traversals, and the three
+distinct ways to ship a parameterized query to the runtime.
+
+## Declaring parameters with `defineParams`
+
+`defineParams({...})` takes a record of parameter names to `ParamSchema` constructors
+and returns a typed proxy. Each property of the returned proxy is a `ParamRef` you
+can pass into builder methods that expect one.
+
+```ts
+import { defineParams, param } from "@helixdb/enterprise-ql";
+
+const params = defineParams({
+  tenant_id:     param.string(),
+  username:      param.string(),
+  limit:         param.i64(),
+  query_vector:  param.array(param.f32()),
+  created_after: param.dateTime(),
+});
+```
+
+The supported `param.*` constructors:
+
+| Constructor | Wire type | Accepted JS values |
+|---|---|---|
+| `param.bool()` | `Bool` | `boolean` |
+| `param.i64()` | `I64` | `number` (safe int) or `bigint` |
+| `param.f64()` / `param.f32()` | `F64` / `F32` | `number` |
+| `param.string()` | `String` | `string` |
+| `param.dateTime()` | `DateTime` | `DateTime`, RFC3339 string, or epoch-millis number/bigint |
+| `param.bytes()` | `Bytes` | `Uint8Array` or `number[]` — **dynamic requests reject this** |
+| `param.value()` | `Value` | any JSON value (untyped) |
+| `param.object(inner?)` | `Object` | `Record<string, T>` if `inner` is given, else loose JSON |
+| `param.array(inner)` | `{Array: inner}` | array of values matching the inner schema |
+
+`param.array(param.f32())` is what produces the `{"Array": "F32"}` shape required for
+vector parameters; `param.object(param.string())` produces `{"Array": "Object"}` rows
+inside a `forEachParam`.
+
+## Referring to parameters inside a traversal
+
+There are three ways a parameter shows up inside a query, depending on what kind of
+value the builder expects:
+
+1. **Bound to a step argument that takes a `ParamRef`** — for `.limit(p.limit)`,
+   `.skip(p.skip)`, etc. The proxy returned by `defineParams` is the value to pass.
+2. **Inside a predicate** — `Predicate.eqParam("prop", "param_name")` and the rest
+   of the `*Param` family take the parameter *name as a string*, not the proxy.
+3. **As a property value or expression** — `PropertyInput.param("name")`,
+   `Expr.param("name")`, `NodeRef.param("name")`, `EdgeRef.param("name")`. All take
+   the name as a string.
+
+In practice the proxy is mostly used to keep parameter names in sync — if you
+rename the field in `defineParams`, every reference through the proxy moves with it.
+For string-keyed refs (`PropertyInput.param("name")`), the name has to match
+exactly. A common convention is to assign the proxy to a `p` argument and read both
+forms from there:
+
+```ts
+function findUsers(p = params) {
+  return readBatch().varAs(
+    "users",
+    g()
+      .nWithLabel("User")
+      .where(Predicate.eqParam("tenantId", "tenant_id"))   // string name
+      .limit(p.limit)                                       // proxy ref
+      .valueMap(["$id", "username", "tenantId"]),
+  ).returning(["users"]);
+}
+```
+
+## Three deployment shapes
+
+A query built with `readBatch()` / `writeBatch()` can be shipped to the runtime in
+three different ways. They share the same query AST; they differ in where and when
+the parameters bind.
+
+### 1. Dynamic request
+
+The simplest case: build the batch, call `.toDynamicJson(params, values)`, POST the
+resulting body to `/v1/query`. No deploy step. Best for ad-hoc queries, prototyping,
+and one-off integrations.
+
+```ts
+import { defineParams, g, param, Predicate, readBatch } from "@helixdb/enterprise-ql";
+
+const params = defineParams({ username: param.string() });
+
+function userByUsername(p = params) {
+  return readBatch()
+    .varAs(
+      "user",
+      g().nWithLabel("User")
+         .where(Predicate.eqParam("username", "username"))
+         .valueMap(["$id", "username", "tier"]),
+    )
+    .returning(["user"]);
+}
+```
+
+The dynamic envelope produced by `.toDynamicJson(params, values)` is the body for
+`POST /v1/query`. Below are the three equivalent ways to send it:
+
+<CodeGroup>
+```ts TypeScript
+const body = userByUsername().toDynamicJson(params, { username: "alice" });
+
+const response = await fetch("https://helix.example.com/v1/query", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body,
+});
+
+if (!response.ok) {
+  throw new Error(`Helix returned ${response.status}`);
+}
+
+const { user } = await response.json();
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+let body = DynamicQueryRequest::read(user_by_username("alice".to_string()))
+    .to_json_string()?;
+
+let response = reqwest::Client::new()
+    .post("https://helix.example.com/v1/query")
+    .header("content-type", "application/json")
+    .body(body)
+    .send()
+    .await?
+    .error_for_status()?
+    .json::<serde_json::Value>()
+    .await?;
+
+let user = &response["user"];
+```
+
+```bash curl
+curl -sS -X POST https://helix.example.com/v1/query \
+  -H "content-type: application/json" \
+  --data-raw '{
+    "request_type": "read",
+    "query": {
+      "queries": [
+        { "Query": { "name": "user", "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+          { "Where": { "Compare": {
+            "left":  { "Property": "username" },
+            "op":    "Eq",
+            "right": { "Param": "username" }
+          } } },
+          { "ValueMap": ["$id", "username", "tier"] }
+        ], "condition": null } }
+      ],
+      "returns": ["user"]
+    },
+    "parameters":      { "username": "alice" },
+    "parameter_types": { "username": "String" }
+  }'
+```
+</CodeGroup>
+
+For larger envelopes, write the JSON to a file and use `--data-binary @file.json` —
+the inline `--data-raw` form works for small bodies but gets unwieldy fast.
+
+The three serialization helpers on a batch:
+
+| Method | Returns |
+|---|---|
+| `.toDynamicJson(params?, values?)` | JSON string (full envelope: `request_type`, `query`, `parameters`, `parameter_types`) |
+| `.toDynamicRequest(params?, values?)` | `DynamicQueryRequest` instance — useful when you want to mutate it before serializing |
+| `.toDynamicBytes(params?, values?)` | `Uint8Array` of the JSON encoding — handy for `fetch` bodies that prefer bytes |
+
+For a parameter-less batch, omit both arguments:
+
+```ts
+readBatch().varAs("count", g().nWithLabel("User").count()).toDynamicJson();
+```
+
+`.toJsonString()` returns the *raw batch* (no envelope, no parameters) for
+deployment as a stored route — covered below.
+
+### 2. Stored bundle
+
+For routes you want to deploy alongside the rest of your application, wrap each
+query function with `registerRead` or `registerWrite` and pass them all to
+`defineQueries`. The bundle's `generate(path)` method writes a single `queries.json`
+in the exact shape the runtime expects.
+
+```ts
+import {
+  defineParams,
+  defineQueries,
+  g,
+  param,
+  Predicate,
+  readBatch,
+  registerRead,
+  registerWrite,
+  writeBatch,
+} from "@helixdb/enterprise-ql";
+
+const readParams = defineParams({ username: param.string() });
+
+function userByUsername(p = readParams) {
+  return readBatch()
+    .varAs(
+      "user",
+      g().nWithLabel("User")
+         .where(Predicate.eqParam("username", "username"))
+         .valueMap(["$id", "username", "tier"]),
+    )
+    .returning(["user"]);
+}
+
+const writeParams = defineParams({
+  username: param.string(),
+  tier:     param.string(),
+});
+
+function addUser(p = writeParams) {
+  return writeBatch()
+    .varAs(
+      "newUser",
+      g().addN("User", {
+        username: PropertyInput.param("username"),
+        tier:     PropertyInput.param("tier"),
+      }),
+    )
+    .returning(["newUser"]);
+}
+
+export const queries = defineQueries({
+  read:  { user_by_username: registerRead(userByUsername, readParams) },
+  write: { add_user:         registerWrite(addUser, writeParams) },
+});
+
+// Build queries.json at deploy time.
+await queries.generate("queries.json");
+```
+
+The resulting bundle has this top-level shape:
+
+```json
+{
+  "version": 4,
+  "read_routes":  { "user_by_username": { "queries": [...], "returns": ["user"] } },
+  "write_routes": { "add_user":         { "queries": [...], "returns": ["newUser"] } },
+  "read_parameters": {
+    "user_by_username": [{ "name": "username", "ty": "String" }]
+  },
+  "write_parameters": {
+    "add_user": [
+      { "name": "username", "ty": "String" },
+      { "name": "tier",     "ty": "String" }
+    ]
+  }
+}
+```
+
+Each `read_routes.<name>` / `write_routes.<name>` is exactly what `.toJsonString()`
+would have produced for the underlying batch — no envelope. Once deployed, callers
+invoke the routes by name at `POST /v1/query/<name>`, passing the parameters as the
+JSON body.
+
+Route names must be unique across reads *and* writes; duplicates throw `GenerateError`
+at bundle time.
+
+Calling a stored route — the wire shape is much smaller than the dynamic envelope
+because the route is already registered. The body is just the parameter object.
+
+<CodeGroup>
+```ts TypeScript
+const response = await fetch(
+  "https://helix.example.com/v1/query/user_by_username",
+  {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ username: "alice" }),
+  },
+);
+
+if (!response.ok) {
+  throw new Error(`Helix returned ${response.status}`);
+}
+
+const { user } = await response.json();
+```
+
+```rust Rust
+let response = reqwest::Client::new()
+    .post("https://helix.example.com/v1/query/user_by_username")
+    .json(&serde_json::json!({ "username": "alice" }))
+    .send()
+    .await?
+    .error_for_status()?
+    .json::<serde_json::Value>()
+    .await?;
+
+let user = &response["user"];
+```
+
+```bash curl
+curl -sS -X POST https://helix.example.com/v1/query/user_by_username \
+  -H "content-type: application/json" \
+  --data-raw '{ "username": "alice" }'
+```
+</CodeGroup>
+
+Write routes work identically — `POST /v1/query/add_user` with `{"username": "...",
+"tier": "..."}` as the body. The response shape is the object keyed by the bound
+names in `.returning([...])`.
+
+### 3. Typed call helpers
+
+`defineQueries(...)` also exposes a typed `call` map. Each entry is a function that
+takes the route's parameter values (inferred from `defineParams`) and returns a
+serializable `DynamicQueryRequest`. The argument is fully type-checked from the
+parameter schema; unknown keys, missing keys, and wrong value types are all compile
+errors:
+
+```ts
+queries.call.user_by_username({
+  username: "alice",
+  unexpected: true,  // ts(...): Object literal may only specify known properties
+});
+
+queries.call.user_by_username({
+  username: 1,  // ts(...): Type 'number' is not assignable to type 'string'
+});
+```
+
+The returned object serializes to the same dynamic envelope you would build by hand,
+so it can be POSTed to either the stored route (`/v1/query/<name>`) or the dynamic
+route (`/v1/query`) — but the conventional path is to POST it as the dynamic
+envelope so the bundled route name does not need to exist on the server yet:
+
+```ts
+const request = queries.call.user_by_username({ username: "alice" });
+
+const response = await fetch("https://helix.example.com/v1/query", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: request.toJsonString(),
+});
+
+const { user } = await response.json();
+```
+
+For deployed bundles, the more common pattern is to bypass the typed-call helper and
+hit the stored route directly with just the parameters (the snippet in the previous
+section). `queries.call.*` is most useful in tests, in scripts, and when iterating
+locally before the bundle is deployed.
+
+## How parameters serialize
+
+Inside the AST, parameter references appear as `{"Param": "name"}` wrapped in the
+spot the value would go: `{"Limit": ... }` becomes `{"LimitBy": {"Param": "n"}}`,
+`{"Has": ["k", value]}` becomes `{"Where": {"Compare": {"left": {"Property": "k"},
+"op": "Eq", "right": {"Param": "k"}}}}`, and so on. The
+[Filtering](/database/querying-guide/filtering) page tabulates every shape.
+
+At envelope position, the actual value is a *bare* JSON value, *not* a tagged
+`PropertyValue`. The shape `{"Array": "F32"}` you see in the `parameter_types` map
+is `QueryParamType`, the runtime coercion schema.
+
+A complete envelope produced by `toDynamicJson`:
+
+```json
+{
+  "request_type": "read",
+  "query": { "queries": [...], "returns": [...] },
+  "parameters": {
+    "username":      "alice",
+    "limit":         25,
+    "created_after": "2026-04-05T10:34:56.789Z",
+    "labels":        { "status": "active" }
+  },
+  "parameter_types": {
+    "username":      "String",
+    "limit":         "I64",
+    "created_after": "DateTime",
+    "labels":        "Object"
+  }
+}
+```
+
+## Number handling: `bigint` for `i64`
+
+JavaScript `number` only has 53 bits of integer precision. The DSL accepts a plain
+`number` wherever it fits in a safe integer range, but for full `i64` (node ids,
+large counts, epoch nanos) you should pass a `bigint`:
+
+```ts
+g().n(9223372036854775807n);
+PropertyValue.i64(9223372036854775807n);
+```
+
+`stringifyJson`, `.toJsonString()`, and `serializeQueryBundle` all preserve `bigint`
+without loss. Plain `JSON.stringify` does not — use the package's serializers when
+your payload may contain large integers.
+
+## DateTime handling
+
+`DateTime` is the dedicated value type for timestamps. It stores epoch milliseconds
+and round-trips losslessly through the dynamic envelope as a UTC RFC3339 string.
+
+```ts
+import { DateTime } from "@helixdb/enterprise-ql";
+
+DateTime.fromMillis(-1).toRfc3339();
+// "1969-12-31T23:59:59.999Z"
+
+DateTime.parseRfc3339("2026-04-05T12:34:56.789+02:00").toRfc3339();
+// "2026-04-05T10:34:56.789Z"  (normalized to UTC)
+```
+
+When a parameter is declared as `param.dateTime()`, the call helpers accept
+`DateTime`, an RFC3339 string, or an epoch-millis `number` / `bigint`:
+
+```ts
+queries.call.recent_posts({
+  since: DateTime.fromMillis(0),
+});
+queries.call.recent_posts({
+  since: "2026-01-01T00:00:00Z",  // auto-parsed
+});
+queries.call.recent_posts({
+  since: 1735689600000n,
+});
+```
+
+All three serialize to the same envelope:
+
+```json
+{
+  "parameters":      { "since": "2026-01-01T00:00:00.000Z" },
+  "parameter_types": { "since": "DateTime" }
+}
+```
+
+## Bytes parameters: stored only
+
+`param.bytes()` is declarable in `defineParams` for the bundle, but the dynamic
+envelope cannot round-trip a `Uint8Array` faithfully. Attempting to
+`toDynamicJson(params, { payload: someBytes })` or to call a registered route with a
+bytes parameter through `queries.call.*` throws
+`DynamicQueryError.UnsupportedBytesParameter`.
+
+If you need bytes, deploy the query as a stored route and pass the value through a
+binary-aware client (the runtime's RPC interface). Stored routes happily accept
+`Bytes`; only the JSON dynamic envelope is the bottleneck.
+
+## Generating the bundle from a script
+
+The `queries.generate(path)` shortcut is enough for most projects. If you want to
+inspect or post-process the bundle first, the lower-level helpers are exported too:
+
+```ts
+import {
+  serializeQueryBundle,
+  writeQueryBundleToPath,
+  deserializeQueryBundle,
+  readQueryBundleFromPath,
+} from "@helixdb/enterprise-ql";
+
+const bundle = queries.buildQueryBundle();
+const json = serializeQueryBundle(bundle);
+await writeQueryBundleToPath(bundle, "queries.json");
+
+// Reading and validating an existing bundle:
+const loaded = deserializeQueryBundle(json);              // throws if invalid
+const fromFile = await readQueryBundleFromPath("queries.json");
+```
+
+`deserializeQueryBundle` validates `version === 4` (the current bundle version); it
+will reject older or newer bundles so you catch mismatches at load time rather than
+at deploy time.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Working with HelixDB" icon="rocket" href="/database/working-with-enterprise">
+    Deploy `queries.json` and the runtime workflow.
+  </Card>
+  <Card title="Querying overview" icon="book-open" href="/database/querying">
+    Conceptual model: stored vs dynamic queries, transactions, and the HTTP surface.
+  </Card>
+  <Card title="Querying Guide: overview" icon="circle-arrow-left" href="/database/querying-guide/overview">
+    Back to the start of the guide.
+  </Card>
+  <Card title="npm package" icon="npm" href="https://www.npmjs.com/package/@helixdb/enterprise-ql">
+    `@helixdb/enterprise-ql` on npm.
+  </Card>
+</CardGroup>

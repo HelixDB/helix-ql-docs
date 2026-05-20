@@ -1,0 +1,367 @@
+---
+title: 'Traversals'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+A *traversal* moves from one set of nodes or edges to another by following labeled
+edges. This page covers the node-to-node and node-to-edge steps, multi-hop chaining,
+deduplication, and naming intermediate frontiers with `as` / `select`.
+
+All examples assume the source step has already produced a node or edge stream — see
+[Reading nodes and edges](/database/querying-guide/reading-nodes) for those.
+
+## Node-to-node steps
+
+From a node stream, three steps walk along edges and land on the nodes at the other
+end:
+
+- `.out(label?)` — follow outgoing edges; emit the *destination* nodes.
+- `.in(label?)` — follow incoming edges; emit the *source* nodes.
+- `.both(label?)` — both directions; emit the neighbor on the other side.
+
+The label argument is optional. Omit it to follow every edge regardless of label;
+supply it to scope to one edge type. In the JSON the omitted form becomes
+`{"Out": null}`.
+
+<CodeGroup>
+```ts TypeScript
+import { g, NodeRef, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+
+const aliceFollowing = readBatch()
+  .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAs(
+    "following",
+    g().n(NodeRef.var("user")).out("FOLLOWS").valueMap(["$id", "username"]),
+  )
+  .returning(["user", "following"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn alice_following() -> ReadBatch {
+    read_batch()
+        .var_as("user", g().n_where(SourcePredicate::eq("username", "alice")))
+        .var_as(
+            "following",
+            g().n(NodeRef::var("user"))
+                .out(Some("FOLLOWS"))
+                .value_map(Some(vec!["$id", "username"])),
+        )
+        .returning(["user", "following"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "user",
+        "steps": [
+          { "NWhere": { "Eq": ["username", { "String": "alice" }] } }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "following",
+        "steps": [
+          { "N": { "Var": "user" } },
+          { "Out": "FOLLOWS" },
+          { "ValueMap": ["$id", "username"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["user", "following"]
+}
+```
+</CodeGroup>
+
+To get *followers* — users following Alice — swap `out("FOLLOWS")` for
+`in("FOLLOWS")`. To get both at once, use `both("FOLLOWS")`.
+
+## Multi-hop traversals
+
+Steps chain. Reading a user's tags ("which tags appear on any of Alice's posts") is
+three hops: `User → AUTHORED → Post → TAGGED → Tag`. Add `.dedup()` because a tag
+might appear on more than one of Alice's posts.
+
+<CodeGroup>
+```ts TypeScript
+import { g, NodeRef, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+
+const aliceTags = readBatch()
+  .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAs(
+    "tags",
+    g()
+      .n(NodeRef.var("user"))
+      .out("AUTHORED")
+      .out("TAGGED")
+      .dedup()
+      .valueMap(["name"]),
+  )
+  .returning(["user", "tags"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn alice_tags() -> ReadBatch {
+    read_batch()
+        .var_as("user", g().n_where(SourcePredicate::eq("username", "alice")))
+        .var_as(
+            "tags",
+            g().n(NodeRef::var("user"))
+                .out(Some("AUTHORED"))
+                .out(Some("TAGGED"))
+                .dedup()
+                .value_map(Some(vec!["name"])),
+        )
+        .returning(["user", "tags"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "user",
+        "steps": [
+          { "NWhere": { "Eq": ["username", { "String": "alice" }] } }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "tags",
+        "steps": [
+          { "N": { "Var": "user" } },
+          { "Out": "AUTHORED" },
+          { "Out": "TAGGED" },
+          "Dedup",
+          { "ValueMap": ["name"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["user", "tags"]
+}
+```
+</CodeGroup>
+
+`.dedup()` is a unit step — it serializes as the bare string `"Dedup"`.
+
+## Edge-valued steps
+
+Sometimes you want the *edges* themselves, not the nodes they point to. Use the `E`
+suffix:
+
+- `.outE(label?)` — outgoing edges (a *stream of edges*).
+- `.inE(label?)` — incoming edges.
+- `.bothE(label?)` — edges in either direction.
+
+From an edge stream:
+
+- `.outN()` — the source node of each edge.
+- `.inN()` — the destination node.
+- `.otherN()` — the *other* node, relative to the node you arrived from.
+
+`.otherN()` only makes sense after `.bothE(...)`, where "the other end" depends on
+the originating node.
+
+Edges carry properties too. The example below grabs every `LIKED` edge Alice has
+written, filters by edge property, and returns the destination posts.
+
+<CodeGroup>
+```ts TypeScript
+import { g, NodeRef, Predicate, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+
+const aliceStrongLikes = readBatch()
+  .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAs(
+    "liked_posts",
+    g()
+      .n(NodeRef.var("user"))
+      .outE("LIKED")
+      .where(Predicate.gte("weight", 0.8))
+      .inN()
+      .valueMap(["$id", "title"]),
+  )
+  .returning(["liked_posts"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn alice_strong_likes() -> ReadBatch {
+    read_batch()
+        .var_as("user", g().n_where(SourcePredicate::eq("username", "alice")))
+        .var_as(
+            "liked_posts",
+            g().n(NodeRef::var("user"))
+                .out_e(Some("LIKED"))
+                .where_(Predicate::gte("weight", 0.8))
+                .in_n()
+                .value_map(Some(vec!["$id", "title"])),
+        )
+        .returning(["liked_posts"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "user",
+        "steps": [
+          { "NWhere": { "Eq": ["username", { "String": "alice" }] } }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "liked_posts",
+        "steps": [
+          { "N": { "Var": "user" } },
+          { "OutE": "LIKED" },
+          { "Where": { "Gte": ["weight", { "F64": 0.8 }] } },
+          "InN",
+          { "ValueMap": ["$id", "title"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["liked_posts"]
+}
+```
+</CodeGroup>
+
+Notice that `"InN"`, like `"Dedup"` and `"Count"`, is a unit step encoded as a bare
+string in the JSON.
+
+## Naming intermediate frontiers
+
+When a multi-step traversal needs to refer back to an earlier point — for
+"friends-of-friends excluding direct friends", or "posts not already liked by the
+viewer" — bind a name with `.as("frontier")` and reach for it later with
+`.select("frontier")` (which replaces the current stream with the stored one) or with
+the set operators `.within("frontier")` / `.without("frontier")`.
+
+`.store(name)` is an alias for `.as(name)`; both create a named snapshot of the
+current stream.
+
+<CodeGroup>
+```ts TypeScript
+import { g, NodeRef, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+
+// Friends of Alice's friends, excluding Alice's direct friends.
+const fof = readBatch()
+  .varAs("alice", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAs(
+    "fof",
+    g()
+      .n(NodeRef.var("alice"))
+      .out("FOLLOWS").as("direct")
+      .out("FOLLOWS")
+      .without("direct")
+      .dedup()
+      .valueMap(["$id", "username"]),
+  )
+  .returning(["fof"]);
+```
+
+```rust Rust
+use helix_dsl::prelude::*;
+
+#[register]
+pub fn fof() -> ReadBatch {
+    read_batch()
+        .var_as("alice", g().n_where(SourcePredicate::eq("username", "alice")))
+        .var_as(
+            "fof",
+            g().n(NodeRef::var("alice"))
+                .out(Some("FOLLOWS")).as_("direct")
+                .out(Some("FOLLOWS"))
+                .without("direct")
+                .dedup()
+                .value_map(Some(vec!["$id", "username"])),
+        )
+        .returning(["fof"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "alice",
+        "steps": [
+          { "NWhere": { "Eq": ["username", { "String": "alice" }] } }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "fof",
+        "steps": [
+          { "N": { "Var": "alice" } },
+          { "Out": "FOLLOWS" },
+          { "As": "direct" },
+          { "Out": "FOLLOWS" },
+          { "Without": "direct" },
+          "Dedup",
+          { "ValueMap": ["$id", "username"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["fof"]
+}
+```
+</CodeGroup>
+
+A handy rule of thumb:
+
+- `.as(name)` / `.store(name)` — snapshot the current stream without changing it.
+- `.select(name)` — replace the current stream with the snapshot.
+- `.within(name)` — keep only items that are also in the snapshot (intersection).
+- `.without(name)` — drop items that are in the snapshot (set difference).
+
+## What's not on this page
+
+- Variable-length traversals (`g().n(...).repeat(...)`) belong on the
+  [Advanced patterns](/database/querying-guide/advanced) page along with `union`,
+  `choose`, and `coalesce`.
+- Filtering inside the traversal (`.has`, `.where`, `.edgeHas`) is covered on
+  [Filtering, ordering, paging](/database/querying-guide/filtering).
+- Shaping the output (`.valueMap`, `.project`, `.count`, `.exists`) is covered on
+  [Projections](/database/querying-guide/projections).
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Filtering, ordering, paging" icon="filter" href="/database/querying-guide/filtering">
+    `where`, `has`, predicates, ordering, `limit`/`skip`/`range`.
+  </Card>
+  <Card title="Projections" icon="table-columns" href="/database/querying-guide/projections">
+    `values`, `valueMap`, `project`, terminal aggregations.
+  </Card>
+</CardGroup>
