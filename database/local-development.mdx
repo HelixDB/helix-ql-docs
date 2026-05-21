@@ -78,6 +78,25 @@ MinIO volume across `helix stop`. Use `helix prune <instance>` to delete the per
 If you'd rather manage the containers yourself with Docker Compose, the in-memory and on-disk
 setups below show the raw image configuration that the CLI disk mode mirrors.
 
+## Installing the SDKs
+
+To author queries against your local instance, install the SDK for your language. Both build
+the same `queries.json` bundle, so the choice is purely which language you'd rather work in.
+
+<CodeGroup>
+```bash TypeScript
+npm install @helix-db/helix-db
+```
+
+```bash Rust
+cargo add helix-db
+```
+</CodeGroup>
+
+For the full project layout, generator setup, and authoring walkthrough, see
+[TypeScript Project Setup](/database/typescript-project-setup) and
+[Rust Project Setup](/database/rust-project-setup).
+
 ## In-Memory
 
 <Warning>

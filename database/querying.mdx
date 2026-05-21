@@ -13,6 +13,25 @@ JSON) and shipped to the runtime in one of two shapes: **dynamic** or
 DSL end-to-end; this page covers the choice between the two deployment shapes
 and how each one looks on the wire.
 
+## Installing the SDKs
+
+The TypeScript and Rust examples below are built with the Helix SDKs. Install the one for
+your language to follow along — both emit the same JSON, so the bundle is interchangeable.
+
+<CodeGroup>
+```bash TypeScript
+npm install @helix-db/helix-db
+```
+
+```bash Rust
+cargo add helix-db
+```
+</CodeGroup>
+
+For the full project layout and generator setup, see
+[TypeScript Project Setup](/database/typescript-project-setup) and
+[Rust Project Setup](/database/rust-project-setup).
+
 ## The two ways to ship a query
 
 |                            | Dynamic query                                                                                  | Stored query                                                      |

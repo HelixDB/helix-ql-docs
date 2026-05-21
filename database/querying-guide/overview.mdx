@@ -15,6 +15,26 @@ the same query AST. The TypeScript and Rust DSLs are typed builders that emit th
 shape directly. If you copy the JSON column into a `POST /v1/query` body, it will
 execute the same query as the DSL above it.
 
+## Installing the SDKs
+
+To follow along in TypeScript or Rust, install the SDK for that language. Both emit the
+same query AST, so you can switch between them — or use the JSON column directly and skip
+the SDK entirely.
+
+<CodeGroup>
+```bash TypeScript
+npm install @helix-db/helix-db
+```
+
+```bash Rust
+cargo add helix-db
+```
+</CodeGroup>
+
+For the full project layout and generator setup, see
+[TypeScript Project Setup](/database/typescript-project-setup) and
+[Rust Project Setup](/database/rust-project-setup).
+
 ## The running example
 
 Every page in this guide uses one small social-graph schema, so each new step plugs
