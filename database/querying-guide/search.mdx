@@ -44,7 +44,7 @@ const createIndexes = writeBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn create_indexes() -> WriteBatch {
@@ -175,7 +175,7 @@ const similarPosts = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn similar_posts() -> ReadBatch {
@@ -268,7 +268,7 @@ const authorsOfSimilar = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn authors_of_similar() -> ReadBatch {
@@ -387,7 +387,7 @@ const postsAboutGraphs = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn posts_about_graphs() -> ReadBatch {
@@ -490,7 +490,7 @@ function semanticSearch(p = params) {
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn semantic_search(query_vector: Vec<f32>, k: i64) -> ReadBatch {
@@ -593,7 +593,7 @@ const tenantSearch = readBatch().varAs(
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 pub fn create_tenant_index() -> WriteBatch {
     write_batch().var_as(

@@ -96,7 +96,7 @@ const body = aliceFeed.toDynamicJson(); // POST body for /v1/query
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn alice_feed() -> ReadBatch {
@@ -196,7 +196,7 @@ const { user, posts } = await response.json();
 
 ```rust Rust
 // alice_feed() returns a ReadBatch; build a DynamicQueryRequest and post it.
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 let body = DynamicQueryRequest::read(alice_feed()).to_json_string()?;
 

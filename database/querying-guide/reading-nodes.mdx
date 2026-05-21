@@ -26,7 +26,7 @@ const countUsers = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn count_users() -> ReadBatch {
@@ -78,7 +78,7 @@ const oneUser = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn one_user() -> ReadBatch {
@@ -138,7 +138,7 @@ const allTags = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn all_tags() -> ReadBatch {
@@ -189,7 +189,7 @@ const aliceByUsername = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn alice_by_username() -> ReadBatch {
@@ -253,7 +253,7 @@ const proUsers = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn pro_users() -> ReadBatch {
@@ -320,7 +320,7 @@ const recentFollows = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn recent_follows() -> ReadBatch {

@@ -53,7 +53,7 @@ const body = countUsers.toDynamicJson();
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 fn count_users() -> ReadBatch {
     read_batch()
@@ -102,14 +102,15 @@ const { user_count } = await response.json();
 ```
 
 ```rust Rust
-let response = reqwest::Client::new()
-    .post("https://helix.example.com/v1/query")
-    .header("content-type", "application/json")
-    .body(body) // from to_json_string() above
+use helix_db::Client;
+
+let client = Client::new(Some("https://helix.example.com"))?;
+
+// Builds the envelope and POSTs it to /v1/query.
+let response: serde_json::Value = client
+    .query()
+    .dynamic_query(DynamicQueryRequest::read(count_users()))
     .send()
-    .await?
-    .error_for_status()?
-    .json::<serde_json::Value>()
     .await?;
 
 let user_count = &response["user_count"];
@@ -180,7 +181,7 @@ await queries.generate("queries.json");
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn count_users() -> ReadBatch {
@@ -190,7 +191,7 @@ pub fn count_users() -> ReadBatch {
 }
 
 fn main() {
-    helix_dsl::generate_to_path("queries.json")
+    helix_db::generate_to_path("queries.json")
         .expect("generate queries bundle");
 }
 ```
@@ -242,13 +243,16 @@ const { user_count } = await response.json();
 ```
 
 ```rust Rust
-let response = reqwest::Client::new()
-    .post("https://helix.example.com/v1/query/count_users")
-    .json(&serde_json::json!({}))
+use helix_db::Client;
+
+let client = Client::new(Some("https://helix.example.com"))?;
+
+// Routes to /v1/query/count_users; the body is just the parameter object.
+let response: serde_json::Value = client
+    .query()
+    .body(&serde_json::json!({}))?
+    .stored_query("count_users".to_string())
     .send()
-    .await?
-    .error_for_status()?
-    .json::<serde_json::Value>()
     .await?;
 
 let user_count = &response["user_count"];

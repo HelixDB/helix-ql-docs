@@ -37,7 +37,7 @@ const addAlice = writeBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn add_alice() -> WriteBatch {
@@ -126,7 +126,7 @@ const seedFollow = writeBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn seed_follow() -> WriteBatch {
@@ -282,7 +282,7 @@ const body = updateTier().toDynamicJson(params, {
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn update_tier(username: String, tier: String) -> WriteBatch {
@@ -385,7 +385,7 @@ function unfollow(p = params) {
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn unfollow(follower: String, followee: String) -> WriteBatch {
@@ -531,7 +531,7 @@ function upsertUser(p = params) {
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn upsert_user(username: String, tier: String) -> WriteBatch {

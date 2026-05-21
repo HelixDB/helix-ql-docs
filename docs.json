@@ -117,7 +117,7 @@
         {
           "anchor": "HelixDB DSL Docs",
           "icon": "code",
-          "href": "https://docs.rs/helix-enterprise-ql/latest/helix_dsl/"
+          "href": "https://docs.rs/helix-db/latest/helix_db/"
         }
       ]
     },

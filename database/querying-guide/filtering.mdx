@@ -26,7 +26,7 @@ const proUsers = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn pro_users() -> ReadBatch {
@@ -110,7 +110,7 @@ const recentProPosts = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn recent_pro_posts() -> ReadBatch {
@@ -212,7 +212,7 @@ const body = userByUsername().toDynamicJson(params, { username: "alice" });
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn user_by_username(username: String) -> ReadBatch {
@@ -296,7 +296,7 @@ const aliceStrongFollows = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn alice_strong_follows() -> ReadBatch {
@@ -368,7 +368,7 @@ const recentPosts = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn recent_posts() -> ReadBatch {
@@ -450,7 +450,7 @@ const secondPage = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn second_page() -> ReadBatch {
@@ -524,7 +524,7 @@ const body = recentPostsPaged().toDynamicJson(params, { page_size: 25n });
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn recent_posts_paged(page_size: i64) -> ReadBatch {

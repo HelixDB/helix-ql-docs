@@ -30,7 +30,7 @@ const aliceStats = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn alice_stats() -> ReadBatch {
@@ -112,7 +112,7 @@ const usersForAdminPanel = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn users_for_admin_panel() -> ReadBatch {
@@ -187,7 +187,7 @@ const userCards = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn user_cards() -> ReadBatch {
@@ -277,7 +277,7 @@ const userCardsWithFallback = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn user_cards_with_fallback() -> ReadBatch {
@@ -366,7 +366,7 @@ const aliceFollowsEdges = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn alice_follows_edges() -> ReadBatch {
@@ -429,7 +429,7 @@ const tierBreakdown = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn tier_breakdown() -> ReadBatch {

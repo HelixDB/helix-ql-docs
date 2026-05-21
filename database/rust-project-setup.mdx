@@ -5,11 +5,11 @@ title: 'Rust Project Setup'
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
 Stored queries for HelixDB are authored in Rust using the
-[`helix-enterprise-ql`](https://crates.io/crates/helix-enterprise-ql) crate (imported as
-`helix_dsl`). This page covers bootstrapping a Rust project that builds your queries into the
+[`helix-db`](https://crates.io/crates/helix-db) crate (imported as
+`helix_db`). This page covers bootstrapping a Rust project that builds your queries into the
 `queries.json` bundle that the runtime consumes. For the traversal model and query patterns
 themselves, see [Querying](/database/querying) and the
-[docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/).
+[docs.rs reference](https://docs.rs/helix-db/latest/helix_db/).
 
 ## Prerequisites
 
@@ -33,24 +33,24 @@ queries alongside the rest of your service code.
 ## Add the dependency
 
 ```bash
-cargo add helix-enterprise-ql
+cargo add helix-db
 ```
 
 Or add it directly to `Cargo.toml`:
 
 ```toml
 [dependencies]
-helix-enterprise-ql = "0.1.7"
+helix-db = "2.0.0"
 ```
 
-The crate is published on crates.io as `helix-enterprise-ql` but its module path is `helix_dsl`,
-so all imports look like `use helix_dsl::...`.
+The crate is published on crates.io as `helix-db` but its module path is `helix_db`,
+so all imports look like `use helix_db::...`.
 
 ## Set up `src/main.rs`
 
 ```rust
 fn main() {
-    let path = helix_dsl::generate_to_path("queries.json").expect("generate queries bundle");
+    let path = helix_db::generate_to_path("queries.json").expect("generate queries bundle");
     println!("generated {}", path.display());
 }
 ```
@@ -64,13 +64,13 @@ hand it to a downstream deploy step.
 Inside the modules where you author queries, bring the DSL into scope with the prelude:
 
 ```rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 ```
 
 The prelude re-exports the common building blocks — `read_batch`, `write_batch`, the traversal
 builder `g()`, sub-traversal `sub()`, `NodeRef`/`EdgeRef`, `Predicate`/`SourcePredicate`, the
 projection helpers (`PropertyProjection`, `ExprProjection`), and `AggregateFunction`. See the
-[docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) for the full surface
+[docs.rs reference](https://docs.rs/helix-db/latest/helix_db/) for the full surface
 and [Querying](/database/querying) for how the pieces fit together.
 
 ## Setting up your queries
@@ -84,7 +84,7 @@ For a small project you can keep everything in `src/main.rs` alongside `fn main(
 have more than a handful of queries, move them into their own modules.
 
 ```rust expandable
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 // Write query: insert a new User node.
 #[register]
@@ -123,7 +123,7 @@ pub fn user_by_id(userId: String) -> ReadBatch {
 }
 
 fn main() {
-    let path = helix_dsl::generate_to_path("queries.json").expect("generate queries bundle");
+    let path = helix_db::generate_to_path("queries.json").expect("generate queries bundle");
     println!("generated {}", path.display());
 }
 ```
@@ -141,7 +141,7 @@ A few things to know about this snippet:
   names appear in the response payload.
 
 For the full builder catalog — edges, richer predicates, vector and text search, sub-traversals,
-and aggregations — see the [docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/)
+and aggregations — see the [docs.rs reference](https://docs.rs/helix-db/latest/helix_db/)
 and [Querying](/database/querying).
 
 ## Generate the bundle
@@ -169,7 +169,7 @@ This produces `queries.json` in the project root. From here you can:
   <Card title="Local Development" icon="laptop-code" href="/database/local-development">
     Run the bundle locally with the `enterprise-dev` image.
   </Card>
-  <Card title="DSL API Reference" icon="code" href="https://docs.rs/helix-enterprise-ql/latest/helix_dsl/">
-    Full `helix_dsl` API on docs.rs.
+  <Card title="DSL API Reference" icon="code" href="https://docs.rs/helix-db/latest/helix_db/">
+    Full `helix_db` API on docs.rs.
   </Card>
 </CardGroup>

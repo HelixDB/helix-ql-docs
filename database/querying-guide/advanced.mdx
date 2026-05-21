@@ -48,7 +48,7 @@ const aliceReach = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn alice_reach() -> ReadBatch {
@@ -136,7 +136,7 @@ const feed = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn feed() -> ReadBatch {
@@ -215,7 +215,7 @@ const usersAnnotated = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn users_annotated() -> ReadBatch {
@@ -378,7 +378,7 @@ const body = bulkAddUsers().toDynamicJson(params, {
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn bulk_add_users(users: ParamValue) -> WriteBatch {

@@ -38,7 +38,7 @@ const aliceFollowing = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn alice_following() -> ReadBatch {
@@ -111,7 +111,7 @@ const aliceTags = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn alice_tags() -> ReadBatch {
@@ -202,7 +202,7 @@ const aliceStrongLikes = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn alice_strong_likes() -> ReadBatch {
@@ -286,7 +286,7 @@ const fof = readBatch()
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 #[register]
 pub fn fof() -> ReadBatch {

@@ -128,7 +128,7 @@ const { user } = await response.json();
 ```
 
 ```rust Rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 let body = DynamicQueryRequest::read(user_by_username("alice".to_string()))
     .to_json_string()?;
