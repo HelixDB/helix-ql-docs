@@ -1,0 +1,40 @@
+---
+title: 'E642'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Object Position Restriction
+
+## Erroneous Code Example
+
+This error occurs when you place an object operation in a position other than the last step of a traversal.
+
+
+In this example, the object is not at the end of the traversal.
+
+<CodeGroup>
+
+```helixql queries.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::{
+                userID: ID
+            }::Out<Knows>
+```
+</CodeGroup>
+
+# Solution
+
+Place object operations only at the end of traversals.
+
+<CodeGroup>
+```helixql queries.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    out_users <- user::Out<Knows>
+    RETURN out_users, user::{
+                            userID: ID
+                        }::Out<Knows>
+```
+</CodeGroup>

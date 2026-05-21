@@ -1,0 +1,76 @@
+---
+title: "helix project"
+sidebarTitle: "project"
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Manage the V2 Cloud project that this local project is linked to. Selection is persisted in `helix.toml` (under `[project] workspace_id` and `[project] id`).
+
+## Usage
+
+```bash
+helix project <SUBCOMMAND>
+```
+
+If you run `helix project` with no subcommand in a TTY, the CLI prompts you to choose a project.
+
+## Available sub-commands
+
+| Sub-command | Description |
+|-------------|-------------|
+| `list` | List projects in the active workspace. |
+| `show` | Show the currently linked project. |
+| `switch <PROJECT>` | Link this directory to a workspace project by name or ID. |
+
+### `helix project list`
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--workspace-id` | String | Override the active workspace selection for this command. | Value from `~/.helix/config` |
+| `--format` | `human` \| `json` | Output format. | `human` |
+
+### `helix project show`
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--format` | `human` \| `json` | Output format. | `human` |
+
+### `helix project switch`
+
+| Argument | Description |
+|----------|-------------|
+| `PROJECT` | Project name or ID. |
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--id` | Boolean | Treat `PROJECT` as an ID rather than a name. |
+
+## Examples
+
+```bash
+# List projects in the active workspace
+helix project list
+
+# Show the linked project
+helix project show
+
+# Link to a project by name
+helix project switch payments-api
+
+# Link to a project by ID
+helix project switch prj_01HX... --id
+
+# List projects in a specific workspace without switching globally
+helix project list --workspace-id ws_01HX...
+```
+
+<Note>
+`helix project` requires V2 Cloud authentication. Run `helix auth login` first.
+</Note>
+
+## Related
+
+- [`helix workspace`](/cli/command-reference/workspace) — manage the active workspace
+- [`helix cluster`](/cli/command-reference/cluster) — list clusters available in the workspace/project
+- [`helix sync`](/cli/command-reference/sync) — refresh V2 Cloud instance metadata

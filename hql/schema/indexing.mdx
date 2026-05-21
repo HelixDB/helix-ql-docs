@@ -1,0 +1,35 @@
+---
+title: "Secondary Indexing"
+description: "Indexing a field of a node as a global secondary index."
+icon: "list"
+---
+
+<Warning>
+**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-db/latest/helix_db/) and dispatched as JSON — see the [Querying](/database/querying) guide. This section is kept as a reference for legacy HelixQL projects.
+</Warning>
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+You can create secondary indexes on node fields using the `INDEX` keyword. For enforcing uniqueness constraints, see [Unique Indexes](/hql/schema/unique-index).
+
+To create a secondary index, use the `INDEX` keyword:
+
+```helixql
+N::NodeType {
+  INDEX field1: String,
+  field2: U32
+}
+```
+
+This internally creates a table for the indexed field.
+To query a node by the indexed field, you can use object syntax:
+
+```helixql
+QUERY getByIndex(index_field: String) =>
+    node <- N<User>({field1: index_field})
+    RETURN node
+```
+
+---
+
+**Note:** You can currently only use indexing with nodes. Indexing for vectors is not supported yet.

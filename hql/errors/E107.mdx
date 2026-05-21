@@ -1,0 +1,36 @@
+---
+title: 'E107'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Duplicate Schema Definition
+
+## Erroneous Code Example
+
+This error occurs when you define the same node, edge, or vector type more than once in your schema.
+
+<CodeGroup>
+```helixql schema.hx
+N::User {
+    name: String,
+}
+
+N::User {
+    email: String,
+}
+```
+</CodeGroup>
+
+## Solution
+
+Remove the duplicate definition or rename one of the types.
+
+<CodeGroup>
+```helixql schema.hx
+N::User {
+    name: String,
+    email: String,
+}
+```
+</CodeGroup>

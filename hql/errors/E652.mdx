@@ -1,0 +1,36 @@
+---
+title: 'E652'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Invalid Field Access
+
+## Erroneous Code Example
+
+This error occurs when you try to access a field that doesn't exist on the inner type of an iterable variable.
+
+
+<CodeGroup>
+```helixql queries.hx
+Query addUser(userData: [{name: String, age: I64}]) =>
+    FOR { name, age, nonexistent_field } IN userData {
+        AddN<User>({name: name, age: age})
+    }
+    RETURN "Users added"
+```
+</CodeGroup>
+
+## Solution
+
+Ensure to only access fields that exist on the inner type.
+
+<CodeGroup>
+```helixql queries.hx
+Query addUser(userData: [{name: String, age: I64}]) =>
+    FOR { name, age } IN userData {
+        AddN<User>({name: name, age: age})
+    }
+    RETURN "Users added"
+```
+</CodeGroup>

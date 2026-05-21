@@ -1,0 +1,29 @@
+---
+title: 'E645'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Empty Object Remapping
+
+This error occurs when you define an object remapping with no fields.
+
+## Example
+
+<CodeGroup>
+
+```helixql queries.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::{}
+```
+</CodeGroup>
+## Solution
+
+<CodeGroup>
+```helixql queries.hx
+Query getUser(userId: ID) =>
+    user <- N<User>(userId)
+    RETURN user::{name}
+```
+</CodeGroup>

@@ -1,0 +1,33 @@
+---
+title: 'E602'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Invalid Step
+
+## Erroneous Code Example
+
+This error occurs when you try to use a step that is not valid in the current context.
+
+In this example, the `OutE<Knows>` step results in edges, but the `Out` step can only be used on nodes.
+
+<CodeGroup>
+```helixql queries.hx
+Query getUser() =>
+    user <- N<User>::OutE<Knows>::Out<Knows>
+    RETURN user
+```
+</CodeGroup>
+
+## Solution
+
+Use valid step types in your traversals.
+
+<CodeGroup>
+```helixql queries.hx
+Query getUser() =>
+    user <- N<User>::Out<Knows>::Out<Knows>
+    RETURN user
+```
+</CodeGroup>

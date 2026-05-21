@@ -1,0 +1,303 @@
+---
+title: 'Querying'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Helix Cloud exposes a single query surface over HTTP. Every query — whether a
+deep graph traversal, a vector search, a bulk write, or all three at once — is
+expressed in the same composable DSL and executes as one serializable
+transaction. Queries are authored once in TypeScript or Rust (or by hand as
+JSON) and shipped to the runtime in one of two shapes: **dynamic** or
+**stored**. The [Querying Guide](/database/querying-guide/overview) walks the
+DSL end-to-end; this page covers the choice between the two deployment shapes
+and how each one looks on the wire.
+
+## The two ways to ship a query
+
+|                            | Dynamic query                                                                                  | Stored query                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Where the query lives**  | Inside each request body                                                                       | `queries.json`, deployed to the cluster                           |
+| **HTTP endpoint**          | `POST /v1/query`                                                                               | `POST /v1/query/<name>`                                           |
+| **Request body**           | Full envelope: `request_type`, `query`, `parameters`, `parameter_types`                        | Just the parameter object                                         |
+| **Per-request overhead**   | Higher — the inline query is deserialized on every call                                        | Lowest — the route is pre-registered                              |
+| **When to reach for it**   | Ad-hoc queries, prototyping, internal tools, anything you do not want to deploy ahead of time  | Stable production traffic and any route you call repeatedly       |
+
+The query *itself* — the JSON AST under `query` or `read_routes.<name>` — is
+identical between the two modes. The same DSL produces it, and the same engine
+runs it. Only the deployment path changes.
+
+## Dynamic queries
+
+A dynamic query is sent inline: the request body carries the JSON AST that a
+stored route would hold, plus a small envelope that names the request kind and
+any runtime parameters. There is no deployment step. This is the right shape
+for one-off queries, exploratory work, and any code path where you do not want
+to maintain a registered route.
+
+The example below counts every `User` node. The TypeScript and Rust tabs are
+two builder front-ends that produce the same JSON envelope; pick whichever your
+codebase already speaks. The JSON tab shows the resulting envelope verbatim — if
+you want to skip the DSL and POST hand-written JSON, this is the body you send.
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch } from "@helixdb/enterprise-ql";
+
+const countUsers = readBatch()
+  .varAs("user_count", g().nWithLabel("User").count())
+  .returning(["user_count"]);
+
+// Full POST body for /v1/query.
+const body = countUsers.toDynamicJson();
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+fn count_users() -> ReadBatch {
+    read_batch()
+        .var_as("user_count", g().n_with_label("User").count())
+        .returning(["user_count"])
+}
+
+// Full POST body for /v1/query.
+let body = DynamicQueryRequest::read(count_users()).to_json_string()?;
+```
+
+```json envelope
+{
+  "request_type": "read",
+  "query": {
+    "queries": [
+      {
+        "Query": {
+          "name": "user_count",
+          "steps": [
+            { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+            "Count"
+          ],
+          "condition": null
+        }
+      }
+    ],
+    "returns": ["user_count"]
+  }
+}
+```
+</CodeGroup>
+
+Sending that envelope is one POST to `/v1/query`. The response is a JSON
+object keyed by the names from `.returning([...])`.
+
+<CodeGroup>
+```ts TypeScript
+const response = await fetch("https://helix.example.com/v1/query", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body, // from .toDynamicJson() above
+});
+
+const { user_count } = await response.json();
+```
+
+```rust Rust
+use helix_db::Client;
+
+let client = Client::new(Some("https://helix.example.com"))?;
+
+// Builds the envelope and POSTs it to /v1/query.
+let response: serde_json::Value = client
+    .query()
+    .dynamic_query(DynamicQueryRequest::read(count_users()))
+    .send()
+    .await?;
+
+let user_count = &response["user_count"];
+```
+
+```bash curl
+curl -sS -X POST https://helix.example.com/v1/query \
+  -H "content-type: application/json" \
+  --data-raw '{
+    "request_type": "read",
+    "query": {
+      "queries": [
+        {
+          "Query": {
+            "name": "user_count",
+            "steps": [
+              { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+              "Count"
+            ],
+            "condition": null
+          }
+        }
+      ],
+      "returns": ["user_count"]
+    }
+  }'
+```
+</CodeGroup>
+
+For larger envelopes, write the JSON to a file and use `curl --data-binary
+@file.json` — the inline `--data-raw` form gets unwieldy past a few steps.
+
+## Stored queries
+
+A stored query is registered into `queries.json` at build time and deployed to
+the cluster through the control plane. Clients then invoke it by name; the
+request body carries only the parameters, and the gateway routes straight to
+the pre-compiled procedure — no inline-query deserialization on the hot path.
+
+The example below takes the same `countUsers` query from the previous section
+and registers it as a `count_users` route. The TypeScript and Rust tabs wrap
+the builder code with the registration helpers (`registerRead` + `defineQueries`
+in TS, `#[register]` in Rust) and emit `queries.json`. The JSON tab shows the
+resulting bundle entry — the inner `read_routes.count_users` value is exactly
+the same shape as the `query` field of the dynamic envelope above.
+
+<CodeGroup>
+```ts TypeScript
+import {
+  defineQueries,
+  g,
+  readBatch,
+  registerRead,
+} from "@helixdb/enterprise-ql";
+
+function countUsers() {
+  return readBatch()
+    .varAs("user_count", g().nWithLabel("User").count())
+    .returning(["user_count"]);
+}
+
+export const queries = defineQueries({
+  read: { count_users: registerRead(countUsers) },
+});
+
+// Build-time: emit queries.json for the runtime to load.
+await queries.generate("queries.json");
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn count_users() -> ReadBatch {
+    read_batch()
+        .var_as("user_count", g().n_with_label("User").count())
+        .returning(["user_count"])
+}
+
+fn main() {
+    helix_db::generate_to_path("queries.json")
+        .expect("generate queries bundle");
+}
+```
+
+```json queries.json
+{
+  "version": 4,
+  "read_routes": {
+    "count_users": {
+      "queries": [
+        {
+          "Query": {
+            "name": "user_count",
+            "steps": [
+              { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+              "Count"
+            ],
+            "condition": null
+          }
+        }
+      ],
+      "returns": ["user_count"]
+    }
+  },
+  "write_routes": {},
+  "read_parameters":  { "count_users": [] },
+  "write_parameters": {}
+}
+```
+</CodeGroup>
+
+Once `queries.json` is deployed, callers invoke the route by name. The body is
+just the parameter object — `{}` here, since `count_users` takes none. The
+response shape matches the dynamic case — keyed by the names in
+`.returning([...])`.
+
+<CodeGroup>
+```ts TypeScript
+const response = await fetch(
+  "https://helix.example.com/v1/query/count_users",
+  {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({}),
+  },
+);
+
+const { user_count } = await response.json();
+```
+
+```rust Rust
+use helix_db::Client;
+
+let client = Client::new(Some("https://helix.example.com"))?;
+
+// Routes to /v1/query/count_users; the body is just the parameter object.
+let response: serde_json::Value = client
+    .query()
+    .body(&serde_json::json!({}))?
+    .stored_query("count_users".to_string())
+    .send()
+    .await?;
+
+let user_count = &response["user_count"];
+```
+
+```bash curl
+curl -sS -X POST https://helix.example.com/v1/query/count_users \
+  -H "content-type: application/json" \
+  --data-raw '{}'
+```
+</CodeGroup>
+
+For the full deployment workflow — parameters, bundles, the typed `queries.call.*`
+helpers — see [Parameters & bundles](/database/querying-guide/parameters-bundles).
+
+## Transactions
+
+Every query — stored or dynamic, read or write — executes as a single transaction
+with serializable snapshot isolation.
+
+- **Serializable.** Transactions behave as if they executed one at a time, even
+  when running concurrently.
+- **Snapshot isolation.** Each transaction reads from a consistent point-in-time
+  snapshot. Reads within a transaction are never affected by concurrent writes.
+- **Automatic.** Transactions are implicit. Every query invocation is a
+  transaction. There is no manual `BEGIN` / `COMMIT` / `ROLLBACK`.
+
+Read-only queries never block writes. Write transactions are serialized through
+the single writer process for correctness without distributed locking. See
+[Guarantees](/database/guarantees) for the full consistency and durability
+contract.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Querying Guide" icon="book-open" href="/database/querying-guide/overview">
+    Tutorial walkthrough of the DSL with TypeScript, Rust, and JSON for every example.
+  </Card>
+  <Card title="Parameters & bundles" icon="gear" href="/database/querying-guide/parameters-bundles">
+    `defineParams`, stored bundles, dynamic requests, and the typed `call` helpers in depth.
+  </Card>
+  <Card title="Working with HelixDB" icon="rocket" href="/database/working-with-enterprise">
+    Deploy-time and runtime workflow, query warming, and HTTP semantics.
+  </Card>
+  <Card title="Data Model" icon="diagram-project" href="/database/data-model">
+    Nodes, edges, properties, and the labeled multigraph model.
+  </Card>
+</CardGroup>

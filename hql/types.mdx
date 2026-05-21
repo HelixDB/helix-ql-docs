@@ -1,0 +1,25 @@
+---
+title: "Helix Types"
+icon: "text-size"
+---
+
+<Warning>
+**HelixQL is deprecated in HelixDB v2.** Queries are now written with the [Rust DSL](https://docs.rs/helix-db/latest/helix_db/) and dispatched as JSON — see the [Querying](/database/querying) guide. This section is kept as a reference for legacy HelixQL projects.
+</Warning>
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+## Types
+
+HelixQL supports the following types:
+
+| Type      | Description                                                     | Type      | Description                       |
+| :-------- | :-------------------------------------------------------------- | :-------- | :-------------------------------- |
+| `ID`      | UUID for nodes, edges and vectors  &emsp; &emsp;  &emsp; &emsp; | `[T]`     | Array of any type                 |
+| `Date`    | Timestamp or RFC3339 string                                     | `F32`     | 32-bit floating point             |
+| `String`  | Text data                                                       | `F64`     | 64-bit floating point             |
+| `Boolean` | True/false value                                                | `U8`      | 8-bit unsigned integer            |
+| `I8`      | 8-bit signed integer                                            | `U16`     | 16-bit unsigned integer           |
+| `I16`     | 16-bit signed integer                                           | `U32`     | 32-bit unsigned integer           |
+| `I32`     | 32-bit signed integer                                           | `U64`     | 64-bit unsigned integer           |
+| `I64`     | 64-bit signed integer                                           | `U128`    | 128-bit unsigned integer          |

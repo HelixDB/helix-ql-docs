@@ -1,0 +1,35 @@
+---
+title: 'E103'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Unknown Vector Type
+
+## Erroneous Code Example
+
+This error occurs when you try to reference a vector type that is not defined in your schema.
+
+<CodeGroup>
+```helixql queries.hx
+QUERY search(query: String) =>
+    results <- SearchV<Document>(Embed(query), 10)
+    RETURN results
+```
+
+```helixql schema.hx
+// no types defined
+```
+</CodeGroup>
+
+## Solution
+
+Define the vector type `Document` in your schema.
+
+<CodeGroup>
+```helixql schema.hx
+V::Document {
+    // fields
+}
+```
+</CodeGroup>

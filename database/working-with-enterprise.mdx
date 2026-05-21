@@ -1,0 +1,142 @@
+---
+title: 'Working with HelixDB Cloud'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+import { EnterpriseDiagram } from "/snippets/database-diagram.jsx"
+import { workflowDiagram } from "/snippets/diagrams.jsx"
+
+Helix Cloud separates deployment-time operations from runtime query execution. This boundary
+keeps the system easier to scale, secure, and operate.
+
+
+
+## End-to-End Workflow
+
+<EnterpriseDiagram diagram={workflowDiagram} />
+
+
+## Deploy-Time Workflow
+
+Stored queries are authored as a single `queries.json` artifact — graph traversals, property
+filters, vector searches, text searches, and mutations all expressed as JSON. A single query can
+chain multiple traversals, apply filters, and combine graph, vector, and text operations within
+one transaction.
+
+`queries.json` is deployed to the cluster through the Helix control plane. The Helix CLI is not
+involved in stored-procedure deployment in v2 — its job at runtime is to send dynamic queries,
+fetch logs, and synchronize per-instance metadata via [`helix sync`](/cli/command-reference/sync).
+
+Queries are the only artifact that moves from development to production. There is no schema
+migration step, no ORM configuration, and no SQL to manage. The data model is implicit in the
+queries themselves.
+
+## Runtime Workflow
+
+At runtime, applications interact with Helix Cloud over HTTP.
+
+1. **Call by name.** An HTTP client sends a request to the gateway with a stored query name and
+   any required parameters at `POST /v1/query/<query-name>`. Clients can also send an inline query
+   at `POST /v1/query`.
+2. **Transaction execution.** The gateway routes the request to the appropriate process. The query
+   runs inside a transaction with serializable snapshot isolation. Reads and writes within the
+   same query see a consistent snapshot.
+3. **Result delivery.** Helix returns the query result as a JSON response. Reads are served by
+   horizontally scaled readers. Writes are serialized through the single writer.
+
+Stored queries execute as pre-compiled procedures, keeping runtime overhead minimal. Dynamic
+queries deserialize the inline query JSON at request time, which makes them more flexible but less
+optimized than stored routes.
+
+## Dynamic Queries
+
+Helix supports inline queries for cases where you do not want to deploy the route ahead of time.
+
+- Send `POST /v1/query`.
+- Include a JSON body shaped like:
+
+```json
+{
+  "request_type": "read",
+  "query": {
+    "queries": [
+      {
+        "name": "user",
+        "steps": [
+          {
+            "NWhere": {
+              "Eq": ["username", { "String": "Alice" }]
+            }
+          }
+        ],
+        "condition": null
+      }
+    ],
+    "returns": ["user"]
+  },
+  "parameters": {}
+}
+```
+
+- `request_type` must be `read` or `write` so the gateway can route the request correctly.
+- `query` is the same JSON object that would otherwise live under `read_routes.<name>` or
+  `write_routes.<name>` in `queries.json`.
+- `parameters` is optional and uses the same shape as stored-query calls.
+
+## Query Warming
+
+Helix supports built-in query warming for read queries.
+
+- Send the normal read request with the same parameters you would use for a real read:
+  - stored route: `POST /v1/query/<query-name>`
+  - dynamic route: `POST /v1/query`
+- Add `X-Helix-Warm: true` or `X-Helix-Warm: 1`.
+- Helix executes the query as a query warming request, discards the result body, and returns
+  `204 No Content`.
+
+This is useful when you want to pre-populate the per-process caches that a known query touches
+before live traffic arrives.
+
+Important details:
+
+- Query warming is only supported for read queries. Warming a write query is rejected.
+- Helix sends the query warming request to all backends so every node can populate its local caches
+  with the data fetched during query execution.
+- Query warming does not create a separate query-result cache. It warms the normal storage,
+  vector, and text-search caches that the query touches during execution.
+
+## Separation of Concerns
+
+| Responsibility       | Deploy-time   | Runtime                     |
+| -------------------- | ------------- | --------------------------- |
+| Query authoring      | `queries.json` | --                         |
+| Stored-query loading | Control plane | --                          |
+| Dynamic queries      | --            | `helix query` + Gateway     |
+| Query execution      | --            | Gateway + Writer/Readers    |
+| Data storage         | --            | Object storage              |
+| Caching              | --            | SSD + in-memory per process |
+| Scaling              | --            | Auto-scaling readers        |
+
+## Local Development
+
+For iterating locally without provisioning a full cluster, Helix ships a combined `enterprise-dev`
+image that runs a gateway and database together in a single container. See
+[Developing with HelixDB Locally](/database/local-development) for in-memory and on-disk setups.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Querying" icon="magnifying-glass" href="/database/querying">
+    Traversal DSL, stored queries, dynamic queries, and transactions.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/database/architecture">
+    Gateway, writer, readers, object storage, and the cache hierarchy.
+  </Card>
+  <Card title="Data Model" icon="diagram-project" href="/database/data-model">
+    Nodes, edges, properties, and the labeled multigraph model.
+  </Card>
+  <Card title="Developing Locally" icon="laptop-code" href="/database/local-development">
+    Run the `enterprise-dev` image in-memory or against MinIO.
+  </Card>
+</CardGroup>

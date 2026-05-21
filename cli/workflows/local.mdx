@@ -1,0 +1,149 @@
+---
+title: "Local Development"
+description: "Run a local v2 instance and iterate on dynamic JSON queries"
+icon: "computer"
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Local development runs the prebuilt `ghcr.io/helixdb/database-dev:latest` container and exposes the gateway at `POST /v1/query`. By default, storage is in-memory. Use `--disk` when you want persistent local data backed by a CLI-managed MinIO volume.
+
+## Prerequisites
+
+- **Docker** or **Podman** on `PATH`.
+- The Helix CLI: `curl -sSL "https://install.helix-db.com" | bash`.
+
+## Initial setup
+
+For an agent-assisted first app, [`helix chef`](/cli/command-reference/chef) can run this setup end-to-end: it installs Helix skills and the docs MCP, initializes `~/my-first-helix-project`, starts `dev`, seeds starter data, and opens the dashboard.
+
+```bash
+helix chef
+```
+
+Use the manual flow below when you want to scaffold and run each step yourself.
+
+<Steps>
+  <Step title="Scaffold a project">
+    ```bash
+    mkdir my-helix-app
+    cd my-helix-app
+    helix init
+    ```
+
+    `helix init` creates `helix.toml`, `.helix/`, and `examples/request.json`.
+  </Step>
+
+  <Step title="Start the local runtime">
+    ```bash
+    helix run dev
+    ```
+
+    Starts a background container named `helix-my-helix-app-dev` on port `8080`. The CLI waits until the gateway accepts `POST /v1/query` before returning.
+
+    For attached log streaming use `helix run dev --foreground` and stop with Ctrl-C.
+
+    For persistent local storage use `helix run dev --disk`, or initialize the project with `helix init local --disk` to make disk mode the default for that instance.
+  </Step>
+
+  <Step title="Send the example query">
+    ```bash
+    helix query dev --file examples/request.json
+    ```
+
+    The example counts `User` nodes. Try `--compact` to print on one line, or `--warm` to populate caches without printing a response.
+  </Step>
+</Steps>
+
+<Warning>
+Default local storage is in-memory. `helix stop` or `helix restart` wipes in-memory data — keep your seed data in JSON request files so you can replay it, or use `--disk` for persistent local storage.
+</Warning>
+
+## Persistent local storage
+
+```bash
+# One-off disk mode for this run
+helix run dev --disk
+
+# Persist disk mode in helix.toml for a new local instance
+helix add local --name persistent --disk
+helix run persistent
+```
+
+Disk mode starts a MinIO sidecar, creates the `helix-db` bucket, and stores data in a Helix-managed Docker/Podman volume. `helix stop` removes the containers but keeps the volume. `helix prune <instance>` removes the volume and deletes the persisted local data.
+
+## Iteration loop
+
+```bash
+# Edit a request file (or write a new one)
+$EDITOR examples/request.json
+
+# Send the request
+helix query dev --file examples/request.json
+
+# Tail container logs in another shell
+helix logs dev --follow
+
+# Stop and restart from a clean state
+helix restart dev
+```
+
+`helix restart` falls back to a fresh `helix run` if the container has been removed.
+
+## Multiple local instances
+
+```bash
+# Add a second local instance on a different port
+helix add local --name staging --port 9090
+
+# Run them independently
+helix run dev
+helix run staging
+
+# See what's running
+helix status
+```
+
+Each instance is isolated by container name and host port. Disk-mode instances also get their own MinIO container, network, and volume.
+
+## Inspecting logs
+
+```bash
+helix logs dev               # one-shot dump from docker/podman logs
+helix logs dev --follow      # stream
+```
+
+`--range`, `--start`, and `--end` are V2 Cloud-only and rejected for local instances.
+
+## Cleaning up
+
+| Goal | Command |
+|------|---------|
+| Stop one instance | `helix stop <instance>` |
+| Restart one instance | `helix restart <instance>` |
+| Remove containers, workspace state, and disk-mode volume for one instance | `helix prune <instance>` |
+| Remove everything Helix-owned, for every local instance | `helix prune --all` (`--yes` in non-TTY) |
+| Permanently delete an instance from `helix.toml` | `helix delete <instance>` (`--yes` in non-TTY) |
+
+[`helix prune`](/cli/command-reference/prune) only touches Helix-managed containers (`helix-<project>-<instance>` and disk-mode MinIO sidecars), networks, volumes, and the per-instance `.helix/<instance>` directory. It never runs a broad `docker/podman system prune`.
+
+## Authoring dynamic queries
+
+A request JSON file must contain:
+
+- `request_type`: lowercase `"read"` or `"write"`.
+- `query`: the query object — `queries[]` with `name`, `steps`, and optional `condition`, plus a `returns[]` list.
+- `parameters` (optional): named parameter values.
+
+The first step must be a source step (for example `NWhere`) before any terminal step like `Count`. See [`helix query`](/cli/command-reference/query) for the validation rules.
+
+## What next?
+
+<CardGroup cols={2}>
+  <Card title="V2 Cloud workflow" icon="cloud" href="/cli/workflows/helix_cloud">
+    Authenticate, link a project, and query a remote cluster
+  </Card>
+  <Card title="CLI Command Reference" icon="terminal" href="/cli/command-reference">
+    Every command, subcommand, and flag
+  </Card>
+</CardGroup>

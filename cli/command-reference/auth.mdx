@@ -1,0 +1,43 @@
+---
+title: "helix auth"
+sidebarTitle: "auth"
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Manage V2 Cloud authentication. Credentials are stored in `~/.helix/credentials`.
+
+## Usage
+
+```bash
+helix auth <SUBCOMMAND>
+```
+
+## Available sub-commands
+
+| Sub-command | Description |
+|-------------|-------------|
+| `login` | Authenticate with Helix Cloud via a browser-based GitHub device flow. |
+| `logout` | Remove `~/.helix/credentials`. |
+| `create-key <CLUSTER>` | Rotate the API key for a specific V2 Cloud cluster. The new key prints once. |
+
+### `helix auth create-key`
+
+| Argument | Description |
+|----------|-------------|
+| `CLUSTER` | Cluster ID to rotate. Find one with [`helix cluster list`](/cli/command-reference/cluster). |
+
+`helix auth create-key` requires you to already be logged in. The new key replaces any previous keys for that cluster — update `HELIX_API_KEY` (or whatever `query_auth_env` resolves to for the instance) before running [`helix query`](/cli/command-reference/query) again.
+
+## Examples
+
+```bash
+# Login (opens a browser device flow)
+helix auth login
+
+# Logout (clears ~/.helix/credentials)
+helix auth logout
+
+# Rotate a cluster API key
+helix auth create-key ec_01HX...
+```

@@ -1,0 +1,487 @@
+---
+title: 'Projections'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Up to this point every example has ended with `.valueMap([...])` to ship a few
+properties back to the caller. This page covers the full set of terminal projections:
+how to shape the output, compute derived values, and aggregate the stream.
+
+A traversal that ends in a terminal step (`.count`, `.values`, `.project`, …)
+produces a final result rather than another node or edge stream. The TypeScript and
+Rust typestate machinery prevents you from chaining traversal steps after a terminal.
+
+## Scalar terminals: `.count`, `.exists`, `.id`, `.label`
+
+The smallest terminals collapse the whole stream into a single value.
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+
+const aliceStats = readBatch()
+  .varAs("post_count", g().nWithLabel("Post").count())
+  .varAs(
+    "alice_exists",
+    g().nWhere(SourcePredicate.eq("username", "alice")).exists(),
+  )
+  .returning(["post_count", "alice_exists"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn alice_stats() -> ReadBatch {
+    read_batch()
+        .var_as("post_count", g().n_with_label("Post").count())
+        .var_as(
+            "alice_exists",
+            g().n_where(SourcePredicate::eq("username", "alice")).exists(),
+        )
+        .returning(["post_count", "alice_exists"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "post_count",
+        "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "Post" }] } },
+          "Count"
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "alice_exists",
+        "steps": [
+          { "NWhere": { "Eq": ["username", { "String": "alice" }] } },
+          "Exists"
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["post_count", "alice_exists"]
+}
+```
+</CodeGroup>
+
+The four scalar terminals:
+
+| Step | Returns |
+|---|---|
+| `.count()` | Number of items in the stream. |
+| `.exists()` | `true` if the stream is non-empty, `false` otherwise. |
+| `.id()` | Stream of `$id` values, one per item. |
+| `.label()` | Stream of `$label` values, one per item. |
+
+`.id()` and `.label()` are usually most useful followed by another binding via
+`.varAs(...)`, or as input to `.project(...)`.
+
+## `.values(...)` and `.valueMap(...)`
+
+When you want a few properties from each item:
+
+- `.values([prop, ...])` — emits an array of arrays, one inner array per item, with
+  the properties in the requested order. No keys, only positional values.
+- `.valueMap([prop, ...])` — emits an array of objects keyed by property name. Pass
+  `null` (or omit the argument) for "every property".
+
+`valueMap` is the default choice for service-facing routes; `values` is handy when
+the caller does its own positional decoding.
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch } from "@helixdb/enterprise-ql";
+
+const usersForAdminPanel = readBatch()
+  .varAs(
+    "rows",
+    g()
+      .nWithLabel("User")
+      .valueMap(["$id", "$label", "username", "tier", "createdAt"]),
+  )
+  .returning(["rows"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn users_for_admin_panel() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "rows",
+            g().n_with_label("User").value_map(Some(vec![
+                "$id",
+                "$label",
+                "username",
+                "tier",
+                "createdAt",
+            ])),
+        )
+        .returning(["rows"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "rows",
+        "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+          { "ValueMap": ["$id", "$label", "username", "tier", "createdAt"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["rows"]
+}
+```
+</CodeGroup>
+
+`$id`, `$label`, `$from`, `$to`, and `$distance` are **virtual fields**: they are
+always available even though they are not declared on your schema. `$from`/`$to`
+appear on edge streams; `$distance` appears on vector / text search hits.
+
+## `.project(...)` with renames and expressions
+
+`project([...])` is the most flexible terminal — it accepts a list of items, each one
+either:
+
+- `PropertyProjection.new(prop)` — emit `prop` under its own name.
+- `PropertyProjection.renamed(source, alias)` — emit `source` under a different key.
+- `ExprProjection.new(alias, expr)` — emit a computed expression under `alias`.
+
+Use it when you want to flatten ids out from under `$id`, return a different name
+than the schema's, or compute a derived field.
+
+A typical `project` call mixes plain property pulls with one or two renames:
+
+<CodeGroup>
+```ts TypeScript
+import { g, PropertyProjection, readBatch } from "@helixdb/enterprise-ql";
+
+const userCards = readBatch()
+  .varAs(
+    "cards",
+    g()
+      .nWithLabel("User")
+      .project([
+        PropertyProjection.renamed("$id", "id"),
+        PropertyProjection.new("username"),
+        PropertyProjection.new("tier"),
+      ]),
+  )
+  .returning(["cards"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn user_cards() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "cards",
+            g().n_with_label("User").project(vec![
+                PropertyProjection::renamed("$id", "id"),
+                PropertyProjection::new("username"),
+                PropertyProjection::new("tier"),
+            ]),
+        )
+        .returning(["cards"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "cards",
+        "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+          {
+            "Project": [
+              { "source": "$id",      "alias": "id" },
+              { "source": "username", "alias": "username" },
+              { "source": "tier",     "alias": "tier" }
+            ]
+          }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["cards"]
+}
+```
+</CodeGroup>
+
+Each entry in `Project` is a bare object with `source` / `alias` (for
+`PropertyProjection`) or `alias` / `expr` (for `ExprProjection`). There is no enum
+tag around them — the `Projection` enum is untagged on the wire.
+
+### Expressions for `ExprProjection`
+
+`Expr` is a small arithmetic-and-conditionals algebra:
+
+- Sources: `Expr.prop(name)`, `Expr.val(value)`, `Expr.id()`, `Expr.timestamp()`,
+  `Expr.datetime()`, `Expr.param(name)`.
+- Arithmetic: `.add(other)`, `.sub(other)`, `.mul(other)`, `.div(other)`,
+  `.modulo(other)`, `.neg()`.
+- Branching: `Expr.case([[predicate, expr], ...], elseExpr)`.
+
+A small derived field — fall back to `"unknown"` when the `tier` property is null:
+
+<CodeGroup>
+```ts TypeScript
+import {
+  Expr,
+  ExprProjection,
+  g,
+  Predicate,
+  PropertyProjection,
+  readBatch,
+} from "@helixdb/enterprise-ql";
+
+const userCardsWithFallback = readBatch()
+  .varAs(
+    "cards",
+    g()
+      .nWithLabel("User")
+      .project([
+        PropertyProjection.renamed("$id", "id"),
+        PropertyProjection.new("username"),
+        ExprProjection.new(
+          "tier",
+          Expr.case(
+            [[Predicate.isNotNull("tier"), Expr.prop("tier")]],
+            Expr.val("unknown"),
+          ),
+        ),
+      ]),
+  )
+  .returning(["cards"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn user_cards_with_fallback() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "cards",
+            g().n_with_label("User").project(vec![
+                PropertyProjection::renamed("$id", "id"),
+                PropertyProjection::new("username"),
+                ExprProjection::new(
+                    "tier",
+                    Expr::case(
+                        vec![(
+                            Predicate::is_not_null("tier"),
+                            Expr::prop("tier"),
+                        )],
+                        Some(Expr::val("unknown")),
+                    ),
+                ),
+            ]),
+        )
+        .returning(["cards"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "cards",
+        "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+          {
+            "Project": [
+              { "source": "$id",      "alias": "id" },
+              { "source": "username", "alias": "username" },
+              {
+                "alias": "tier",
+                "expr": {
+                  "Case": {
+                    "when_then": [
+                      [
+                        { "IsNotNull": "tier" },
+                        { "Property": "tier" }
+                      ]
+                    ],
+                    "else_expr": { "Constant": { "String": "unknown" } }
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["cards"]
+}
+```
+</CodeGroup>
+
+For time-relative comparisons against "now" (e.g. "rows newer than 30 days"), use
+`Expr.timestamp()` (server epoch millis) or `Expr.datetime()` (typed datetime) on
+one side of a `Predicate.compare(left, CompareOp.*, right)`. Arithmetic on `Expr`
+returns another `Expr`, so you can chain `Expr.timestamp().sub(Expr.val(30 * 86_400 * 1000))`
+to compute a cut-off server-side.
+
+## Edge property output
+
+For edge streams, `.edgeProperties()` emits each edge as an object with all of its
+properties plus the virtual `$id`, `$label`, `$from`, and `$to` fields.
+
+<CodeGroup>
+```ts TypeScript
+import { g, NodeRef, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+
+const aliceFollowsEdges = readBatch()
+  .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAs(
+    "edges",
+    g().n(NodeRef.var("user")).outE("FOLLOWS").edgeProperties(),
+  )
+  .returning(["edges"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn alice_follows_edges() -> ReadBatch {
+    read_batch()
+        .var_as("user", g().n_where(SourcePredicate::eq("username", "alice")))
+        .var_as(
+            "edges",
+            g().n(NodeRef::var("user")).out_e(Some("FOLLOWS")).edge_properties(),
+        )
+        .returning(["edges"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "user",
+        "steps": [
+          { "NWhere": { "Eq": ["username", { "String": "alice" }] } }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "edges",
+        "steps": [
+          { "N":    { "Var": "user" } },
+          { "OutE": "FOLLOWS" },
+          "EdgeProperties"
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["edges"]
+}
+```
+</CodeGroup>
+
+## Aggregations: `.group`, `.groupCount`, `.aggregateBy`
+
+For grouped counts and aggregate statistics:
+
+- `.group(prop)` — bucket the stream by `prop`, emit `{groupValue: [items...]}`.
+- `.groupCount(prop)` — bucket and count, emit `{groupValue: count}`.
+- `.aggregateBy(AggregateFunction.*, prop)` — apply a reducer to one property:
+  `Count`, `Sum`, `Min`, `Max`, `Mean`.
+
+<CodeGroup>
+```ts TypeScript
+import { AggregateFunction, g, readBatch } from "@helixdb/enterprise-ql";
+
+const tierBreakdown = readBatch()
+  .varAs("by_tier", g().nWithLabel("User").groupCount("tier"))
+  .varAs("avg_post_age", g().nWithLabel("Post").aggregateBy(AggregateFunction.Mean, "createdAt"))
+  .returning(["by_tier", "avg_post_age"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn tier_breakdown() -> ReadBatch {
+    read_batch()
+        .var_as("by_tier", g().n_with_label("User").group_count("tier"))
+        .var_as(
+            "avg_post_age",
+            g().n_with_label("Post").aggregate_by(AggregateFunction::Mean, "createdAt"),
+        )
+        .returning(["by_tier", "avg_post_age"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "by_tier",
+        "steps": [
+          { "NWhere":     { "Eq": ["$label", { "String": "User" }] } },
+          { "GroupCount": "tier" }
+        ],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "avg_post_age",
+        "steps": [
+          { "NWhere":      { "Eq": ["$label", { "String": "Post" }] } },
+          { "AggregateBy": ["Mean", "createdAt"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["by_tier", "avg_post_age"]
+}
+```
+</CodeGroup>
+
+`AggregateFunction` values are serialized as strings: `"Count"`, `"Sum"`, `"Min"`,
+`"Max"`, `"Mean"`.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Mutations" icon="pen-to-square" href="/database/querying-guide/mutations">
+    `writeBatch`, `addN`, `addE`, `setProperty`, `drop` — and using results inside the same batch.
+  </Card>
+  <Card title="Vector and text search" icon="magnifying-glass" href="/database/querying-guide/search">
+    `vectorSearchNodes`, `textSearchNodes`, projecting `$distance`, follow-on traversal.
+  </Card>
+</CardGroup>

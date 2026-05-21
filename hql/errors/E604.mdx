@@ -1,0 +1,26 @@
+---
+title: 'E604'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Update Restriction
+
+## Erroneous Code Example
+
+This error occurs when you try to perform an update operation on something other than nodes or edges.
+
+In this example, the `update` step is used on a vector type which is not allowed **yet**.
+
+<CodeGroup>
+```helixql queries.hx
+Query updateVector(vectorId: ID) =>
+    vector <- V<Vector>(vectorId)::UPDATE({field1: "updated value"})
+```
+
+```helixql schema.hx
+V::Vector {
+    field1: String,
+}
+```
+</CodeGroup>

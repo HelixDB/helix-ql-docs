@@ -1,0 +1,189 @@
+---
+title: 'Local Development'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+For local development, Helix ships a combined `enterprise-dev` image that runs a gateway and
+database together in a single container. The image supports two storage modes:
+
+- **In-memory** — fastest to spin up, but data is lost on container restart.
+- **On-disk** — backed by an S3-compatible object store such as
+  [MinIO](https://min.io/), so data survives restarts and mirrors the production storage path.
+
+In both modes:
+
+- If `PATH_TO_QUERIES` is unset, you can still use dynamic `POST /v1/query` requests.
+- If `PATH_TO_QUERIES` is set, the container loads stored queries from the mounted
+  `queries.json` file during startup.
+
+## Quick Start with the CLI
+
+The fastest way to get started is the Helix CLI, which wraps the `enterprise-dev` image and
+handles container lifecycle for you:
+
+```bash
+# Install the CLI
+curl -sSL "https://install.helix-db.com" | bash
+
+# Scaffold a new project (creates helix.toml and examples/request.json)
+mkdir my-helix-app && cd my-helix-app
+helix init local --name dev
+
+# Start the local in-memory runtime on port 8080
+helix run dev
+
+# Or start with persistent local storage backed by MinIO
+helix run dev --disk
+
+# Send a dynamic query
+helix query dev --file examples/request.json
+
+# Stop the instance when you're done
+helix stop dev
+```
+
+For installation details, V2 Cloud authentication, and the full command reference, see the
+[CLI Getting Started guide](/cli/getting-started).
+
+### AI-assisted query authoring
+
+If you're developing with a coding agent, install the Helix skills bundle to get specialized agents for writing,
+optimizing, and translating HelixDB queries:
+
+```bash
+npx skills add HelixDB/skills
+```
+
+This installs skills such as `helix-query-authoring`, `helix-query-optimize`,
+`helix-query-json-dynamic`, `helix-query-from-cypher`, and `helix-query-from-gremlin`. Once
+installed, Claude will load the relevant skill automatically when you ask it to write a query,
+tune a slow traversal, or translate a Cypher/Gremlin query into the Helix Rust DSL.
+
+Run the command from the root of your Helix project so the skills can inspect your local schema,
+edges, and existing queries when generating new ones.
+
+### Configuring disk mode
+
+To make disk mode the default for a local instance, initialize or add it with `--disk`:
+
+```bash
+helix init local --disk
+helix add local --name persistent --disk
+```
+
+The CLI-managed disk mode starts a MinIO sidecar, creates the `helix-db` bucket, and keeps the
+MinIO volume across `helix stop`. Use `helix prune <instance>` to delete the persisted local data.
+
+If you'd rather manage the containers yourself with Docker Compose, the in-memory and on-disk
+setups below show the raw image configuration that the CLI disk mode mirrors.
+
+## In-Memory
+
+<Warning>
+In-memory mode is development-only. Stopping or restarting the container wipes all data.
+</Warning>
+
+You can add this service to a local `docker-compose.yml`:
+
+```yaml expandable
+services:
+  helix:
+    image: ghcr.io/helixdb/database-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PATH_TO_QUERIES: /workspace/queries.json
+    volumes:
+      - ./queries.json:/workspace/queries.json:ro
+```
+
+If you only want dynamic queries, omit `PATH_TO_QUERIES` and the mounted `queries.json` volume.
+
+## On-Disk
+
+For persistent local development, point the `enterprise-dev` image at an S3-compatible object
+store. The example below brings up MinIO, initializes the `helix-db` bucket, and configures the
+`enterprise-dev` container to read and write to it. Data persists across container restarts as
+long as the MinIO volume is preserved.
+
+```yaml expandable
+services:
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    restart: "no"
+    depends_on:
+      - minio
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 1; done
+        mc mb --ignore-existing local/helix-db
+
+  helix:
+    image: ghcr.io/helixdb/database-dev:v0.1.0
+    restart: unless-stopped
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    environment:
+      PATH_TO_QUERIES: /workspace/queries.json
+      S3_BUCKET: helix-db
+      S3_REGION: us-east-1
+      DB_PATH: db/
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_ENDPOINT: http://minio:9000
+      AWS_ALLOW_HTTP: "true"
+    volumes:
+      - ./queries.json:/workspace/queries.json:ro
+
+volumes:
+  minio-data:
+```
+
+### Environment variables
+
+| Variable                | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `S3_BUCKET`             | Bucket the database reads and writes to.                                     |
+| `S3_REGION`             | Region passed to the S3 client. Any value works against MinIO.               |
+| `DB_PATH`               | Prefix inside the bucket where the database keeps its files.                 |
+| `AWS_ACCESS_KEY_ID`     | Access key for the object store.                                             |
+| `AWS_SECRET_ACCESS_KEY` | Secret key for the object store.                                             |
+| `AWS_ENDPOINT`          | Custom endpoint URL — required for MinIO and other non-AWS S3 providers.     |
+| `AWS_ALLOW_HTTP`        | Set to `true` when the endpoint is plain HTTP (e.g. local MinIO).            |
+
+The same variables work against any S3-compatible store — MinIO, LocalStack, Ceph RGW, or AWS S3
+itself. Drop `AWS_ENDPOINT` and `AWS_ALLOW_HTTP` to talk to real AWS S3.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Working with Helix Cloud" icon="rocket" href="/database/working-with-enterprise">
+    Authoring `queries.json`, deploying stored queries, and the runtime workflow.
+  </Card>
+  <Card title="Querying" icon="magnifying-glass" href="/database/querying">
+    Traversal DSL, stored queries, dynamic queries, and transactions.
+  </Card>
+  <Card title="CLI Getting Started" icon="terminal" href="/cli/getting-started">
+    Install the Helix CLI, scaffold a project, and send your first query.
+  </Card>
+  <Card title="Local Workflow" icon="code" href="/cli/workflows/local">
+    Iterate on dynamic JSON queries against a local v2 instance.
+  </Card>
+</CardGroup>

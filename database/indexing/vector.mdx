@@ -1,0 +1,99 @@
+---
+title: 'Vector Indexes'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Vector indexes enable approximate nearest neighbor (ANN) search on numeric array properties.
+Helix supports vector indexes on both nodes and edges. Values are normalized to float32 for
+indexing, and supported distance metrics are cosine, euclidean, and manhattan. The query vector
+must match the configured index dimension exactly.
+
+Vector search is approximate by design, trading a small amount of recall for significantly faster
+search over large datasets. The third argument to the index-creation builders is an optional
+tenant property name; pass `None::<&str>` for a global index, or see
+[Multi-Tenancy](/database/multi-tenancy) for the partitioned variant.
+
+The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
+or `write_batch()` route as shown in [Querying](/database/querying).
+
+## Vector Index — Nodes
+
+Declare the index. The second argument is the property that holds the embedding:
+
+```rust
+g().create_vector_index_nodes("Doc", "embedding", None::<&str>)
+```
+
+Insert a node with both the application data and the embedding. `PropertyInput::from(Vec<f32>)`
+works through the generic conversion path from any type that `PropertyValue` accepts:
+
+```rust
+g().add_n(
+    "Doc",
+    vec![
+        ("title", PropertyInput::from("Intro to vector search")),
+        ("embedding", PropertyInput::from(vec![0.12f32, 0.85, -0.04])),
+    ],
+)
+```
+
+kNN search returns the top `k` nearest nodes. Pass `None::<PropertyValue>` for the tenant
+argument when the index is not partitioned:
+
+```rust
+g().vector_search_nodes(
+    "Doc",
+    "embedding",
+    vec![0.12f32, 0.85, -0.04],
+    10,
+    None::<PropertyValue>,
+)
+```
+
+## Vector Index — Edges
+
+Edges can carry embeddings too — useful when the relationship itself is what you want to retrieve
+by similarity (e.g., citation context, relation-typed embeddings).
+
+```rust
+g().create_vector_index_edges("CITES", "embedding", None::<&str>)
+```
+
+```rust
+g().n(NodeRef::param("source"))
+    .add_e(
+        "CITES",
+        NodeRef::param("target"),
+        vec![("embedding", PropertyInput::from(vec![0.12f32, 0.85, -0.04]))],
+    )
+```
+
+```rust
+g().vector_search_edges(
+    "CITES",
+    "embedding",
+    vec![0.12f32, 0.85, -0.04],
+    10,
+    None::<PropertyValue>,
+)
+```
+
+## Parameterized Searches
+
+The plain `vector_search_nodes` / `vector_search_edges` builders take a literal `Vec<f32>` and a
+`usize` for `k`. For routes that receive the query vector and limit from request parameters, use
+the `_with` variants. They accept `PropertyInput::param(...)` for the vector and `Expr::param(...)`
+for `k`:
+
+```rust
+g().vector_search_nodes_with(
+    "Doc",
+    "embedding",
+    PropertyInput::param("queryVector"),
+    Expr::param("limit"),
+    None::<PropertyInput>,
+)
+```
+
+The same pattern applies to `vector_search_edges_with`.

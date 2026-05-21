@@ -1,0 +1,32 @@
+---
+title: 'E601'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+# Invalid Traversal
+
+**Note:** This error is not currently emitted by the compiler.
+
+## Erroneous Code Example
+
+This error occurs when you attempt a malformed traversal.
+
+<CodeGroup>
+```helixql queries.hx
+Query getUser() =>
+    user <- N() 
+```
+</CodeGroup>
+
+## Solution
+
+Ensure each step in the traversal is valid.
+
+<CodeGroup>
+```helixql queries.hx
+Query getUser() =>
+    user <- N<User>
+    RETURN user
+```
+</CodeGroup>
