@@ -61,7 +61,7 @@ you want to skip the DSL and POST hand-written JSON, this is the body you send.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, readBatch } from "@helixdb/enterprise-ql";
+import { g, readBatch } from "@helix-db/helix-db";
 
 const countUsers = readBatch()
   .varAs("user_count", g().nWithLabel("User").count())
@@ -183,7 +183,7 @@ import {
   g,
   readBatch,
   registerRead,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 function countUsers() {
   return readBatch()

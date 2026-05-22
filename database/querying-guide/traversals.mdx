@@ -26,7 +26,7 @@ supply it to scope to one edge type. In the JSON the omitted form becomes
 
 <CodeGroup>
 ```ts TypeScript
-import { g, NodeRef, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+import { g, NodeRef, readBatch, SourcePredicate } from "@helix-db/helix-db";
 
 const aliceFollowing = readBatch()
   .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
@@ -94,7 +94,7 @@ might appear on more than one of Alice's posts.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, NodeRef, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+import { g, NodeRef, readBatch, SourcePredicate } from "@helix-db/helix-db";
 
 const aliceTags = readBatch()
   .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
@@ -185,7 +185,7 @@ written, filters by edge property, and returns the destination posts.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, NodeRef, Predicate, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+import { g, NodeRef, Predicate, readBatch, SourcePredicate } from "@helix-db/helix-db";
 
 const aliceStrongLikes = readBatch()
   .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
@@ -267,7 +267,7 @@ current stream.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, NodeRef, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+import { g, NodeRef, readBatch, SourcePredicate } from "@helix-db/helix-db";
 
 // Friends of Alice's friends, excluding Alice's direct friends.
 const fof = readBatch()

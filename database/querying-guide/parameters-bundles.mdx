@@ -17,7 +17,7 @@ and returns a typed proxy. Each property of the returned proxy is a `ParamRef` y
 can pass into builder methods that expect one.
 
 ```ts
-import { defineParams, param } from "@helixdb/enterprise-ql";
+import { defineParams, param } from "@helix-db/helix-db";
 
 const params = defineParams({
   tenant_id:     param.string(),
@@ -91,7 +91,7 @@ resulting body to `/v1/query`. No deploy step. Best for ad-hoc queries, prototyp
 and one-off integrations.
 
 ```ts
-import { defineParams, g, param, Predicate, readBatch } from "@helixdb/enterprise-ql";
+import { defineParams, g, param, Predicate, readBatch } from "@helix-db/helix-db";
 
 const params = defineParams({ username: param.string() });
 
@@ -209,7 +209,7 @@ import {
   registerRead,
   registerWrite,
   writeBatch,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const readParams = defineParams({ username: param.string() });
 
@@ -417,7 +417,7 @@ your payload may contain large integers.
 and round-trips losslessly through the dynamic envelope as a UTC RFC3339 string.
 
 ```ts
-import { DateTime } from "@helixdb/enterprise-ql";
+import { DateTime } from "@helix-db/helix-db";
 
 DateTime.fromMillis(-1).toRfc3339();
 // "1969-12-31T23:59:59.999Z"
@@ -473,7 +473,7 @@ import {
   writeQueryBundleToPath,
   deserializeQueryBundle,
   readQueryBundleFromPath,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const bundle = queries.buildQueryBundle();
 const json = serializeQueryBundle(bundle);
@@ -500,7 +500,7 @@ at deploy time.
   <Card title="Querying Guide: overview" icon="circle-arrow-left" href="/database/querying-guide/overview">
     Back to the start of the guide.
   </Card>
-  <Card title="npm package" icon="npm" href="https://www.npmjs.com/package/@helixdb/enterprise-ql">
-    `@helixdb/enterprise-ql` on npm.
+  <Card title="npm package" icon="npm" href="https://www.npmjs.com/package/@helix-db/helix-db">
+    `@helix-db/helix-db` on npm.
   </Card>
 </CardGroup>

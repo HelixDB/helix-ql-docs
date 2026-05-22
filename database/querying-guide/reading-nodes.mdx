@@ -18,7 +18,7 @@ receives.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, readBatch } from "@helixdb/enterprise-ql";
+import { g, readBatch } from "@helix-db/helix-db";
 
 const countUsers = readBatch()
   .varAs("user_count", g().nWithLabel("User").count())
@@ -70,7 +70,7 @@ your application data), pass it to `g().n(...)` to skip any index lookup at all.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, NodeRef, readBatch } from "@helixdb/enterprise-ql";
+import { g, NodeRef, readBatch } from "@helix-db/helix-db";
 
 const oneUser = readBatch()
   .varAs("user", g().n(NodeRef.id(42n)).valueMap(["$id", "username", "tier"]))
@@ -130,7 +130,7 @@ that label.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, readBatch } from "@helixdb/enterprise-ql";
+import { g, readBatch } from "@helix-db/helix-db";
 
 const allTags = readBatch()
   .varAs("tags", g().nWithLabel("Tag").valueMap(["name"]))
@@ -178,7 +178,7 @@ The most common starting shape: look up a node by an indexed property. Use
 
 <CodeGroup>
 ```ts TypeScript
-import { g, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+import { g, readBatch, SourcePredicate } from "@helix-db/helix-db";
 
 const aliceByUsername = readBatch()
   .varAs(
@@ -242,7 +242,7 @@ but reads more clearly.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+import { g, readBatch, SourcePredicate } from "@helix-db/helix-db";
 
 const proUsers = readBatch()
   .varAs(
@@ -306,7 +306,7 @@ Edge streams support `.outN()` / `.inN()` / `.otherN()` to walk back to a node â
 
 <CodeGroup>
 ```ts TypeScript
-import { g, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+import { g, readBatch, SourcePredicate } from "@helix-db/helix-db";
 
 const recentFollows = readBatch()
   .varAs(

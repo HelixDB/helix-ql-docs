@@ -18,7 +18,7 @@ The smallest terminals collapse the whole stream into a single value.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+import { g, readBatch, SourcePredicate } from "@helix-db/helix-db";
 
 const aliceStats = readBatch()
   .varAs("post_count", g().nWithLabel("Post").count())
@@ -99,7 +99,7 @@ the caller does its own positional decoding.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, readBatch } from "@helixdb/enterprise-ql";
+import { g, readBatch } from "@helix-db/helix-db";
 
 const usersForAdminPanel = readBatch()
   .varAs(
@@ -170,7 +170,7 @@ A typical `project` call mixes plain property pulls with one or two renames:
 
 <CodeGroup>
 ```ts TypeScript
-import { g, PropertyProjection, readBatch } from "@helixdb/enterprise-ql";
+import { g, PropertyProjection, readBatch } from "@helix-db/helix-db";
 
 const userCards = readBatch()
   .varAs(
@@ -254,7 +254,7 @@ import {
   Predicate,
   PropertyProjection,
   readBatch,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const userCardsWithFallback = readBatch()
   .varAs(
@@ -354,7 +354,7 @@ properties plus the virtual `$id`, `$label`, `$from`, and `$to` fields.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, NodeRef, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+import { g, NodeRef, readBatch, SourcePredicate } from "@helix-db/helix-db";
 
 const aliceFollowsEdges = readBatch()
   .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
@@ -420,7 +420,7 @@ For grouped counts and aggregate statistics:
 
 <CodeGroup>
 ```ts TypeScript
-import { AggregateFunction, g, readBatch } from "@helixdb/enterprise-ql";
+import { AggregateFunction, g, readBatch } from "@helix-db/helix-db";
 
 const tierBreakdown = readBatch()
   .varAs("by_tier", g().nWithLabel("User").groupCount("tier"))

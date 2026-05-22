@@ -32,7 +32,7 @@ import {
   RepeatConfig,
   SourcePredicate,
   sub,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const aliceReach = readBatch()
   .varAs("alice", g().nWhere(SourcePredicate.eq("username", "alice")))
@@ -120,7 +120,7 @@ feed that mixes posts you authored *and* posts you liked.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, NodeRef, readBatch, SourcePredicate, sub } from "@helixdb/enterprise-ql";
+import { g, NodeRef, readBatch, SourcePredicate, sub } from "@helix-db/helix-db";
 
 const feed = readBatch()
   .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
@@ -198,7 +198,7 @@ Surface different fields for free-tier vs paid-tier users:
 
 <CodeGroup>
 ```ts TypeScript
-import { g, Predicate, readBatch, sub } from "@helixdb/enterprise-ql";
+import { g, Predicate, readBatch, sub } from "@helix-db/helix-db";
 
 const usersAnnotated = readBatch()
   .varAs(
@@ -348,7 +348,7 @@ import {
   param,
   PropertyInput,
   writeBatch,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const params = defineParams({
   users: param.array(param.object(param.string())),

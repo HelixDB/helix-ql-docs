@@ -93,7 +93,7 @@ import {
   PropertyProjection,
   SourcePredicate,
   readBatch,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const aliceFeed = readBatch()
   .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))

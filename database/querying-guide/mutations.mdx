@@ -20,7 +20,7 @@ of `[name, PropertyInput]` tuples (matches the Rust `vec![("name", value)]` shap
 
 <CodeGroup>
 ```ts TypeScript
-import { g, PropertyProjection, writeBatch } from "@helixdb/enterprise-ql";
+import { g, PropertyProjection, writeBatch } from "@helix-db/helix-db";
 
 const addAlice = writeBatch()
   .varAs(
@@ -102,7 +102,7 @@ A few wire-format details:
 
 <CodeGroup>
 ```ts TypeScript
-import { g, NodeRef, PropertyProjection, writeBatch } from "@helixdb/enterprise-ql";
+import { g, NodeRef, PropertyProjection, writeBatch } from "@helix-db/helix-db";
 
 const seedFollow = writeBatch()
   .varAs(
@@ -255,7 +255,7 @@ import {
   defineParams,
   param,
   writeBatch,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const params = defineParams({
   username: param.string(),
@@ -356,7 +356,7 @@ import {
   defineParams,
   param,
   writeBatch,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const params = defineParams({
   follower: param.string(),
@@ -498,7 +498,7 @@ import {
   Predicate,
   PropertyInput,
   writeBatch,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const params = defineParams({
   username: param.string(),

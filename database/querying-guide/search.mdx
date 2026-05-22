@@ -20,7 +20,7 @@ safe to run on each deploy.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, IndexSpec, writeBatch } from "@helixdb/enterprise-ql";
+import { g, IndexSpec, writeBatch } from "@helix-db/helix-db";
 
 const createIndexes = writeBatch()
   .varAs(
@@ -158,7 +158,7 @@ distance order with a virtual `$distance` field projected onto each result.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, PropertyProjection, readBatch } from "@helixdb/enterprise-ql";
+import { g, PropertyProjection, readBatch } from "@helix-db/helix-db";
 
 const similarPosts = readBatch()
   .varAs(
@@ -243,7 +243,7 @@ post's distance projected as an annotation.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, PropertyProjection, readBatch } from "@helixdb/enterprise-ql";
+import { g, PropertyProjection, readBatch } from "@helix-db/helix-db";
 
 const authorsOfSimilar = readBatch()
   .varAs(
@@ -370,7 +370,7 @@ distance).
 
 <CodeGroup>
 ```ts TypeScript
-import { g, PropertyProjection, readBatch } from "@helixdb/enterprise-ql";
+import { g, PropertyProjection, readBatch } from "@helix-db/helix-db";
 
 const postsAboutGraphs = readBatch()
   .varAs(
@@ -460,7 +460,7 @@ import {
   PropertyProjection,
   readBatch,
   StreamBound,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const params = defineParams({
   query_vector: param.array(param.f32()),
@@ -571,7 +571,7 @@ inside the `_with` variants.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, IndexSpec, PropertyValue, readBatch, writeBatch } from "@helixdb/enterprise-ql";
+import { g, IndexSpec, PropertyValue, readBatch, writeBatch } from "@helix-db/helix-db";
 
 // Create a tenant-scoped vector index.
 const createTenantIndex = writeBatch().varAs(

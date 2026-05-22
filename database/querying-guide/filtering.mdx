@@ -15,7 +15,7 @@ node and edge streams.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, readBatch } from "@helixdb/enterprise-ql";
+import { g, readBatch } from "@helix-db/helix-db";
 
 const proUsers = readBatch()
   .varAs(
@@ -87,7 +87,7 @@ A typical multi-predicate filter:
 
 <CodeGroup>
 ```ts TypeScript
-import { g, Predicate, readBatch } from "@helixdb/enterprise-ql";
+import { g, Predicate, readBatch } from "@helix-db/helix-db";
 
 const recentProPosts = readBatch()
   .varAs(
@@ -192,7 +192,7 @@ import {
   defineParams,
   param,
   readBatch,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const params = defineParams({ username: param.string() });
 
@@ -279,7 +279,7 @@ without leaving the stream, use `.edgeHas(prop, value)` or `.edgeHasLabel(label)
 
 <CodeGroup>
 ```ts TypeScript
-import { g, NodeRef, PropertyInput, readBatch, SourcePredicate } from "@helixdb/enterprise-ql";
+import { g, NodeRef, PropertyInput, readBatch, SourcePredicate } from "@helix-db/helix-db";
 
 const aliceStrongFollows = readBatch()
   .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
@@ -353,7 +353,7 @@ direction per key.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, Order, readBatch } from "@helixdb/enterprise-ql";
+import { g, Order, readBatch } from "@helix-db/helix-db";
 
 const recentPosts = readBatch()
   .varAs(
@@ -435,7 +435,7 @@ The three slicing steps all accept either a literal number / `bigint` or a
 
 <CodeGroup>
 ```ts TypeScript
-import { g, Order, readBatch } from "@helixdb/enterprise-ql";
+import { g, Order, readBatch } from "@helix-db/helix-db";
 
 const secondPage = readBatch()
   .varAs(
@@ -503,7 +503,7 @@ import {
   param,
   readBatch,
   StreamBound,
-} from "@helixdb/enterprise-ql";
+} from "@helix-db/helix-db";
 
 const params = defineParams({ page_size: param.i64() });
 
