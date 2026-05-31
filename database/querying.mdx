@@ -128,7 +128,7 @@ let client = Client::new(Some("https://helix.example.com"))?;
 // Builds the envelope and POSTs it to /v1/query.
 let response: serde_json::Value = client
     .query()
-    .dynamic_query(DynamicQueryRequest::read(count_users()))
+    .dynamic(DynamicQueryRequest::read(count_users()))
     .send()
     .await?;
 
@@ -270,7 +270,7 @@ let client = Client::new(Some("https://helix.example.com"))?;
 let response: serde_json::Value = client
     .query()
     .body(&serde_json::json!({}))?
-    .stored_query("count_users".to_string())
+    .stored("count_users".to_string())
     .send()
     .await?;
 
