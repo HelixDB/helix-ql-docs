@@ -7,8 +7,8 @@ title: 'Parameters and bundles'
 So far every parameterized example on the prior pages has shown
 `p = paramsObject` / `Predicate.eqParam("prop", "name")` / `toDynamicJson(params, values)`
 without dwelling on the parameter system itself. This page is the dedicated treatment:
-how to declare parameters, how to refer to them in traversals, and the three
-distinct ways to ship a parameterized query to the runtime.
+how to declare parameters, how to refer to them in traversals, and how to ship a
+parameterized query to the runtime.
 
 ## Declaring parameters with `defineParams`
 
@@ -78,13 +78,14 @@ function findUsers(p = params) {
 }
 ```
 
-## Three deployment shapes
+## Shipping a parameterized query
 
-A query built with `readBatch()` / `writeBatch()` can be shipped to the runtime in
-three different ways. They share the same query AST; they differ in where and when
-the parameters bind.
+A query built with `readBatch()` / `writeBatch()` is sent to the runtime as a
+dynamic request. There are a few ways to produce that request — straight from a
+batch, from a registered bundle, or through the typed `call` helpers — but they
+all serialize to the same dynamic envelope you POST to `/v1/query`.
 
-### 1. Dynamic request
+### 1. From a batch directly
 
 The simplest case: build the batch, call `.toDynamicJson(params, values)`, POST the
 resulting body to `/v1/query`. No deploy step. Best for ad-hoc queries, prototyping,
@@ -112,35 +113,27 @@ The dynamic envelope produced by `.toDynamicJson(params, values)` is the body fo
 
 <CodeGroup>
 ```ts TypeScript
-const body = userByUsername().toDynamicJson(params, { username: "alice" });
+import { Client } from "@helix-db/helix-db";
 
-const response = await fetch("https://helix.example.com/v1/query", {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body,
-});
+const client = new Client("https://helix.example.com");
 
-if (!response.ok) {
-  throw new Error(`Helix returned ${response.status}`);
-}
+const request = userByUsername().toDynamicRequest(params, { username: "alice" });
 
-const { user } = await response.json();
+const { user } = await client
+  .query<{ user: unknown }>()
+  .dynamic(request)
+  .send();
 ```
 
 ```rust Rust
-use helix_db::dsl::prelude::*;
+use helix_db::Client;
 
-let body = DynamicQueryRequest::read(user_by_username("alice".to_string()))
-    .to_json_string()?;
+let client = Client::new(Some("https://helix.example.com"))?;
 
-let response = reqwest::Client::new()
-    .post("https://helix.example.com/v1/query")
-    .header("content-type", "application/json")
-    .body(body)
+let response: serde_json::Value = client
+    .query()
+    .dynamic(user_by_username("alice".to_string()))
     .send()
-    .await?
-    .error_for_status()?
-    .json::<serde_json::Value>()
     .await?;
 
 let user = &response["user"];
@@ -188,13 +181,13 @@ For a parameter-less batch, omit both arguments:
 readBatch().varAs("count", g().nWithLabel("User").count()).toDynamicJson();
 ```
 
-`.toJsonString()` returns the *raw batch* (no envelope, no parameters) for
-deployment as a stored route — covered below.
+`.toJsonString()` returns the *raw batch* (no envelope, no parameters), the form
+that goes into a bundle — covered below.
 
-### 2. Stored bundle
+### 2. Registered bundles
 
-For routes you want to deploy alongside the rest of your application, wrap each
-query function with `registerRead` or `registerWrite` and pass them all to
+To keep a set of queries organized and generate a single `queries.json` artifact,
+wrap each query function with `registerRead` or `registerWrite` and pass them all to
 `defineQueries`. The bundle's `generate(path)` method writes a single `queries.json`
 in the exact shape the runtime expects.
 
@@ -270,57 +263,12 @@ The resulting bundle has this top-level shape:
 ```
 
 Each `read_routes.<name>` / `write_routes.<name>` is exactly what `.toJsonString()`
-would have produced for the underlying batch — no envelope. Once deployed, callers
-invoke the routes by name at `POST /v1/query/<name>`, passing the parameters as the
-JSON body.
+would have produced for the underlying batch — no envelope. To execute one of these
+queries, produce its dynamic envelope through the typed `call` helpers below and POST
+it to `/v1/query`.
 
 Route names must be unique across reads *and* writes; duplicates throw `GenerateError`
 at bundle time.
-
-Calling a stored route — the wire shape is much smaller than the dynamic envelope
-because the route is already registered. The body is just the parameter object.
-
-<CodeGroup>
-```ts TypeScript
-const response = await fetch(
-  "https://helix.example.com/v1/query/user_by_username",
-  {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ username: "alice" }),
-  },
-);
-
-if (!response.ok) {
-  throw new Error(`Helix returned ${response.status}`);
-}
-
-const { user } = await response.json();
-```
-
-```rust Rust
-let response = reqwest::Client::new()
-    .post("https://helix.example.com/v1/query/user_by_username")
-    .json(&serde_json::json!({ "username": "alice" }))
-    .send()
-    .await?
-    .error_for_status()?
-    .json::<serde_json::Value>()
-    .await?;
-
-let user = &response["user"];
-```
-
-```bash curl
-curl -sS -X POST https://helix.example.com/v1/query/user_by_username \
-  -H "content-type: application/json" \
-  --data-raw '{ "username": "alice" }'
-```
-</CodeGroup>
-
-Write routes work identically — `POST /v1/query/add_user` with `{"username": "...",
-"tier": "..."}` as the body. The response shape is the object keyed by the bound
-names in `.returning([...])`.
 
 ### 3. Typed call helpers
 
@@ -342,26 +290,22 @@ queries.call.user_by_username({
 ```
 
 The returned object serializes to the same dynamic envelope you would build by hand,
-so it can be POSTed to either the stored route (`/v1/query/<name>`) or the dynamic
-route (`/v1/query`) — but the conventional path is to POST it as the dynamic
-envelope so the bundled route name does not need to exist on the server yet:
+so you POST it to `/v1/query`:
 
 ```ts
-const request = queries.call.user_by_username({ username: "alice" });
+import { Client } from "@helix-db/helix-db";
 
-const response = await fetch("https://helix.example.com/v1/query", {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body: request.toJsonString(),
-});
+const client = new Client("https://helix.example.com");
 
-const { user } = await response.json();
+const { user } = await client
+  .query<{ user: unknown }>()
+  .dynamic(queries.call.user_by_username({ username: "alice" }))
+  .send();
 ```
 
-For deployed bundles, the more common pattern is to bypass the typed-call helper and
-hit the stored route directly with just the parameters (the snippet in the previous
-section). `queries.call.*` is most useful in tests, in scripts, and when iterating
-locally before the bundle is deployed.
+`queries.call.*` keeps parameter names and types in sync with `defineParams`, so it
+is the most convenient way to send a registered query — in application code, tests,
+and scripts alike.
 
 ## How parameters serialize
 
@@ -450,17 +394,16 @@ All three serialize to the same envelope:
 }
 ```
 
-## Bytes parameters: stored only
+## Bytes parameters
 
-`param.bytes()` is declarable in `defineParams` for the bundle, but the dynamic
-envelope cannot round-trip a `Uint8Array` faithfully. Attempting to
-`toDynamicJson(params, { payload: someBytes })` or to call a registered route with a
+`param.bytes()` is declarable in `defineParams`, but the dynamic envelope cannot
+round-trip a `Uint8Array` faithfully. Attempting to
+`toDynamicJson(params, { payload: someBytes })` or to build a request with a
 bytes parameter through `queries.call.*` throws
 `DynamicQueryError.UnsupportedBytesParameter`.
 
-If you need bytes, deploy the query as a stored route and pass the value through a
-binary-aware client (the runtime's RPC interface). Stored routes happily accept
-`Bytes`; only the JSON dynamic envelope is the bottleneck.
+If you need to pass binary data, send it through a binary-aware client (the runtime's
+RPC interface) rather than the JSON dynamic envelope, which is the bottleneck.
 
 ## Generating the bundle from a script
 
@@ -495,7 +438,7 @@ at deploy time.
     Deploy `queries.json` and the runtime workflow.
   </Card>
   <Card title="Querying overview" icon="book-open" href="/database/querying">
-    Conceptual model: stored vs dynamic queries, transactions, and the HTTP surface.
+    Conceptual model: dynamic queries, transactions, and the HTTP surface.
   </Card>
   <Card title="Querying Guide: overview" icon="circle-arrow-left" href="/database/querying-guide/overview">
     Back to the start of the guide.

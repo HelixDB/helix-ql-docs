@@ -40,6 +40,6 @@ throughput of the writer process make this sufficient for most workloads.
 and text search artifacts. The tradeoff is less flexibility in cache allocation when only one
 workload dominates.
 
-**Stored query model.** Pre-compiling queries eliminates runtime parsing overhead and limits the
-API surface to explicitly deployed operations. The tradeoff is that ad-hoc queries are not
-supported; all queries must be authored and deployed in advance.
+**Dynamic query model.** Queries travel inline with each request, so there is no deploy step and
+ad-hoc queries are fully supported. The tradeoff is the small per-request cost of deserializing the
+query AST on every call.

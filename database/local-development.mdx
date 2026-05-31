@@ -13,8 +13,8 @@ database together in a single container. The image supports two storage modes:
 
 In both modes:
 
-- If `PATH_TO_QUERIES` is unset, you can still use dynamic `POST /v1/query` requests.
-- If `PATH_TO_QUERIES` is set, the container loads stored queries from the mounted
+- If `PATH_TO_QUERIES` is unset, send queries as dynamic `POST /v1/query` requests.
+- If `PATH_TO_QUERIES` is set, the container preloads your query bundle from the mounted
   `queries.json` file during startup.
 
 ## Quick Start with the CLI
@@ -118,7 +118,8 @@ services:
       - ./queries.json:/workspace/queries.json:ro
 ```
 
-If you only want dynamic queries, omit `PATH_TO_QUERIES` and the mounted `queries.json` volume.
+To run without a preloaded bundle, omit `PATH_TO_QUERIES` and the mounted `queries.json` volume;
+queries still execute as dynamic `POST /v1/query` requests.
 
 ## On-Disk
 
@@ -194,10 +195,10 @@ itself. Drop `AWS_ENDPOINT` and `AWS_ALLOW_HTTP` to talk to real AWS S3.
 
 <CardGroup cols={2}>
   <Card title="Working with Helix Cloud" icon="rocket" href="/database/working-with-enterprise">
-    Authoring `queries.json`, deploying stored queries, and the runtime workflow.
+    Authoring `queries.json` and the runtime workflow.
   </Card>
   <Card title="Querying" icon="magnifying-glass" href="/database/querying">
-    Traversal DSL, stored queries, dynamic queries, and transactions.
+    Traversal DSL, dynamic queries, and transactions.
   </Card>
   <Card title="CLI Getting Started" icon="terminal" href="/cli/getting-started">
     Install the Helix CLI, scaffold a project, and send your first query.

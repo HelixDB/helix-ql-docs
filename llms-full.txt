@@ -30,8 +30,8 @@ Caches reduce steady-state latency and accelerate cold starts.
   text search artifacts keep hot-path reads fast.
 - **Full ACID transactions.** Every query runs in a serializable snapshot isolation transaction.
   Concurrent reads and writes do not block each other.
-- **Stored query model.** Queries are authored in a Rust DSL, deployed as stored procedures, and
-  invoked by name over HTTP. No query parsing at runtime.
+- **Dynamic query model.** Queries are authored in a Rust or TypeScript DSL and sent to the
+  runtime as dynamic HTTP requests that carry the query inline. No separate deployment step.
 
 ## Next Steps
 
@@ -46,8 +46,8 @@ database together in a single container. The image supports two storage modes:
 
 In both modes:
 
-- If `PATH_TO_QUERIES` is unset, you can still use dynamic `POST /v1/query` requests.
-- If `PATH_TO_QUERIES` is set, the container loads stored queries from the mounted
+- If `PATH_TO_QUERIES` is unset, send queries as dynamic `POST /v1/query` requests.
+- If `PATH_TO_QUERIES` is set, the container preloads your query bundle from the mounted
   `queries.json` file during startup.
 
 ## Quick Start with the CLI
@@ -111,6 +111,15 @@ MinIO volume across `helix stop`. Use `helix prune <instance>` to delete the per
 If you'd rather manage the containers yourself with Docker Compose, the in-memory and on-disk
 setups below show the raw image configuration that the CLI disk mode mirrors.
 
+## Installing the SDKs
+
+To author queries against your local instance, install the SDK for your language. Both build
+the same `queries.json` bundle, so the choice is purely which language you'd rather work in.
+
+For the full project layout, generator setup, and authoring walkthrough, see
+[TypeScript Project Setup](/database/typescript-project-setup) and
+[Rust Project Setup](/database/rust-project-setup).
+
 ## In-Memory
 
 You can add this service to a local `docker-compose.yml`:
@@ -128,7 +137,8 @@ services:
       - ./queries.json:/workspace/queries.json:ro
 ```
 
-If you only want dynamic queries, omit `PATH_TO_QUERIES` and the mounted `queries.json` volume.
+To run without a preloaded bundle, omit `PATH_TO_QUERIES` and the mounted `queries.json` volume;
+queries still execute as dynamic `POST /v1/query` requests.
 
 ## On-Disk
 
@@ -204,12 +214,12 @@ itself. Drop `AWS_ENDPOINT` and `AWS_ALLOW_HTTP` to talk to real AWS S3.
 
 # Rust Project Setup
 
-Stored queries for HelixDB are authored in Rust using the
-[`helix-enterprise-ql`](https://crates.io/crates/helix-enterprise-ql) crate (imported as
-`helix_dsl`). This page covers bootstrapping a Rust project that builds your queries into the
-`queries.json` bundle that the runtime consumes. For the traversal model and query patterns
-themselves, see [Querying](/database/querying) and the
-[docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/).
+Queries for HelixDB are authored in Rust using the
+[`helix-db`](https://crates.io/crates/helix-db) crate (imported as
+`helix_db`). This page covers bootstrapping a Rust project that builds your queries into the
+`queries.json` bundle and lets you send them as dynamic requests. For the traversal model and
+query patterns themselves, see [Querying](/database/querying) and the
+[docs.rs reference](https://docs.rs/helix-db/latest/helix_db/).
 
 ## Prerequisites
 
@@ -233,24 +243,24 @@ queries alongside the rest of your service code.
 ## Add the dependency
 
 ```bash
-cargo add helix-enterprise-ql
+cargo add helix-db
 ```
 
 Or add it directly to `Cargo.toml`:
 
 ```toml
 [dependencies]
-helix-enterprise-ql = "0.1.7"
+helix-db = "2.0.0"
 ```
 
-The crate is published on crates.io as `helix-enterprise-ql` but its module path is `helix_dsl`,
-so all imports look like `use helix_dsl::...`.
+The crate is published on crates.io as `helix-db` but its module path is `helix_db`,
+so all imports look like `use helix_db::...`.
 
 ## Set up `src/main.rs`
 
 ```rust
 fn main() {
-    let path = helix_dsl::generate_to_path("queries.json").expect("generate queries bundle");
+    let path = helix_db::generate_to_path("queries.json").expect("generate queries bundle");
     println!("generated {}", path.display());
 }
 ```
@@ -264,13 +274,13 @@ hand it to a downstream deploy step.
 Inside the modules where you author queries, bring the DSL into scope with the prelude:
 
 ```rust
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 ```
 
 The prelude re-exports the common building blocks — `read_batch`, `write_batch`, the traversal
 builder `g()`, sub-traversal `sub()`, `NodeRef`/`EdgeRef`, `Predicate`/`SourcePredicate`, the
 projection helpers (`PropertyProjection`, `ExprProjection`), and `AggregateFunction`. See the
-[docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/) for the full surface
+[docs.rs reference](https://docs.rs/helix-db/latest/helix_db/) for the full surface
 and [Querying](/database/querying) for how the pieces fit together.
 
 ## Setting up your queries
@@ -284,7 +294,7 @@ For a small project you can keep everything in `src/main.rs` alongside `fn main(
 have more than a handful of queries, move them into their own modules.
 
 ```rust expandable
-use helix_dsl::prelude::*;
+use helix_db::dsl::prelude::*;
 
 // Write query: insert a new User node.
 #[register]
@@ -323,7 +333,7 @@ pub fn user_by_id(userId: String) -> ReadBatch {
 }
 
 fn main() {
-    let path = helix_dsl::generate_to_path("queries.json").expect("generate queries bundle");
+    let path = helix_db::generate_to_path("queries.json").expect("generate queries bundle");
     println!("generated {}", path.display());
 }
 ```
@@ -332,8 +342,9 @@ A few things to know about this snippet:
 
 - `#[register]` registers the function with the global query bundle so `generate_to_path` will
   include it in `queries.json`. No manual list to maintain.
-- The function name becomes the route name. Once deployed, callers invoke
-  `POST /v1/query/add_user` with a JSON body like `{"userId": "u-1", "name": "Alice"}`.
+- Calling the registered function with concrete arguments — e.g. `add_user("u-1".into(),
+  "Alice".into())` — returns a `DynamicQueryRequest` you POST to `/v1/query`. See
+  [Querying](/database/querying) for the full send path.
 - The `let _ = (&userId, &name);` line silences Rust's unused-variable warning — the macro reads
   the parameter *names* at compile time to wire them into the JSON schema, so the values
   themselves aren't used in the body.
@@ -341,7 +352,7 @@ A few things to know about this snippet:
   names appear in the response payload.
 
 For the full builder catalog — edges, richer predicates, vector and text search, sub-traversals,
-and aggregations — see the [docs.rs reference](https://docs.rs/helix-enterprise-ql/latest/helix_dsl/)
+and aggregations — see the [docs.rs reference](https://docs.rs/helix-db/latest/helix_db/)
 and [Querying](/database/querying).
 
 ## Generate the bundle
@@ -356,6 +367,207 @@ This produces `queries.json` in the project root. From here you can:
   [Local Development](/database/local-development).
 - Deploy it to HelixDB through the control plane — see
   [Working with HelixDB](/database/working-with-enterprise).
+
+## Next Steps
+
+# TypeScript Project Setup
+
+Queries for HelixDB can also be authored in TypeScript using the
+[`@helix-db/helix-db`](https://www.npmjs.com/package/@helix-db/helix-db) package.
+The TypeScript DSL builds the same JSON AST as the Rust [`helix-db`](/database/rust-project-setup)
+crate, so the resulting `queries.json` bundle is interchangeable with one generated by
+Rust. Use TypeScript when your service is already a Node.js codebase, when you want
+end-to-end type inference on parameters from the same language that calls the routes,
+or when you prefer to keep query authoring close to the application that consumes them.
+
+For the conceptual model and per-builder walkthrough, see the
+[Querying Guide](/database/querying-guide/overview).
+
+## Prerequisites
+
+- Node.js 20 or later.
+- A package manager (`npm`, `pnpm`, or `yarn`).
+- Optional: the [Helix CLI](/cli/getting-started) for deploying the resulting bundle.
+
+## Create a new project
+
+```bash
+mkdir helix-queries
+cd helix-queries
+npm init -y
+npm pkg set type=module
+```
+
+`@helix-db/helix-db` is published as an ES module, so the `"type": "module"` field
+in `package.json` matters. Skip this step if you are adding queries to an existing
+ESM-configured project.
+
+## Add the dependency
+
+```bash
+npm install @helix-db/helix-db
+npm install --save-dev typescript @types/node tsx
+```
+
+`tsx` is optional but convenient for running the generator without a separate build step.
+
+## Minimal `tsconfig.json`
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"]
+}
+```
+
+The DSL relies on strict mode for the typestate-tracked traversal builder; turn it on.
+
+## Author your queries
+
+Queries are plain functions that return a `ReadBatch` or `WriteBatch`. To bundle them,
+declare their parameters with `defineParams`, wrap them with
+`registerRead` / `registerWrite`, and collect them with `defineQueries`. The bundle's
+`generate(path)` method writes the same `queries.json` shape that the Rust
+[`generate_to_path`](/database/rust-project-setup#generate-the-bundle) emits.
+
+```ts src/queries.ts
+  NodeRef,
+  Order,
+  Predicate,
+  PropertyInput,
+  PropertyProjection,
+  defineParams,
+  defineQueries,
+  g,
+  param,
+  readBatch,
+  registerRead,
+  registerWrite,
+  writeBatch,
+} from "@helix-db/helix-db";
+
+// Parameters for the read route.
+const userByUsernameParams = defineParams({
+  username: param.string(),
+});
+
+function userByUsername(p = userByUsernameParams) {
+  return readBatch()
+    .varAs(
+      "user",
+      g()
+        .nWithLabel("User")
+        .where(Predicate.eqParam("username", "username"))
+        .project([
+          PropertyProjection.renamed("$id", "id"),
+          PropertyProjection.new("username"),
+          PropertyProjection.new("tier"),
+        ]),
+    )
+    .returning(["user"]);
+}
+
+// Parameters for the write route.
+const addUserParams = defineParams({
+  username: param.string(),
+  tier: param.string(),
+});
+
+function addUser(p = addUserParams) {
+  return writeBatch()
+    .varAs(
+      "newUser",
+      g()
+        .addN("User", {
+          username: PropertyInput.param("username"),
+          tier: PropertyInput.param("tier"),
+        })
+        .project([PropertyProjection.renamed("$id", "id")]),
+    )
+    .returning(["newUser"]);
+}
+
+export const queries = defineQueries({
+  read: {
+    user_by_username: registerRead(userByUsername, userByUsernameParams),
+  },
+  write: {
+    add_user: registerWrite(addUser, addUserParams),
+  },
+});
+```
+
+A few things to know about this snippet:
+
+- Each query is a plain function. Calling the function returns a serializable
+  `ReadBatch` or `WriteBatch`; nothing happens at module load.
+- The keys under `read` and `write` (`user_by_username`, `add_user`) name each query in
+  the bundle and back the typed `queries.call.*` helpers used to send them as dynamic
+  requests (see below). Names must be unique across reads *and* writes — a duplicate
+  throws `GenerateError` at bundle time.
+- `varAs("name", traversal)` binds a sub-result, and `.returning([...])` chooses which
+  bound names appear in the response payload.
+- `PropertyInput.param("name")` is how a parameter feeds into an `addN` property bag
+  or a `setProperty` call; for predicates use `Predicate.eqParam(...)` and friends.
+
+## Add a generator entry point
+
+```ts src/generate.ts
+
+await queries.generate("queries.json");
+console.log("generated queries.json");
+```
+
+`queries.generate(path)` writes the bundle and resolves to the path it wrote. The file
+is laid out identically to the Rust bundle so the runtime treats them as equivalent.
+
+## Wire up the script
+
+```json
+{
+  "scripts": {
+    "generate": "tsx src/generate.ts"
+  }
+}
+```
+
+```bash
+npm run generate
+```
+
+This produces `queries.json` in the project root. From here you can:
+
+- Mount it into the local `enterprise-dev` runtime as `PATH_TO_QUERIES` — see
+  [Local Development](/database/local-development).
+- Deploy it to HelixDB through the control plane — see
+  [Working with HelixDB](/database/working-with-enterprise).
+
+## Sending registered queries from TypeScript
+
+`defineQueries` also exposes a typed `call` map. Each entry takes the query's
+parameter values (inferred from `defineParams`) and returns a `DynamicQueryRequest`
+you hand to the client's `.dynamic(...)`:
+
+```ts
+
+const client = new Client("https://your-helix.example.com")
+  .withApiKey("hx_secret"); // omit for a local instance
+
+const { user } = await client
+  .query<{ user: unknown }>()
+  .dynamic(queries.call.user_by_username({ username: "alice" }))
+  .send();
+```
+
+`call.<name>` is fully typed: passing an unknown key or the wrong value type for a
+parameter is a compile error.
 
 ## Next Steps
 
@@ -390,16 +602,13 @@ keeps the system easier to scale, secure, and operate.
 
 ## End-to-End Workflow
 
-## Deploy-Time Workflow
+## Authoring Workflow
 
-Stored queries are authored as a single `queries.json` artifact — graph traversals, property
+Queries are authored as a single `queries.json` artifact — graph traversals, property
 filters, vector searches, text searches, and mutations all expressed as JSON. A single query can
 chain multiple traversals, apply filters, and combine graph, vector, and text operations within
-one transaction.
-
-`queries.json` is deployed to the cluster through the Helix control plane. The Helix CLI is not
-involved in stored-procedure deployment in v2 — its job at runtime is to send dynamic queries,
-fetch logs, and synchronize per-instance metadata via [`helix sync`](/cli/command-reference/sync).
+one transaction. You build `queries.json` with the [Rust](/database/rust-project-setup) or
+[TypeScript](/database/typescript-project-setup) DSL.
 
 Queries are the only artifact that moves from development to production. There is no schema
 migration step, no ORM configuration, and no SQL to manage. The data model is implicit in the
@@ -409,22 +618,18 @@ queries themselves.
 
 At runtime, applications interact with Helix Cloud over HTTP.
 
-1. **Call by name.** An HTTP client sends a request to the gateway with a stored query name and
-   any required parameters at `POST /v1/query/<query-name>`. Clients can also send an inline query
-   at `POST /v1/query`.
+1. **Send the query.** An HTTP client POSTs a dynamic request to the gateway at `POST /v1/query` —
+   the JSON query AST plus any required parameters travel in the request body, so there is nothing
+   to deploy ahead of time.
 2. **Transaction execution.** The gateway routes the request to the appropriate process. The query
    runs inside a transaction with serializable snapshot isolation. Reads and writes within the
    same query see a consistent snapshot.
 3. **Result delivery.** Helix returns the query result as a JSON response. Reads are served by
    horizontally scaled readers. Writes are serialized through the single writer.
 
-Stored queries execute as pre-compiled procedures, keeping runtime overhead minimal. Dynamic
-queries deserialize the inline query JSON at request time, which makes them more flexible but less
-optimized than stored routes.
-
 ## Dynamic Queries
 
-Helix supports inline queries for cases where you do not want to deploy the route ahead of time.
+Each request carries the query inline, so you never deploy a route ahead of time.
 
 - Send `POST /v1/query`.
 - Include a JSON body shaped like:
@@ -453,18 +658,19 @@ Helix supports inline queries for cases where you do not want to deploy the rout
 ```
 
 - `request_type` must be `read` or `write` so the gateway can route the request correctly.
-- `query` is the same JSON object that would otherwise live under `read_routes.<name>` or
-  `write_routes.<name>` in `queries.json`.
-- `parameters` is optional and uses the same shape as stored-query calls.
+- `query` is the same JSON object that lives under `read_routes.<name>` or
+  `write_routes.<name>` in a generated `queries.json` bundle.
+- `parameters` is optional and carries the values for the query's named parameters.
 
 ## Query Warming
 
 Helix supports built-in query warming for read queries.
 
-- Send the normal read request with the same parameters you would use for a real read:
-  - stored route: `POST /v1/query/<query-name>`
-  - dynamic route: `POST /v1/query`
-- Add `X-Helix-Warm: true` or `X-Helix-Warm: 1`.
+- Send the normal read request to `POST /v1/query` with the same parameters you would use for a
+  real read.
+- Add `X-Helix-Warm: true` or `X-Helix-Warm: 1`. The SDK clients set this for you via
+  `.warmOnly()` (TypeScript) / `.warm_only()` (Rust):
+
 - Helix executes the query as a query warming request, discards the result body, and returns
   `204 No Content`.
 
@@ -484,8 +690,7 @@ Important details:
 | Responsibility       | Deploy-time   | Runtime                     |
 | -------------------- | ------------- | --------------------------- |
 | Query authoring      | `queries.json` | --                         |
-| Stored-query loading | Control plane | --                          |
-| Dynamic queries      | --            | `helix query` + Gateway     |
+| Query submission     | --            | `helix query` + Gateway     |
 | Query execution      | --            | Gateway + Writer/Readers    |
 | Data storage         | --            | Object storage              |
 | Caching              | --            | SSD + in-memory per process |
@@ -515,8 +720,8 @@ storage that can handle concurrent writes to the writer node and allows for virt
 The gateway is the entry point for all client traffic. For high availability, deploy at least
 three gateway instances per cluster. Smaller gateway fleets can be used for non-HA or test
 workloads, but they are not recommended for production. Gateways accept HTTP requests,
-authenticate the caller via Bearer token, resolve a stored query name or accept an inline query
-payload, and route the request to the writer or a reader. Mutations are always routed to the
+authenticate the caller via Bearer token, accept the inline query payload, and route the request
+to the writer or a reader. Mutations are always routed to the
 writer. Read-only queries are distributed across readers and the writer. Gateways handle
 connection management, load balancing, token validation, and the translation from HTTP requests to
 the backend query RPC.
@@ -669,13 +874,17 @@ through the Helix dashboard. Include the token in the `Authorization` header of 
 Authorization: Bearer <token>
 ```
 
+The SDK clients attach this header for you — set the key once with `withApiKey`
+(TypeScript) / `with_api_key` (Rust) and every request the client sends is
+authenticated:
+
 Requests without a valid token are rejected at the gateway before reaching any database node.
 Token rotation and revocation are performed in the dashboard with immediate effect.
 
 ## Role-Based Access Control
 
 Scoped API keys with role-based permissions - read-only, read-write, or restricted to specific
-stored queries - allowing least-privilege credentials for each service or environment.
+operations - allowing least-privilege credentials for each service or environment.
 
 Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss RBAC requirements for
 your cluster.
@@ -751,9 +960,9 @@ throughput of the writer process make this sufficient for most workloads.
 and text search artifacts. The tradeoff is less flexibility in cache allocation when only one
 workload dominates.
 
-**Stored query model.** Pre-compiling queries eliminates runtime parsing overhead and limits the
-API surface to explicitly deployed operations. The tradeoff is that ad-hoc queries are not
-supported; all queries must be authored and deployed in advance.
+**Dynamic query model.** Queries travel inline with each request, so there is no deploy step and
+ad-hoc queries are fully supported. The tradeoff is the small per-request cost of deserializing the
+query AST on every call.
 
 # Limits
 
@@ -803,7 +1012,7 @@ fundamental architectural boundaries.
 
 | Limit             | Value                                |
 | ----------------- | ------------------------------------ |
-| Query model       | Stored procedures and runtime queries|
+| Query model       | Dynamic queries                      |
 | Query language    | Rust DSL                             |
 | Transaction scope | One transaction per query invocation |
 
@@ -833,55 +1042,1258 @@ how it is read and mutated, see [Querying](/database/querying).
 
 # Querying
 
-Helix Cloud exposes a single query surface over HTTP. Queries can be deployed as stored
-procedures or sent inline, and every invocation executes as one serializable transaction.
+Helix Cloud exposes a single query surface over HTTP. Every query — whether a
+deep graph traversal, a vector search, a bulk write, or all three at once — is
+expressed in the same composable DSL and executes as one serializable
+transaction. Queries are authored once in TypeScript or Rust (or by hand as
+JSON) and sent to the runtime as **dynamic** requests — the request body
+carries the query itself, so there is no separate deployment step. The
+[Querying Guide](/database/querying-guide/overview) walks the DSL end-to-end;
+this page covers how a dynamic query looks on the wire.
 
-## Traversal DSL
+## Installing the SDKs
 
-Helix exposes a composable Rust DSL for defining queries. The DSL supports graph traversals,
-property filters, vector searches, text searches, variable bindings, conditional logic, and
-mutations within a single query. Multiple traversals can be chained and combined.
+The TypeScript and Rust examples below are built with the Helix SDKs. Install the one for
+your language to follow along — both emit the same JSON, so the bundle is interchangeable.
 
-## Stored Queries
+For the full project layout and generator setup, see
+[TypeScript Project Setup](/database/typescript-project-setup) and
+[Rust Project Setup](/database/rust-project-setup).
 
-Queries are deployed as stored procedures. Clients invoke them by name over HTTP at
-`POST /v1/query/<query-name>`, passing parameters as needed. Stored queries avoid runtime query
-deserialization because the route has already been registered in the deployed query bundle.
+## Dynamic queries
 
-Each stored query can compose graph traversals, property filters, vector search, text search, and
-mutations in one transaction. All operations within a query share the same consistent snapshot.
+A dynamic query is sent inline: the request body carries the JSON AST for the
+query plus a small envelope that names the request kind and any runtime
+parameters. There is no deployment step — the query travels with the request,
+so the same DSL that builds it also produces the body you POST.
 
-## Dynamic Queries
+The example below counts every `User` node. The TypeScript and Rust tabs are
+two builder front-ends that produce the same JSON envelope; pick whichever your
+codebase already speaks. The JSON tab shows the resulting envelope verbatim — if
+you want to skip the DSL and POST hand-written JSON, this is the body you send.
 
-Clients can also execute inline queries at `POST /v1/query` without pre-registering a route in the
-bundle. The request body carries:
+Sending that envelope is one POST to `/v1/query`. The response is a JSON
+object keyed by the names from `.returning([...])`.
 
-- `request_type`: `read` or `write`
-- `query`: the same JSON object that would otherwise appear under `read_routes.<name>` or
-  `write_routes.<name>` in `queries.json`
-- `parameters`: optional runtime parameters
+For larger envelopes, write the JSON to a file and use `curl --data-binary
+@file.json` — the inline `--data-raw` form gets unwieldy past a few steps.
 
-Dynamic queries trade some runtime overhead for flexibility. Stored queries remain the preferred
-path when you want a stable API surface and minimal per-request overhead.
+For parameters, bundles, and the typed `queries.call.*` helpers, see
+[Parameters & bundles](/database/querying-guide/parameters-bundles).
 
-For the authoring and deployment workflow, see
-[Working with Helix Cloud](/database/working-with-enterprise).
+## Running queries with the client
+
+Both SDKs ship a `Client` so you don't have to assemble requests by hand. The
+client owns the connection details (URL and, on Helix Cloud, the API key) and
+exposes the same fluent surface in TypeScript and Rust.
+
+`send()` returns the parsed JSON response on HTTP `200`. Any other status raises a
+`HelixError` whose `kind` is one of `Network`, `Remote`, `Serialization`, or
+`InvalidUrl` (`Remote` carries the server response body in `details`), so there is
+no manual status check to write.
 
 ## Transactions
 
-Every query executes as a single transaction with serializable snapshot isolation.
+Every query — read or write — executes as a single transaction
+with serializable snapshot isolation.
 
-- **Serializable.** Transactions behave as if they executed one at a time, even when running
-  concurrently.
-- **Snapshot isolation.** Each transaction reads from a consistent point-in-time snapshot. Reads
-  within a transaction are never affected by concurrent writes.
-- **Automatic.** Transactions are implicit. Every query invocation is a transaction. There is no
-  manual `BEGIN` / `COMMIT` / `ROLLBACK`.
+- **Serializable.** Transactions behave as if they executed one at a time, even
+  when running concurrently.
+- **Snapshot isolation.** Each transaction reads from a consistent point-in-time
+  snapshot. Reads within a transaction are never affected by concurrent writes.
+- **Automatic.** Transactions are implicit. Every query invocation is a
+  transaction. There is no manual `BEGIN` / `COMMIT` / `ROLLBACK`.
 
-Read-only queries never block writes. Write transactions are serialized through the single writer
-process for correctness without distributed locking.
+Read-only queries never block writes. Write transactions are serialized through
+the single writer process for correctness without distributed locking. See
+[Guarantees](/database/guarantees) for the full consistency and durability
+contract.
 
-For consistency and durability details, see [Guarantees](/database/guarantees).
+## Next Steps
+
+# Querying Guide: Overview
+
+This guide is a tutorial walkthrough of the HelixDB query language. Each page builds
+on the last, starting from the simplest possible read and ending at parameter-bound
+bundles. Every example shows the **TypeScript**, **Rust**, and **JSON** form
+side by side, so you can pick a client and follow along — or skim across all three to
+see how the surfaces relate.
+
+The three forms are not three different query languages; they are three encodings of
+the same query AST. The TypeScript and Rust DSLs are typed builders that emit the JSON
+shape directly. If you copy the JSON column into a `POST /v1/query` body, it will
+execute the same query as the DSL above it.
+
+## Installing the SDKs
+
+To follow along in TypeScript or Rust, install the SDK for that language. Both emit the
+same query AST, so you can switch between them — or use the JSON column directly and skip
+the SDK entirely.
+
+For the full project layout and generator setup, see
+[TypeScript Project Setup](/database/typescript-project-setup) and
+[Rust Project Setup](/database/rust-project-setup).
+
+## The running example
+
+Every page in this guide uses one small social-graph schema, so each new step plugs
+into a domain you already know.
+
+- **Nodes:** `User` (`username`, `tier`, `createdAt`), `Post` (`title`, `body`,
+  `embedding`, `createdAt`), `Tag` (`name`).
+- **Edges:** `FOLLOWS` (User → User), `AUTHORED` (User → Post), `LIKED` (User → Post),
+  `TAGGED` (Post → Tag).
+- **Indexes:** a unique-equality index on `User.username`, a vector index on
+  `Post.embedding`, a text index on `Post.body`.
+
+Index setup itself is covered on the [Search](/database/querying-guide/search) page;
+for now assume they exist.
+
+## How a query is shaped
+
+Every query — read or write — is a small pipeline:
+
+1. Open a batch with `readBatch()` or `writeBatch()`.
+2. Bind one or more named sub-results with `.varAs("name", traversal)`. A traversal
+   always starts from `g()` and chains steps until it produces nodes, edges, or a
+   terminal value.
+3. Choose which bound names to surface to the caller with `.returning([...])`.
+
+The TypeScript shell:
+
+```ts
+readBatch()
+  .varAs("name", g().someSource().someStep())
+  .varAs("other", g().someSource().someStep())
+  .returning(["name", "other"]);
+```
+
+The Rust shell is identical except for naming conventions (`read_batch`, `var_as`,
+`returning`). The JSON shell is what the batch serializes to: a top-level
+`{queries: [...], returns: [...]}` object, with each `varAs` producing one
+`{Query: {name, steps, condition}}` entry. The
+[Reading nodes](/database/querying-guide/reading-nodes) page covers the shell step by
+step; this overview just shows the finished product.
+
+## A full first example
+
+Fetch a user by `username` and the ten most recent posts they authored. This example
+takes no parameters; it hard-codes `"alice"` and a limit of `10` so the JSON column is
+unambiguous. Parameter binding is introduced on the
+[Filtering](/database/querying-guide/filtering) and
+[Parameters & bundles](/database/querying-guide/parameters-bundles) pages.
+
+Two things to notice:
+
+- The `posts` traversal starts from `NodeRef.var("user")` — that's how one named
+  binding feeds into the next. The same name appears as `{"N": {"Var": "user"}}` in
+  the JSON.
+- The TypeScript and Rust DSLs surface a friendly `nWithLabel` / `n_with_label`
+  alias, but this example uses `nWhere(SourcePredicate.eq("username", "alice"))`
+  directly because the read is anchored on a unique property, not a label scan. The
+  next page covers when to use each anchor.
+
+## Sending the request
+
+The JSON above is the actual body for `POST /v1/query`. Below are the same request
+in three transports — TypeScript and Rust using their SDK clients, and `curl`
+straight from the shell. All three are interchangeable; pick whichever fits your
+environment.
+
+The response is a JSON object keyed by the names from `.returning([...])` — here
+`{ "user": [...], "posts": [...] }`. Each value is the list of rows produced by that
+named binding.
+
+The [Parameters and bundles](/database/querying-guide/parameters-bundles) page shows
+how to bind parameters and organize queries into a `queries.json` bundle.
+
+## How to read this guide
+
+Each page follows the same template:
+
+1. A short prose intro to the concept.
+2. One or more `<CodeGroup>` blocks. The **TypeScript** tab is the lead — every
+   example is written there first.
+3. The **Rust** tab mirrors the TypeScript exactly, with snake-case method names and
+   the trailing-underscore convention for Rust keywords (`where_`, `in_`, `as_`).
+4. The **JSON** tab is the serialized AST that either DSL produces. It is the body
+   you would POST to `/v1/query`; the same object appears inside a generated
+   `queries.json` bundle under `read_routes.<name>` or `write_routes.<name>`.
+
+You can also jump straight to any topic from the list below; the pages do not assume
+strict sequential reading, but anything earlier in the list is fair game later on.
+
+## Next Steps
+
+# Reading nodes and edges
+
+Every traversal in the DSL starts with `g()` — a fresh, empty graph cursor — followed
+by a *source* step that produces nodes or edges. This page covers the source steps:
+how to anchor on an id, a label, or an indexed property, and the difference between a
+`SourcePredicate` and a full `Predicate`.
+
+## The batch shell
+
+Before any source step, you need a batch to hold the traversal. Reads use
+`readBatch()`; writes use `writeBatch()`. Inside, every named result is introduced
+with `varAs("name", traversal)`, and `returning([...])` chooses which names the caller
+receives.
+
+Two things worth noting from the JSON column:
+
+- `nWithLabel("User")` is a DSL convenience. On the wire it becomes a label-filtered
+  source: `{"NWhere": {"Eq": ["$label", {"String": "User"}]}}`. The virtual `$label`
+  field is implicit on every node.
+- `count()` is a *unit* step — it carries no payload — so it serializes as the bare
+  string `"Count"` rather than a `{Count: ...}` object.
+
+## Anchoring on a node id
+
+When you already have a node id (returned by an earlier query, or stored alongside
+your application data), pass it to `g().n(...)` to skip any index lookup at all.
+
+`NodeRef` has several useful constructors:
+
+- `NodeRef.id(42n)` / `NodeRef.ids([1n, 2n, 3n])` — one or many concrete ids.
+- `NodeRef.var("name")` — the result of an earlier `varAs` binding.
+- `NodeRef.param("name")` — a value supplied at request time (covered in
+  [Parameters & bundles](/database/querying-guide/parameters-bundles)).
+- `NodeRef.all()` — every node in the graph; rarely what you want.
+
+Node ids fit in `i64` and can exceed `Number.MAX_SAFE_INTEGER`. Use `BigInt` literals
+(`42n`) in TypeScript when authoring queries that touch ids directly.
+
+## Anchoring on a label
+
+`nWithLabel(label)` selects every node of a given label. Without a follow-up filter
+this is a full label scan, so reach for it only when you genuinely want every node of
+that label.
+
+## Anchoring on a unique property
+
+The most common starting shape: look up a node by an indexed property. Use
+`nWhere(SourcePredicate.eq(...))` when there is no label scope, or
+`nWithLabelWhere(label, SourcePredicate)` when you want both at the source step.
+
+### `SourcePredicate` vs `Predicate`
+
+Source steps (`nWhere`, `eWhere`, etc.) accept a `SourcePredicate`, which is a
+deliberately smaller set: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `between`, `hasKey`,
+`startsWith`, plus `and` / `or`. These are the predicates the storage layer can push
+down into an index lookup.
+
+For richer post-filtering — collection membership, regex-ish contains/endsWith,
+`isNull`, `not`, parameter-bound comparisons — use a `.where(Predicate.*)` step *after*
+the source. That's covered in [Filtering](/database/querying-guide/filtering).
+
+If you've already built a `SourcePredicate` and need to lift it into a full
+`Predicate`, every `SourcePredicate` exposes `.toPredicate()`.
+
+## Anchoring on label plus a predicate
+
+When the source step is both label-scoped and predicate-filtered, `nWithLabelWhere`
+collapses the two into one step. It produces the same JSON as `nWhere(And[$label, ...])`
+but reads more clearly.
+
+## Anchoring on edges
+
+Edges have a parallel set of source steps:
+
+- `g().e(EdgeRef.id(...))` / `EdgeRef.ids([...])` — by id.
+- `g().eWithLabel("FOLLOWS")` — by edge label (e.g. every `FOLLOWS` edge in the graph).
+- `g().eWhere(SourcePredicate.gt("weight", 0.5))` — by indexed edge property.
+- `g().eWithLabelWhere("FOLLOWS", SourcePredicate.gte("since", "2026-01-01"))` —
+  label + predicate.
+
+Edge streams support `.outN()` / `.inN()` / `.otherN()` to walk back to a node — see
+[Traversals](/database/querying-guide/traversals) for the full edge story.
+
+## Picking the right anchor
+
+Order of preference, narrowest first:
+
+1. **Node or edge id** (`g().n(NodeRef.id(...))`). No index lookup at all.
+2. **Unique-indexed property** (`g().nWhere(SourcePredicate.eq("username", ...))`).
+3. **Equality-indexed property** (same shape, non-unique index).
+4. **Label-scoped predicate scan** (`g().nWithLabelWhere(...)`).
+5. **Plain label scan** (`g().nWithLabel(...)`). Last resort.
+
+If your route accepts an id or other indexed identifier from the request, use it as
+the anchor — never start from a broad label scan when an indexed identifier is
+available. [Parameters & bundles](/database/querying-guide/parameters-bundles) shows
+the parameterized versions of every shape above.
+
+## Next Steps
+
+# Traversals
+
+A *traversal* moves from one set of nodes or edges to another by following labeled
+edges. This page covers the node-to-node and node-to-edge steps, multi-hop chaining,
+deduplication, and naming intermediate frontiers with `as` / `select`.
+
+All examples assume the source step has already produced a node or edge stream — see
+[Reading nodes and edges](/database/querying-guide/reading-nodes) for those.
+
+## Node-to-node steps
+
+From a node stream, three steps walk along edges and land on the nodes at the other
+end:
+
+- `.out(label?)` — follow outgoing edges; emit the *destination* nodes.
+- `.in(label?)` — follow incoming edges; emit the *source* nodes.
+- `.both(label?)` — both directions; emit the neighbor on the other side.
+
+The label argument is optional. Omit it to follow every edge regardless of label;
+supply it to scope to one edge type. In the JSON the omitted form becomes
+`{"Out": null}`.
+
+To get *followers* — users following Alice — swap `out("FOLLOWS")` for
+`in("FOLLOWS")`. To get both at once, use `both("FOLLOWS")`.
+
+## Multi-hop traversals
+
+Steps chain. Reading a user's tags ("which tags appear on any of Alice's posts") is
+three hops: `User → AUTHORED → Post → TAGGED → Tag`. Add `.dedup()` because a tag
+might appear on more than one of Alice's posts.
+
+`.dedup()` is a unit step — it serializes as the bare string `"Dedup"`.
+
+## Edge-valued steps
+
+Sometimes you want the *edges* themselves, not the nodes they point to. Use the `E`
+suffix:
+
+- `.outE(label?)` — outgoing edges (a *stream of edges*).
+- `.inE(label?)` — incoming edges.
+- `.bothE(label?)` — edges in either direction.
+
+From an edge stream:
+
+- `.outN()` — the source node of each edge.
+- `.inN()` — the destination node.
+- `.otherN()` — the *other* node, relative to the node you arrived from.
+
+`.otherN()` only makes sense after `.bothE(...)`, where "the other end" depends on
+the originating node.
+
+Edges carry properties too. The example below grabs every `LIKED` edge Alice has
+written, filters by edge property, and returns the destination posts.
+
+Notice that `"InN"`, like `"Dedup"` and `"Count"`, is a unit step encoded as a bare
+string in the JSON.
+
+## Naming intermediate frontiers
+
+When a multi-step traversal needs to refer back to an earlier point — for
+"friends-of-friends excluding direct friends", or "posts not already liked by the
+viewer" — bind a name with `.as("frontier")` and reach for it later with
+`.select("frontier")` (which replaces the current stream with the stored one) or with
+the set operators `.within("frontier")` / `.without("frontier")`.
+
+`.store(name)` is an alias for `.as(name)`; both create a named snapshot of the
+current stream.
+
+A handy rule of thumb:
+
+- `.as(name)` / `.store(name)` — snapshot the current stream without changing it.
+- `.select(name)` — replace the current stream with the snapshot.
+- `.within(name)` — keep only items that are also in the snapshot (intersection).
+- `.without(name)` — drop items that are in the snapshot (set difference).
+
+## What's not on this page
+
+- Variable-length traversals (`g().n(...).repeat(...)`) belong on the
+  [Advanced patterns](/database/querying-guide/advanced) page along with `union`,
+  `choose`, and `coalesce`.
+- Filtering inside the traversal (`.has`, `.where`, `.edgeHas`) is covered on
+  [Filtering, ordering, paging](/database/querying-guide/filtering).
+- Shaping the output (`.valueMap`, `.project`, `.count`, `.exists`) is covered on
+  [Projections](/database/querying-guide/projections).
+
+## Next Steps
+
+# Filtering, ordering, paging
+
+This page covers the steps that *narrow* a stream rather than walking the graph:
+property and label filters, the full `Predicate` catalog, ordering, and slicing the
+result with `limit` / `skip` / `range`.
+
+## `.has`, `.hasLabel`, `.hasKey`
+
+The simplest filters are equality checks on a single property. They work on both
+node and edge streams.
+
+- `.has(property, value)` — property equals the given value.
+- `.hasLabel(label)` — node/edge label equals.
+- `.hasKey(property)` — property exists (any non-null value).
+
+These are convenience wrappers; under the hood they could all be expressed via
+`.where(...)`.
+
+## `.where(Predicate.*)`
+
+For anything richer than equality, use `.where(Predicate.*)`. `Predicate` exposes the
+full set:
+
+| Group | Builders |
+|---|---|
+| Comparison | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `between` |
+| String | `startsWith`, `endsWith`, `contains` |
+| Collection | `isIn`, `isInExpr` |
+| Property presence | `hasKey`, `isNull`, `isNotNull` |
+| Logical | `and([...])`, `or([...])`, `not(p)` |
+| Parameter-bound | `eqParam`, `neqParam`, `gtParam`, `gteParam`, `ltParam`, `lteParam`, `isInParam`, `containsParam` |
+| Expression | `compare(left, op, right)` — for arithmetic on either side |
+
+A typical multi-predicate filter:
+
+### `SourcePredicate` vs `Predicate`
+
+Source steps (`nWhere`, `eWhere`, `nWithLabelWhere`, `eWithLabelWhere`) accept a
+*`SourcePredicate`*, which is deliberately smaller: comparison + `between` + `hasKey`
++ `startsWith` + `and` / `or`. These are the predicates the storage layer can push
+down into an index lookup.
+
+Use a `SourcePredicate` when you want the filter to participate in index selection at
+the source step. Use `.where(Predicate.*)` when you need anything outside that set,
+or when you want the filter to run *after* a graph traversal step.
+
+## Parameter-bound predicates
+
+To filter by a value the caller supplies at request time, use the `*Param` family.
+Pass the parameter *name* as a string; the runtime substitutes the value at execution.
+Full parameter declaration via `defineParams` is covered on
+[Parameters & bundles](/database/querying-guide/parameters-bundles); this page focuses
+on the predicate shape.
+
+A few wire-format details worth noting:
+
+- `Predicate.eqParam(prop, name)` desugars to a generic `Compare` predicate with a
+  `Property` on the left and a `Param` on the right. The same shape applies to
+  `neqParam`, `gtParam`, `gteParam`, `ltParam`, `lteParam` (the `op` field varies).
+- `Predicate.isInParam("status", "statuses")` becomes
+  `{"IsInExpr": ["status", {"Param": "statuses"}]}` — a `Param`-valued expression,
+  not a `Compare`.
+- `Predicate.containsParam("body", "needle")` becomes
+  `{"ContainsExpr": ["body", {"Param": "needle"}]}`.
+
+## Filtering edges in the middle of a traversal
+
+When you're walking through an edge stream and want to filter on edge properties
+without leaving the stream, use `.edgeHas(prop, value)` or `.edgeHasLabel(label)`.
+
+## Ordering
+
+`.orderBy(property, Order.Asc | Order.Desc)` sorts by a single property.
+`.orderByMultiple([[prop, order], ...])` sorts by several at once with explicit
+direction per key.
+
+For multi-key ordering:
+
+```ts
+g()
+  .nWithLabel("Post")
+  .orderByMultiple([
+    ["createdAt", Order.Desc],
+    ["title", Order.Asc],
+  ]);
+```
+
+which serializes as:
+
+```json
+{ "OrderByMultiple": [["createdAt", "Desc"], ["title", "Asc"]] }
+```
+
+## Paging: `.limit`, `.skip`, `.range`
+
+The three slicing steps all accept either a literal number / `bigint` or a
+`StreamBound` for parameter-bound bounds.
+
+- `.limit(n)` — keep the first `n`.
+- `.skip(n)` — drop the first `n`.
+- `.range(start, end)` — keep the half-open `[start, end)` slice.
+
+### Literal bounds
+
+### Parameter-bound limits
+
+For request-time pagination, wrap the bound in `StreamBound.expr(Expr.param("..."))`.
+The JSON variant changes too: `Limit` becomes `LimitBy`, `Skip` becomes `SkipBy`,
+`Range` becomes `RangeBy`.
+
+The `Range` parameter-bound variant looks like:
+
+```json
+{ "RangeBy": [{ "Literal": 0 }, { "Expr": { "Param": "end" } }] }
+```
+
+— each bound is independently a `Literal` or an `Expr`, so you can mix-and-match a
+constant start with a parameterized end.
+
+## Next Steps
+
+# Projections
+
+Up to this point every example has ended with `.valueMap([...])` to ship a few
+properties back to the caller. This page covers the full set of terminal projections:
+how to shape the output, compute derived values, and aggregate the stream.
+
+A traversal that ends in a terminal step (`.count`, `.values`, `.project`, …)
+produces a final result rather than another node or edge stream. The TypeScript and
+Rust typestate machinery prevents you from chaining traversal steps after a terminal.
+
+## Scalar terminals: `.count`, `.exists`, `.id`, `.label`
+
+The smallest terminals collapse the whole stream into a single value.
+
+The four scalar terminals:
+
+| Step | Returns |
+|---|---|
+| `.count()` | Number of items in the stream. |
+| `.exists()` | `true` if the stream is non-empty, `false` otherwise. |
+| `.id()` | Stream of `$id` values, one per item. |
+| `.label()` | Stream of `$label` values, one per item. |
+
+`.id()` and `.label()` are usually most useful followed by another binding via
+`.varAs(...)`, or as input to `.project(...)`.
+
+## `.values(...)` and `.valueMap(...)`
+
+When you want a few properties from each item:
+
+- `.values([prop, ...])` — emits an array of arrays, one inner array per item, with
+  the properties in the requested order. No keys, only positional values.
+- `.valueMap([prop, ...])` — emits an array of objects keyed by property name. Pass
+  `null` (or omit the argument) for "every property".
+
+`valueMap` is the default choice for service-facing routes; `values` is handy when
+the caller does its own positional decoding.
+
+`$id`, `$label`, `$from`, `$to`, and `$distance` are **virtual fields**: they are
+always available even though they are not declared on your schema. `$from`/`$to`
+appear on edge streams; `$distance` appears on vector / text search hits.
+
+## `.project(...)` with renames and expressions
+
+`project([...])` is the most flexible terminal — it accepts a list of items, each one
+either:
+
+- `PropertyProjection.new(prop)` — emit `prop` under its own name.
+- `PropertyProjection.renamed(source, alias)` — emit `source` under a different key.
+- `ExprProjection.new(alias, expr)` — emit a computed expression under `alias`.
+
+Use it when you want to flatten ids out from under `$id`, return a different name
+than the schema's, or compute a derived field.
+
+A typical `project` call mixes plain property pulls with one or two renames:
+
+Each entry in `Project` is a bare object with `source` / `alias` (for
+`PropertyProjection`) or `alias` / `expr` (for `ExprProjection`). There is no enum
+tag around them — the `Projection` enum is untagged on the wire.
+
+### Expressions for `ExprProjection`
+
+`Expr` is a small arithmetic-and-conditionals algebra:
+
+- Sources: `Expr.prop(name)`, `Expr.val(value)`, `Expr.id()`, `Expr.timestamp()`,
+  `Expr.datetime()`, `Expr.param(name)`.
+- Arithmetic: `.add(other)`, `.sub(other)`, `.mul(other)`, `.div(other)`,
+  `.modulo(other)`, `.neg()`.
+- Branching: `Expr.case([[predicate, expr], ...], elseExpr)`.
+
+A small derived field — fall back to `"unknown"` when the `tier` property is null:
+
+For time-relative comparisons against "now" (e.g. "rows newer than 30 days"), use
+`Expr.timestamp()` (server epoch millis) or `Expr.datetime()` (typed datetime) on
+one side of a `Predicate.compare(left, CompareOp.*, right)`. Arithmetic on `Expr`
+returns another `Expr`, so you can chain `Expr.timestamp().sub(Expr.val(30 * 86_400 * 1000))`
+to compute a cut-off server-side.
+
+## Edge property output
+
+For edge streams, `.edgeProperties()` emits each edge as an object with all of its
+properties plus the virtual `$id`, `$label`, `$from`, and `$to` fields.
+
+## Aggregations: `.group`, `.groupCount`, `.aggregateBy`
+
+For grouped counts and aggregate statistics:
+
+- `.group(prop)` — bucket the stream by `prop`, emit `{groupValue: [items...]}`.
+- `.groupCount(prop)` — bucket and count, emit `{groupValue: count}`.
+- `.aggregateBy(AggregateFunction.*, prop)` — apply a reducer to one property:
+  `Count`, `Sum`, `Min`, `Max`, `Mean`.
+
+`AggregateFunction` values are serialized as strings: `"Count"`, `"Sum"`, `"Min"`,
+`"Max"`, `"Mean"`.
+
+## Next Steps
+
+# Mutations
+
+`readBatch()` only accepts read traversals — the TypeScript type system rejects any
+mutating step. To create nodes, add edges, or update properties, switch to
+`writeBatch()`.
+
+Inside a `writeBatch`, every `varAs` may chain any read step *or* any write step. The
+typestate machinery flips into "write" mode the moment a mutation appears, so a write
+batch can also do plain reads (look up an existing user, then update them).
+
+## Adding nodes
+
+`g().addN(label, properties)` inserts a new node and emits a single-item stream — the
+new node. Property values can be passed as a plain object (most common) or as a list
+of `[name, PropertyInput]` tuples (matches the Rust `vec![("name", value)]` shape).
+
+A few wire-format details:
+
+- The `properties` array preserves insertion order — `Map`-style, not `Object`-style.
+- Each value is wrapped in a `PropertyInput`. A literal becomes
+  `{"Value": {"String": ...}}`; a parameter becomes `{"Expr": {"Param": "..."}}`
+  (covered in [Parameters & bundles](/database/querying-guide/parameters-bundles)).
+- The result of `addN` is a node stream, so the same chain can keep going —
+  here, `.project([...])` collects the new id.
+
+## Adding edges between bound nodes
+
+`addE` joins two nodes by label. The `to` argument is a `NodeRef` — most often
+`NodeRef.var("...")` pointing at a node bound earlier in the same batch.
+
+Every entry in a `writeBatch` shares the same transaction — either all three writes
+above land, or none do. There is no manual `BEGIN`/`COMMIT`; see
+[Transactions](/database/querying#transactions) for details.
+
+## Updating properties
+
+Two single-property steps update an existing node or edge:
+
+- `.setProperty(name, value)` — set or overwrite.
+- `.removeProperty(name)` — unset.
+
+Both expect a node or edge stream (so you anchor first, then call), and both leave
+the stream unchanged so you can keep chaining or call `.count()` to confirm how many
+rows were touched.
+
+The envelope's `request_type` is `"write"`. Any mutation step anywhere in the AST
+makes the request a write — `.toDynamicJson` on a `writeBatch` picks the right value
+automatically.
+
+## Deleting nodes and edges
+
+Three drop steps cover the common cases. All require an anchored stream first.
+
+- `.drop()` — delete the current nodes (and the edges they participate in).
+- `.dropEdge(to)` — from a node stream, delete edges going to a specific other node
+  (`NodeRef`). Optionally label-scoped via `.dropEdgeLabeled(to, label)`.
+- `.dropEdgeById(EdgeRef)` — delete edges by id; the safe choice when the same node
+  pair could have multiple parallel edges (multigraph mode).
+
+The same pattern works for `.drop()` to remove a node entirely — `.nWithLabel("Post").where(...).drop()`
+will remove matching posts plus every edge incident to them.
+
+## Conditional writes with `varAsIf`
+
+Sometimes a write should only run when a previous step did or did not produce
+results. `.varAsIf(name, condition, traversal)` attaches a `BatchCondition` to a step
+so it only executes when the named variable is non-empty, empty, or has at least N
+items.
+
+The most common pattern is upsert: load the row, update if found, create if not.
+
+The full set of conditions:
+
+- `BatchCondition.varNotEmpty(name)` — run when `name` produced ≥ 1 result.
+- `BatchCondition.varEmpty(name)` — run when `name` produced 0 results.
+- `BatchCondition.varMinSize(name, n)` — run when `name` produced ≥ `n` results.
+- `BatchCondition.prevNotEmpty()` — same as `varNotEmpty` but for the immediately
+  preceding step, useful when you don't want to name it.
+
+## Next Steps
+
+# Vector and text search
+
+The DSL exposes two kinds of search source steps that return scored hits instead of a
+plain label scan: **vector search** (approximate k-NN over a float-array property) and
+**text search** (BM25 over a string property). Both are available on nodes and edges,
+both expose a literal form and a parameter-bound `_with` form, and both can be the
+first step of a longer traversal — once you have hits, you can keep walking the graph.
+
+This page assumes the indexes exist. Index creation is covered first, then queries.
+
+## Creating indexes
+
+Indexes are graph mutations, so they live in a `writeBatch`. The unified
+`createIndexIfNotExists(IndexSpec.*)` step covers every variant and is idempotent —
+safe to run on each deploy.
+
+`IndexSpec` covers every shape the runtime supports:
+
+| Spec | What it is |
+|---|---|
+| `nodeEquality(label, prop)` | Secondary equality index. |
+| `nodeUniqueEquality(label, prop)` | Equality index with a uniqueness constraint. |
+| `nodeRange(label, prop)` | Range / ordering index. |
+| `nodeVector(label, prop, tenant?)` | ANN vector index. |
+| `nodeText(label, prop, tenant?)` | BM25 text index. |
+| `edgeEquality` / `edgeRange` / `edgeVector` / `edgeText` | Same shapes for edges. |
+
+`tenant?` is the multi-tenancy partition key — see the bottom of this page.
+
+## Vector search
+
+`vectorSearchNodes(label, property, queryVector, k, tenantValue?)` returns the top
+`k` nodes whose `property` is closest to `queryVector`. Hits arrive in ascending
+distance order with a virtual `$distance` field projected onto each result.
+
+`$distance` is only present on the direct hit stream. The instant you step off it
+with `.out()`, `.in()`, `.both()`, `.outN()`, etc., the score is gone — project it
+*before* you traverse.
+
+## Following the graph from a hit
+
+Vector hits are a normal node stream, so the next step can keep walking. The example
+below finds posts similar to a query vector, then returns their authors with the
+post's distance projected as an annotation.
+
+The two `varAs` blocks duplicate the search step because each is a fresh traversal
+binding. If you only want the authors and don't need the hits themselves in the
+response, drop the first `varAs` and remove `"hits"` from `returning(...)`.
+
+## Text search (BM25)
+
+`textSearchNodes(label, property, queryText, k, tenantValue?)` runs BM25 over the
+named text-indexed property and returns the top `k` matching nodes. The interface
+mirrors `vectorSearchNodes` exactly, including the `$distance` virtual field (here it
+represents an inverted relevance score — smaller is more relevant, just like vector
+distance).
+
+## Parameter-bound search
+
+For routes that take the query vector / text and `k` from the request, switch to the
+`_with` siblings. They accept `PropertyInput.param(...)` for the query and a
+`StreamBound` (literal or `Expr`-wrapped) for `k`.
+
+`textSearchNodesWith(...)` has the identical shape — just replace
+`PropertyInput.param("query_vector")` with `PropertyInput.param("query_text")` and
+declare the parameter as `param.string()`.
+
+## Multi-tenancy
+
+If the index was created with a `tenantProperty`, every search must supply a matching
+`tenantValue` (the partition key). Pass it as the fifth argument to
+`vectorSearchNodes` / `textSearchNodes`, or wrap it in `PropertyInput.param("...")`
+inside the `_with` variants.
+
+A search that omits the tenant against a tenant-scoped index will fail to find any
+rows even if the data exists. See [Multi-Tenancy](/database/multi-tenancy) for the
+full partitioning model.
+
+## Next Steps
+
+# Advanced patterns
+
+This page covers the steps that branch, repeat, or fan-out inside a single
+traversal: `repeat`, `union`, `choose`, `coalesce`, `optional`, and — at the batch
+level — `forEachParam`. All five sub-traversal-shaped steps share one helper:
+`sub()`, which opens a fresh traversal builder that does not start with `g()`.
+
+`sub()` is to in-line traversals what `g()` is to top-level ones. It has the same
+chainable surface (`out`, `where`, `dedup`, etc.) but it is not a complete query on
+its own — it is always passed into a parent step.
+
+## `repeat`: variable-length traversal
+
+`.repeat(RepeatConfig.new(sub()...).times(n))` walks the same sub-traversal `n`
+times, threading the output of each iteration into the input of the next. By
+default, only the final frontier is emitted. Add `.emitAll()` to keep every
+intermediate frontier; add `.emitBefore()` / `.emitAfter()` to keep only one side.
+
+A two-hop reachability example: from Alice, who is followed-of-followed-by within
+three hops?
+
+The `max_depth: 100` field in the JSON is a safety ceiling — change it by chaining
+`.maxDepth(n)` on the `RepeatConfig`. To stop early when a predicate is satisfied
+instead of after `n` steps, swap `.times(3)` for `.until(predicate)`.
+
+## `union`: combine multiple sub-traversals
+
+`.union([sub()..., sub()...])` runs each sub-traversal from the current stream and
+emits the concatenation. Use it when "the result is either A or B" — e.g. a personal
+feed that mixes posts you authored *and* posts you liked.
+
+## `choose`: per-item if/else
+
+`.choose(predicate, thenSub, elseSub?)` evaluates the predicate per item and routes
+each item through the matching sub-traversal. The optional `else` arm defaults to
+"drop the item" — pass `null` (or omit it in Rust) for that.
+
+Surface different fields for free-tier vs paid-tier users:
+
+## `coalesce`: first non-empty branch wins
+
+`.coalesce([sub()..., sub()..., sub()...])` tries each sub-traversal in order per
+item and returns the first one that produces results. Useful for "prefer A, fall
+back to B".
+
+```ts
+g()
+  .n(NodeRef.var("user"))
+  .coalesce([
+    sub().out("PRIMARY_FEED"),
+    sub().out("DEFAULT_FEED"),
+  ])
+```
+
+The JSON form:
+
+```json
+{
+  "Coalesce": [
+    { "steps": [{ "Out": "PRIMARY_FEED" }] },
+    { "steps": [{ "Out": "DEFAULT_FEED" }] }
+  ]
+}
+```
+
+## `optional`: keep the input even if the sub-traversal is empty
+
+`.optional(sub())` runs the sub-traversal and lets each item through unchanged if the
+sub-traversal produced no result. Think SQL `LEFT JOIN`: you get the original row
+whether or not the optional walk matched anything.
+
+```ts
+g().nWithLabel("User").optional(sub().out("POSTED"));
+```
+
+```json
+{ "Optional": { "steps": [{ "Out": "POSTED" }] } }
+```
+
+## Batch-level conditionals: `varAsIf`
+
+Inside a `readBatch` / `writeBatch`, `.varAsIf(name, BatchCondition.*, traversal)`
+makes a whole `varAs` step conditional on the result of an earlier one. This is the
+upsert pattern from the [Mutations](/database/querying-guide/mutations#conditional-writes-with-varasif)
+page, but it's just as useful on the read side — fetch related rows only if the
+primary lookup produced something.
+
+```ts
+readBatch()
+  .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAsIf(
+    "posts",
+    BatchCondition.varNotEmpty("user"),
+    g().n(NodeRef.var("user")).out("AUTHORED").valueMap(["$id", "title"]),
+  )
+  .returning(["user", "posts"]);
+```
+
+In the JSON, the `condition` field on the conditional `Query` entry carries the
+constraint:
+
+```json
+{
+  "Query": {
+    "name": "posts",
+    "steps": [
+      { "N":         { "Var": "user" } },
+      { "Out":       "AUTHORED" },
+      { "ValueMap": ["$id", "title"] }
+    ],
+    "condition": { "VarNotEmpty": "user" }
+  }
+}
+```
+
+## Fan-out over array parameters: `forEachParam`
+
+`.forEachParam("paramName", body)` iterates over an array-of-object parameter and
+runs `body` once per element. Inside `body`, each object's keys are addressable as
+plain `PropertyInput.param(key)` references. This is the standard shape for
+bulk-insert routes.
+
+A few notes specific to `forEachParam`:
+
+- The body is a *whole* batch (`readBatch()` / `writeBatch()`), not a sub-traversal.
+  This lets you bind multiple variables per iteration if needed.
+- Bindings inside the loop body are *per-iteration*. The outer `returning([...])`
+  receives the per-iteration results collected into one array.
+- The parameter must be typed `{"Array": "Object"}` — an array of plain JSON
+  objects. `defineParams({ users: param.array(param.object(...)) })` produces this
+  shape automatically.
+
+## Next Steps
+
+# Parameters and bundles
+
+So far every parameterized example on the prior pages has shown
+`p = paramsObject` / `Predicate.eqParam("prop", "name")` / `toDynamicJson(params, values)`
+without dwelling on the parameter system itself. This page is the dedicated treatment:
+how to declare parameters, how to refer to them in traversals, and how to ship a
+parameterized query to the runtime.
+
+## Declaring parameters with `defineParams`
+
+`defineParams({...})` takes a record of parameter names to `ParamSchema` constructors
+and returns a typed proxy. Each property of the returned proxy is a `ParamRef` you
+can pass into builder methods that expect one.
+
+```ts
+
+const params = defineParams({
+  tenant_id:     param.string(),
+  username:      param.string(),
+  limit:         param.i64(),
+  query_vector:  param.array(param.f32()),
+  created_after: param.dateTime(),
+});
+```
+
+The supported `param.*` constructors:
+
+| Constructor | Wire type | Accepted JS values |
+|---|---|---|
+| `param.bool()` | `Bool` | `boolean` |
+| `param.i64()` | `I64` | `number` (safe int) or `bigint` |
+| `param.f64()` / `param.f32()` | `F64` / `F32` | `number` |
+| `param.string()` | `String` | `string` |
+| `param.dateTime()` | `DateTime` | `DateTime`, RFC3339 string, or epoch-millis number/bigint |
+| `param.bytes()` | `Bytes` | `Uint8Array` or `number[]` — **dynamic requests reject this** |
+| `param.value()` | `Value` | any JSON value (untyped) |
+| `param.object(inner?)` | `Object` | `Record<string, T>` if `inner` is given, else loose JSON |
+| `param.array(inner)` | `{Array: inner}` | array of values matching the inner schema |
+
+`param.array(param.f32())` is what produces the `{"Array": "F32"}` shape required for
+vector parameters; `param.object(param.string())` produces `{"Array": "Object"}` rows
+inside a `forEachParam`.
+
+## Referring to parameters inside a traversal
+
+There are three ways a parameter shows up inside a query, depending on what kind of
+value the builder expects:
+
+1. **Bound to a step argument that takes a `ParamRef`** — for `.limit(p.limit)`,
+   `.skip(p.skip)`, etc. The proxy returned by `defineParams` is the value to pass.
+2. **Inside a predicate** — `Predicate.eqParam("prop", "param_name")` and the rest
+   of the `*Param` family take the parameter *name as a string*, not the proxy.
+3. **As a property value or expression** — `PropertyInput.param("name")`,
+   `Expr.param("name")`, `NodeRef.param("name")`, `EdgeRef.param("name")`. All take
+   the name as a string.
+
+In practice the proxy is mostly used to keep parameter names in sync — if you
+rename the field in `defineParams`, every reference through the proxy moves with it.
+For string-keyed refs (`PropertyInput.param("name")`), the name has to match
+exactly. A common convention is to assign the proxy to a `p` argument and read both
+forms from there:
+
+```ts
+function findUsers(p = params) {
+  return readBatch().varAs(
+    "users",
+    g()
+      .nWithLabel("User")
+      .where(Predicate.eqParam("tenantId", "tenant_id"))   // string name
+      .limit(p.limit)                                       // proxy ref
+      .valueMap(["$id", "username", "tenantId"]),
+  ).returning(["users"]);
+}
+```
+
+## Shipping a parameterized query
+
+A query built with `readBatch()` / `writeBatch()` is sent to the runtime as a
+dynamic request. There are a few ways to produce that request — straight from a
+batch, from a registered bundle, or through the typed `call` helpers — but they
+all serialize to the same dynamic envelope you POST to `/v1/query`.
+
+### 1. From a batch directly
+
+The simplest case: build the batch, call `.toDynamicJson(params, values)`, POST the
+resulting body to `/v1/query`. No deploy step. Best for ad-hoc queries, prototyping,
+and one-off integrations.
+
+```ts
+
+const params = defineParams({ username: param.string() });
+
+function userByUsername(p = params) {
+  return readBatch()
+    .varAs(
+      "user",
+      g().nWithLabel("User")
+         .where(Predicate.eqParam("username", "username"))
+         .valueMap(["$id", "username", "tier"]),
+    )
+    .returning(["user"]);
+}
+```
+
+The dynamic envelope produced by `.toDynamicJson(params, values)` is the body for
+`POST /v1/query`. Below are the three equivalent ways to send it:
+
+For larger envelopes, write the JSON to a file and use `--data-binary @file.json` —
+the inline `--data-raw` form works for small bodies but gets unwieldy fast.
+
+The three serialization helpers on a batch:
+
+| Method | Returns |
+|---|---|
+| `.toDynamicJson(params?, values?)` | JSON string (full envelope: `request_type`, `query`, `parameters`, `parameter_types`) |
+| `.toDynamicRequest(params?, values?)` | `DynamicQueryRequest` instance — useful when you want to mutate it before serializing |
+| `.toDynamicBytes(params?, values?)` | `Uint8Array` of the JSON encoding — handy for `fetch` bodies that prefer bytes |
+
+For a parameter-less batch, omit both arguments:
+
+```ts
+readBatch().varAs("count", g().nWithLabel("User").count()).toDynamicJson();
+```
+
+`.toJsonString()` returns the *raw batch* (no envelope, no parameters), the form
+that goes into a bundle — covered below.
+
+### 2. Registered bundles
+
+To keep a set of queries organized and generate a single `queries.json` artifact,
+wrap each query function with `registerRead` or `registerWrite` and pass them all to
+`defineQueries`. The bundle's `generate(path)` method writes a single `queries.json`
+in the exact shape the runtime expects.
+
+```ts
+  defineParams,
+  defineQueries,
+  g,
+  param,
+  Predicate,
+  readBatch,
+  registerRead,
+  registerWrite,
+  writeBatch,
+} from "@helix-db/helix-db";
+
+const readParams = defineParams({ username: param.string() });
+
+function userByUsername(p = readParams) {
+  return readBatch()
+    .varAs(
+      "user",
+      g().nWithLabel("User")
+         .where(Predicate.eqParam("username", "username"))
+         .valueMap(["$id", "username", "tier"]),
+    )
+    .returning(["user"]);
+}
+
+const writeParams = defineParams({
+  username: param.string(),
+  tier:     param.string(),
+});
+
+function addUser(p = writeParams) {
+  return writeBatch()
+    .varAs(
+      "newUser",
+      g().addN("User", {
+        username: PropertyInput.param("username"),
+        tier:     PropertyInput.param("tier"),
+      }),
+    )
+    .returning(["newUser"]);
+}
+
+export const queries = defineQueries({
+  read:  { user_by_username: registerRead(userByUsername, readParams) },
+  write: { add_user:         registerWrite(addUser, writeParams) },
+});
+
+// Build queries.json at deploy time.
+await queries.generate("queries.json");
+```
+
+The resulting bundle has this top-level shape:
+
+```json
+{
+  "version": 4,
+  "read_routes":  { "user_by_username": { "queries": [...], "returns": ["user"] } },
+  "write_routes": { "add_user":         { "queries": [...], "returns": ["newUser"] } },
+  "read_parameters": {
+    "user_by_username": [{ "name": "username", "ty": "String" }]
+  },
+  "write_parameters": {
+    "add_user": [
+      { "name": "username", "ty": "String" },
+      { "name": "tier",     "ty": "String" }
+    ]
+  }
+}
+```
+
+Each `read_routes.<name>` / `write_routes.<name>` is exactly what `.toJsonString()`
+would have produced for the underlying batch — no envelope. To execute one of these
+queries, produce its dynamic envelope through the typed `call` helpers below and POST
+it to `/v1/query`.
+
+Route names must be unique across reads *and* writes; duplicates throw `GenerateError`
+at bundle time.
+
+### 3. Typed call helpers
+
+`defineQueries(...)` also exposes a typed `call` map. Each entry is a function that
+takes the route's parameter values (inferred from `defineParams`) and returns a
+serializable `DynamicQueryRequest`. The argument is fully type-checked from the
+parameter schema; unknown keys, missing keys, and wrong value types are all compile
+errors:
+
+```ts
+queries.call.user_by_username({
+  username: "alice",
+  unexpected: true,  // ts(...): Object literal may only specify known properties
+});
+
+queries.call.user_by_username({
+  username: 1,  // ts(...): Type 'number' is not assignable to type 'string'
+});
+```
+
+The returned object serializes to the same dynamic envelope you would build by hand,
+so you POST it to `/v1/query`:
+
+```ts
+
+const client = new Client("https://helix.example.com");
+
+const { user } = await client
+  .query<{ user: unknown }>()
+  .dynamic(queries.call.user_by_username({ username: "alice" }))
+  .send();
+```
+
+`queries.call.*` keeps parameter names and types in sync with `defineParams`, so it
+is the most convenient way to send a registered query — in application code, tests,
+and scripts alike.
+
+## How parameters serialize
+
+Inside the AST, parameter references appear as `{"Param": "name"}` wrapped in the
+spot the value would go: `{"Limit": ... }` becomes `{"LimitBy": {"Param": "n"}}`,
+`{"Has": ["k", value]}` becomes `{"Where": {"Compare": {"left": {"Property": "k"},
+"op": "Eq", "right": {"Param": "k"}}}}`, and so on. The
+[Filtering](/database/querying-guide/filtering) page tabulates every shape.
+
+At envelope position, the actual value is a *bare* JSON value, *not* a tagged
+`PropertyValue`. The shape `{"Array": "F32"}` you see in the `parameter_types` map
+is `QueryParamType`, the runtime coercion schema.
+
+A complete envelope produced by `toDynamicJson`:
+
+```json
+{
+  "request_type": "read",
+  "query": { "queries": [...], "returns": [...] },
+  "parameters": {
+    "username":      "alice",
+    "limit":         25,
+    "created_after": "2026-04-05T10:34:56.789Z",
+    "labels":        { "status": "active" }
+  },
+  "parameter_types": {
+    "username":      "String",
+    "limit":         "I64",
+    "created_after": "DateTime",
+    "labels":        "Object"
+  }
+}
+```
+
+## Number handling: `bigint` for `i64`
+
+JavaScript `number` only has 53 bits of integer precision. The DSL accepts a plain
+`number` wherever it fits in a safe integer range, but for full `i64` (node ids,
+large counts, epoch nanos) you should pass a `bigint`:
+
+```ts
+g().n(9223372036854775807n);
+PropertyValue.i64(9223372036854775807n);
+```
+
+`stringifyJson`, `.toJsonString()`, and `serializeQueryBundle` all preserve `bigint`
+without loss. Plain `JSON.stringify` does not — use the package's serializers when
+your payload may contain large integers.
+
+## DateTime handling
+
+`DateTime` is the dedicated value type for timestamps. It stores epoch milliseconds
+and round-trips losslessly through the dynamic envelope as a UTC RFC3339 string.
+
+```ts
+
+DateTime.fromMillis(-1).toRfc3339();
+// "1969-12-31T23:59:59.999Z"
+
+DateTime.parseRfc3339("2026-04-05T12:34:56.789+02:00").toRfc3339();
+// "2026-04-05T10:34:56.789Z"  (normalized to UTC)
+```
+
+When a parameter is declared as `param.dateTime()`, the call helpers accept
+`DateTime`, an RFC3339 string, or an epoch-millis `number` / `bigint`:
+
+```ts
+queries.call.recent_posts({
+  since: DateTime.fromMillis(0),
+});
+queries.call.recent_posts({
+  since: "2026-01-01T00:00:00Z",  // auto-parsed
+});
+queries.call.recent_posts({
+  since: 1735689600000n,
+});
+```
+
+All three serialize to the same envelope:
+
+```json
+{
+  "parameters":      { "since": "2026-01-01T00:00:00.000Z" },
+  "parameter_types": { "since": "DateTime" }
+}
+```
+
+## Bytes parameters
+
+`param.bytes()` is declarable in `defineParams`, but the dynamic envelope cannot
+round-trip a `Uint8Array` faithfully. Attempting to
+`toDynamicJson(params, { payload: someBytes })` or to build a request with a
+bytes parameter through `queries.call.*` throws
+`DynamicQueryError.UnsupportedBytesParameter`.
+
+If you need to pass binary data, send it through a binary-aware client (the runtime's
+RPC interface) rather than the JSON dynamic envelope, which is the bottleneck.
+
+## Generating the bundle from a script
+
+The `queries.generate(path)` shortcut is enough for most projects. If you want to
+inspect or post-process the bundle first, the lower-level helpers are exported too:
+
+```ts
+  serializeQueryBundle,
+  writeQueryBundleToPath,
+  deserializeQueryBundle,
+  readQueryBundleFromPath,
+} from "@helix-db/helix-db";
+
+const bundle = queries.buildQueryBundle();
+const json = serializeQueryBundle(bundle);
+await writeQueryBundleToPath(bundle, "queries.json");
+
+// Reading and validating an existing bundle:
+const loaded = deserializeQueryBundle(json);              // throws if invalid
+const fromFile = await readQueryBundleFromPath("queries.json");
+```
+
+`deserializeQueryBundle` validates `version === 4` (the current bundle version); it
+will reject older or newer bundles so you catch mismatches at load time rather than
+at deploy time.
 
 ## Next Steps
 
@@ -7285,7 +8697,7 @@ The first step must be a source step (for example `NWhere`) before any terminal 
 
 # V2 Cloud
 
-The Helix CLI's V2 Cloud surface covers authentication, workspace/project/cluster selection, instance metadata sync, log retrieval, and dynamic queries against a remote gateway. Cluster provisioning, scaling, and stored-procedure deployment happen in the Helix control plane — not in the CLI.
+The Helix CLI's V2 Cloud surface covers authentication, workspace/project/cluster selection, instance metadata sync, log retrieval, and dynamic queries against a remote gateway. Cluster provisioning and scaling happen in the Helix control plane — not in the CLI.
 
 ## Prerequisites
 
@@ -7567,14 +8979,6 @@ helix auth logout
 helix auth login
 ```
 
-### Rotating a cluster API key
-
-```bash
-helix auth create-key <cluster-id>
-```
-
-The new key prints once. Update `HELIX_API_KEY` (or whatever `query_auth_env` resolves to) in your environment before running [`helix query`](/cli/command-reference/query).
-
 ## V2 Cloud query issues
 
 ### `gateway_url is not configured`
@@ -7795,6 +9199,83 @@ helix auth logout
 helix auth create-key ec_01HX...
 ```
 
+# helix chef
+
+Bootstrap a first HelixDB app for a coding agent. `helix chef` installs agent context, creates a local project, starts the local database, seeds starter data, and opens the dashboard.
+
+## Usage
+
+```bash
+helix chef [OPTIONS]
+```
+
+`helix cook` is an alias for `helix chef`.
+
+## Flags
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `-a`, `--auto` | Boolean | Run automatic setup with defaults and no prompts. | `false` |
+
+## What it does
+
+Automatic setup runs these steps:
+
+1. Installs Helix skills with `npx skills add HelixDB/skills`.
+2. Installs the Helix docs MCP with `npx add-mcp https://docs.helix-db.com/mcp --name helixdb-docs`.
+3. Initializes a local project under `~/my-first-helix-project` with a `dev` instance on port `8080`.
+4. Writes `HELIX_CHEF_PROMPT.md`, a placeholder prompt for the active coding agent.
+5. Writes starter dynamic query files:
+   - `examples/seed.json` inserts starter `User` nodes.
+   - `examples/read_users.json` reads the seeded users.
+6. Starts the local database with the equivalent of `helix run dev`.
+7. Runs `examples/seed.json` with the equivalent of `helix query dev --file examples/seed.json`.
+8. Starts the dashboard on `http://localhost:3000` with the equivalent of `helix dashboard start --restart`.
+
+## Interactive mode
+
+Running `helix chef` in a terminal prompts first for:
+
+```text
+What do you want to build?
+```
+
+Leave this blank to skip. If you provide an app idea, the CLI writes it into `HELIX_CHEF_PROMPT.md` so your coding agent can use it when replacing the generic starter queries.
+
+Next, choose a setup mode:
+
+| Mode | Behavior |
+|------|----------|
+| Automatic setup | Runs every setup step with defaults. |
+| Manual setup | Lets you choose the project path and confirm each setup step. |
+
+## Generated prompt placeholder
+
+The query-generation prompt is intentionally a placeholder. Until the final generator prompt is shipped, `HELIX_CHEF_PROMPT.md` tells the coding agent to replace the starter JSON files with app-specific dynamic query requests based on the user's build intent.
+
+## Examples
+
+```bash
+# Interactive setup
+helix chef
+
+# Fully automatic setup
+helix chef --auto
+
+# Short flag
+helix chef -a
+
+# Alias
+helix cook
+```
+
+## Related
+
+- [`helix init`](/cli/command-reference/init) — initialize a project without agent setup.
+- [`helix run`](/cli/command-reference/run) — start a local instance.
+- [`helix query`](/cli/command-reference/query) — send dynamic JSON requests.
+- [`helix dashboard`](/cli/command-reference/dashboard) — launch the dashboard.
+
 # helix cluster
 
 List V2 Cloud clusters available to the active workspace or a specific project.
@@ -7988,83 +9469,6 @@ helix feedback "love the new dynamic query flow"
 # Open an interactive prompt
 helix feedback
 ```
-
-# helix chef
-
-Bootstrap a first HelixDB app for a coding agent. `helix chef` installs agent context, creates a local project, starts the local database, seeds starter data, and opens the dashboard.
-
-## Usage
-
-```bash
-helix chef [OPTIONS]
-```
-
-`helix cook` is an alias for `helix chef`.
-
-## Flags
-
-| Flag | Type | Description | Default |
-|------|------|-------------|---------|
-| `-a`, `--auto` | Boolean | Run automatic setup with defaults and no prompts. | `false` |
-
-## What it does
-
-Automatic setup runs these steps:
-
-1. Installs Helix skills with `npx skills add HelixDB/skills`.
-2. Installs the Helix docs MCP with `npx add-mcp https://docs.helix-db.com/mcp --name helixdb-docs`.
-3. Initializes a local project under `~/my-first-helix-project` with a `dev` instance on port `8080`.
-4. Writes `HELIX_CHEF_PROMPT.md`, a placeholder prompt for the active coding agent.
-5. Writes starter dynamic query files:
-   - `examples/seed.json` inserts starter `User` nodes.
-   - `examples/read_users.json` reads the seeded users.
-6. Starts the local database with the equivalent of `helix run dev`.
-7. Runs `examples/seed.json` with the equivalent of `helix query dev --file examples/seed.json`.
-8. Starts the dashboard on `http://localhost:3000` with the equivalent of `helix dashboard start --restart`.
-
-## Interactive mode
-
-Running `helix chef` in a terminal prompts first for:
-
-```text
-What do you want to build?
-```
-
-Leave this blank to skip. If you provide an app idea, the CLI writes it into `HELIX_CHEF_PROMPT.md` so your coding agent can use it when replacing the generic starter queries.
-
-Next, choose a setup mode:
-
-| Mode | Behavior |
-|------|----------|
-| Automatic setup | Runs every setup step with defaults. |
-| Manual setup | Lets you choose the project path and confirm each setup step. |
-
-## Generated prompt placeholder
-
-The query-generation prompt is intentionally a placeholder. Until the final generator prompt is shipped, `HELIX_CHEF_PROMPT.md` tells the coding agent to replace the starter JSON files with app-specific dynamic query requests based on the user's build intent.
-
-## Examples
-
-```bash
-# Interactive setup
-helix chef
-
-# Fully automatic setup
-helix chef --auto
-
-# Short flag
-helix chef -a
-
-# Alias
-helix cook
-```
-
-## Related
-
-- [`helix init`](/cli/command-reference/init) — initialize a project without agent setup.
-- [`helix run`](/cli/command-reference/run) — start a local instance.
-- [`helix query`](/cli/command-reference/query) — send dynamic JSON requests.
-- [`helix dashboard`](/cli/command-reference/dashboard) — launch the dashboard.
 
 # helix init
 

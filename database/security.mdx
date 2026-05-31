@@ -13,13 +13,31 @@ through the Helix dashboard. Include the token in the `Authorization` header of 
 Authorization: Bearer <token>
 ```
 
+The SDK clients attach this header for you — set the key once with `withApiKey`
+(TypeScript) / `with_api_key` (Rust) and every request the client sends is
+authenticated:
+
+<CodeGroup>
+```ts TypeScript
+import { Client } from "@helix-db/helix-db";
+
+const client = new Client("https://helix.example.com").withApiKey(token);
+```
+
+```rust Rust
+use helix_db::Client;
+
+let client = Client::new(Some("https://helix.example.com"))?.with_api_key(Some(&token));
+```
+</CodeGroup>
+
 Requests without a valid token are rejected at the gateway before reaching any database node.
 Token rotation and revocation are performed in the dashboard with immediate effect.
 
 ## Role-Based Access Control
 
 Scoped API keys with role-based permissions - read-only, read-write, or restricted to specific
-stored queries - allowing least-privilege credentials for each service or environment.
+operations - allowing least-privilege credentials for each service or environment.
 
 Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss RBAC requirements for
 your cluster.

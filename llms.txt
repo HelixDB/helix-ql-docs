@@ -6,6 +6,7 @@
 - [Introduction](https://docs.helix-db.com/database/introduction)
 - [Local Development](https://docs.helix-db.com/database/local-development)
 - [Rust Project Setup](https://docs.helix-db.com/database/rust-project-setup)
+- [TypeScript Project Setup](https://docs.helix-db.com/database/typescript-project-setup)
 - [Roadmap](https://docs.helix-db.com/database/roadmap): What we're building and what's coming next
 - [HelixDB Cloud Release Notes](https://docs.helix-db.com/database/release-notes): HelixDB Cloud Release Notes
 
@@ -20,6 +21,15 @@
 ## Concepts & Examples
 - [Data Model](https://docs.helix-db.com/database/data-model)
 - [Querying](https://docs.helix-db.com/database/querying)
+- [Querying Guide: Overview](https://docs.helix-db.com/database/querying-guide/overview)
+- [Reading nodes and edges](https://docs.helix-db.com/database/querying-guide/reading-nodes)
+- [Traversals](https://docs.helix-db.com/database/querying-guide/traversals)
+- [Filtering, ordering, paging](https://docs.helix-db.com/database/querying-guide/filtering)
+- [Projections](https://docs.helix-db.com/database/querying-guide/projections)
+- [Mutations](https://docs.helix-db.com/database/querying-guide/mutations)
+- [Vector and text search](https://docs.helix-db.com/database/querying-guide/search)
+- [Advanced patterns](https://docs.helix-db.com/database/querying-guide/advanced)
+- [Parameters and bundles](https://docs.helix-db.com/database/querying-guide/parameters-bundles)
 - [Secondary Indexes](https://docs.helix-db.com/database/indexing/secondary)
 - [Vector Indexes](https://docs.helix-db.com/database/indexing/vector)
 - [Text Indexes](https://docs.helix-db.com/database/indexing/text)
@@ -150,11 +160,11 @@
 - [CLI Command Reference](https://docs.helix-db.com/cli/command-reference): Complete reference for all Helix CLI v2 commands and options
 - [helix add](https://docs.helix-db.com/cli/command-reference/add)
 - [helix auth](https://docs.helix-db.com/cli/command-reference/auth)
+- [helix chef](https://docs.helix-db.com/cli/command-reference/chef)
 - [helix cluster](https://docs.helix-db.com/cli/command-reference/cluster)
 - [helix dashboard](https://docs.helix-db.com/cli/command-reference/dashboard)
 - [helix delete](https://docs.helix-db.com/cli/command-reference/delete)
 - [helix feedback](https://docs.helix-db.com/cli/command-reference/feedback)
-- [helix chef](https://docs.helix-db.com/cli/command-reference/chef)
 - [helix init](https://docs.helix-db.com/cli/command-reference/init)
 - [helix logs](https://docs.helix-db.com/cli/command-reference/logs)
 - [helix metrics](https://docs.helix-db.com/cli/command-reference/metrics)

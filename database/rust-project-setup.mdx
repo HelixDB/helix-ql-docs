@@ -4,11 +4,11 @@ title: 'Rust Project Setup'
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Stored queries for HelixDB are authored in Rust using the
+Queries for HelixDB are authored in Rust using the
 [`helix-db`](https://crates.io/crates/helix-db) crate (imported as
 `helix_db`). This page covers bootstrapping a Rust project that builds your queries into the
-`queries.json` bundle that the runtime consumes. For the traversal model and query patterns
-themselves, see [Querying](/database/querying) and the
+`queries.json` bundle and lets you send them as dynamic requests. For the traversal model and
+query patterns themselves, see [Querying](/database/querying) and the
 [docs.rs reference](https://docs.rs/helix-db/latest/helix_db/).
 
 ## Prerequisites
@@ -132,8 +132,9 @@ A few things to know about this snippet:
 
 - `#[register]` registers the function with the global query bundle so `generate_to_path` will
   include it in `queries.json`. No manual list to maintain.
-- The function name becomes the route name. Once deployed, callers invoke
-  `POST /v1/query/add_user` with a JSON body like `{"userId": "u-1", "name": "Alice"}`.
+- Calling the registered function with concrete arguments — e.g. `add_user("u-1".into(),
+  "Alice".into())` — returns a `DynamicQueryRequest` you POST to `/v1/query`. See
+  [Querying](/database/querying) for the full send path.
 - The `let _ = (&userId, &name);` line silences Rust's unused-variable warning — the macro reads
   the parameter *names* at compile time to wire them into the JSON schema, so the values
   themselves aren't used in the body.
@@ -161,7 +162,7 @@ This produces `queries.json` in the project root. From here you can:
 
 <CardGroup cols={2}>
   <Card title="Querying" icon="magnifying-glass" href="/database/querying">
-    Traversal DSL, stored queries, dynamic queries, and transactions.
+    Traversal DSL, dynamic queries, and transactions.
   </Card>
   <Card title="Working with HelixDB" icon="rocket" href="/database/working-with-enterprise">
     Deploy `queries.json` and the runtime workflow.

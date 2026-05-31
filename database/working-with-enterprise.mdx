@@ -17,16 +17,13 @@ keeps the system easier to scale, secure, and operate.
 <EnterpriseDiagram diagram={workflowDiagram} />
 
 
-## Deploy-Time Workflow
+## Authoring Workflow
 
-Stored queries are authored as a single `queries.json` artifact — graph traversals, property
+Queries are authored as a single `queries.json` artifact — graph traversals, property
 filters, vector searches, text searches, and mutations all expressed as JSON. A single query can
 chain multiple traversals, apply filters, and combine graph, vector, and text operations within
-one transaction.
-
-`queries.json` is deployed to the cluster through the Helix control plane. The Helix CLI is not
-involved in stored-procedure deployment in v2 — its job at runtime is to send dynamic queries,
-fetch logs, and synchronize per-instance metadata via [`helix sync`](/cli/command-reference/sync).
+one transaction. You build `queries.json` with the [Rust](/database/rust-project-setup) or
+[TypeScript](/database/typescript-project-setup) DSL.
 
 Queries are the only artifact that moves from development to production. There is no schema
 migration step, no ORM configuration, and no SQL to manage. The data model is implicit in the
@@ -36,22 +33,18 @@ queries themselves.
 
 At runtime, applications interact with Helix Cloud over HTTP.
 
-1. **Call by name.** An HTTP client sends a request to the gateway with a stored query name and
-   any required parameters at `POST /v1/query/<query-name>`. Clients can also send an inline query
-   at `POST /v1/query`.
+1. **Send the query.** An HTTP client POSTs a dynamic request to the gateway at `POST /v1/query` —
+   the JSON query AST plus any required parameters travel in the request body, so there is nothing
+   to deploy ahead of time.
 2. **Transaction execution.** The gateway routes the request to the appropriate process. The query
    runs inside a transaction with serializable snapshot isolation. Reads and writes within the
    same query see a consistent snapshot.
 3. **Result delivery.** Helix returns the query result as a JSON response. Reads are served by
    horizontally scaled readers. Writes are serialized through the single writer.
 
-Stored queries execute as pre-compiled procedures, keeping runtime overhead minimal. Dynamic
-queries deserialize the inline query JSON at request time, which makes them more flexible but less
-optimized than stored routes.
-
 ## Dynamic Queries
 
-Helix supports inline queries for cases where you do not want to deploy the route ahead of time.
+Each request carries the query inline, so you never deploy a route ahead of time.
 
 - Send `POST /v1/query`.
 - Include a JSON body shaped like:
@@ -80,18 +73,29 @@ Helix supports inline queries for cases where you do not want to deploy the rout
 ```
 
 - `request_type` must be `read` or `write` so the gateway can route the request correctly.
-- `query` is the same JSON object that would otherwise live under `read_routes.<name>` or
-  `write_routes.<name>` in `queries.json`.
-- `parameters` is optional and uses the same shape as stored-query calls.
+- `query` is the same JSON object that lives under `read_routes.<name>` or
+  `write_routes.<name>` in a generated `queries.json` bundle.
+- `parameters` is optional and carries the values for the query's named parameters.
 
 ## Query Warming
 
 Helix supports built-in query warming for read queries.
 
-- Send the normal read request with the same parameters you would use for a real read:
-  - stored route: `POST /v1/query/<query-name>`
-  - dynamic route: `POST /v1/query`
-- Add `X-Helix-Warm: true` or `X-Helix-Warm: 1`.
+- Send the normal read request to `POST /v1/query` with the same parameters you would use for a
+  real read.
+- Add `X-Helix-Warm: true` or `X-Helix-Warm: 1`. The SDK clients set this for you via
+  `.warmOnly()` (TypeScript) / `.warm_only()` (Rust):
+
+<CodeGroup>
+```ts TypeScript
+await client.query().warmOnly().dynamic(request).send();
+```
+
+```rust Rust
+let _: serde_json::Value = client.query().warm_only().dynamic(count_users()).send().await?;
+```
+</CodeGroup>
+
 - Helix executes the query as a query warming request, discards the result body, and returns
   `204 No Content`.
 
@@ -111,8 +115,7 @@ Important details:
 | Responsibility       | Deploy-time   | Runtime                     |
 | -------------------- | ------------- | --------------------------- |
 | Query authoring      | `queries.json` | --                         |
-| Stored-query loading | Control plane | --                          |
-| Dynamic queries      | --            | `helix query` + Gateway     |
+| Query submission     | --            | `helix query` + Gateway     |
 | Query execution      | --            | Gateway + Writer/Readers    |
 | Data storage         | --            | Object storage              |
 | Caching              | --            | SSD + in-memory per process |
@@ -128,7 +131,7 @@ image that runs a gateway and database together in a single container. See
 
 <CardGroup cols={2}>
   <Card title="Querying" icon="magnifying-glass" href="/database/querying">
-    Traversal DSL, stored queries, dynamic queries, and transactions.
+    Traversal DSL, dynamic queries, and transactions.
   </Card>
   <Card title="Architecture" icon="sitemap" href="/database/architecture">
     Gateway, writer, readers, object storage, and the cache hierarchy.

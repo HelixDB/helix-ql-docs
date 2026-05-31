@@ -35,14 +35,14 @@ Caches reduce steady-state latency and accelerate cold starts.
   text search artifacts keep hot-path reads fast.
 - **Full ACID transactions.** Every query runs in a serializable snapshot isolation transaction.
   Concurrent reads and writes do not block each other.
-- **Stored query model.** Queries are authored in a Rust DSL, deployed as stored procedures, and
-  invoked by name over HTTP. No query parsing at runtime.
+- **Dynamic query model.** Queries are authored in a Rust or TypeScript DSL and sent to the
+  runtime as dynamic HTTP requests that carry the query inline. No separate deployment step.
 
 ## Next Steps
 
 <CardGroup cols={2}>
   <Card title="Working with Helix Cloud" icon="rocket" href="/database/working-with-enterprise">
-    Deploy-time and runtime workflow for stored and dynamic queries.
+    Authoring and runtime workflow for dynamic queries.
   </Card>
   <Card title="Architecture" icon="sitemap" href="/database/architecture">
     Gateway, writer, readers, object storage, and the cache hierarchy.
@@ -51,7 +51,7 @@ Caches reduce steady-state latency and accelerate cold starts.
     Run the `enterprise-dev` image in-memory or against MinIO.
   </Card>
   <Card title="Querying" icon="magnifying-glass" href="/database/querying">
-    Traversal DSL, stored queries, dynamic queries, and transactions.
+    Traversal DSL, dynamic queries, and transactions.
   </Card>
 </CardGroup>
 

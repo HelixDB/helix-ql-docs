@@ -6,7 +6,7 @@ title: 'Querying Guide: Overview'
 
 This guide is a tutorial walkthrough of the HelixDB query language. Each page builds
 on the last, starting from the simplest possible read and ending at parameter-bound
-stored bundles. Every example shows the **TypeScript**, **Rust**, and **JSON** form
+bundles. Every example shows the **TypeScript**, **Rust**, and **JSON** form
 side by side, so you can pick a client and follow along — or skim across all three to
 see how the surfaces relate.
 
@@ -112,7 +112,7 @@ const aliceFeed = readBatch()
   )
   .returning(["user", "posts"]);
 
-const body = aliceFeed.toDynamicJson(); // POST body for /v1/query
+const request = aliceFeed.toDynamicRequest(); // POST this to /v1/query
 ```
 
 ```rust Rust
@@ -194,40 +194,33 @@ Two things to notice:
 ## Sending the request
 
 The JSON above is the actual body for `POST /v1/query`. Below are the same request
-in three transports — TypeScript using `fetch`, Rust using `reqwest`, and `curl`
+in three transports — TypeScript and Rust using their SDK clients, and `curl`
 straight from the shell. All three are interchangeable; pick whichever fits your
 environment.
 
 <CodeGroup>
 ```ts TypeScript
 // Continuing from the snippet above.
-const response = await fetch("https://helix.example.com/v1/query", {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body: aliceFeed.toDynamicJson(),
-});
+import { Client } from "@helix-db/helix-db";
 
-if (!response.ok) {
-  throw new Error(`Helix returned ${response.status}`);
-}
+const client = new Client("https://helix.example.com");
 
-const { user, posts } = await response.json();
+const { user, posts } = await client
+  .query<{ user: unknown; posts: unknown }>()
+  .dynamic(request) // from .toDynamicRequest() above
+  .send();
 ```
 
 ```rust Rust
-// alice_feed() returns a ReadBatch; build a DynamicQueryRequest and post it.
-use helix_db::dsl::prelude::*;
+// alice_feed() returns the request to POST to /v1/query.
+use helix_db::Client;
 
-let body = DynamicQueryRequest::read(alice_feed()).to_json_string()?;
+let client = Client::new(Some("https://helix.example.com"))?;
 
-let response = reqwest::Client::new()
-    .post("https://helix.example.com/v1/query")
-    .header("content-type", "application/json")
-    .body(body)
+let response: serde_json::Value = client
+    .query()
+    .dynamic(alice_feed())
     .send()
-    .await?
-    .error_for_status()?
-    .json::<serde_json::Value>()
     .await?;
 
 let user = &response["user"];
@@ -271,11 +264,8 @@ The response is a JSON object keyed by the names from `.returning([...])` — he
 `{ "user": [...], "posts": [...] }`. Each value is the list of rows produced by that
 named binding.
 
-If this query were deployed as a *stored* route under the name `alice_feed`, the
-client would hit `POST /v1/query/alice_feed` with a much smaller body (just the
-parameters object — empty `{}` here, since this query takes none). The
-[Parameters and bundles](/database/querying-guide/parameters-bundles) page walks
-through both shapes.
+The [Parameters and bundles](/database/querying-guide/parameters-bundles) page shows
+how to bind parameters and organize queries into a `queries.json` bundle.
 
 ## How to read this guide
 
@@ -287,9 +277,8 @@ Each page follows the same template:
 3. The **Rust** tab mirrors the TypeScript exactly, with snake-case method names and
    the trailing-underscore convention for Rust keywords (`where_`, `in_`, `as_`).
 4. The **JSON** tab is the serialized AST that either DSL produces. It is the body
-   you would POST to `/v1/query` for a dynamic request; the same object appears
-   inside `queries.json` under `read_routes.<name>` or `write_routes.<name>` for a
-   stored route.
+   you would POST to `/v1/query`; the same object appears inside a generated
+   `queries.json` bundle under `read_routes.<name>` or `write_routes.<name>`.
 
 You can also jump straight to any topic from the list below; the pages do not assume
 strict sequential reading, but anything earlier in the list is fair game later on.
@@ -319,6 +308,6 @@ strict sequential reading, but anything earlier in the list is fair game later o
     `repeat`, `union`, `choose`, `coalesce`, `optional`, `varAsIf`, `forEachParam`.
   </Card>
   <Card title="Parameters and bundles" icon="gear" href="/database/querying-guide/parameters-bundles">
-    `defineParams`, stored bundles, dynamic requests, typed call helpers.
+    `defineParams`, dynamic requests, bundles, typed call helpers.
   </Card>
 </CardGroup>
