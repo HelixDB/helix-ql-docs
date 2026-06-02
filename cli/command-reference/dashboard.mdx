@@ -37,7 +37,7 @@ helix dashboard start [INSTANCE] [OPTIONS]
 |------|------|-------------|---------|
 | `-p`, `--port` | Number | Host port to publish the dashboard on. | `3000` |
 | `--host` | String | Helix host to connect to. Bypasses `helix.toml` instance lookup. | `localhost` (resolved from `[local.<instance>] port`) |
-| `--helix-port` | Number | Helix port the dashboard talks to. Only used with `--host`. | `8080` |
+| `--helix-port` | Number | Helix port the dashboard talks to. Only used with `--host`. | `6969` |
 | `--attach` | Boolean | Run the dashboard in the foreground with logs. | `false` |
 | `--restart` | Boolean | Remove and recreate the dashboard container if one already exists. | `false` |
 
@@ -75,7 +75,7 @@ helix dashboard start
 helix dashboard start staging --port 4000
 
 # Point at an arbitrary host (e.g. a tunneled remote)
-helix dashboard start --host tunnel.example.com --helix-port 8080
+helix dashboard start --host tunnel.example.com --helix-port 6969
 
 # Recreate the dashboard container if one is already running
 helix dashboard start --restart

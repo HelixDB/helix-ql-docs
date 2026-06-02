@@ -66,7 +66,7 @@ In a TTY, `helix init` prompts you to pick `local` or `enterprise`. Pass the sub
 helix run dev
 ```
 
-`helix run` pulls `ghcr.io/helixdb/database-dev:latest`, starts a background container named `helix-<project>-dev`, publishes port `8080`, and waits until the local gateway accepts `POST /v1/query` before returning.
+`helix run` pulls `ghcr.io/helixdb/database-dev:latest`, starts a background container named `helix-<project>-dev`, publishes port `6969`, and waits until the local gateway accepts `POST /v1/query` before returning.
 
 To stream logs in the foreground instead, use `helix run dev --foreground` and stop the container with Ctrl-C.
 
@@ -123,9 +123,9 @@ helix cluster list
 
 <Step title="Initialize or add a V2 Cloud instance">
 ```bash
-helix init enterprise --cluster-id <cluster-id>
+helix init cloud --cluster-id <cluster-id>
 # or, in an existing project:
-helix add enterprise --name production --cluster-id <cluster-id>
+helix add cloud --name production --cluster-id <cluster-id>
 ```
 </Step>
 
@@ -150,7 +150,7 @@ helix query production --file examples/request.json
     - Every dynamic query must start with a source step (for example `NWhere`) before a terminal step like `Count`.
   </Accordion>
   <Accordion title="Scripting and CI">
-    - Pass subcommands explicitly (`helix init local …`, `helix add enterprise …`) — the CLI never prompts when stdin is not a TTY.
+    - Pass subcommands explicitly (`helix init local …`, `helix add cloud …`) — the CLI never prompts when stdin is not a TTY.
     - Use `--yes` for destructive operations in non-interactive contexts: [`helix delete <INSTANCE> --yes`](/cli/command-reference/delete), [`helix prune --all --yes`](/cli/command-reference/prune).
     - `helix stop` exits cleanly when the instance is not running, so it is safe to call unconditionally in teardown.
   </Accordion>

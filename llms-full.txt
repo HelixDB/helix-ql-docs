@@ -63,7 +63,7 @@ curl -sSL "https://install.helix-db.com" | bash
 mkdir my-helix-app && cd my-helix-app
 helix init local --name dev
 
-# Start the local in-memory runtime on port 8080
+# Start the local in-memory runtime on port 6969
 helix run dev
 
 # Or start with persistent local storage backed by MinIO
@@ -130,7 +130,7 @@ services:
     image: ghcr.io/helixdb/database-dev
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "6969:8080"
     environment:
       PATH_TO_QUERIES: /workspace/queries.json
     volumes:
@@ -178,7 +178,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     ports:
-      - "8080:8080"
+      - "6969:8080"
     environment:
       PATH_TO_QUERIES: /workspace/queries.json
       S3_BUCKET: helix-db
@@ -8854,7 +8854,7 @@ This page documents the configuration files the Helix CLI reads and writes:
 name = "my-helix-app"
 
 [local.dev]
-port = 8080
+port = 6969
 image = "ghcr.io/helixdb/database-dev"
 tag = "latest"
 # Optional; defaults to in-memory when omitted.
@@ -8882,7 +8882,7 @@ One block per local instance. The instance name is the table key (e.g. `[local.d
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `port` | Number | `8080` | Host port published to container port `8080`. |
+| `port` | Number | `6969` | Host port published to container port `8080`. |
 | `image` | String | `ghcr.io/helixdb/database-dev` | Container image used by [`helix run`](/cli/command-reference/run). |
 | `tag` | String | `latest` | Image tag. |
 | `storage` | `memory` \| `disk` | `memory` | Local storage mode. `disk` uses a CLI-managed MinIO container and persistent volume. |
@@ -8891,7 +8891,7 @@ You can define as many local instances as you want, each on a different port:
 
 ```toml
 [local.dev]
-port = 8080
+port = 6969
 
 [local.staging]
 port = 9090
@@ -9004,10 +9004,10 @@ Either run `helix init` to scaffold a new project, or `cd` into a directory that
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `project name is empty in <path>` | `[project] name` is blank. | Set a non-empty `name`. |
-| `<path> has no instances configured` | No `[local.*]` or `[enterprise.*]` blocks. | Run [`helix add local`](/cli/command-reference/add) or `helix add enterprise`. |
+| `<path> has no instances configured` | No `[local.*]` or `[enterprise.*]` blocks. | Run [`helix add local`](/cli/command-reference/add) or `helix add cloud`. |
 | `instance name is empty in <path>` | Empty key like `[local.""]`. | Give the instance a name. |
 | `cluster_id is empty for '<name>' in <path>` | Missing required V2 Cloud field. | Set `cluster_id` under `[enterprise.<name>]`. |
-| `Failed to parse helix.toml: invalid type` | Numbers quoted as strings. | Use bare numbers — `port = 8080`, not `port = "8080"`. |
+| `Failed to parse helix.toml: invalid type` | Numbers quoted as strings. | Use bare numbers — `port = 6969`, not `port = "6969"`. |
 
 ### `Instance '<name>' not found`
 
@@ -9041,7 +9041,7 @@ bind: address already in use
 ```
 
 ```bash
-lsof -i :8080
+lsof -i :6969
 ```
 
 Either stop the conflicting process or override the port for this run:
@@ -9066,7 +9066,7 @@ docker rm -f helix-my-helix-app-dev
 
 ```
 local Helix did not become ready in time
-hint: check logs with 'helix logs' or verify port 8080 is reachable
+hint: check logs with 'helix logs' or verify port 6969 is reachable
 ```
 
 The `enterprise-dev` container started but did not accept `POST /v1/query` within ~30 seconds. Tail the container with `helix logs <instance> --follow` to investigate.
@@ -9237,12 +9237,12 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 | Flag | Type | Required | Description | Default |
 |------|------|----------|-------------|---------|
 | `-n`, `--name` | String | Yes | Local instance name (must be unique in `helix.toml`). | — |
-| `--port` | Number | No | Host port for the local gateway. | `8080` |
+| `--port` | Number | No | Host port for the local gateway. | `6969` |
 | `--disk` | Boolean | No | Persist local data with on-disk storage backed by a CLI-managed MinIO volume. | `false` |
 
 Interactive local add prompts for the storage mode and defaults to in-memory.
 
-### `helix add enterprise`
+### `helix add cloud`
 
 | Flag | Type | Required | Description | Default |
 |------|------|----------|-------------|---------|
@@ -9250,7 +9250,7 @@ Interactive local add prompts for the storage mode and defaults to in-memory.
 | `--cluster-id` | String | Yes | V2 Cloud cluster ID. Find one with [`helix cluster list`](/cli/command-reference/cluster). | — |
 | `--gateway-url` | URL | No | Runtime gateway URL for dynamic queries. If omitted, run [`helix sync`](/cli/command-reference/sync) afterward to fetch it. | — |
 
-`helix add enterprise` requires V2 Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
+`helix add cloud` requires V2 Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
 
 ## Examples
 
@@ -9261,11 +9261,11 @@ helix add local --name staging --port 9090
 # Add a local instance that uses persistent on-disk storage by default
 helix add local --name disk-dev --disk
 
-# Add an V2 Cloud instance with a known cluster ID
-helix add enterprise --name production --cluster-id ec_01HX...
+# Add a V2 Cloud instance with a known cluster ID
+helix add cloud --name production --cluster-id ec_01HX...
 
-# Add an V2 Cloud instance and let helix sync fill in gateway/auth metadata
-helix add enterprise --name prod --cluster-id ec_01HX...
+# Add a V2 Cloud instance and let helix sync fill in gateway/auth metadata
+helix add cloud --name prod --cluster-id ec_01HX...
 helix sync prod
 ```
 
@@ -9332,7 +9332,7 @@ Automatic setup runs these steps:
 
 1. Installs Helix skills with `npx skills add HelixDB/skills`.
 2. Installs the Helix docs MCP with `npx add-mcp https://docs.helix-db.com/mcp --name helixdb-docs`.
-3. Initializes a local project under `~/my-first-helix-project` with a `dev` instance on port `8080`.
+3. Initializes a local project under `~/my-first-helix-project` with a `dev` instance on port `6969`.
 4. Writes `HELIX_CHEF_PROMPT.md`, a placeholder prompt for the active coding agent.
 5. Writes starter dynamic query files:
    - `examples/seed.json` inserts starter `User` nodes.
@@ -9425,7 +9425,7 @@ helix cluster list --workspace-id ws_01HX...
 helix cluster list --format json
 ```
 
-Use the resulting cluster ID with [`helix init enterprise`](/cli/command-reference/init), [`helix add enterprise`](/cli/command-reference/add), or [`helix auth create-key`](/cli/command-reference/auth).
+Use the resulting cluster ID with [`helix init cloud`](/cli/command-reference/init), [`helix add cloud`](/cli/command-reference/add), or [`helix auth create-key`](/cli/command-reference/auth).
 
 ## Related
 
@@ -9467,7 +9467,7 @@ helix dashboard start [INSTANCE] [OPTIONS]
 |------|------|-------------|---------|
 | `-p`, `--port` | Number | Host port to publish the dashboard on. | `3000` |
 | `--host` | String | Helix host to connect to. Bypasses `helix.toml` instance lookup. | `localhost` (resolved from `[local.<instance>] port`) |
-| `--helix-port` | Number | Helix port the dashboard talks to. Only used with `--host`. | `8080` |
+| `--helix-port` | Number | Helix port the dashboard talks to. Only used with `--host`. | `6969` |
 | `--attach` | Boolean | Run the dashboard in the foreground with logs. | `false` |
 | `--restart` | Boolean | Remove and recreate the dashboard container if one already exists. | `false` |
 
@@ -9501,7 +9501,7 @@ helix dashboard start
 helix dashboard start staging --port 4000
 
 # Point at an arbitrary host (e.g. a tunneled remote)
-helix dashboard start --host tunnel.example.com --helix-port 8080
+helix dashboard start --host tunnel.example.com --helix-port 6969
 
 # Recreate the dashboard container if one is already running
 helix dashboard start --restart
@@ -9609,12 +9609,12 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 | Flag | Type | Description | Default |
 |------|------|-------------|---------|
 | `-n`, `--name` | String | Local instance name. | `dev` |
-| `--port` | Number | Host port for the local gateway. The container always listens on `8080` internally. | `8080` |
+| `--port` | Number | Host port for the local gateway. The container always listens on `8080` internally. | `6969` |
 | `--disk` | Boolean | Persist local data with on-disk storage backed by a CLI-managed MinIO volume. | `false` |
 
 Interactive local init prompts for the storage mode and defaults to in-memory.
 
-### `helix init enterprise`
+### `helix init cloud`
 
 | Flag | Type | Required | Description | Default |
 |------|------|----------|-------------|---------|
@@ -9622,7 +9622,7 @@ Interactive local init prompts for the storage mode and defaults to in-memory.
 | `--cluster-id` | String | Yes | V2 Cloud cluster ID. Find one with [`helix cluster list`](/cli/command-reference/cluster). | — |
 | `--gateway-url` | URL | No | Runtime gateway URL for dynamic queries. If omitted, run [`helix sync`](/cli/command-reference/sync) after init to fetch it. | — |
 
-`helix init enterprise` requires V2 Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
+`helix init cloud` requires V2 Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
 
 ## What `helix init` produces
 
@@ -9669,7 +9669,7 @@ helix init local --name staging --port 9090
 helix init local --disk
 
 # V2 Cloud project linked to an existing cluster
-helix init enterprise --cluster-id ec_01HX... --gateway-url https://gateway.example.com
+helix init cloud --cluster-id ec_01HX... --gateway-url https://gateway.example.com
 ```
 
 ## Next steps after `helix init local`
@@ -9679,7 +9679,7 @@ helix run dev
 helix query dev --file examples/request.json
 ```
 
-## Next steps after `helix init enterprise`
+## Next steps after `helix init cloud`
 
 ```bash
 helix sync <instance>
@@ -9943,7 +9943,7 @@ helix query [INSTANCE] (--file <REQUEST.json> | --json '<JSON>') [OPTIONS]
 | `--json` | String | Yes, unless `--file` is set | Inline JSON request body. Mutually exclusive with `--file`. | — |
 | `--warm` | Boolean | No | Send the request as a cache-warming call (`X-Helix-Warm: true`). Read requests only. | `false` |
 | `--host` | String | No | Override the host for local instances. | `localhost` |
-| `--port` | Number | No | Override the port for local instances. | `[local.<instance>] port` (default `8080`) |
+| `--port` | Number | No | Override the port for local instances. | `[local.<instance>] port` (default `6969`) |
 | `--compact` | Boolean | No | Print compact JSON instead of pretty-printed JSON. | `false` |
 
 ## Request body
@@ -10087,7 +10087,7 @@ helix run [INSTANCE] [OPTIONS]
 | Flag | Type | Description | Default |
 |------|------|-------------|---------|
 | `--foreground` | Boolean | Run attached and stop the container on Ctrl-C. Useful for streaming startup logs. | `false` |
-| `--port` | Number | Override the host port for this run. The container always listens on `8080` internally. | Value from `[local.<instance>] port` (default `8080`) |
+| `--port` | Number | Override the host port for this run. The container always listens on `8080` internally. | Value from `[local.<instance>] port` (default `6969`) |
 | `--disk` | Boolean | Use on-disk storage backed by a CLI-managed MinIO container for this run. | `false` |
 
 ## Behavior

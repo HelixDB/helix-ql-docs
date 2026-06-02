@@ -30,7 +30,7 @@ curl -sSL "https://install.helix-db.com" | bash
 mkdir my-helix-app && cd my-helix-app
 helix init local --name dev
 
-# Start the local in-memory runtime on port 8080
+# Start the local in-memory runtime on port 6969
 helix run dev
 
 # Or start with persistent local storage backed by MinIO
@@ -111,7 +111,7 @@ services:
     image: ghcr.io/helixdb/database-dev
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "6969:8080"
     environment:
       PATH_TO_QUERIES: /workspace/queries.json
     volumes:
@@ -159,7 +159,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     ports:
-      - "8080:8080"
+      - "6969:8080"
     environment:
       PATH_TO_QUERIES: /workspace/queries.json
       S3_BUCKET: helix-db

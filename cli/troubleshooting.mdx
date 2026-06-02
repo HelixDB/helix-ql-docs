@@ -51,10 +51,10 @@ Either run `helix init` to scaffold a new project, or `cd` into a directory that
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `project name is empty in <path>` | `[project] name` is blank. | Set a non-empty `name`. |
-| `<path> has no instances configured` | No `[local.*]` or `[enterprise.*]` blocks. | Run [`helix add local`](/cli/command-reference/add) or `helix add enterprise`. |
+| `<path> has no instances configured` | No `[local.*]` or `[enterprise.*]` blocks. | Run [`helix add local`](/cli/command-reference/add) or `helix add cloud`. |
 | `instance name is empty in <path>` | Empty key like `[local.""]`. | Give the instance a name. |
 | `cluster_id is empty for '<name>' in <path>` | Missing required V2 Cloud field. | Set `cluster_id` under `[enterprise.<name>]`. |
-| `Failed to parse helix.toml: invalid type` | Numbers quoted as strings. | Use bare numbers — `port = 8080`, not `port = "8080"`. |
+| `Failed to parse helix.toml: invalid type` | Numbers quoted as strings. | Use bare numbers — `port = 6969`, not `port = "6969"`. |
 
 ### `Instance '<name>' not found`
 
@@ -88,7 +88,7 @@ bind: address already in use
 ```
 
 ```bash
-lsof -i :8080
+lsof -i :6969
 ```
 
 Either stop the conflicting process or override the port for this run:
@@ -113,7 +113,7 @@ docker rm -f helix-my-helix-app-dev
 
 ```
 local Helix did not become ready in time
-hint: check logs with 'helix logs' or verify port 8080 is reachable
+hint: check logs with 'helix logs' or verify port 6969 is reachable
 ```
 
 The `enterprise-dev` container started but did not accept `POST /v1/query` within ~30 seconds. Tail the container with `helix logs <instance> --follow` to investigate.
