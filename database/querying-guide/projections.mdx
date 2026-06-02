@@ -154,6 +154,21 @@ pub fn users_for_admin_panel() -> ReadBatch {
 always available even though they are not declared on your schema. `$from`/`$to`
 appear on edge streams; `$distance` appears on vector / text search hits.
 
+Filtered `values(...)` and `valueMap(...)` also accept dotted paths into object
+properties, such as `metadata.externalID`. `valueMap(null)` returns stored
+top-level properties as-is and does not flatten nested objects. When you request a
+dotted path explicitly, the returned object is keyed by the requested source
+string unless you rename it with `project(...)`.
+
+```ts
+g().nWithLabel("User").valueMap(["$id", "metadata.externalID"]);
+```
+
+```rust
+g().n_with_label("User")
+    .value_map(Some(vec!["$id", "metadata.externalID"]));
+```
+
 ## `.project(...)` with renames and expressions
 
 `project([...])` is the most flexible terminal — it accepts a list of items, each one
@@ -165,6 +180,25 @@ either:
 
 Use it when you want to flatten ids out from under `$id`, return a different name
 than the schema's, or compute a derived field.
+
+`PropertyProjection` and `Expr.prop(...)` use the same property lookup rules as
+filters. This means nested object fields can be projected and renamed:
+
+```ts
+g().nWithLabel("User").project([
+  PropertyProjection.renamed("metadata.externalID", "external_id"),
+]);
+```
+
+```rust
+g().n_with_label("User").project(vec![
+    PropertyProjection::renamed("metadata.externalID", "external_id"),
+]);
+```
+
+Dotted paths are also valid in fallback ordering, for example
+`.orderBy("metadata.score", Order.Desc)`, but they are not backed by secondary
+indexes in V1.
 
 A typical `project` call mixes plain property pulls with one or two renames:
 

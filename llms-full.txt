@@ -974,8 +974,8 @@ fundamental architectural boundaries.
 | Limit                  | Value                                                                                          |
 | ---------------------- | ---------------------------------------------------------------------------------------------- |
 | Node and edge ID range | 64-bit unsigned integer (max 2^63)                                                             |
-| Property value types   | boolean, integer, float, string, bytes, and array variants                                     |
-| Nested structures      | Not supported. Properties are flat key-value pairs.                                            |
+| Property value types   | boolean, integer, float, string, bytes, typed primitive arrays, generic arrays, and objects    |
+| Nested structures      | Stored object/array values are supported. Dotted-path lookup such as `metadata.externalID` works in scan-time filters, expressions, projections, `values`, filtered `valueMap`, and fallback ordering. Arrays are opaque; there is no array-index path syntax. |
 | Reserved property keys | `$label` (used for label-based filtering and label-scoped secondary, vector, and text indexes) |
 
 ## Vector Indexes
@@ -994,7 +994,7 @@ fundamental architectural boundaries.
 | Limit                    | Value                                                                                                                                                         |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Scope                    | Node and edge properties                                                                                                                                      |
-| Supported property types | `String` and `StringArray`                                                                                                                                    |
+| Supported property types | Top-level `String` and `StringArray` properties. Nested object fields are not flattened for BM25.                                                            |
 | Unsupported values       | `null` and non-string values are rejected                                                                                                                     |
 | Analyzer config          | Preset analyzers: `standard`, `standard_stem_en`, `whitespace_lowercase`                                                                                      |
 | Term positions           | Optional                                                                                                                                                      |
@@ -1004,8 +1004,8 @@ fundamental architectural boundaries.
 
 | Limit            | Value                                                                                                      |
 | ---------------- | ---------------------------------------------------------------------------------------------------------- |
-| Equality indexes | Supported on node and edge properties                                                                      |
-| Range indexes    | Supported on numeric and string properties                                                                 |
+| Equality indexes | Supported on top-level node and edge properties. Nested dotted paths are scan-only in V1.                    |
+| Range indexes    | Supported on top-level numeric and string properties. Nested dotted paths are scan-only in V1.               |
 | Encoding         | Range indexes use lexicographic string encoding. Values must be encoded consistently for correct ordering. |
 
 ## Queries
@@ -1027,8 +1027,17 @@ Nodes and edges are identified by 64-bit unsigned IDs. Edges are directed: each 
 node and a target node. Labels are stored as the reserved `$label` property and are used for
 type-based filtering and label-scoped secondary, vector, and text indexes.
 
-Properties are strongly typed. Supported types: boolean, integer, floating-point, string, bytes,
-and array variants of each.
+Properties are strongly typed. Supported types include boolean, integer,
+floating-point, string, bytes, typed primitive arrays, generic arrays, and object
+maps. Object maps may be nested; query property names such as
+`metadata.externalID` read nested fields with exact-first dotted-path lookup. A
+stored top-level property literally named `metadata.externalID` wins over the
+nested `metadata.externalID` path during scans.
+
+Nested object fields are queryable in filters and projections, but V1 indexing is
+top-level only. Keep secondary, text, and vector indexed values as top-level
+properties. Generic arrays are stored as values and returned as values, but array
+index path syntax such as `tags.0` is not supported.
 
 ## Multigraph
 
@@ -1458,6 +1467,17 @@ Use a `SourcePredicate` when you want the filter to participate in index selecti
 the source step. Use `.where(Predicate.*)` when you need anything outside that set,
 or when you want the filter to run *after* a graph traversal step.
 
+## Nested property paths
+
+Object properties can be filtered with dotted paths. The runtime first checks for
+an exact top-level property name, then walks nested object fields when the name
+contains `.`.
+
+Dotted paths are scan-only in V1. Pair them with an indexed top-level anchor such
+as label, tenant, or status when the label is large; the indexed predicate narrows
+candidate rows and the dotted predicate runs as a residual filter. Arrays are
+opaque, so `metadata.tags.0` is not supported.
+
 ## Parameter-bound predicates
 
 To filter by a value the caller supplies at request time, use the `*Param` family.
@@ -1575,6 +1595,21 @@ the caller does its own positional decoding.
 always available even though they are not declared on your schema. `$from`/`$to`
 appear on edge streams; `$distance` appears on vector / text search hits.
 
+Filtered `values(...)` and `valueMap(...)` also accept dotted paths into object
+properties, such as `metadata.externalID`. `valueMap(null)` returns stored
+top-level properties as-is and does not flatten nested objects. When you request a
+dotted path explicitly, the returned object is keyed by the requested source
+string unless you rename it with `project(...)`.
+
+```ts
+g().nWithLabel("User").valueMap(["$id", "metadata.externalID"]);
+```
+
+```rust
+g().n_with_label("User")
+    .value_map(Some(vec!["$id", "metadata.externalID"]));
+```
+
 ## `.project(...)` with renames and expressions
 
 `project([...])` is the most flexible terminal — it accepts a list of items, each one
@@ -1586,6 +1621,25 @@ either:
 
 Use it when you want to flatten ids out from under `$id`, return a different name
 than the schema's, or compute a derived field.
+
+`PropertyProjection` and `Expr.prop(...)` use the same property lookup rules as
+filters. This means nested object fields can be projected and renamed:
+
+```ts
+g().nWithLabel("User").project([
+  PropertyProjection.renamed("metadata.externalID", "external_id"),
+]);
+```
+
+```rust
+g().n_with_label("User").project(vec![
+    PropertyProjection::renamed("metadata.externalID", "external_id"),
+]);
+```
+
+Dotted paths are also valid in fallback ordering, for example
+`.orderBy("metadata.score", Order.Desc)`, but they are not backed by secondary
+indexes in V1.
 
 A typical `project` call mixes plain property pulls with one or two renames:
 
@@ -1654,6 +1708,17 @@ A few wire-format details:
   (covered in [Parameters & bundles](/database/querying-guide/parameters-bundles)).
 - The result of `addN` is a node stream, so the same chain can keep going —
   here, `.project([...])` collects the new id.
+
+## Nested object and array properties
+
+Node and edge properties can store object and array values. Use nested objects for
+metadata you want to return or filter by scan-time dotted paths; keep frequently
+indexed values as top-level properties.
+
+Nested property lookup is exact-first. A top-level property literally named
+`metadata.externalID` is read before walking the nested `metadata` object. Dotted
+paths only walk object values; arrays are returned as values and do not support
+path syntax such as `tags.0`.
 
 ## Adding edges between bound nodes
 
@@ -1922,6 +1987,10 @@ A few notes specific to `forEachParam`:
 - The parameter must be typed `{"Array": "Object"}` — an array of plain JSON
   objects. `defineParams({ users: param.array(param.object(...)) })` produces this
   shape automatically.
+- Each loop iteration exposes the current object's top-level fields as scoped
+  parameters. If a field itself is an object, pass it through as a whole property
+  value, for example `PropertyInput.param("metadata")`, then query the stored
+  nested fields later with dotted paths such as `metadata.externalID`.
 
 ## Next Steps
 
@@ -2206,6 +2275,36 @@ A complete envelope produced by `toDynamicJson`:
 }
 ```
 
+Nested object and array parameter values are still bare JSON at envelope
+position. When a parameter is used as a property value, the runtime converts that
+JSON object into a stored object property:
+
+```ts
+const params = defineParams({ metadata: param.object(param.value()) });
+
+writeBatch().varAs(
+  "user",
+  g().addN("User", { metadata: PropertyInput.param("metadata") }),
+);
+```
+
+```json
+{
+  "parameters": {
+    "metadata": {
+      "externalID": "crm-42",
+      "preferences": { "locale": "en-US" },
+      "tags": ["trial", 7]
+    }
+  },
+  "parameter_types": { "metadata": "Object" }
+}
+```
+
+After storage, query nested object fields with dotted paths such as
+`metadata.externalID`. The top-level `parameters` map itself does not use tagged
+`PropertyValue` wrappers.
+
 ## Number handling: `bigint` for `i64`
 
 JavaScript `number` only has 53 bits of integer precision. The DSL accepts a plain
@@ -2311,6 +2410,10 @@ Secondary indexes are opt-in. They speed up reads at the cost of additional writ
 storage. Only index properties that are frequently filtered on. Unindexed properties remain
 queryable via `.where_(Predicate::...)`, but the route will scan the label rather than seek the
 index.
+
+Indexes address top-level properties only. A query may filter a nested object field with a dotted
+path such as `metadata.externalID`, but that filter is scan-only in V1 and cannot be declared as an
+equality or range index. Store frequently indexed metadata as explicit top-level properties.
 
 The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
 or `write_batch()` route as shown in [Querying](/database/querying).
@@ -2425,6 +2528,9 @@ Helix supports vector indexes on both nodes and edges. Values are normalized to 
 indexing, and supported distance metrics are cosine, euclidean, and manhattan. The query vector
 must match the configured index dimension exactly.
 
+Vector index properties are top-level properties. Nested object fields are not indexed as vectors;
+store embeddings directly on the node or edge property you pass to the vector-search builder.
+
 Vector search is approximate by design, trading a small amount of recall for significantly faster
 search over large datasets. The third argument to the index-creation builders is an optional
 tenant property name; pass `None::<&str>` for a global index, or see
@@ -2519,6 +2625,9 @@ The same pattern applies to `vector_search_edges_with`.
 Text indexes provide BM25 full-text search on node and edge properties. They are stored durably
 like other indexes rather than rebuilt transiently per query. Indexed values can be `String` or
 `StringArray`, with configurable analyzer presets and optional term positions.
+
+Text index properties are top-level properties. Nested object fields are not flattened into BM25;
+store searchable text directly on the property you pass to the text-search builder.
 
 The third argument to the index-creation builders is an optional tenant property name; pass
 `None::<&str>` for a global index. Tenant-partitioned text indexes currently require the

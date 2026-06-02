@@ -176,6 +176,68 @@ Use a `SourcePredicate` when you want the filter to participate in index selecti
 the source step. Use `.where(Predicate.*)` when you need anything outside that set,
 or when you want the filter to run *after* a graph traversal step.
 
+## Nested property paths
+
+Object properties can be filtered with dotted paths. The runtime first checks for
+an exact top-level property name, then walks nested object fields when the name
+contains `.`.
+
+<CodeGroup>
+```ts TypeScript
+import { g, Predicate, readBatch } from "@helix-db/helix-db";
+
+const usersByExternalId = readBatch()
+  .varAs(
+    "users",
+    g()
+      .nWithLabel("User")
+      .where(Predicate.eq("metadata.externalID", "crm-42"))
+      .valueMap(["$id", "username", "metadata.externalID"]),
+  )
+  .returning(["users"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn users_by_external_id() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "users",
+            g().n_with_label("User")
+                .where_(Predicate::eq("metadata.externalID", "crm-42"))
+                .value_map(Some(vec!["$id", "username", "metadata.externalID"])),
+        )
+        .returning(["users"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "users",
+        "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
+          { "Where": { "Eq": ["metadata.externalID", { "String": "crm-42" }] } },
+          { "ValueMap": ["$id", "username", "metadata.externalID"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["users"]
+}
+```
+</CodeGroup>
+
+Dotted paths are scan-only in V1. Pair them with an indexed top-level anchor such
+as label, tenant, or status when the label is large; the indexed predicate narrows
+candidate rows and the dotted predicate runs as a residual filter. Arrays are
+opaque, so `metadata.tags.0` is not supported.
+
 ## Parameter-bound predicates
 
 To filter by a value the caller supplies at request time, use the `*Param` family.

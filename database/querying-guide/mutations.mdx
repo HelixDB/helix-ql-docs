@@ -95,6 +95,121 @@ A few wire-format details:
 - The result of `addN` is a node stream, so the same chain can keep going —
   here, `.project([...])` collects the new id.
 
+## Nested object and array properties
+
+Node and edge properties can store object and array values. Use nested objects for
+metadata you want to return or filter by scan-time dotted paths; keep frequently
+indexed values as top-level properties.
+
+<CodeGroup>
+```ts TypeScript
+import { g, writeBatch } from "@helix-db/helix-db";
+
+const addUserWithMetadata = writeBatch()
+  .varAs(
+    "user",
+    g()
+      .addN("User", {
+        username: "alice",
+        metadata: {
+          externalID: "crm-42",
+          score: 20,
+          tags: ["trial", 7],
+          preferences: { locale: "en-US" },
+        },
+      })
+      .valueMap(["username", "metadata.externalID", "metadata.preferences.locale"]),
+  )
+  .returning(["user"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn add_user_with_metadata() -> WriteBatch {
+    let metadata = PropertyValue::object(vec![
+        ("externalID", PropertyValue::from("crm-42")),
+        ("score", PropertyValue::from(20i64)),
+        (
+            "tags",
+            PropertyValue::array(vec![
+                PropertyValue::from("trial"),
+                PropertyValue::from(7i64),
+            ]),
+        ),
+        (
+            "preferences",
+            PropertyValue::object(vec![("locale", PropertyValue::from("en-US"))]),
+        ),
+    ]);
+
+    write_batch()
+        .var_as(
+            "user",
+            g().add_n(
+                "User",
+                vec![
+                    ("username", PropertyInput::from("alice")),
+                    ("metadata", PropertyInput::from(metadata)),
+                ],
+            )
+            .value_map(Some(vec![
+                "username",
+                "metadata.externalID",
+                "metadata.preferences.locale",
+            ])),
+        )
+        .returning(["user"])
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "user",
+        "steps": [
+          {
+            "AddN": {
+              "label": "User",
+              "properties": [
+                ["username", { "Value": { "String": "alice" } }],
+                [
+                  "metadata",
+                  {
+                    "Value": {
+                      "Object": {
+                        "externalID": { "String": "crm-42" },
+                        "score": { "I64": 20 },
+                        "tags": { "Array": [{ "String": "trial" }, { "I64": 7 }] },
+                        "preferences": {
+                          "Object": { "locale": { "String": "en-US" } }
+                        }
+                      }
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          { "ValueMap": ["username", "metadata.externalID", "metadata.preferences.locale"] }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["user"]
+}
+```
+</CodeGroup>
+
+Nested property lookup is exact-first. A top-level property literally named
+`metadata.externalID` is read before walking the nested `metadata` object. Dotted
+paths only walk object values; arrays are returned as values and do not support
+path syntax such as `tags.0`.
+
 ## Adding edges between bound nodes
 
 `addE` joins two nodes by label. The `to` argument is a `NodeRef` — most often

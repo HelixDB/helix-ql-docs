@@ -17,6 +17,10 @@ storage. Only index properties that are frequently filtered on. Unindexed proper
 queryable via `.where_(Predicate::...)`, but the route will scan the label rather than seek the
 index.
 
+Indexes address top-level properties only. A query may filter a nested object field with a dotted
+path such as `metadata.externalID`, but that filter is scan-only in V1 and cannot be declared as an
+equality or range index. Store frequently indexed metadata as explicit top-level properties.
+
 The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
 or `write_batch()` route as shown in [Querying](/database/querying).
 

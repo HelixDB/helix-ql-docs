@@ -9,6 +9,9 @@ Helix supports vector indexes on both nodes and edges. Values are normalized to 
 indexing, and supported distance metrics are cosine, euclidean, and manhattan. The query vector
 must match the configured index dimension exactly.
 
+Vector index properties are top-level properties. Nested object fields are not indexed as vectors;
+store embeddings directly on the node or edge property you pass to the vector-search builder.
+
 Vector search is approximate by design, trading a small amount of recall for significantly faster
 search over large datasets. The third argument to the index-creation builders is an optional
 tenant property name; pass `None::<&str>` for a global index, or see

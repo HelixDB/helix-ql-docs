@@ -12,8 +12,8 @@ fundamental architectural boundaries.
 | Limit                  | Value                                                                                          |
 | ---------------------- | ---------------------------------------------------------------------------------------------- |
 | Node and edge ID range | 64-bit unsigned integer (max 2^63)                                                             |
-| Property value types   | boolean, integer, float, string, bytes, and array variants                                     |
-| Nested structures      | Not supported. Properties are flat key-value pairs.                                            |
+| Property value types   | boolean, integer, float, string, bytes, typed primitive arrays, generic arrays, and objects    |
+| Nested structures      | Stored object/array values are supported. Dotted-path lookup such as `metadata.externalID` works in scan-time filters, expressions, projections, `values`, filtered `valueMap`, and fallback ordering. Arrays are opaque; there is no array-index path syntax. |
 | Reserved property keys | `$label` (used for label-based filtering and label-scoped secondary, vector, and text indexes) |
 
 ## Vector Indexes
@@ -32,7 +32,7 @@ fundamental architectural boundaries.
 | Limit                    | Value                                                                                                                                                         |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Scope                    | Node and edge properties                                                                                                                                      |
-| Supported property types | `String` and `StringArray`                                                                                                                                    |
+| Supported property types | Top-level `String` and `StringArray` properties. Nested object fields are not flattened for BM25.                                                            |
 | Unsupported values       | `null` and non-string values are rejected                                                                                                                     |
 | Analyzer config          | Preset analyzers: `standard`, `standard_stem_en`, `whitespace_lowercase`                                                                                      |
 | Term positions           | Optional                                                                                                                                                      |
@@ -42,8 +42,8 @@ fundamental architectural boundaries.
 
 | Limit            | Value                                                                                                      |
 | ---------------- | ---------------------------------------------------------------------------------------------------------- |
-| Equality indexes | Supported on node and edge properties                                                                      |
-| Range indexes    | Supported on numeric and string properties                                                                 |
+| Equality indexes | Supported on top-level node and edge properties. Nested dotted paths are scan-only in V1.                    |
+| Range indexes    | Supported on top-level numeric and string properties. Nested dotted paths are scan-only in V1.               |
 | Encoding         | Range indexes use lexicographic string encoding. Values must be encoded consistently for correct ordering. |
 
 ## Queries

@@ -455,6 +455,10 @@ A few notes specific to `forEachParam`:
 - The parameter must be typed `{"Array": "Object"}` — an array of plain JSON
   objects. `defineParams({ users: param.array(param.object(...)) })` produces this
   shape automatically.
+- Each loop iteration exposes the current object's top-level fields as scoped
+  parameters. If a field itself is an object, pass it through as a whole property
+  value, for example `PropertyInput.param("metadata")`, then query the stored
+  nested fields later with dotted paths such as `metadata.externalID`.
 
 ## Next Steps
 

@@ -13,8 +13,17 @@ Nodes and edges are identified by 64-bit unsigned IDs. Edges are directed: each 
 node and a target node. Labels are stored as the reserved `$label` property and are used for
 type-based filtering and label-scoped secondary, vector, and text indexes.
 
-Properties are strongly typed. Supported types: boolean, integer, floating-point, string, bytes,
-and array variants of each.
+Properties are strongly typed. Supported types include boolean, integer,
+floating-point, string, bytes, typed primitive arrays, generic arrays, and object
+maps. Object maps may be nested; query property names such as
+`metadata.externalID` read nested fields with exact-first dotted-path lookup. A
+stored top-level property literally named `metadata.externalID` wins over the
+nested `metadata.externalID` path during scans.
+
+Nested object fields are queryable in filters and projections, but V1 indexing is
+top-level only. Keep secondary, text, and vector indexed values as top-level
+properties. Generic arrays are stored as values and returned as values, but array
+index path syntax such as `tags.0` is not supported.
 
 ## Multigraph
 

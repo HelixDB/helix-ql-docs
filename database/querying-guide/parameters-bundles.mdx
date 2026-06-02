@@ -340,6 +340,36 @@ A complete envelope produced by `toDynamicJson`:
 }
 ```
 
+Nested object and array parameter values are still bare JSON at envelope
+position. When a parameter is used as a property value, the runtime converts that
+JSON object into a stored object property:
+
+```ts
+const params = defineParams({ metadata: param.object(param.value()) });
+
+writeBatch().varAs(
+  "user",
+  g().addN("User", { metadata: PropertyInput.param("metadata") }),
+);
+```
+
+```json
+{
+  "parameters": {
+    "metadata": {
+      "externalID": "crm-42",
+      "preferences": { "locale": "en-US" },
+      "tags": ["trial", 7]
+    }
+  },
+  "parameter_types": { "metadata": "Object" }
+}
+```
+
+After storage, query nested object fields with dotted paths such as
+`metadata.externalID`. The top-level `parameters` map itself does not use tagged
+`PropertyValue` wrappers.
+
 ## Number handling: `bigint` for `i64`
 
 JavaScript `number` only has 53 bits of integer precision. The DSL accepts a plain
