@@ -52,18 +52,21 @@ Each request carries the query inline, so you never deploy a route ahead of time
 ```json
 {
   "request_type": "read",
+  "query_name": "user_by_username",
   "query": {
     "queries": [
       {
-        "name": "user",
-        "steps": [
-          {
-            "NWhere": {
-              "Eq": ["username", { "String": "Alice" }]
+        "Query": {
+          "name": "user",
+          "steps": [
+            {
+              "NWhere": {
+                "Eq": ["username", { "String": "Alice" }]
+              }
             }
-          }
-        ],
-        "condition": null
+          ],
+          "condition": null
+        }
       }
     ],
     "returns": ["user"]
@@ -73,6 +76,9 @@ Each request carries the query inline, so you never deploy a route ahead of time
 ```
 
 - `request_type` must be `read` or `write` so the gateway can route the request correctly.
+- `query_name` is optional operational metadata for logs and query diagnostics. Use the exact
+  top-level field `query_name`; missing or `null` falls back to `__dynamic__`, and blank strings
+  are rejected.
 - `query` is the same JSON object that lives under `read_routes.<name>` or
   `write_routes.<name>` in a generated `queries.json` bundle.
 - `parameters` is optional and carries the values for the query's named parameters.

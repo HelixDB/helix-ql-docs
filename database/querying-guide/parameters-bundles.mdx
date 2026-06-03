@@ -5,7 +5,7 @@ title: 'Parameters and bundles'
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
 So far every parameterized example on the prior pages has shown
-`p = paramsObject` / `Predicate.eqParam("prop", "name")` / `toDynamicJson(params, values)`
+`p = paramsObject` / `Predicate.eqParam("prop", "name")` / `toDynamicJson(params, values, options)`
 without dwelling on the parameter system itself. This page is the dedicated treatment:
 how to declare parameters, how to refer to them in traversals, and how to ship a
 parameterized query to the runtime.
@@ -87,9 +87,9 @@ all serialize to the same dynamic envelope you POST to `/v1/query`.
 
 ### 1. From a batch directly
 
-The simplest case: build the batch, call `.toDynamicJson(params, values)`, POST the
-resulting body to `/v1/query`. No deploy step. Best for ad-hoc queries, prototyping,
-and one-off integrations.
+The simplest case: build the batch, call `.toDynamicJson(params, values, options)`,
+POST the resulting body to `/v1/query`. No deploy step. Best for ad-hoc queries,
+prototyping, and one-off integrations.
 
 ```ts
 import { defineParams, g, param, Predicate, readBatch } from "@helix-db/helix-db";
@@ -108,7 +108,7 @@ function userByUsername(p = params) {
 }
 ```
 
-The dynamic envelope produced by `.toDynamicJson(params, values)` is the body for
+The dynamic envelope produced by `.toDynamicJson(params, values, options)` is the body for
 `POST /v1/query`. Below are the three equivalent ways to send it:
 
 <CodeGroup>
@@ -117,7 +117,11 @@ import { Client } from "@helix-db/helix-db";
 
 const client = new Client("https://helix.example.com");
 
-const request = userByUsername().toDynamicRequest(params, { username: "alice" });
+const request = userByUsername().toDynamicRequest(
+  params,
+  { username: "alice" },
+  { queryName: "user_by_username" },
+);
 
 const { user } = await client
   .query<{ user: unknown }>()
@@ -144,6 +148,7 @@ curl -sS -X POST https://helix.example.com/v1/query \
   -H "content-type: application/json" \
   --data-raw '{
     "request_type": "read",
+    "query_name": "user_by_username",
     "query": {
       "queries": [
         { "Query": { "name": "user", "steps": [
@@ -171,14 +176,22 @@ The three serialization helpers on a batch:
 
 | Method | Returns |
 |---|---|
-| `.toDynamicJson(params?, values?)` | JSON string (full envelope: `request_type`, `query`, `parameters`, `parameter_types`) |
-| `.toDynamicRequest(params?, values?)` | `DynamicQueryRequest` instance — useful when you want to mutate it before serializing |
-| `.toDynamicBytes(params?, values?)` | `Uint8Array` of the JSON encoding — handy for `fetch` bodies that prefer bytes |
+| `.toDynamicJson(params?, values?, options?)` | JSON string (full envelope: `request_type`, `query_name`, `query`, `parameters`, `parameter_types`) |
+| `.toDynamicRequest(params?, values?, options?)` | `DynamicQueryRequest` instance — useful when you want to mutate it before serializing |
+| `.toDynamicBytes(params?, values?, options?)` | `Uint8Array` of the JSON encoding — handy for `fetch` bodies that prefer bytes |
 
-For a parameter-less batch, omit both arguments:
+Pass `{ queryName: "..." }` as the final options argument when you want gateway
+logs and query diagnostics to identify a direct inline request. Direct requests
+without a name serialize `query_name: null`, which the gateway records as the
+fallback dynamic name `__dynamic__`.
+
+For a parameter-less batch, omit `params` and `values`; pass only options if you
+want to name the request:
 
 ```ts
-readBatch().varAs("count", g().nWithLabel("User").count()).toDynamicJson();
+readBatch().varAs("count", g().nWithLabel("User").count()).toDynamicJson({
+  queryName: "count_users",
+});
 ```
 
 `.toJsonString()` returns the *raw batch* (no envelope, no parameters), the form
@@ -305,7 +318,8 @@ const { user } = await client
 
 `queries.call.*` keeps parameter names and types in sync with `defineParams`, so it
 is the most convenient way to send a registered query — in application code, tests,
-and scripts alike.
+and scripts alike. The returned dynamic request sets `query_name` to the route
+key (`user_by_username` in this example) automatically.
 
 ## How parameters serialize
 
@@ -324,6 +338,7 @@ A complete envelope produced by `toDynamicJson`:
 ```json
 {
   "request_type": "read",
+  "query_name": "user_by_username",
   "query": { "queries": [...], "returns": [...] },
   "parameters": {
     "username":      "alice",

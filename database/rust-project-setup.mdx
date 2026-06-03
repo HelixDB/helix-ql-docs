@@ -135,6 +135,8 @@ A few things to know about this snippet:
 - Calling the registered function with concrete arguments — e.g. `add_user("u-1".into(),
   "Alice".into())` — returns a `DynamicQueryRequest` you POST to `/v1/query`. See
   [Querying](/database/querying) for the full send path.
+- The generated dynamic request sets the top-level `query_name` to the Rust function name, so
+  gateway logs and query diagnostics show `add_user` instead of the fallback `__dynamic__`.
 - The `let _ = (&userId, &name);` line silences Rust's unused-variable warning — the macro reads
   the parameter *names* at compile time to wire them into the JSON schema, so the values
   themselves aren't used in the body.

@@ -35,9 +35,9 @@ For the full project layout and generator setup, see
 ## Dynamic queries
 
 A dynamic query is sent inline: the request body carries the JSON AST for the
-query plus a small envelope that names the request kind and any runtime
-parameters. There is no deployment step — the query travels with the request,
-so the same DSL that builds it also produces the body you POST.
+query plus a small envelope that names the request kind, an optional query name,
+and any runtime parameters. There is no deployment step — the query travels with
+the request, so the same DSL that builds it also produces the body you POST.
 
 The example below counts every `User` node. The TypeScript and Rust tabs are
 two builder front-ends that produce the same JSON envelope; pick whichever your
@@ -53,7 +53,7 @@ const countUsers = readBatch()
   .returning(["user_count"]);
 
 // The request to POST to /v1/query.
-const request = countUsers.toDynamicRequest();
+const request = countUsers.toDynamicRequest({ queryName: "count_users" });
 ```
 
 ```rust Rust
@@ -73,6 +73,7 @@ let request = count_users();
 ```json envelope
 {
   "request_type": "read",
+  "query_name": "count_users",
   "query": {
     "queries": [
       {
@@ -94,6 +95,11 @@ let request = count_users();
 
 Sending that envelope is one POST to `/v1/query`. The response is a JSON
 object keyed by the names from `.returning([...])`.
+
+`query_name` is optional operational metadata for gateway logs and query
+diagnostics. Use exactly the top-level field `query_name`; `name` and
+`queryName` are not accepted aliases. If `query_name` is missing or `null`, the
+gateway uses the fallback name `__dynamic__`. Blank strings are rejected.
 
 <CodeGroup>
 ```ts TypeScript
@@ -130,6 +136,7 @@ curl -sS -X POST https://helix.example.com/v1/query \
   -H "content-type: application/json" \
   --data-raw '{
     "request_type": "read",
+    "query_name": "count_users",
     "query": {
       "queries": [
         {

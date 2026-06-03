@@ -203,7 +203,9 @@ const { user } = await client
 ```
 
 `call.<name>` is fully typed: passing an unknown key or the wrong value type for a
-parameter is a compile error.
+parameter is a compile error. The returned request also sets the top-level
+`query_name` to the registered route key, so gateway logs and query diagnostics
+show `user_by_username` instead of the fallback `__dynamic__`.
 
 ## Next Steps
 

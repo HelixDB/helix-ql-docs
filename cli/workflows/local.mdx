@@ -132,7 +132,9 @@ helix logs dev --follow      # stream
 A request JSON file must contain:
 
 - `request_type`: lowercase `"read"` or `"write"`.
-- `query`: the query object — `queries[]` with `name`, `steps`, and optional `condition`, plus a `returns[]` list.
+- `query_name` (optional): top-level operational name for logs and query diagnostics. Missing or
+  `null` falls back to `__dynamic__`.
+- `query`: the query object — `queries[]` entries such as `{"Query": {"name": "...", "steps": [...], "condition": null}}`, plus a `returns[]` list.
 - `parameters` (optional): named parameter values.
 
 The first step must be a source step (for example `NWhere`) before any terminal step like `Count`. See [`helix query`](/cli/command-reference/query) for the validation rules.
