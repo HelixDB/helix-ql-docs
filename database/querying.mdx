@@ -270,10 +270,13 @@ if err != nil {
 ```
 </CodeGroup>
 
-`send()` returns the parsed JSON response on HTTP `200`. Any other status raises a
-`HelixError` whose `kind` is one of `Network`, `Remote`, `Serialization`, or
-`InvalidUrl` (`Remote` carries the server response body in `details`), so there is
-no manual status check to write.
+`send()` / `Exec` returns the parsed JSON response on HTTP `200`. Any other status
+raises a `HelixError` whose `kind` is one of `Network`, `Remote`, `Serialization`,
+or `InvalidUrl`. In Go, remote errors are returned as `*helix.HelixError` with
+`StatusCode` populated; HTTP `409 Conflict` also wraps `helix.ErrConflict` and can
+be checked with `helix.IsConflict(err)`. The SDKs do not retry conflicts
+automatically, so retry only in application code when the operation is safe to
+replay.
 
 ## Transactions
 

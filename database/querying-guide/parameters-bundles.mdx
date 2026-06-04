@@ -47,6 +47,13 @@ envelope. Use `q.ParamString`, `q.ParamI64`, `q.ParamF64`, `q.ParamF32`,
 bundle APIs in the Go v1 workflow. Use `MarshalRequest(req)` only for tests,
 parity fixtures, or debugging.
 
+In Go, direct values are literals in the inline AST. `helix.SourceEq("id", "foo")`
+and `helix.PredEq("id", "foo")` embed `"foo"` directly; they do not create a
+runtime parameter. For values that change per request, declare a `q.Param*` value
+and pass the returned ref, for example `id := q.ParamString("id", userID)` and
+`helix.SourceEq("id", id)`. That keeps the request shape stable for server-cache
+reuse.
+
 ## Declaring parameters with `defineParams`
 
 This section applies to TypeScript bundle and dynamic helpers. Rust derives a

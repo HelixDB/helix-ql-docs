@@ -82,6 +82,48 @@ Parameter refs can be passed directly into predicates, stream bounds, and mutati
 property inputs. The SDK inserts both `parameters` and `parameter_types` into the
 dynamic envelope.
 
+## Parameterize request-specific values
+
+Direct Go values are serialized as literals in the query AST. This is useful for
+true constants, but it is not a runtime parameter:
+
+```go
+helix.G().NWhere(helix.SourceEq("id", "foo")) // embeds "foo" in the AST
+```
+
+For values that change per request, declare a `q.Param*` value and pass the returned
+`ParamRef`. That keeps the query shape stable and lets the server reuse cached work
+across requests:
+
+```go
+q := helix.ReadQuery("user_by_id")
+id := q.ParamString("id", userID)
+
+return q.
+	VarAs("user", helix.G().NWhere(helix.SourceEq("id", id)).ValueMap("$id", "name")).
+	Returning("user")
+```
+
+The same rule applies to traversal predicates such as `helix.PredEq`, bounds such
+as `Limit`, mutation properties, and search inputs: pass a `ParamRef` for
+request-specific values, not a direct literal.
+
+## Return explicit variables
+
+The names passed to `Returning(...)` define the top-level response object keys and
+should match your response struct tags:
+
+```go
+type FindUsersResponse struct {
+	Users []UserRow `json:"users"`
+}
+
+return q.VarAs("users", traversal).Returning("users")
+```
+
+Use zero-argument `Returning()` only when the response is intentionally empty, such
+as an idempotent index-creation request. The SDK serializes it as `"returns":[]`.
+
 ## Execute queries
 
 ```go
@@ -146,6 +188,27 @@ err = client.Exec(ctx, CreateUser("Alice", "acme"), &created,
 	helix.WriterOnly(),
 	helix.AwaitDurability(true),
 )
+```
+
+## Handle conflicts in application code
+
+`Client.Exec` does not retry HTTP `409 Conflict` responses automatically. Retry only
+when your operation is safe to replay. Remote errors are returned as
+`*helix.HelixError` with `StatusCode` set, and conflicts wrap `helix.ErrConflict`.
+Use `helix.IsConflict(err)` or `errors.Is(err, helix.ErrConflict)` instead of
+parsing the error text.
+
+```go
+func ExecWithConflictRetry(ctx context.Context, client *helix.Client, build func() helix.Request, out any) error {
+	for attempt := 0; attempt < 3; attempt++ {
+		err := client.Exec(ctx, build(), out)
+		if err == nil || !helix.IsConflict(err) || attempt == 2 {
+			return err
+		}
+		time.Sleep(time.Duration(attempt+1) * 50 * time.Millisecond)
+	}
+	return nil
+}
 ```
 
 ## Next Steps

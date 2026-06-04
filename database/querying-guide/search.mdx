@@ -702,7 +702,7 @@ const tenantSearch = readBatch().varAs(
     5,
     PropertyValue.string("acme"),
   ),
-);
+).returning(["hits"]);
 ```
 
 ```rust Rust
@@ -727,7 +727,7 @@ pub fn tenant_search() -> ReadBatch {
             5,
             Some(PropertyValue::String("acme".to_string())),
         ),
-    )
+    ).returning(["hits"])
 }
 ```
 
@@ -755,7 +755,7 @@ func TenantSearch() helix.Request {
 				"acme",
 			),
 		).
-		Returning()
+		Returning("hits")
 }
 ```
 
@@ -780,7 +780,7 @@ func TenantSearch() helix.Request {
       }
     }
   ],
-  "returns": []
+  "returns": ["hits"]
 }
 ```
 </CodeGroup>
