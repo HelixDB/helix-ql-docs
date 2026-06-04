@@ -15,7 +15,7 @@ Local development runs the prebuilt `ghcr.io/helixdb/database-dev:latest` contai
 
 ## Initial setup
 
-For an agent-assisted first app, [`helix chef`](/cli/command-reference/chef) can run this setup end-to-end: it installs Helix skills and the docs MCP, initializes `~/my-first-helix-project`, starts `dev`, seeds starter data, and opens the dashboard.
+For an agent-assisted first app, [`helix chef`](/cli/command-reference/chef) can run this setup end-to-end: it installs Helix skills and the docs MCP, initializes `~/my-first-helix-project`, starts `dev`, seeds starter data, and launches your coding agent to build the app.
 
 ```bash
 helix chef
@@ -36,14 +36,14 @@ Use the manual flow below when you want to scaffold and run each step yourself.
 
   <Step title="Start the local runtime">
     ```bash
-    helix run dev
+    helix start dev
     ```
 
     Starts a background container named `helix-my-helix-app-dev` on port `6969`. The CLI waits until the gateway accepts `POST /v1/query` before returning.
 
-    For attached log streaming use `helix run dev --foreground` and stop with Ctrl-C.
+    For attached log streaming use `helix start dev --foreground` and stop with Ctrl-C.
 
-    For persistent local storage use `helix run dev --disk`, or initialize the project with `helix init local --disk` to make disk mode the default for that instance.
+    For persistent local storage use `helix start dev --disk`, or initialize the project with `helix init local --disk` to make disk mode the default for that instance.
   </Step>
 
   <Step title="Send the example query">
@@ -63,11 +63,11 @@ Default local storage is in-memory. `helix stop` or `helix restart` wipes in-mem
 
 ```bash
 # One-off disk mode for this run
-helix run dev --disk
+helix start dev --disk
 
 # Persist disk mode in helix.toml for a new local instance
 helix add local --name persistent --disk
-helix run persistent
+helix start persistent
 ```
 
 Disk mode starts a MinIO sidecar, creates the `helix-db` bucket, and stores data in a Helix-managed Docker/Podman volume. `helix stop` removes the containers but keeps the volume. `helix prune <instance>` removes the volume and deletes the persisted local data.
@@ -88,7 +88,7 @@ helix logs dev --follow
 helix restart dev
 ```
 
-`helix restart` falls back to a fresh `helix run` if the container has been removed.
+`helix restart` falls back to a fresh `helix start` if the container has been removed.
 
 ## Multiple local instances
 
@@ -97,8 +97,8 @@ helix restart dev
 helix add local --name staging --port 9090
 
 # Run them independently
-helix run dev
-helix run staging
+helix start dev
+helix start staging
 
 # See what's running
 helix status

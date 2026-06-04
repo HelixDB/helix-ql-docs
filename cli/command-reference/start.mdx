@@ -1,16 +1,20 @@
 ---
-title: "helix run"
-sidebarTitle: "run"
+title: "helix start"
+sidebarTitle: "start"
 ---
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Run a local v2 instance. By default the container starts in the background and the CLI waits until the local gateway accepts `POST /v1/query` requests before returning.
+Start a local v2 instance. By default the container starts in the background and the CLI waits until the local gateway accepts `POST /v1/query` requests before returning.
+
+<Note>
+`helix run` is a backwards-compatible alias for `helix start`.
+</Note>
 
 ## Usage
 
 ```bash
-helix run [INSTANCE] [OPTIONS]
+helix start [INSTANCE] [OPTIONS]
 ```
 
 ## Arguments
@@ -46,19 +50,19 @@ With `--disk`, `helix stop` removes the Helix and MinIO containers but keeps the
 
 ```bash
 # Start the default 'dev' instance in the background
-helix run
+helix start
 
 # Start a named instance in the background
-helix run staging
+helix start staging
 
 # Stream logs in the foreground; Ctrl-C stops the container
-helix run dev --foreground
+helix start dev --foreground
 
 # Override the host port for this run only
-helix run dev --port 9090
+helix start dev --port 9090
 
 # Start with persistent local storage for this run
-helix run dev --disk
+helix start dev --disk
 ```
 
 ## Related

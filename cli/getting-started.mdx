@@ -23,15 +23,13 @@ If you are starting a new project inside a coding-agent environment, use `helix 
 helix chef
 ```
 
-`helix chef` asks what you want to build, then lets you choose automatic or manual setup. Automatic setup installs the Helix skills, connects the Helix docs MCP at `https://docs.helix-db.com/mcp`, creates `~/my-first-helix-project`, starts `dev`, writes starter dynamic query files, seeds example data, and opens the dashboard.
+`helix chef` asks what you want to build, then lets you choose automatic or manual setup. It installs the Helix skills, connects the Helix docs MCP at `https://docs.helix-db.com/mcp`, scaffolds a local project (`helix init local`), starts the `dev` instance, seeds starter data, writes a `HELIX_CHEF_PROMPT.md` build prompt, and launches your coding agent (Claude Code, Codex, or OpenCode) to generate the app from your build intent.
 
-To skip prompts and run the automatic flow directly:
+<Note>
+**Auth and non-interactive use.** The first interactive run signs you in to Helix Cloud via a GitHub device-code flow (used only for an optional, anonymized setup snapshot). When stdin is not a TTY — agents, CI, sandboxes — `helix chef` skips this login automatically and proceeds without it; set `HELIX_SKIP_CLOUD_AUTH=1` to opt out in an interactive shell too.
 
-```bash
-helix chef --auto
-```
-
-The command writes `HELIX_CHEF_PROMPT.md` into the new project. This is a placeholder for the active coding agent to replace the starter JSON requests with app-specific Helix queries based on your build idea.
+For a fully scriptable setup with **no** Cloud auth, skip `chef` and scaffold by hand: `helix init local` → `helix start dev` → `helix query dev --file …` (see the Local quickstart below). This path never prompts and never logs in.
+</Note>
 
 ## Local quickstart
 
@@ -63,14 +61,14 @@ In a TTY, `helix init` prompts you to pick `local` or `enterprise`. Pass the sub
 
 <Step title="Run the local dev runtime">
 ```bash
-helix run dev
+helix start dev
 ```
 
-`helix run` pulls `ghcr.io/helixdb/database-dev:latest`, starts a background container named `helix-<project>-dev`, publishes port `6969`, and waits until the local gateway accepts `POST /v1/query` before returning.
+`helix start` pulls `ghcr.io/helixdb/database-dev:latest`, starts a background container named `helix-<project>-dev`, publishes port `6969`, and waits until the local gateway accepts `POST /v1/query` before returning.
 
-To stream logs in the foreground instead, use `helix run dev --foreground` and stop the container with Ctrl-C.
+To stream logs in the foreground instead, use `helix start dev --foreground` and stop the container with Ctrl-C.
 
-For persistent local data, use `helix run dev --disk`. Disk mode starts a CLI-managed MinIO sidecar and keeps data across `helix stop`.
+For persistent local data, use `helix start dev --disk`. Disk mode starts a CLI-managed MinIO sidecar and keeps data across `helix stop`.
 
 <Warning>
 The default `enterprise-dev` storage mode is in-memory. Stopping or restarting an in-memory instance wipes all local data.

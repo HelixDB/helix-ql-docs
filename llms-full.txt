@@ -64,10 +64,10 @@ mkdir my-helix-app && cd my-helix-app
 helix init local --name dev
 
 # Start the local in-memory runtime on port 6969
-helix run dev
+helix start dev
 
 # Or start with persistent local storage backed by MinIO
-helix run dev --disk
+helix start dev --disk
 
 # Send a dynamic query
 helix query dev --file examples/request.json
@@ -3147,15 +3147,7 @@ If you are starting a new project inside a coding-agent environment, use `helix 
 helix chef
 ```
 
-`helix chef` asks what you want to build, then lets you choose automatic or manual setup. Automatic setup installs the Helix skills, connects the Helix docs MCP at `https://docs.helix-db.com/mcp`, creates `~/my-first-helix-project`, starts `dev`, writes starter dynamic query files, seeds example data, and opens the dashboard.
-
-To skip prompts and run the automatic flow directly:
-
-```bash
-helix chef --auto
-```
-
-The command writes `HELIX_CHEF_PROMPT.md` into the new project. This is a placeholder for the active coding agent to replace the starter JSON requests with app-specific Helix queries based on your build idea.
+`helix chef` asks what you want to build, then lets you choose automatic or manual setup. It installs the Helix skills, connects the Helix docs MCP at `https://docs.helix-db.com/mcp`, scaffolds a local project (`helix init local`), starts the `dev` instance, seeds starter data, writes a `HELIX_CHEF_PROMPT.md` build prompt, and launches your coding agent (Claude Code, Codex, or OpenCode) to generate the app from your build intent.
 
 ## Local quickstart
 
@@ -3180,7 +3172,7 @@ Local development runs the prebuilt `ghcr.io/helixdb/database-dev:latest` contai
 
 ## Initial setup
 
-For an agent-assisted first app, [`helix chef`](/cli/command-reference/chef) can run this setup end-to-end: it installs Helix skills and the docs MCP, initializes `~/my-first-helix-project`, starts `dev`, seeds starter data, and opens the dashboard.
+For an agent-assisted first app, [`helix chef`](/cli/command-reference/chef) can run this setup end-to-end: it installs Helix skills and the docs MCP, initializes `~/my-first-helix-project`, starts `dev`, seeds starter data, and launches your coding agent to build the app.
 
 ```bash
 helix chef
@@ -3192,11 +3184,11 @@ Use the manual flow below when you want to scaffold and run each step yourself.
 
 ```bash
 # One-off disk mode for this run
-helix run dev --disk
+helix start dev --disk
 
 # Persist disk mode in helix.toml for a new local instance
 helix add local --name persistent --disk
-helix run persistent
+helix start persistent
 ```
 
 Disk mode starts a MinIO sidecar, creates the `helix-db` bucket, and stores data in a Helix-managed Docker/Podman volume. `helix stop` removes the containers but keeps the volume. `helix prune <instance>` removes the volume and deletes the persisted local data.
@@ -3217,7 +3209,7 @@ helix logs dev --follow
 helix restart dev
 ```
 
-`helix restart` falls back to a fresh `helix run` if the container has been removed.
+`helix restart` falls back to a fresh `helix start` if the container has been removed.
 
 ## Multiple local instances
 
@@ -3226,8 +3218,8 @@ helix restart dev
 helix add local --name staging --port 9090
 
 # Run them independently
-helix run dev
-helix run staging
+helix start dev
+helix start staging
 
 # See what's running
 helix status
@@ -3349,7 +3341,7 @@ One block per local instance. The instance name is the table key (e.g. `[local.d
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `port` | Number | `6969` | Host port published to container port `8080`. |
-| `image` | String | `ghcr.io/helixdb/database-dev` | Container image used by [`helix run`](/cli/command-reference/run). |
+| `image` | String | `ghcr.io/helixdb/database-dev` | Container image used by [`helix start`](/cli/command-reference/start). |
 | `tag` | String | `latest` | Image tag. |
 | `storage` | `memory` \| `disk` | `memory` | Local storage mode. `disk` uses a CLI-managed MinIO container and persistent volume. |
 
@@ -3364,7 +3356,7 @@ port = 9090
 storage = "disk"
 ```
 
-You can also use `helix run <instance> --disk` as a one-off disk-mode run without changing `helix.toml`.
+You can also use `helix start <instance> --disk` as a one-off disk-mode run without changing `helix.toml`.
 
 ### `[enterprise.<instance>]`
 
@@ -3418,7 +3410,7 @@ Remove with `helix auth logout`. Never commit this file.
 
 ## Troubleshooting
 
-- **Port conflict on `helix run`** — change the port in `[local.<instance>] port`, or pass `helix run <instance> --port <port>` to override for a single run.
+- **Port conflict on `helix start`** — change the port in `[local.<instance>] port`, or pass `helix start <instance> --port <port>` to override for a single run.
 - **`Missing instances`** — `helix.toml` has no `[local.*]` or `[enterprise.*]` blocks. Add one with [`helix add`](/cli/command-reference/add).
 - **`Authentication required`** — run `helix auth login` for V2 Cloud commands.
 - **`gateway_url is still missing` after `helix sync`** — the cloud-side configuration has not been published yet. Re-run `helix sync` later, or set `gateway_url` manually under `[enterprise.<instance>]`.
@@ -3455,6 +3447,34 @@ helix update --force  # reinstall even if already on the latest version
 helix update --v1     # update to v2.3.5 for v1 projects
 ```
 
+### Update check fails or hangs on a restricted network
+
+On its first run, the CLI checks `https://api.github.com` (once, then cached for 24h) for a newer release. This never fails a command — network errors are ignored — but in sandboxes, CI, or rate-limited/offline environments the check can add a few seconds of latency. Skip it entirely with:
+
+```bash
+export HELIX_NO_UPDATE_CHECK=1   # also accepts HELIX_DISABLE_UPDATE_CHECK
+```
+
+## Unrecognized commands
+
+### `helix compile` / `helix check`
+
+These commands do **not** exist in HelixDB v2. There is no client-side compile or validation step — queries are validated **server-side** when you send them to a running instance. Author a JSON dynamic query and run it:
+
+```bash
+helix query dev --file examples/request.json
+```
+
+See [`helix query`](/cli/command-reference/query) for the request shape.
+
+### `helix deploy`
+
+Use [`helix push <instance>`](/cli/command-reference/push) to deploy an Enterprise Cloud instance.
+
+### `--path` reported as an unexpected argument
+
+`--path` is only valid on [`helix init`](/cli/command-reference/init) (it sets the project directory). Other commands locate the project by walking up from the current directory to find `helix.toml`; `cd` into the project instead.
+
 ## Project configuration issues
 
 ### `Not in a Helix project directory`
@@ -3487,7 +3507,12 @@ The instance is not listed in `helix.toml`. Check with `helix status` and add it
 Docker is not available. Install/start docker and try again
 ```
 
-Start Docker Desktop, or on Linux run `sudo systemctl start docker`. Verify with `docker info`. For Podman users, ensure `podman` is on `PATH` and `[project] container_runtime = "podman"` in `helix.toml`.
+A container runtime must be both **installed and running** — installing Docker is not enough if the daemon is stopped. `helix start` attempts to start it for you, but surfaces this error when it can't.
+
+- **macOS:** `open -a Docker`, or `colima start` / `podman machine start`.
+- **Linux:** `sudo systemctl start docker`.
+- **Headless / sandbox (no init system):** start the daemon directly, e.g. `sudo dockerd > /tmp/dockerd.log 2>&1 &`, then verify with `docker info`. Many sandboxes ship the Docker binary but do not start `dockerd` for you.
+- **Podman:** ensure `podman` is on `PATH` and set `[project] container_runtime = "podman"` in `helix.toml`. **Rootless Podman** needs `newuidmap`/`subuid`/`subgid` set up and frequently fails in restricted or rootless containers (namespace/mount errors) — install Docker or use a privileged container there instead.
 
 ### Permission denied on Docker socket
 
@@ -3513,7 +3538,7 @@ lsof -i :6969
 Either stop the conflicting process or override the port for this run:
 
 ```bash
-helix run dev --port 9090
+helix start dev --port 9090
 ```
 
 Or change `[local.<instance>] port` in `helix.toml` permanently.
@@ -3526,7 +3551,7 @@ The CLI names containers `helix-<project>-<instance>`. If a stale container exis
 docker rm -f helix-my-helix-app-dev
 ```
 
-`helix run` removes prior containers with the same name automatically, but a foreign container outside the CLI's control may need manual cleanup.
+`helix start` removes prior containers with the same name automatically, but a foreign container outside the CLI's control may need manual cleanup.
 
 ### Local runtime did not become ready in time
 
@@ -3613,7 +3638,7 @@ helix prune --all --yes
 
 ## Interactive vs scripted use
 
-The CLI uses `cliclack` prompts when stdin is a TTY and a required choice is missing — for example, `helix init` with no subcommand, or `helix run` when multiple local instances exist and no instance is passed.
+The CLI uses `cliclack` prompts when stdin is a TTY and a required choice is missing — for example, `helix init` with no subcommand, or `helix start` when multiple local instances exist and no instance is passed.
 
 In non-interactive contexts (CI, pipes, scripts):
 
@@ -3657,9 +3682,9 @@ helix -v, --verbose     Show detailed output with timing information
 | Command | Subcommands | Flags | Scope | Description |
 |:--------|:------------|:------|:------|:------------|
 | [`helix init`](/cli/command-reference/init) | `local`, `enterprise` | `-p`/`--path` | Local, V2 Cloud | Initialize a v2 Helix project |
-| [`helix chef`](/cli/command-reference/chef) | | `-a`/`--auto` | Local | Bootstrap a first Helix app with skills, docs MCP, starter queries, seed data, and dashboard launch |
+| [`helix chef`](/cli/command-reference/chef) | | | Local | Bootstrap a first Helix app with skills, docs MCP, starter queries, seed data, and a launched coding agent |
 | [`helix add`](/cli/command-reference/add) | `local`, `enterprise` | | Local, V2 Cloud | Add an instance to an existing project |
-| [`helix run`](/cli/command-reference/run) | | `--foreground`, `--port`, `--disk` | Local | Run a local instance (background by default) |
+| [`helix start`](/cli/command-reference/start) | | `--foreground`, `--port`, `--disk` | Local | Start a local instance (background by default) |
 | [`helix stop`](/cli/command-reference/stop) | | | Local | Stop a background local instance |
 | [`helix restart`](/cli/command-reference/restart) | | | Local | Restart a background local instance |
 | [`helix status`](/cli/command-reference/status) | | | Local, V2 Cloud | Show instance status |
@@ -3673,7 +3698,6 @@ helix -v, --verbose     Show detailed output with timing information
 | [`helix prune`](/cli/command-reference/prune) | | `-a`/`--all`, `-y`/`--yes` | Local | Remove Helix-owned local containers, volumes, and workspaces |
 | [`helix delete`](/cli/command-reference/delete) | | `-y`/`--yes` | Local, V2 Cloud | Delete an instance from `helix.toml` and local state |
 | [`helix metrics`](/cli/command-reference/metrics) | `full`, `basic`, `off`, `status` | | Local, V2 Cloud | Configure CLI telemetry |
-| [`helix dashboard`](/cli/command-reference/dashboard) | `start`, `stop`, `status` | `-p`/`--port`, `--host`, `--helix-port`, `--attach`, `--restart` | Local, V2 Cloud | Launch the Helix Dashboard |
 | [`helix update`](/cli/command-reference/update) | | `--force`, `--v1` | — | Update the CLI to the latest version |
 | [`helix feedback`](/cli/command-reference/feedback) | | | — | Send feedback to the Helix team |
 
@@ -3776,36 +3800,37 @@ helix auth create-key ec_01HX...
 
 # helix chef
 
-Bootstrap a first HelixDB app for a coding agent. `helix chef` installs agent context, creates a local project, starts the local database, seeds starter data, and opens the dashboard.
+Bootstrap a first HelixDB app for a coding agent. `helix chef` installs agent context, scaffolds a local project, starts the local database, seeds starter data, writes a build prompt, and launches your coding agent to generate the app.
 
 ## Usage
 
 ```bash
-helix chef [OPTIONS]
+helix chef
 ```
 
-`helix cook` is an alias for `helix chef`.
+`helix cook` is an alias for `helix chef`. The command takes no flags — it is fully interactive (and falls back to sensible defaults when run without a TTY).
 
-## Flags
+## Authentication
 
-| Flag | Type | Description | Default |
-|------|------|-------------|---------|
-| `-a`, `--auto` | Boolean | Run automatic setup with defaults and no prompts. | `false` |
+The first interactive run signs you in to Helix Cloud through a GitHub device-code flow. This is used only to upload an optional, anonymized setup snapshot — the build itself does not require it.
+
+- **Non-interactive (agents, CI, sandboxes):** when stdin is not a TTY, `helix chef` skips the login automatically and proceeds without it. The snapshot upload is simply skipped.
+- **Opt out in an interactive shell:** set `HELIX_SKIP_CLOUD_AUTH=1`.
+- **No-auth alternative:** to scaffold without `chef` (and without any Cloud login), run `helix init local` → `helix start dev` → `helix query dev --file …` by hand.
 
 ## What it does
 
-Automatic setup runs these steps:
-
 1. Installs Helix skills with `npx skills add HelixDB/skills`.
 2. Installs the Helix docs MCP with `npx add-mcp https://docs.helix-db.com/mcp --name helixdb-docs`.
-3. Initializes a local project under `~/my-first-helix-project` with a `dev` instance on port `6969`.
-4. Writes `HELIX_CHEF_PROMPT.md`, a placeholder prompt for the active coding agent.
-5. Writes starter dynamic query files:
+3. Initializes a local project (`helix init local`) with a `dev` instance on port `6969`.
+4. Writes `HELIX_CHEF_PROMPT.md` — the build prompt handed to your coding agent (your build intent is substituted in; a Personal CRM is used as the default when you leave it blank).
+5. Writes starter dynamic query files (when no custom build intent is given):
    - `examples/seed.json` inserts starter `User` nodes.
    - `examples/read_users.json` reads the seeded users.
-6. Starts the local database with the equivalent of `helix run dev`.
-7. Runs `examples/seed.json` with the equivalent of `helix query dev --file examples/seed.json`.
-8. Starts the dashboard on `http://localhost:3000` with the equivalent of `helix dashboard start --restart`.
+6. Starts the local database (`helix start dev`, in-memory).
+7. Seeds starter data (`helix query dev --file examples/seed.json`).
+8. Detects an installed coding agent (Claude Code → Codex → OpenCode), asks for a permission mode, and launches it against the build prompt.
+9. Opens the generated app in your browser at `http://localhost:3000` once the agent's frontend is running.
 
 ## Interactive mode
 
@@ -3815,7 +3840,7 @@ Running `helix chef` in a terminal prompts first for:
 What do you want to build?
 ```
 
-Leave this blank to skip. If you provide an app idea, the CLI writes it into `HELIX_CHEF_PROMPT.md` so your coding agent can use it when replacing the generic starter queries.
+Leave this blank to use the default Personal CRM build. If you provide an app idea, it is written into `HELIX_CHEF_PROMPT.md` and used to drive the agent.
 
 Next, choose a setup mode:
 
@@ -3824,21 +3849,14 @@ Next, choose a setup mode:
 | Automatic setup | Runs every setup step with defaults. |
 | Manual setup | Lets you choose the project path and confirm each setup step. |
 
-## Generated prompt placeholder
-
-The query-generation prompt is intentionally a placeholder. Until the final generator prompt is shipped, `HELIX_CHEF_PROMPT.md` tells the coding agent to replace the starter JSON files with app-specific dynamic query requests based on the user's build intent.
-
 ## Examples
 
 ```bash
 # Interactive setup
 helix chef
 
-# Fully automatic setup
-helix chef --auto
-
-# Short flag
-helix chef -a
+# Skip the Cloud login (also implicit in non-interactive shells)
+HELIX_SKIP_CLOUD_AUTH=1 helix chef
 
 # Alias
 helix cook
@@ -3847,9 +3865,8 @@ helix cook
 ## Related
 
 - [`helix init`](/cli/command-reference/init) — initialize a project without agent setup.
-- [`helix run`](/cli/command-reference/run) — start a local instance.
+- [`helix start`](/cli/command-reference/start) — start a local instance.
 - [`helix query`](/cli/command-reference/query) — send dynamic JSON requests.
-- [`helix dashboard`](/cli/command-reference/dashboard) — launch the dashboard.
 
 # helix cluster
 
@@ -3898,84 +3915,6 @@ Use the resulting cluster ID with [`helix init cloud`](/cli/command-reference/in
 - [`helix workspace`](/cli/command-reference/workspace) — manage the active workspace
 - [`helix project`](/cli/command-reference/project) — manage the linked project
 - [`helix sync`](/cli/command-reference/sync) — refresh V2 Cloud instance metadata
-
-# helix dashboard
-
-Launch the Helix Dashboard in a container to visualize and interact with a local or V2 Cloud instance.
-
-Docker or Podman must be installed and running.
-
-## Usage
-
-```bash
-helix dashboard <SUBCOMMAND>
-```
-
-## Available sub-commands
-
-| Sub-command | Description |
-|-------------|-------------|
-| `start` | Start the dashboard container. |
-| `stop` | Stop and remove the dashboard container. |
-| `status` | Show whether the dashboard container is running. |
-
-### `helix dashboard start`
-
-```bash
-helix dashboard start [INSTANCE] [OPTIONS]
-```
-
-| Argument | Description |
-|----------|-------------|
-| `INSTANCE` | Instance to connect to. Defaults to `dev`. Ignored when `--host` is set. |
-
-| Flag | Type | Description | Default |
-|------|------|-------------|---------|
-| `-p`, `--port` | Number | Host port to publish the dashboard on. | `3000` |
-| `--host` | String | Helix host to connect to. Bypasses `helix.toml` instance lookup. | `localhost` (resolved from `[local.<instance>] port`) |
-| `--helix-port` | Number | Helix port the dashboard talks to. Only used with `--host`. | `6969` |
-| `--attach` | Boolean | Run the dashboard in the foreground with logs. | `false` |
-| `--restart` | Boolean | Remove and recreate the dashboard container if one already exists. | `false` |
-
-Background runs print `Dashboard started at http://localhost:<port>` when the container is up.
-
-### `helix dashboard stop`
-
-```bash
-helix dashboard stop
-```
-
-- Prints `Dashboard stopped` when an existing container is removed.
-- Prints `Dashboard was not running` if no dashboard container exists.
-
-### `helix dashboard status`
-
-```bash
-helix dashboard status
-```
-
-- Prints `Dashboard not running` when no container is found.
-- Otherwise prints the container name, status, and port mapping.
-
-## Examples
-
-```bash
-# Start the dashboard against the default 'dev' instance on port 3000
-helix dashboard start
-
-# Use a non-default port and a named instance
-helix dashboard start staging --port 4000
-
-# Point at an arbitrary host (e.g. a tunneled remote)
-helix dashboard start --host tunnel.example.com --helix-port 6969
-
-# Recreate the dashboard container if one is already running
-helix dashboard start --restart
-
-# Stop and check status
-helix dashboard stop
-helix dashboard status
-```
 
 # helix delete
 
@@ -4069,6 +4008,8 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 | Flag | Type | Description | Default |
 |------|------|-------------|---------|
 | `-p`, `--path` | Path | Project directory to initialize. | Current directory |
+| `--skills` | Boolean | Install the Helix agent skills + docs MCP (the install you'd otherwise be prompted for). | Prompted in a TTY |
+| `--no-skills` | Boolean | Skip installing the Helix agent skills + docs MCP. | Prompted in a TTY |
 
 ### `helix init local`
 
@@ -4141,7 +4082,7 @@ helix init cloud --cluster-id ec_01HX... --gateway-url https://gateway.example.c
 ## Next steps after `helix init local`
 
 ```bash
-helix run dev
+helix start dev
 helix query dev --file examples/request.json
 ```
 
@@ -4505,12 +4446,12 @@ helix query production --file examples/request.json
 
 ## Related
 
-- [`helix run`](/cli/command-reference/run) — start a local instance to query against
+- [`helix start`](/cli/command-reference/start) — start a local instance to query against
 - [`helix sync`](/cli/command-reference/sync) — refresh V2 Cloud gateway/auth metadata
 
 # helix restart
 
-Restart a background local instance. If the container still exists, it is restarted in place. If the container has been removed (for example after `helix prune`), `helix restart` falls back to a fresh [`helix run`](/cli/command-reference/run).
+Restart a background local instance. If the container still exists, it is restarted in place. If the container has been removed (for example after `helix prune`), `helix restart` falls back to a fresh [`helix start`](/cli/command-reference/start).
 
 Default local data is in-memory and is wiped by every restart. Disk-mode instances preserve data in their local MinIO volume.
 
@@ -4536,14 +4477,14 @@ helix restart dev
 helix restart
 ```
 
-# helix run
+# helix start
 
-Run a local v2 instance. By default the container starts in the background and the CLI waits until the local gateway accepts `POST /v1/query` requests before returning.
+Start a local v2 instance. By default the container starts in the background and the CLI waits until the local gateway accepts `POST /v1/query` requests before returning.
 
 ## Usage
 
 ```bash
-helix run [INSTANCE] [OPTIONS]
+helix start [INSTANCE] [OPTIONS]
 ```
 
 ## Arguments
@@ -4575,19 +4516,19 @@ With `--disk`, `helix stop` removes the Helix and MinIO containers but keeps the
 
 ```bash
 # Start the default 'dev' instance in the background
-helix run
+helix start
 
 # Start a named instance in the background
-helix run staging
+helix start staging
 
 # Stream logs in the foreground; Ctrl-C stops the container
-helix run dev --foreground
+helix start dev --foreground
 
 # Override the host port for this run only
-helix run dev --port 9090
+helix start dev --port 9090
 
 # Start with persistent local storage for this run
-helix run dev --disk
+helix start dev --disk
 ```
 
 ## Related
@@ -4660,7 +4601,7 @@ helix stop staging || true
 
 ## Related
 
-- [`helix run`](/cli/command-reference/run) — start a local instance
+- [`helix start`](/cli/command-reference/start) — start a local instance
 - [`helix restart`](/cli/command-reference/restart) — restart a local instance
 - [`helix prune`](/cli/command-reference/prune) — remove all Helix-owned local state for an instance
 

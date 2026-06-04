@@ -36,6 +36,34 @@ helix update --force  # reinstall even if already on the latest version
 helix update --v1     # update to v2.3.5 for v1 projects
 ```
 
+### Update check fails or hangs on a restricted network
+
+On its first run, the CLI checks `https://api.github.com` (once, then cached for 24h) for a newer release. This never fails a command — network errors are ignored — but in sandboxes, CI, or rate-limited/offline environments the check can add a few seconds of latency. Skip it entirely with:
+
+```bash
+export HELIX_NO_UPDATE_CHECK=1   # also accepts HELIX_DISABLE_UPDATE_CHECK
+```
+
+## Unrecognized commands
+
+### `helix compile` / `helix check`
+
+These commands do **not** exist in HelixDB v2. There is no client-side compile or validation step — queries are validated **server-side** when you send them to a running instance. Author a JSON dynamic query and run it:
+
+```bash
+helix query dev --file examples/request.json
+```
+
+See [`helix query`](/cli/command-reference/query) for the request shape.
+
+### `helix deploy`
+
+Use [`helix push <instance>`](/cli/command-reference/push) to deploy an Enterprise Cloud instance.
+
+### `--path` reported as an unexpected argument
+
+`--path` is only valid on [`helix init`](/cli/command-reference/init) (it sets the project directory). Other commands locate the project by walking up from the current directory to find `helix.toml`; `cd` into the project instead.
+
 ## Project configuration issues
 
 ### `Not in a Helix project directory`
@@ -68,7 +96,12 @@ The instance is not listed in `helix.toml`. Check with `helix status` and add it
 Docker is not available. Install/start docker and try again
 ```
 
-Start Docker Desktop, or on Linux run `sudo systemctl start docker`. Verify with `docker info`. For Podman users, ensure `podman` is on `PATH` and `[project] container_runtime = "podman"` in `helix.toml`.
+A container runtime must be both **installed and running** — installing Docker is not enough if the daemon is stopped. `helix start` attempts to start it for you, but surfaces this error when it can't.
+
+- **macOS:** `open -a Docker`, or `colima start` / `podman machine start`.
+- **Linux:** `sudo systemctl start docker`.
+- **Headless / sandbox (no init system):** start the daemon directly, e.g. `sudo dockerd > /tmp/dockerd.log 2>&1 &`, then verify with `docker info`. Many sandboxes ship the Docker binary but do not start `dockerd` for you.
+- **Podman:** ensure `podman` is on `PATH` and set `[project] container_runtime = "podman"` in `helix.toml`. **Rootless Podman** needs `newuidmap`/`subuid`/`subgid` set up and frequently fails in restricted or rootless containers (namespace/mount errors) — install Docker or use a privileged container there instead.
 
 ### Permission denied on Docker socket
 
@@ -94,7 +127,7 @@ lsof -i :6969
 Either stop the conflicting process or override the port for this run:
 
 ```bash
-helix run dev --port 9090
+helix start dev --port 9090
 ```
 
 Or change `[local.<instance>] port` in `helix.toml` permanently.
@@ -107,7 +140,7 @@ The CLI names containers `helix-<project>-<instance>`. If a stale container exis
 docker rm -f helix-my-helix-app-dev
 ```
 
-`helix run` removes prior containers with the same name automatically, but a foreign container outside the CLI's control may need manual cleanup.
+`helix start` removes prior containers with the same name automatically, but a foreign container outside the CLI's control may need manual cleanup.
 
 ### Local runtime did not become ready in time
 
@@ -194,7 +227,7 @@ helix prune --all --yes
 
 ## Interactive vs scripted use
 
-The CLI uses `cliclack` prompts when stdin is a TTY and a required choice is missing — for example, `helix init` with no subcommand, or `helix run` when multiple local instances exist and no instance is passed.
+The CLI uses `cliclack` prompts when stdin is a TTY and a required choice is missing — for example, `helix init` with no subcommand, or `helix start` when multiple local instances exist and no instance is passed.
 
 In non-interactive contexts (CI, pipes, scripts):
 

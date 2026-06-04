@@ -27,6 +27,12 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 | Flag | Type | Description | Default |
 |------|------|-------------|---------|
 | `-p`, `--path` | Path | Project directory to initialize. | Current directory |
+| `--skills` | Boolean | Install the Helix agent skills + docs MCP (the install you'd otherwise be prompted for). | Prompted in a TTY |
+| `--no-skills` | Boolean | Skip installing the Helix agent skills + docs MCP. | Prompted in a TTY |
+
+<Note>
+`--skills` / `--no-skills` are accepted **either before or after** the subcommand — both `helix init --no-skills local` and `helix init local --no-skills` work. They are mutually exclusive. When neither is given, an interactive run prompts you and a non-interactive run skips the install. To install or refresh the skills later, use [`helix skills`](/cli/command-reference/skills).
+</Note>
 
 ### `helix init local`
 
@@ -99,7 +105,7 @@ helix init cloud --cluster-id ec_01HX... --gateway-url https://gateway.example.c
 ## Next steps after `helix init local`
 
 ```bash
-helix run dev
+helix start dev
 helix query dev --file examples/request.json
 ```
 

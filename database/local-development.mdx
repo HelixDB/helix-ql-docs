@@ -31,10 +31,10 @@ mkdir my-helix-app && cd my-helix-app
 helix init local --name dev
 
 # Start the local in-memory runtime on port 6969
-helix run dev
+helix start dev
 
 # Or start with persistent local storage backed by MinIO
-helix run dev --disk
+helix start dev --disk
 
 # Send a dynamic query
 helix query dev --file examples/request.json

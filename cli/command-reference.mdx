@@ -23,9 +23,9 @@ helix -v, --verbose     Show detailed output with timing information
 | Command | Subcommands | Flags | Scope | Description |
 |:--------|:------------|:------|:------|:------------|
 | [`helix init`](/cli/command-reference/init) | `local`, `enterprise` | `-p`/`--path` | Local, V2 Cloud | Initialize a v2 Helix project |
-| [`helix chef`](/cli/command-reference/chef) | | `-a`/`--auto` | Local | Bootstrap a first Helix app with skills, docs MCP, starter queries, seed data, and dashboard launch |
+| [`helix chef`](/cli/command-reference/chef) | | | Local | Bootstrap a first Helix app with skills, docs MCP, starter queries, seed data, and a launched coding agent |
 | [`helix add`](/cli/command-reference/add) | `local`, `enterprise` | | Local, V2 Cloud | Add an instance to an existing project |
-| [`helix run`](/cli/command-reference/run) | | `--foreground`, `--port`, `--disk` | Local | Run a local instance (background by default) |
+| [`helix start`](/cli/command-reference/start) | | `--foreground`, `--port`, `--disk` | Local | Start a local instance (background by default) |
 | [`helix stop`](/cli/command-reference/stop) | | | Local | Stop a background local instance |
 | [`helix restart`](/cli/command-reference/restart) | | | Local | Restart a background local instance |
 | [`helix status`](/cli/command-reference/status) | | | Local, V2 Cloud | Show instance status |
@@ -38,9 +38,9 @@ helix -v, --verbose     Show detailed output with timing information
 | [`helix sync`](/cli/command-reference/sync) | | | V2 Cloud | Refresh V2 Cloud instance metadata in `helix.toml` |
 | [`helix prune`](/cli/command-reference/prune) | | `-a`/`--all`, `-y`/`--yes` | Local | Remove Helix-owned local containers, volumes, and workspaces |
 | [`helix delete`](/cli/command-reference/delete) | | `-y`/`--yes` | Local, V2 Cloud | Delete an instance from `helix.toml` and local state |
+| [`helix skills`](/cli/command-reference/skills) | `install`, `update`, `list` | `--project` | — | Install, update, and list the Helix agent skills |
 | [`helix metrics`](/cli/command-reference/metrics) | `full`, `basic`, `off`, `status` | | Local, V2 Cloud | Configure CLI telemetry |
-| [`helix dashboard`](/cli/command-reference/dashboard) | `start`, `stop`, `status` | `-p`/`--port`, `--host`, `--helix-port`, `--attach`, `--restart` | Local, V2 Cloud | Launch the Helix Dashboard |
-| [`helix update`](/cli/command-reference/update) | | `--force`, `--v1` | — | Update the CLI to the latest version |
+| [`helix update`](/cli/command-reference/update) | | `--force`, `--v1` | — | Update the CLI (and refresh installed skills) to the latest version |
 | [`helix feedback`](/cli/command-reference/feedback) | | | — | Send feedback to the Helix team |
 
 <Note>
