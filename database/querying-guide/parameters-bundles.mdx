@@ -10,7 +10,48 @@ without dwelling on the parameter system itself. This page is the dedicated trea
 how to declare parameters, how to refer to them in traversals, and how to ship a
 parameterized query to the runtime.
 
+## SDK workflows
+
+TypeScript and Rust support both direct dynamic requests and registered bundle
+workflows. Go v1 is dynamic-first: write normal Go functions that return
+`helix.Request`, set the query name with `helix.ReadQuery("name")` or
+`helix.WriteQuery("name")`, and declare runtime parameters inline on the query
+builder.
+
+```go
+func FindUsers(tenantID string, limit int64) helix.Request {
+	q := helix.ReadQuery("find_users")
+
+	tenant := q.ParamString("tenant_id", tenantID)
+	maxRows := q.ParamI64("limit", limit)
+
+	return q.
+		VarAs("users",
+			helix.G().
+				NWithLabel("User").
+				Where(helix.PredEq("tenantId", tenant)).
+				Limit(maxRows).
+				ValueMap("$id", "name", "tenantId"),
+		).
+		Returning("users")
+}
+
+var out FindUsersResponse
+err := client.Exec(ctx, FindUsers("acme", 25), &out)
+```
+
+The Go helpers insert both `parameters` and `parameter_types` in the dynamic
+envelope. Use `q.ParamString`, `q.ParamI64`, `q.ParamF64`, `q.ParamF32`,
+`q.ParamBool`, `q.ParamDateTime`, `q.ParamValue`, `q.ParamObject`, and
+`q.ParamArray`. Do not use `.With(...)`, `WithQueryName(...)`, or stored-query
+bundle APIs in the Go v1 workflow. Use `MarshalRequest(req)` only for tests,
+parity fixtures, or debugging.
+
 ## Declaring parameters with `defineParams`
+
+This section applies to TypeScript bundle and dynamic helpers. Rust derives a
+similar schema from registered function arguments. Go declares the same schema
+inline through `q.Param*` methods as shown above.
 
 `defineParams({...})` takes a record of parameter names to `ParamSchema` constructors
 and returns a typed proxy. Each property of the returned proxy is a `ParamRef` you
@@ -198,6 +239,10 @@ readBatch().varAs("count", g().nWithLabel("User").count()).toDynamicJson({
 that goes into a bundle — covered below.
 
 ### 2. Registered bundles
+
+Registered bundles are available in TypeScript and Rust. Go v1 does not generate
+or register bundles; keep Go application queries dynamic-first with
+`client.Exec(ctx, request, &out)`.
 
 To keep a set of queries organized and generate a single `queries.json` artifact,
 wrap each query function with `registerRead` or `registerWrite` and pass them all to

@@ -7,7 +7,7 @@ title: 'Querying'
 Helix Cloud exposes a single query surface over HTTP. Every query — whether a
 deep graph traversal, a vector search, a bulk write, or all three at once — is
 expressed in the same composable DSL and executes as one serializable
-transaction. Queries are authored once in TypeScript or Rust (or by hand as
+transaction. Queries are authored once in TypeScript, Rust, or Go (or by hand as
 JSON) and sent to the runtime as **dynamic** requests — the request body
 carries the query itself, so there is no separate deployment step. The
 [Querying Guide](/database/querying-guide/overview) walks the DSL end-to-end;
@@ -15,8 +15,8 @@ this page covers how a dynamic query looks on the wire.
 
 ## Installing the SDKs
 
-The TypeScript and Rust examples below are built with the Helix SDKs. Install the one for
-your language to follow along — both emit the same JSON, so the bundle is interchangeable.
+The TypeScript, Rust, and Go examples below are built with the Helix SDKs. Install the one for
+your language to follow along — all three emit the same dynamic query JSON.
 
 <CodeGroup>
 ```bash TypeScript
@@ -26,11 +26,16 @@ npm install @helix-db/helix-db
 ```bash Rust
 cargo add helix-db
 ```
+
+```bash Go
+go get github.com/helixdb/helix-db/sdks/go
+```
 </CodeGroup>
 
 For the full project layout and generator setup, see
 [TypeScript Project Setup](/database/typescript-project-setup) and
-[Rust Project Setup](/database/rust-project-setup).
+[Rust Project Setup](/database/rust-project-setup). For Go's dynamic-first workflow,
+see [Go Project Setup](/database/go-project-setup).
 
 ## Dynamic queries
 
@@ -39,8 +44,8 @@ query plus a small envelope that names the request kind, an optional query name,
 and any runtime parameters. There is no deployment step — the query travels with
 the request, so the same DSL that builds it also produces the body you POST.
 
-The example below counts every `User` node. The TypeScript and Rust tabs are
-two builder front-ends that produce the same JSON envelope; pick whichever your
+The example below counts every `User` node. The TypeScript, Rust, and Go tabs are
+builder front-ends that produce the same JSON envelope; pick whichever your
 codebase already speaks. The JSON tab shows the resulting envelope verbatim — if
 you want to skip the DSL and POST hand-written JSON, this is the body you send.
 
@@ -68,6 +73,16 @@ pub fn count_users() -> ReadBatch {
 
 // Calling the registered fn returns the request to POST to /v1/query.
 let request = count_users();
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func CountUsers() helix.Request {
+	return helix.ReadQuery("count_users").
+		VarAs("user_count", helix.G().NWithLabel("User").Count()).
+		Returning("user_count")
+}
 ```
 
 ```json envelope
@@ -164,9 +179,9 @@ For parameters, bundles, and the typed `queries.call.*` helpers, see
 
 ## Running queries with the client
 
-Both SDKs ship a `Client` so you don't have to assemble requests by hand. The
+The SDKs ship a `Client` so you don't have to assemble requests by hand. The
 client owns the connection details (URL and, on Helix Cloud, the API key) and
-exposes the same fluent surface in TypeScript and Rust.
+posts dynamic requests to `/v1/query`.
 
 <CodeGroup>
 ```ts TypeScript
@@ -216,6 +231,25 @@ let _: serde_json::Value = client
     .send()
     .await?;
 ```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+client, err := helix.NewClient("https://helix.example.com", helix.WithAPIKey("hx_secret"))
+if err != nil {
+	return err
+}
+
+var response map[string]any
+err = client.Exec(ctx, CountUsers(), &response,
+	helix.WarmOnly(),
+	helix.WriterOnly(),
+	helix.AwaitDurability(true),
+)
+if err != nil {
+	return err
+}
+```
 </CodeGroup>
 
 `send()` returns the parsed JSON response on HTTP `200`. Any other status raises a
@@ -244,7 +278,7 @@ contract.
 
 <CardGroup cols={2}>
   <Card title="Querying Guide" icon="book-open" href="/database/querying-guide/overview">
-    Tutorial walkthrough of the DSL with TypeScript, Rust, and JSON for every example.
+    Tutorial walkthrough of the DSL with TypeScript, Rust, Go, and JSON for every example.
   </Card>
   <Card title="Parameters & bundles" icon="gear" href="/database/querying-guide/parameters-bundles">
     `defineParams`, dynamic requests, bundles, and the typed `call` helpers in depth.

@@ -41,6 +41,16 @@ pub fn pro_users() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func ProUsers() helix.Request {
+	return helix.ReadQuery("pro_users").
+		VarAs("users", helix.G().NWithLabel("User").Has("tier", "pro").ValueMap("$id", "username")).
+		Returning("users")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -132,6 +142,28 @@ pub fn recent_pro_posts() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func RecentProPosts() helix.Request {
+	return helix.ReadQuery("recent_pro_posts").
+		VarAs("posts",
+			helix.G().
+				NWithLabel("Post").
+				Where(helix.PredAnd(
+					helix.PredGte("createdAt", "2026-01-01"),
+					helix.PredOr(
+						helix.PredContains("title", "graph"),
+						helix.PredContains("title", "database"),
+					),
+					helix.PredIsNotNull("body"),
+				)).
+				ValueMap("$id", "title", "createdAt"),
+		).
+		Returning("posts")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -213,6 +245,21 @@ pub fn users_by_external_id() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func UsersByExternalID() helix.Request {
+	return helix.ReadQuery("users_by_external_id").
+		VarAs("users",
+			helix.G().
+				NWithLabel("User").
+				Where(helix.PredEq("metadata.externalID", "crm-42")).
+				ValueMap("$id", "username", "metadata.externalID"),
+		).
+		Returning("users")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -290,6 +337,26 @@ pub fn user_by_username(username: String) -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func UserByUsername(username string) helix.Request {
+	q := helix.ReadQuery("user_by_username")
+	usernameParam := q.ParamString("username", username)
+
+	return q.
+		VarAs("user",
+			helix.G().
+				NWithLabel("User").
+				Where(helix.PredEq("username", usernameParam)).
+				ValueMap("$id", "username", "tier"),
+		).
+		Returning("user")
+}
+
+body, err := helix.MarshalRequest(UserByUsername("alice"))
+```
+
 ```json JSON
 {
   "request_type": "read",
@@ -337,11 +404,18 @@ A few wire-format details worth noting:
 ## Filtering edges in the middle of a traversal
 
 When you're walking through an edge stream and want to filter on edge properties
-without leaving the stream, use `.edgeHas(prop, value)` or `.edgeHasLabel(label)`.
+without leaving the stream, use the same generic filters as node streams:
+`.has(prop, value)`, `.hasLabel(label)`, `.hasKey(prop)`, and
+`.where(Predicate.*)`.
+
+Edge predicates can read stored edge properties plus the virtual edge fields
+`$id`, `$label`, `$from`, `$to`, `$distance`, and `$score`. Use `.edgeHas(prop,
+value)` when the right-hand side must be a `PropertyInput` expression or runtime
+parameter.
 
 <CodeGroup>
 ```ts TypeScript
-import { g, NodeRef, PropertyInput, readBatch, SourcePredicate } from "@helix-db/helix-db";
+import { g, NodeRef, Predicate, readBatch, SourcePredicate } from "@helix-db/helix-db";
 
 const aliceStrongFollows = readBatch()
   .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
@@ -350,7 +424,7 @@ const aliceStrongFollows = readBatch()
     g()
       .n(NodeRef.var("user"))
       .outE("FOLLOWS")
-      .edgeHas("weight", PropertyInput.value(0.8))
+      .where(Predicate.gte("weight", 0.8))
       .inN()
       .valueMap(["$id", "username"]),
   )
@@ -368,11 +442,29 @@ pub fn alice_strong_follows() -> ReadBatch {
             "strong_following",
             g().n(NodeRef::var("user"))
                 .out_e(Some("FOLLOWS"))
-                .edge_has("weight", PropertyInput::from(0.8))
+                .where_(Predicate::gte("weight", 0.8))
                 .in_n()
                 .value_map(Some(vec!["$id", "username"])),
         )
         .returning(["strong_following"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AliceStrongFollows() helix.Request {
+	return helix.ReadQuery("alice_strong_follows").
+		VarAs("user", helix.G().NWhere(helix.SourceEq("username", "alice"))).
+		VarAs("strong_following",
+			helix.G().
+				N(helix.NodeVar("user")).
+				OutE("FOLLOWS").
+				Where(helix.PredGte("weight", helix.F64(0.8))).
+				InN().
+				ValueMap("$id", "username"),
+		).
+		Returning("strong_following")
 }
 ```
 
@@ -394,7 +486,7 @@ pub fn alice_strong_follows() -> ReadBatch {
         "steps": [
           { "N":           { "Var": "user" } },
           { "OutE":        "FOLLOWS" },
-          { "EdgeHas":     ["weight", { "Value": { "F64": 0.8 } }] },
+          { "Where":       { "Gte": ["weight", { "F64": 0.8 }] } },
           "InN",
           { "ValueMap":    ["$id", "username"] }
         ],
@@ -446,6 +538,22 @@ pub fn recent_posts() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func RecentPosts() helix.Request {
+	return helix.ReadQuery("recent_posts").
+		VarAs("posts",
+			helix.G().
+				NWithLabel("Post").
+				OrderBy("createdAt", helix.OrderDesc).
+				Limit(20).
+				ValueMap("$id", "title", "createdAt"),
+		).
+		Returning("posts")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -476,6 +584,13 @@ g()
     ["createdAt", Order.Desc],
     ["title", Order.Asc],
   ]);
+```
+
+```go
+helix.G().NWithLabel("Post").OrderByMultiple(
+	helix.Ordering{Property: "createdAt", Order: helix.OrderDesc},
+	helix.Ordering{Property: "title", Order: helix.OrderAsc},
+)
 ```
 
 which serializes as:
@@ -525,6 +640,22 @@ pub fn second_page() -> ReadBatch {
                 .value_map(Some(vec!["$id", "title"])),
         )
         .returning(["posts"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func SecondPage() helix.Request {
+	return helix.ReadQuery("second_page").
+		VarAs("posts",
+			helix.G().
+				NWithLabel("Post").
+				OrderBy("createdAt", helix.OrderDesc).
+				Range(20, 40).
+				ValueMap("$id", "title"),
+		).
+		Returning("posts")
 }
 ```
 
@@ -601,6 +732,27 @@ pub fn recent_posts_paged(page_size: i64) -> ReadBatch {
         )
         .returning(["posts"])
 }
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func RecentPostsPaged(pageSize int64) helix.Request {
+	q := helix.ReadQuery("recent_posts_paged")
+	pageSizeParam := q.ParamI64("page_size", pageSize)
+
+	return q.
+		VarAs("posts",
+			helix.G().
+				NWithLabel("Post").
+				OrderBy("createdAt", helix.OrderDesc).
+				Limit(pageSizeParam).
+				ValueMap("$id", "title"),
+		).
+		Returning("posts")
+}
+
+body, err := helix.MarshalRequest(RecentPostsPaged(25))
 ```
 
 ```json JSON

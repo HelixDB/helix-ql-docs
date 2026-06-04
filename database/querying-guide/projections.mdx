@@ -8,9 +8,11 @@ Up to this point every example has ended with `.valueMap([...])` to ship a few
 properties back to the caller. This page covers the full set of terminal projections:
 how to shape the output, compute derived values, and aggregate the stream.
 
-A traversal that ends in a terminal step (`.count`, `.values`, `.project`, …)
+A traversal that ends in a terminal step (`.count`, `.values`, `.project`, ...)
 produces a final result rather than another node or edge stream. The TypeScript and
-Rust typestate machinery prevents you from chaining traversal steps after a terminal.
+Rust typestate machinery prevents you from chaining traversal steps after a terminal;
+the Go SDK records terminal steps in the same JSON AST and surfaces construction
+errors through `Validate`, `MarshalRequest`, or `Client.Exec`.
 
 ## Scalar terminals: `.count`, `.exists`, `.id`, `.label`
 
@@ -41,6 +43,17 @@ pub fn alice_stats() -> ReadBatch {
             g().n_where(SourcePredicate::eq("username", "alice")).exists(),
         )
         .returning(["post_count", "alice_exists"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AliceStats() helix.Request {
+	return helix.ReadQuery("alice_stats").
+		VarAs("post_count", helix.G().NWithLabel("Post").Count()).
+		VarAs("alice_exists", helix.G().NWhere(helix.SourceEq("username", "alice")).Exists()).
+		Returning("post_count", "alice_exists")
 }
 ```
 
@@ -131,6 +144,20 @@ pub fn users_for_admin_panel() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func UsersForAdminPanel() helix.Request {
+	return helix.ReadQuery("users_for_admin_panel").
+		VarAs("rows",
+			helix.G().
+				NWithLabel("User").
+				ValueMap("$id", "$label", "username", "tier", "createdAt"),
+		).
+		Returning("rows")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -150,9 +177,9 @@ pub fn users_for_admin_panel() -> ReadBatch {
 ```
 </CodeGroup>
 
-`$id`, `$label`, `$from`, `$to`, and `$distance` are **virtual fields**: they are
+`$id`, `$label`, `$from`, `$to`, `$distance`, and `$score` are **virtual fields**: they are
 always available even though they are not declared on your schema. `$from`/`$to`
-appear on edge streams; `$distance` appears on vector / text search hits.
+appear on edge streams; `$distance`/`$score` appear on ranked vector / text hits.
 
 Filtered `values(...)` and `valueMap(...)` also accept dotted paths into object
 properties, such as `metadata.externalID`. `valueMap(null)` returns stored
@@ -167,6 +194,10 @@ g().nWithLabel("User").valueMap(["$id", "metadata.externalID"]);
 ```rust
 g().n_with_label("User")
     .value_map(Some(vec!["$id", "metadata.externalID"]));
+```
+
+```go
+helix.G().NWithLabel("User").ValueMap("$id", "metadata.externalID")
 ```
 
 ## `.project(...)` with renames and expressions
@@ -194,6 +225,12 @@ g().nWithLabel("User").project([
 g().n_with_label("User").project(vec![
     PropertyProjection::renamed("metadata.externalID", "external_id"),
 ]);
+```
+
+```go
+helix.G().NWithLabel("User").Project(
+	helix.ProjectPropAs("metadata.externalID", "external_id"),
+)
 ```
 
 Dotted paths are also valid in fallback ordering, for example
@@ -235,6 +272,24 @@ pub fn user_cards() -> ReadBatch {
             ]),
         )
         .returning(["cards"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func UserCards() helix.Request {
+	return helix.ReadQuery("user_cards").
+		VarAs("cards",
+			helix.G().
+				NWithLabel("User").
+				Project(
+					helix.ProjectPropAs("$id", "id"),
+					helix.ProjectPropAs("username", "username"),
+					helix.ProjectPropAs("tier", "tier"),
+				),
+		).
+		Returning("cards")
 }
 ```
 
@@ -337,6 +392,29 @@ pub fn user_cards_with_fallback() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func UserCardsWithFallback() helix.Request {
+	unknown := helix.ExprVal("unknown")
+
+	return helix.ReadQuery("user_cards_with_fallback").
+		VarAs("cards",
+			helix.G().
+				NWithLabel("User").
+				Project(
+					helix.ProjectPropAs("$id", "id"),
+					helix.ProjectPropAs("username", "username"),
+					helix.ProjectExpr("tier", helix.ExprCase(
+						[]helix.CaseBranch{{When: helix.PredIsNotNull("tier"), Then: helix.ExprProp("tier")}},
+						&unknown,
+					)),
+				),
+		).
+		Returning("cards")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -384,7 +462,8 @@ to compute a cut-off server-side.
 ## Edge property output
 
 For edge streams, `.edgeProperties()` emits each edge as an object with all of its
-properties plus the virtual `$id`, `$label`, `$from`, and `$to` fields.
+properties plus the virtual `$id`, `$label`, `$from`, `$to`, `$distance`, and
+`$score` fields when those fields are present on the current ranked edge stream.
 
 <CodeGroup>
 ```ts TypeScript
@@ -411,6 +490,17 @@ pub fn alice_follows_edges() -> ReadBatch {
             g().n(NodeRef::var("user")).out_e(Some("FOLLOWS")).edge_properties(),
         )
         .returning(["edges"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AliceFollowsEdges() helix.Request {
+	return helix.ReadQuery("alice_follows_edges").
+		VarAs("user", helix.G().NWhere(helix.SourceEq("username", "alice"))).
+		VarAs("edges", helix.G().N(helix.NodeVar("user")).OutE("FOLLOWS").EdgeProperties()).
+		Returning("edges")
 }
 ```
 
@@ -474,6 +564,17 @@ pub fn tier_breakdown() -> ReadBatch {
             g().n_with_label("Post").aggregate_by(AggregateFunction::Mean, "createdAt"),
         )
         .returning(["by_tier", "avg_post_age"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func TierBreakdown() helix.Request {
+	return helix.ReadQuery("tier_breakdown").
+		VarAs("by_tier", helix.G().NWithLabel("User").GroupCount("tier")).
+		VarAs("avg_post_age", helix.G().NWithLabel("Post").AggregateBy(helix.AggregateMean, "createdAt")).
+		Returning("by_tier", "avg_post_age")
 }
 ```
 

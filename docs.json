@@ -132,6 +132,7 @@
               "database/local-development",
               "database/rust-project-setup",
               "database/typescript-project-setup",
+              "database/go-project-setup",
               "database/roadmap",
               "database/release-notes"
             ]

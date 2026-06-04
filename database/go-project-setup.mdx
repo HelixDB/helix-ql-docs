@@ -1,0 +1,173 @@
+---
+title: 'Go Project Setup'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Queries for HelixDB can be authored directly in Go with the
+`github.com/helixdb/helix-db/sdks/go` module. The Go SDK is dynamic-first: write
+ordinary Go functions that return `helix.Request`, declare parameters inline, and
+execute with `client.Exec(ctx, request, &out)`. There is no bundle-generation step
+in the primary Go workflow.
+
+For the traversal model and query patterns themselves, see
+[Querying](/database/querying) and the [Querying Guide](/database/querying-guide/overview).
+
+## Prerequisites
+
+- Go 1.22 or later.
+- Optional: the [Helix CLI](/cli/getting-started) for local development and ad-hoc query testing.
+
+## Create a project
+
+```bash
+mkdir helix-go-app
+cd helix-go-app
+go mod init example.com/helix-go-app
+```
+
+## Add the dependency
+
+```bash
+go get github.com/helixdb/helix-db/sdks/go
+```
+
+Import the SDK as `helix`:
+
+```go
+import helix "github.com/helixdb/helix-db/sdks/go"
+```
+
+## Write query functions
+
+Go queries are normal functions. Use `helix.ReadQuery("name")` or
+`helix.WriteQuery("name")` to set the dynamic request's `query_name`, then declare
+runtime parameters inline with methods such as `q.ParamString`, `q.ParamI64`, and
+`q.ParamDateTime`.
+
+```go
+package users
+
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+type UserRow struct {
+	ID       int64  `json:"$id"`
+	Name     string `json:"name"`
+	TenantID string `json:"tenantId"`
+}
+
+type FindUsersResponse struct {
+	Users []UserRow `json:"users"`
+}
+
+func FindUsers(tenantID string, limit int64) helix.Request {
+	q := helix.ReadQuery("find_users")
+
+	tenant := q.ParamString("tenant_id", tenantID)
+	maxRows := q.ParamI64("limit", limit)
+
+	return q.
+		VarAs("users",
+			helix.G().
+				NWithLabel("User").
+				Where(helix.PredEq("tenantId", tenant)).
+				Limit(maxRows).
+				ValueMap("$id", "name", "tenantId"),
+		).
+		Returning("users")
+}
+```
+
+Parameter refs can be passed directly into predicates, stream bounds, and mutation
+property inputs. The SDK inserts both `parameters` and `parameter_types` into the
+dynamic envelope.
+
+## Execute queries
+
+```go
+package users
+
+import (
+	"context"
+
+	helix "github.com/helixdb/helix-db/sdks/go"
+)
+
+func ListUsers(ctx context.Context, client *helix.Client, tenantID string, limit int64) (FindUsersResponse, error) {
+	var out FindUsersResponse
+	err := client.Exec(ctx, FindUsers(tenantID, limit), &out)
+	return out, err
+}
+```
+
+Create the client once and reuse it:
+
+```go
+client, err := helix.NewClient("https://helix.example.com", helix.WithAPIKey("hx_secret"))
+if err != nil {
+	return err
+}
+
+var out FindUsersResponse
+err = client.Exec(ctx, FindUsers("acme", 25), &out)
+```
+
+For local development, pass `""` or `"http://localhost:6969"` to `NewClient`.
+
+## Write queries
+
+```go
+type CreateUserResponse struct {
+	User []UserRow `json:"user"`
+}
+
+func CreateUser(name string, tenantID string) helix.Request {
+	q := helix.WriteQuery("create_user")
+
+	nameParam := q.ParamString("name", name)
+	tenant := q.ParamString("tenant_id", tenantID)
+
+	return q.
+		VarAs("user",
+			helix.G().AddN("User", helix.Props{
+				helix.Prop("name", nameParam),
+				helix.Prop("tenantId", tenant),
+			}),
+		).
+		Returning("user")
+}
+```
+
+Use execution options when a write must hit the writer node or wait for durability:
+
+```go
+var created CreateUserResponse
+err = client.Exec(ctx, CreateUser("Alice", "acme"), &created,
+	helix.WriterOnly(),
+	helix.AwaitDurability(true),
+)
+```
+
+## What Go does not require
+
+- Do not use `.With(...)` to attach parameter values.
+- Do not use `WithQueryName(...)`; the query name lives in `ReadQuery` or `WriteQuery`.
+- Do not use stored-query or bundle workflows for Go v1.
+- Do not call JSON conversion in normal application code. `MarshalRequest(req)` exists for tests, parity fixtures, and debugging.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Querying" icon="magnifying-glass" href="/database/querying">
+    Dynamic query envelopes, client execution, and transactions.
+  </Card>
+  <Card title="Parameters & bundles" icon="gear" href="/database/querying-guide/parameters-bundles">
+    Parameter serialization across TypeScript, Rust, and Go.
+  </Card>
+  <Card title="Local Development" icon="laptop-code" href="/database/local-development">
+    Run HelixDB locally while developing queries.
+  </Card>
+  <Card title="Go SDK source" icon="github" href="https://github.com/HelixDB/helix-db/tree/main/sdks/go">
+    Go module source and README.
+  </Card>
+</CardGroup>
