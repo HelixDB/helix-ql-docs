@@ -148,13 +148,6 @@ err = client.Exec(ctx, CreateUser("Alice", "acme"), &created,
 )
 ```
 
-## What Go does not require
-
-- Do not use `.With(...)` to attach parameter values.
-- Do not use `WithQueryName(...)`; the query name lives in `ReadQuery` or `WriteQuery`.
-- Do not use stored-query or bundle workflows for Go v1.
-- Do not call JSON conversion in normal application code. `MarshalRequest(req)` exists for tests, parity fixtures, and debugging.
-
 ## Next Steps
 
 <CardGroup cols={2}>

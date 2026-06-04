@@ -9,7 +9,7 @@
 - [TypeScript Project Setup](https://docs.helix-db.com/database/typescript-project-setup)
 - [Go Project Setup](https://docs.helix-db.com/database/go-project-setup)
 - [Roadmap](https://docs.helix-db.com/database/roadmap): What we're building and what's coming next
-- [HelixDB Cloud Release Notes](https://docs.helix-db.com/database/release-notes): HelixDB Cloud Release Notes
+- [Release Notes](https://docs.helix-db.com/database/release-notes): HelixDB Cloud Release Notes
 
 ## HelixDB Cloud
 - [Working with HelixDB Cloud](https://docs.helix-db.com/database/working-with-enterprise)

@@ -746,7 +746,7 @@ err = client.Exec(ctx, CreateUser("Alice", "acme"), &created,
 
 Have a feature request? [Let us know on Discord](https://discord.com/invite/2stgMPr5BD) or [email us](mailto:founders@helix-db.com).
 
-# HelixDB Cloud Release Notes
+# Release Notes
 
 
 
