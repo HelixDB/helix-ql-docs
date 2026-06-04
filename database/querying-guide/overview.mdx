@@ -6,20 +6,20 @@ title: 'Querying Guide: Overview'
 
 This guide is a tutorial walkthrough of the HelixDB query language. Each page builds
 on the last, starting from the simplest possible read and ending at parameter-bound
-bundles. Every example shows the **TypeScript**, **Rust**, and **JSON** form
-side by side, so you can pick a client and follow along — or skim across all three to
+bundles. Every example shows the **TypeScript**, **Rust**, **Go**, and **JSON** form
+side by side, so you can pick a client and follow along — or skim across all four to
 see how the surfaces relate.
 
-The three forms are not three different query languages; they are three encodings of
-the same query AST. The TypeScript and Rust DSLs are typed builders that emit the JSON
+The four forms are not four different query languages; they are four encodings of
+the same query AST. The TypeScript, Rust, and Go DSLs are builders that emit the JSON
 shape directly. If you copy the JSON column into a `POST /v1/query` body, it will
 execute the same query as the DSL above it.
 
 ## Installing the SDKs
 
-To follow along in TypeScript or Rust, install the SDK for that language. Both emit the
-same query AST, so you can switch between them — or use the JSON column directly and skip
-the SDK entirely.
+To follow along in TypeScript, Rust, or Go, install the SDK for that language. All
+three emit the same query AST, so you can switch between them — or use the JSON
+column directly and skip the SDK entirely.
 
 <CodeGroup>
 ```bash TypeScript
@@ -29,11 +29,16 @@ npm install @helix-db/helix-db
 ```bash Rust
 cargo add helix-db
 ```
+
+```bash Go
+go get github.com/helixdb/helix-db/sdks/go
+```
 </CodeGroup>
 
 For the full project layout and generator setup, see
-[TypeScript Project Setup](/database/typescript-project-setup) and
-[Rust Project Setup](/database/rust-project-setup).
+[TypeScript Project Setup](/database/typescript-project-setup),
+[Rust Project Setup](/database/rust-project-setup), and
+[Go Project Setup](/database/go-project-setup).
 
 ## The running example
 
@@ -70,7 +75,8 @@ readBatch()
 ```
 
 The Rust shell is identical except for naming conventions (`read_batch`, `var_as`,
-`returning`). The JSON shell is what the batch serializes to: a top-level
+`returning`). Go uses `helix.ReadQuery("name")`, `VarAs`, and variadic `Returning`.
+The JSON shell is what the batch serializes to: a top-level
 `{queries: [...], returns: [...]}` object, with each `varAs` producing one
 `{Query: {name, steps, condition}}` entry. The
 [Reading nodes](/database/querying-guide/reading-nodes) page covers the shell step by
@@ -141,6 +147,28 @@ pub fn alice_feed() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AliceFeed() helix.Request {
+	return helix.ReadQuery("alice_feed").
+		VarAs("user", helix.G().NWhere(helix.SourceEq("username", "alice"))).
+		VarAs("posts",
+			helix.G().
+				N(helix.NodeVar("user")).
+				Out("AUTHORED").
+				OrderBy("createdAt", helix.OrderDesc).
+				Limit(10).
+				Project(
+					helix.ProjectPropAs("$id", "post_id"),
+					helix.ProjectProp("title"),
+					helix.ProjectProp("createdAt"),
+				),
+		).
+		Returning("user", "posts")
+}
+```
+
 ```json JSON
 {
   "request_type": "read",
@@ -186,16 +214,16 @@ Two things to notice:
 - The `posts` traversal starts from `NodeRef.var("user")` — that's how one named
   binding feeds into the next. The same name appears as `{"N": {"Var": "user"}}` in
   the JSON.
-- The TypeScript and Rust DSLs surface a friendly `nWithLabel` / `n_with_label`
-  alias, but this example uses `nWhere(SourcePredicate.eq("username", "alice"))`
+- The TypeScript, Rust, and Go DSLs surface a friendly `nWithLabel` / `n_with_label` /
+  `NWithLabel` alias, but this example uses `nWhere(SourcePredicate.eq("username", "alice"))`
   directly because the read is anchored on a unique property, not a label scan. The
   next page covers when to use each anchor.
 
 ## Sending the request
 
 The JSON above is the actual body for `POST /v1/query`. Below are the same request
-in three transports — TypeScript and Rust using their SDK clients, and `curl`
-straight from the shell. All three are interchangeable; pick whichever fits your
+in four transports — TypeScript, Rust, and Go using their SDK clients, and `curl`
+straight from the shell. All four are interchangeable; pick whichever fits your
 environment.
 
 <CodeGroup>
@@ -225,6 +253,27 @@ let response: serde_json::Value = client
 
 let user = &response["user"];
 let posts = &response["posts"];
+```
+
+```go Go
+// AliceFeed() returns the request to POST to /v1/query.
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+client, err := helix.NewClient("https://helix.example.com")
+if err != nil {
+	return err
+}
+
+var response struct {
+	User  []map[string]any `json:"user"`
+	Posts []map[string]any `json:"posts"`
+}
+if err := client.Exec(ctx, AliceFeed(), &response); err != nil {
+	return err
+}
+
+user := response.User
+posts := response.Posts
 ```
 
 ```bash curl
@@ -276,7 +325,9 @@ Each page follows the same template:
    example is written there first.
 3. The **Rust** tab mirrors the TypeScript exactly, with snake-case method names and
    the trailing-underscore convention for Rust keywords (`where_`, `in_`, `as_`).
-4. The **JSON** tab is the serialized AST that either DSL produces. It is the body
+4. The **Go** tab mirrors the same AST with `helix.ReadQuery` / `helix.WriteQuery`
+   dynamic request builders.
+5. The **JSON** tab is the serialized AST that every DSL produces. It is the body
    you would POST to `/v1/query`; the same object appears inside a generated
    `queries.json` bundle under `read_routes.<name>` or `write_routes.<name>`.
 

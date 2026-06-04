@@ -36,6 +36,16 @@ pub fn count_users() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func CountUsers() helix.Request {
+	return helix.ReadQuery("count_users").
+		VarAs("user_count", helix.G().NWithLabel("User").Count()).
+		Returning("user_count")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -89,6 +99,16 @@ pub fn one_user() -> ReadBatch {
                 .value_map(Some(vec!["$id", "username", "tier"])),
         )
         .returning(["user"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func OneUser() helix.Request {
+	return helix.ReadQuery("one_user").
+		VarAs("user", helix.G().N(helix.NodeID(42)).ValueMap("$id", "username", "tier")).
+		Returning("user")
 }
 ```
 
@@ -151,6 +171,16 @@ pub fn all_tags() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AllTags() helix.Request {
+	return helix.ReadQuery("all_tags").
+		VarAs("tags", helix.G().NWithLabel("Tag").ValueMap("name")).
+		Returning("tags")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -199,6 +229,16 @@ pub fn alice_by_username() -> ReadBatch {
             g().n_where(SourcePredicate::eq("username", "alice")),
         )
         .returning(["user"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AliceByUsername() helix.Request {
+	return helix.ReadQuery("alice_by_username").
+		VarAs("user", helix.G().NWhere(helix.SourceEq("username", "alice"))).
+		Returning("user")
 }
 ```
 
@@ -263,6 +303,16 @@ pub fn pro_users() -> ReadBatch {
             g().n_with_label_where("User", SourcePredicate::eq("tier", "pro")),
         )
         .returning(["pro_users"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func ProUsers() helix.Request {
+	return helix.ReadQuery("pro_users").
+		VarAs("pro_users", helix.G().NWithLabelWhere("User", helix.SourceEq("tier", "pro"))).
+		Returning("pro_users")
 }
 ```
 
@@ -333,6 +383,21 @@ pub fn recent_follows() -> ReadBatch {
             ),
         )
         .returning(["edges"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func RecentFollows() helix.Request {
+	return helix.ReadQuery("recent_follows").
+		VarAs("edges",
+			helix.G().EWithLabelWhere(
+				"FOLLOWS",
+				helix.SourceGte("since", "2026-01-01"),
+			),
+		).
+		Returning("edges")
 }
 ```
 

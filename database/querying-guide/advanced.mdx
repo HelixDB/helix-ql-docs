@@ -69,6 +69,23 @@ pub fn alice_reach() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AliceReach() helix.Request {
+	return helix.ReadQuery("alice_reach").
+		VarAs("alice", helix.G().NWhere(helix.SourceEq("username", "alice"))).
+		VarAs("within_3",
+			helix.G().
+				N(helix.NodeVar("alice")).
+				Repeat(helix.Repeat(helix.Sub().Out("FOLLOWS")).WithTimes(3).EmitAll()).
+				Dedup().
+				ValueMap("$id", "username"),
+		).
+		Returning("within_3")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -153,6 +170,23 @@ pub fn feed() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func Feed() helix.Request {
+	return helix.ReadQuery("feed").
+		VarAs("user", helix.G().NWhere(helix.SourceEq("username", "alice"))).
+		VarAs("posts",
+			helix.G().
+				N(helix.NodeVar("user")).
+				Union(helix.Sub().Out("AUTHORED"), helix.Sub().Out("LIKED")).
+				Dedup().
+				ValueMap("$id", "title"),
+		).
+		Returning("posts")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -194,41 +228,63 @@ pub fn feed() -> ReadBatch {
 each item through the matching sub-traversal. The optional `else` arm defaults to
 "drop the item" — pass `null` (or omit it in Rust) for that.
 
-Surface different fields for free-tier vs paid-tier users:
+Route paid-tier users through a premium feed edge and everyone else through the
+default feed, then project the same fields from whichever branch matched:
 
 <CodeGroup>
 ```ts TypeScript
 import { g, Predicate, readBatch, sub } from "@helix-db/helix-db";
 
-const usersAnnotated = readBatch()
+const recommendedPosts = readBatch()
   .varAs(
-    "users",
+    "posts",
     g()
       .nWithLabel("User")
       .choose(
         Predicate.eq("tier", "pro"),
-        sub().valueMap(["$id", "username", "tier"]),
-        sub().valueMap(["$id", "username"]),
-      ),
+        sub().out("PRO_FEED"),
+        sub().out("DEFAULT_FEED"),
+      )
+      .valueMap(["$id", "title"]),
   )
-  .returning(["users"]);
+  .returning(["posts"]);
 ```
 
 ```rust Rust
 use helix_db::dsl::prelude::*;
 
 #[register]
-pub fn users_annotated() -> ReadBatch {
+pub fn recommended_posts() -> ReadBatch {
     read_batch()
         .var_as(
-            "users",
+            "posts",
             g().n_with_label("User").choose(
                 Predicate::eq("tier", "pro"),
-                sub().value_map(Some(vec!["$id", "username", "tier"])),
-                Some(sub().value_map(Some(vec!["$id", "username"]))),
-            ),
+                sub().out(Some("PRO_FEED")),
+                Some(sub().out(Some("DEFAULT_FEED"))),
+            )
+            .value_map(Some(vec!["$id", "title"])),
         )
-        .returning(["users"])
+        .returning(["posts"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func RecommendedPosts() helix.Request {
+	return helix.ReadQuery("recommended_posts").
+		VarAs("posts",
+			helix.G().
+				NWithLabel("User").
+				Choose(
+					helix.PredEq("tier", "pro"),
+					helix.Sub().Out("PRO_FEED"),
+					helix.Sub().Out("DEFAULT_FEED"),
+				).
+				ValueMap("$id", "title"),
+		).
+		Returning("posts")
 }
 ```
 
@@ -237,22 +293,23 @@ pub fn users_annotated() -> ReadBatch {
   "queries": [
     {
       "Query": {
-        "name": "users",
+        "name": "posts",
         "steps": [
           { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
           {
             "Choose": {
               "condition":       { "Eq": ["tier", { "String": "pro" }] },
-              "then_traversal":  { "steps": [{ "ValueMap": ["$id", "username", "tier"] }] },
-              "else_traversal":  { "steps": [{ "ValueMap": ["$id", "username"] }] }
+              "then_traversal":  { "steps": [{ "Out": "PRO_FEED" }] },
+              "else_traversal":  { "steps": [{ "Out": "DEFAULT_FEED" }] }
             }
-          }
+          },
+          { "ValueMap": ["$id", "title"] }
         ],
         "condition": null
       }
     }
   ],
-  "returns": ["users"]
+  "returns": ["posts"]
 }
 ```
 </CodeGroup>
@@ -398,6 +455,26 @@ pub fn bulk_add_users(users: ParamValue) -> WriteBatch {
             ),
         )
         .returning(["created"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func BulkAddUsers(users []map[string]any) helix.Request {
+	q := helix.WriteQuery("bulk_add_users")
+	q.ParamArray("users", users, helix.ParamTypeObject())
+
+	return q.
+		ForEachParam("users",
+			helix.Write().VarAs("created",
+				helix.G().AddN("User", helix.Props{
+					helix.Prop("username", helix.ParamInput("username")),
+					helix.Prop("tier", helix.ParamInput("tier")),
+				}),
+			),
+		).
+		Returning("created")
 }
 ```
 

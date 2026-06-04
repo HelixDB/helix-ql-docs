@@ -54,6 +54,22 @@ pub fn alice_following() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AliceFollowing() helix.Request {
+	return helix.ReadQuery("alice_following").
+		VarAs("user", helix.G().NWhere(helix.SourceEq("username", "alice"))).
+		VarAs("following",
+			helix.G().
+				N(helix.NodeVar("user")).
+				Out("FOLLOWS").
+				ValueMap("$id", "username"),
+		).
+		Returning("user", "following")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -126,6 +142,24 @@ pub fn alice_tags() -> ReadBatch {
                 .value_map(Some(vec!["name"])),
         )
         .returning(["user", "tags"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AliceTags() helix.Request {
+	return helix.ReadQuery("alice_tags").
+		VarAs("user", helix.G().NWhere(helix.SourceEq("username", "alice"))).
+		VarAs("tags",
+			helix.G().
+				N(helix.NodeVar("user")).
+				Out("AUTHORED").
+				Out("TAGGED").
+				Dedup().
+				ValueMap("name"),
+		).
+		Returning("user", "tags")
 }
 ```
 
@@ -220,6 +254,24 @@ pub fn alice_strong_likes() -> ReadBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AliceStrongLikes() helix.Request {
+	return helix.ReadQuery("alice_strong_likes").
+		VarAs("user", helix.G().NWhere(helix.SourceEq("username", "alice"))).
+		VarAs("liked_posts",
+			helix.G().
+				N(helix.NodeVar("user")).
+				OutE("LIKED").
+				Where(helix.PredGte("weight", 0.8)).
+				InN().
+				ValueMap("$id", "title"),
+		).
+		Returning("liked_posts")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -302,6 +354,25 @@ pub fn fof() -> ReadBatch {
                 .value_map(Some(vec!["$id", "username"])),
         )
         .returning(["fof"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func FriendsOfFriends() helix.Request {
+	return helix.ReadQuery("fof").
+		VarAs("alice", helix.G().NWhere(helix.SourceEq("username", "alice"))).
+		VarAs("fof",
+			helix.G().
+				N(helix.NodeVar("alice")).
+				Out("FOLLOWS").As("direct").
+				Out("FOLLOWS").
+				Without("direct").
+				Dedup().
+				ValueMap("$id", "username"),
+		).
+		Returning("fof")
 }
 ```
 

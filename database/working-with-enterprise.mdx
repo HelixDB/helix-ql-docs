@@ -90,7 +90,7 @@ Helix supports built-in query warming for read queries.
 - Send the normal read request to `POST /v1/query` with the same parameters you would use for a
   real read.
 - Add `X-Helix-Warm: true` or `X-Helix-Warm: 1`. The SDK clients set this for you via
-  `.warmOnly()` (TypeScript) / `.warm_only()` (Rust):
+  `.warmOnly()` (TypeScript), `.warm_only()` (Rust), or `helix.WarmOnly()` (Go):
 
 <CodeGroup>
 ```ts TypeScript
@@ -99,6 +99,11 @@ await client.query().warmOnly().dynamic(request).send();
 
 ```rust Rust
 let _: serde_json::Value = client.query().warm_only().dynamic(count_users()).send().await?;
+```
+
+```go Go
+var out map[string]any
+err := client.Exec(ctx, CountUsers(), &out, helix.WarmOnly())
 ```
 </CodeGroup>
 

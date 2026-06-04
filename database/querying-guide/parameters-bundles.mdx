@@ -150,7 +150,7 @@ function userByUsername(p = params) {
 ```
 
 The dynamic envelope produced by `.toDynamicJson(params, values, options)` is the body for
-`POST /v1/query`. Below are the three equivalent ways to send it:
+`POST /v1/query`. Below are the four equivalent ways to send it:
 
 <CodeGroup>
 ```ts TypeScript
@@ -182,6 +182,38 @@ let response: serde_json::Value = client
     .await?;
 
 let user = &response["user"];
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func UserByUsername(username string) helix.Request {
+	q := helix.ReadQuery("user_by_username")
+	usernameParam := q.ParamString("username", username)
+
+	return q.
+		VarAs("user",
+			helix.G().
+				NWithLabel("User").
+				Where(helix.PredEq("username", usernameParam)).
+				ValueMap("$id", "username", "tier"),
+		).
+		Returning("user")
+}
+
+client, err := helix.NewClient("https://helix.example.com")
+if err != nil {
+	return err
+}
+
+var response struct {
+	User []map[string]any `json:"user"`
+}
+if err := client.Exec(ctx, UserByUsername("alice"), &response); err != nil {
+	return err
+}
+
+user := response.User
 ```
 
 ```bash curl

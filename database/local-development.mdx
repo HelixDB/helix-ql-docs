@@ -80,8 +80,8 @@ setups below show the raw image configuration that the CLI disk mode mirrors.
 
 ## Installing the SDKs
 
-To author queries against your local instance, install the SDK for your language. Both build
-the same `queries.json` bundle, so the choice is purely which language you'd rather work in.
+To author queries against your local instance, install the SDK for your language.
+TypeScript and Rust can generate bundles; Go v1 posts dynamic requests directly.
 
 <CodeGroup>
 ```bash TypeScript
@@ -91,11 +91,16 @@ npm install @helix-db/helix-db
 ```bash Rust
 cargo add helix-db
 ```
+
+```bash Go
+go get github.com/helixdb/helix-db/sdks/go
+```
 </CodeGroup>
 
 For the full project layout, generator setup, and authoring walkthrough, see
-[TypeScript Project Setup](/database/typescript-project-setup) and
-[Rust Project Setup](/database/rust-project-setup).
+[TypeScript Project Setup](/database/typescript-project-setup),
+[Rust Project Setup](/database/rust-project-setup), and
+[Go Project Setup](/database/go-project-setup).
 
 ## In-Memory
 

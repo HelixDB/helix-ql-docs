@@ -14,8 +14,8 @@ Authorization: Bearer <token>
 ```
 
 The SDK clients attach this header for you — set the key once with `withApiKey`
-(TypeScript) / `with_api_key` (Rust) and every request the client sends is
-authenticated:
+(TypeScript), `with_api_key` (Rust), or `WithAPIKey` (Go) and every request the
+client sends is authenticated:
 
 <CodeGroup>
 ```ts TypeScript
@@ -28,6 +28,15 @@ const client = new Client("https://helix.example.com").withApiKey(token);
 use helix_db::Client;
 
 let client = Client::new(Some("https://helix.example.com"))?.with_api_key(Some(&token));
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+client, err := helix.NewClient("https://helix.example.com", helix.WithAPIKey(token))
+if err != nil {
+	return err
+}
 ```
 </CodeGroup>
 

@@ -146,6 +146,24 @@ let response: serde_json::Value = client
 let user_count = &response["user_count"];
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+client, err := helix.NewClient("https://helix.example.com")
+if err != nil {
+	return err
+}
+
+var response struct {
+	UserCount int64 `json:"user_count"`
+}
+if err := client.Exec(ctx, CountUsers(), &response); err != nil {
+	return err
+}
+
+userCount := response.UserCount
+```
+
 ```bash curl
 curl -sS -X POST https://helix.example.com/v1/query \
   -H "content-type: application/json" \

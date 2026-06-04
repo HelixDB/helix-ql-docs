@@ -58,6 +58,24 @@ pub fn add_alice() -> WriteBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AddAlice() helix.Request {
+	return helix.WriteQuery("add_alice").
+		VarAs("alice",
+			helix.G().
+				AddN("User", helix.Props{
+					helix.Prop("username", "alice"),
+					helix.Prop("tier", "pro"),
+					helix.Prop("createdAt", "2026-05-19T00:00:00Z"),
+				}).
+				Project(helix.ProjectPropAs("$id", "id")),
+		).
+		Returning("alice")
+}
+```
+
 ```json JSON
 {
   "queries": [
@@ -161,6 +179,32 @@ pub fn add_user_with_metadata() -> WriteBatch {
             ])),
         )
         .returning(["user"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func AddUserWithMetadata() helix.Request {
+	metadata := helix.ObjectFromEntries(
+		helix.Entry("externalID", "crm-42"),
+		helix.Entry("score", int64(20)),
+		helix.Entry("tags", helix.Array(helix.String("trial"), helix.I64(7))),
+		helix.Entry("preferences", helix.ObjectFromEntries(
+			helix.Entry("locale", "en-US"),
+		)),
+	)
+
+	return helix.WriteQuery("add_user_with_metadata").
+		VarAs("user",
+			helix.G().
+				AddN("User", helix.Props{
+					helix.Prop("username", "alice"),
+					helix.Prop("metadata", metadata),
+				}).
+				ValueMap("username", "metadata.externalID", "metadata.preferences.locale"),
+		).
+		Returning("user")
 }
 ```
 
@@ -279,6 +323,39 @@ pub fn seed_follow() -> WriteBatch {
                 .count(),
         )
         .returning(["alice", "bob", "edge"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func SeedFollow() helix.Request {
+	return helix.WriteQuery("seed_follow").
+		VarAs("alice",
+			helix.G().
+				AddN("User", helix.Props{
+					helix.Prop("username", "alice"),
+					helix.Prop("tier", "pro"),
+				}).
+				Project(helix.ProjectPropAs("$id", "id")),
+		).
+		VarAs("bob",
+			helix.G().
+				AddN("User", helix.Props{
+					helix.Prop("username", "bob"),
+					helix.Prop("tier", "free"),
+				}).
+				Project(helix.ProjectPropAs("$id", "id")),
+		).
+		VarAs("edge",
+			helix.G().
+				N(helix.NodeVar("alice")).
+				AddE("FOLLOWS", helix.NodeVar("bob"), helix.Props{
+					helix.Prop("since", "2026-05-01"),
+				}).
+				Count(),
+		).
+		Returning("alice", "bob", "edge")
 }
 ```
 
@@ -414,6 +491,26 @@ pub fn update_tier(username: String, tier: String) -> WriteBatch {
 }
 ```
 
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func UpdateTier(username string, tier string) helix.Request {
+	q := helix.WriteQuery("update_tier")
+	usernameParam := q.ParamString("username", username)
+	tierParam := q.ParamString("tier", tier)
+
+	return q.
+		VarAs("updated",
+			helix.G().
+				NWithLabel("User").
+				Where(helix.PredEq("username", usernameParam)).
+				SetProperty("tier", tierParam).
+				Count(),
+		).
+		Returning("updated")
+}
+```
+
 ```json JSON
 {
   "request_type": "write",
@@ -521,6 +618,31 @@ pub fn unfollow(follower: String, followee: String) -> WriteBatch {
                 .count(),
         )
         .returning(["dropped"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func Unfollow(follower string, followee string) helix.Request {
+	q := helix.WriteQuery("unfollow")
+	followerParam := q.ParamString("follower", follower)
+	followeeParam := q.ParamString("followee", followee)
+
+	return q.
+		VarAs("follower_node",
+			helix.G().NWithLabel("User").Where(helix.PredEq("username", followerParam)),
+		).
+		VarAs("followee_node",
+			helix.G().NWithLabel("User").Where(helix.PredEq("username", followeeParam)),
+		).
+		VarAs("dropped",
+			helix.G().
+				N(helix.NodeVar("follower_node")).
+				DropEdgeLabeled(helix.NodeVar("followee_node"), "FOLLOWS").
+				Count(),
+		).
+		Returning("dropped")
 }
 ```
 
@@ -674,6 +796,33 @@ pub fn upsert_user(username: String, tier: String) -> WriteBatch {
             ),
         )
         .returning(["updated", "created"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func UpsertUser(username string, tier string) helix.Request {
+	q := helix.WriteQuery("upsert_user")
+	usernameParam := q.ParamString("username", username)
+	tierParam := q.ParamString("tier", tier)
+
+	return q.
+		VarAs("existing",
+			helix.G().NWithLabel("User").Where(helix.PredEq("username", usernameParam)),
+		).
+		VarAsIf("updated",
+			helix.VarNotEmpty("existing"),
+			helix.G().N(helix.NodeVar("existing")).SetProperty("tier", tierParam),
+		).
+		VarAsIf("created",
+			helix.VarEmpty("existing"),
+			helix.G().AddN("User", helix.Props{
+				helix.Prop("username", usernameParam),
+				helix.Prop("tier", tierParam),
+			}),
+		).
+		Returning("updated", "created")
 }
 ```
 
