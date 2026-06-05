@@ -58,6 +58,7 @@
 - [helix prune](https://docs.helix-db.com/cli/command-reference/prune)
 - [helix query](https://docs.helix-db.com/cli/command-reference/query)
 - [helix restart](https://docs.helix-db.com/cli/command-reference/restart)
+- [helix skills](https://docs.helix-db.com/cli/command-reference/skills)
 - [helix start](https://docs.helix-db.com/cli/command-reference/start)
 - [helix status](https://docs.helix-db.com/cli/command-reference/status)
 - [helix stop](https://docs.helix-db.com/cli/command-reference/stop)

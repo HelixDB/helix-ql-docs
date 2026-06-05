@@ -653,6 +653,48 @@ Parameter refs can be passed directly into predicates, stream bounds, and mutati
 property inputs. The SDK inserts both `parameters` and `parameter_types` into the
 dynamic envelope.
 
+## Parameterize request-specific values
+
+Direct Go values are serialized as literals in the query AST. This is useful for
+true constants, but it is not a runtime parameter:
+
+```go
+helix.G().NWhere(helix.SourceEq("id", "foo")) // embeds "foo" in the AST
+```
+
+For values that change per request, declare a `q.Param*` value and pass the returned
+`ParamRef`. That keeps the query shape stable and lets the server reuse cached work
+across requests:
+
+```go
+q := helix.ReadQuery("user_by_id")
+id := q.ParamString("id", userID)
+
+return q.
+	VarAs("user", helix.G().NWhere(helix.SourceEq("id", id)).ValueMap("$id", "name")).
+	Returning("user")
+```
+
+The same rule applies to traversal predicates such as `helix.PredEq`, bounds such
+as `Limit`, mutation properties, and search inputs: pass a `ParamRef` for
+request-specific values, not a direct literal.
+
+## Return explicit variables
+
+The names passed to `Returning(...)` define the top-level response object keys and
+should match your response struct tags:
+
+```go
+type FindUsersResponse struct {
+	Users []UserRow `json:"users"`
+}
+
+return q.VarAs("users", traversal).Returning("users")
+```
+
+Use zero-argument `Returning()` only when the response is intentionally empty, such
+as an idempotent index-creation request. The SDK serializes it as `"returns":[]`.
+
 ## Execute queries
 
 ```go
@@ -716,6 +758,27 @@ err = client.Exec(ctx, CreateUser("Alice", "acme"), &created,
 	helix.WriterOnly(),
 	helix.AwaitDurability(true),
 )
+```
+
+## Handle conflicts in application code
+
+`Client.Exec` does not retry HTTP `409 Conflict` responses automatically. Retry only
+when your operation is safe to replay. Remote errors are returned as
+`*helix.HelixError` with `StatusCode` set, and conflicts wrap `helix.ErrConflict`.
+Use `helix.IsConflict(err)` or `errors.Is(err, helix.ErrConflict)` instead of
+parsing the error text.
+
+```go
+func ExecWithConflictRetry(ctx context.Context, client *helix.Client, build func() helix.Request, out any) error {
+	for attempt := 0; attempt < 3; attempt++ {
+		err := client.Exec(ctx, build(), out)
+		if err == nil || !helix.IsConflict(err) || attempt == 2 {
+			return err
+		}
+		time.Sleep(time.Duration(attempt+1) * 50 * time.Millisecond)
+	}
+	return nil
+}
 ```
 
 ## Next Steps
@@ -1257,10 +1320,13 @@ The SDKs ship a `Client` so you don't have to assemble requests by hand. The
 client owns the connection details (URL and, on Helix Cloud, the API key) and
 posts dynamic requests to `/v1/query`.
 
-`send()` returns the parsed JSON response on HTTP `200`. Any other status raises a
-`HelixError` whose `kind` is one of `Network`, `Remote`, `Serialization`, or
-`InvalidUrl` (`Remote` carries the server response body in `details`), so there is
-no manual status check to write.
+`send()` / `Exec` returns the parsed JSON response on HTTP `200`. Any other status
+raises a `HelixError` whose `kind` is one of `Network`, `Remote`, `Serialization`,
+or `InvalidUrl`. In Go, remote errors are returned as `*helix.HelixError` with
+`StatusCode` populated; HTTP `409 Conflict` also wraps `helix.ErrConflict` and can
+be checked with `helix.IsConflict(err)`. The SDKs do not retry conflicts
+automatically, so retry only in application code when the operation is safe to
+replay.
 
 ## Transactions
 
@@ -2231,6 +2297,13 @@ envelope. Use `q.ParamString`, `q.ParamI64`, `q.ParamF64`, `q.ParamF32`,
 `q.ParamArray`. Do not use `.With(...)`, `WithQueryName(...)`, or stored-query
 bundle APIs in the Go v1 workflow. Use `MarshalRequest(req)` only for tests,
 parity fixtures, or debugging.
+
+In Go, direct values are literals in the inline AST. `helix.SourceEq("id", "foo")`
+and `helix.PredEq("id", "foo")` embed `"foo"` directly; they do not create a
+runtime parameter. For values that change per request, declare a `q.Param*` value
+and pass the returned ref, for example `id := q.ParamString("id", userID)` and
+`helix.SourceEq("id", id)`. That keeps the request shape stable for server-cache
+reuse.
 
 ## Declaring parameters with `defineParams`
 
@@ -3697,8 +3770,9 @@ helix -v, --verbose     Show detailed output with timing information
 | [`helix sync`](/cli/command-reference/sync) | | | V2 Cloud | Refresh V2 Cloud instance metadata in `helix.toml` |
 | [`helix prune`](/cli/command-reference/prune) | | `-a`/`--all`, `-y`/`--yes` | Local | Remove Helix-owned local containers, volumes, and workspaces |
 | [`helix delete`](/cli/command-reference/delete) | | `-y`/`--yes` | Local, V2 Cloud | Delete an instance from `helix.toml` and local state |
+| [`helix skills`](/cli/command-reference/skills) | `install`, `update`, `list` | `--project` | — | Install, update, and list the Helix agent skills |
 | [`helix metrics`](/cli/command-reference/metrics) | `full`, `basic`, `off`, `status` | | Local, V2 Cloud | Configure CLI telemetry |
-| [`helix update`](/cli/command-reference/update) | | `--force`, `--v1` | — | Update the CLI to the latest version |
+| [`helix update`](/cli/command-reference/update) | | `--force`, `--v1` | — | Update the CLI (and refresh installed skills) to the latest version |
 | [`helix feedback`](/cli/command-reference/feedback) | | | — | Send feedback to the Helix team |
 
 ## Next Steps
@@ -4477,6 +4551,62 @@ helix restart dev
 helix restart
 ```
 
+# helix skills
+
+Install, refresh, and inspect the Helix agent skills — the query-authoring skills
+(`helix-query-typescript`, `helix-query-rust`, `helix-memory-system`, and friends) that
+coding agents like Claude Code use to write correct HelixDB queries. They are installed
+with the [`skills`](https://github.com/vercel-labs/skills) CLI under the hood
+(`npx skills add HelixDB/skills`), so this command requires **Node.js/npm** (`npx`) on your PATH.
+
+`helix init` and `helix chef` install these skills for you; `helix skills` is how you
+manage them afterwards. They install **globally** by default (`~/.agents/skills`, shared
+across projects) — pass `--project` to operate on the current project instead.
+
+## Usage
+
+```bash
+helix skills <SUBCOMMAND>
+```
+
+## Available sub-commands
+
+| Sub-command | Description |
+|-------------|-------------|
+| `install` | Install the Helix agent skills (interactive). |
+| `update` | Refresh installed Helix skills to the latest version. |
+| `list` | List installed agent skills. |
+
+## Available flags
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--project` | Boolean | Operate on the current project (`.<agent>/skills`) instead of globally. | Global |
+
+## Update notifications
+
+When skills are installed, the CLI checks once every 24 hours (the same cadence and
+`HELIX_NO_UPDATE_CHECK` opt-out as the CLI version check) whether the Helix skills are out
+of date, and prints a one-line notice pointing you at `helix skills update`. It is
+**notify-only** — it never rewrites skill files on a routine command. Running
+[`helix update`](/cli/command-reference/update) also refreshes installed skills.
+
+## Examples
+
+```bash
+# Install the Helix skills globally
+helix skills install
+
+# Refresh installed skills to the latest version
+helix skills update
+
+# Install into the current project instead of globally
+helix skills install --project
+
+# List installed skills
+helix skills list
+```
+
 # helix start
 
 Start a local v2 instance. By default the container starts in the background and the CLI waits until the local gateway accepts `POST /v1/query` requests before returning.
@@ -4660,6 +4790,8 @@ helix sync
 # helix update
 
 Update the Helix CLI to the latest version. Use `--v1` to update to `v2.3.5`, the last CLI release for v1 projects.
+
+If the [Helix agent skills](/cli/command-reference/skills) are installed, `helix update` also refreshes them to the latest version (a failure here degrades to a warning and never fails the CLI update). Separately, when skills are installed the CLI checks once every 24 hours whether they are out of date and prints a notice pointing you at `helix skills update`; set `HELIX_NO_UPDATE_CHECK=1` to opt out of both the CLI and skills checks.
 
 ## Usage
 
