@@ -111,10 +111,9 @@ func CountUsers() helix.Request {
 Sending that envelope is one POST to `/v1/query`. The response is a JSON
 object keyed by the names from `.returning([...])`.
 
-`query_name` is optional operational metadata for gateway logs and query
-diagnostics. Use exactly the top-level field `query_name`; `name` and
-`queryName` are not accepted aliases. If `query_name` is missing or `null`, the
-gateway uses the fallback name `__dynamic__`. Blank strings are rejected.
+`query_name` is optional metadata for gateway logs and diagnostics. Use the exact
+field `query_name` (not `name` or `queryName`); it defaults to `__dynamic__` when
+missing or `null`, and blank strings are rejected.
 
 <CodeGroup>
 ```ts TypeScript

@@ -20,14 +20,12 @@ storage that can handle concurrent writes to the writer node and allows for virt
 
 ## Gateway
 
-The gateway is the entry point for all client traffic. For high availability, deploy at least
-three gateway instances per cluster. Smaller gateway fleets can be used for non-HA or test
-workloads, but they are not recommended for production. Gateways accept HTTP requests,
-authenticate the caller via Bearer token, accept the inline query payload, and route the request
-to the writer or a reader. Mutations are always routed to the
-writer. Read-only queries are distributed across readers and the writer. Gateways handle
-connection management, load balancing, token validation, and the translation from HTTP requests to
-the backend query RPC.
+The gateway is the entry point for all client traffic. It authenticates each request via Bearer
+token, accepts the inline query payload, and routes it: mutations always go to the writer,
+read-only queries are distributed across the readers and the writer.
+
+For high availability, deploy at least three gateway instances per cluster. Smaller fleets work for
+non-HA or test workloads but are not recommended for production.
 
 ## Writer
 
@@ -68,11 +66,9 @@ Each process (writer and readers) maintains local cache tiers for the data and i
   storage.
 
 Graph, vector, and text workloads use specialized cache paths so hot working sets do not fully
-contend with one another.
-
-On cold start, caches warm progressively as queries execute. Frequently accessed data reaches
-steady-state cache residency quickly. For predictable latency from the first query, caches can be
-pre-warmed, including text index generations.
+contend with one another. On cold start, caches warm progressively as queries execute; for
+predictable latency from the first query, caches (including text index generations) can be
+pre-warmed.
 
 ## Read Path
 

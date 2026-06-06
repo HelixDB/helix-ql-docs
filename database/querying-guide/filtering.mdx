@@ -199,14 +199,11 @@ func RecentProPosts() helix.Request {
 
 ### `SourcePredicate` vs `Predicate`
 
-Source steps (`nWhere`, `eWhere`, `nWithLabelWhere`, `eWithLabelWhere`) accept a
-*`SourcePredicate`*, which is deliberately smaller: comparison + `between` + `hasKey`
-+ `startsWith` + `and` / `or`. These are the predicates the storage layer can push
-down into an index lookup.
-
-Use a `SourcePredicate` when you want the filter to participate in index selection at
-the source step. Use `.where(Predicate.*)` when you need anything outside that set,
-or when you want the filter to run *after* a graph traversal step.
+Use a `SourcePredicate` at source steps when the filter should participate in index
+selection; use `.where(Predicate.*)` for anything outside that set or to filter after a
+traversal step. See
+[`SourcePredicate` vs `Predicate`](/database/querying-guide/reading-nodes#sourcepredicate-vs-predicate)
+for the full breakdown.
 
 ## Nested property paths
 

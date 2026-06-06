@@ -8,11 +8,9 @@ Up to this point every example has ended with `.valueMap([...])` to ship a few
 properties back to the caller. This page covers the full set of terminal projections:
 how to shape the output, compute derived values, and aggregate the stream.
 
-A traversal that ends in a terminal step (`.count`, `.values`, `.project`, ...)
-produces a final result rather than another node or edge stream. The TypeScript and
-Rust typestate machinery prevents you from chaining traversal steps after a terminal;
-the Go SDK records terminal steps in the same JSON AST and surfaces construction
-errors through `Validate`, `MarshalRequest`, or `Client.Exec`.
+A terminal step (`.count`, `.values`, `.project`, ...) ends the chain and produces a
+result rather than another stream. TypeScript and Rust block further chaining at
+compile time; Go reports it at serialization (`Validate`, `MarshalRequest`, or `Client.Exec`).
 
 ## Scalar terminals: `.count`, `.exists`, `.id`, `.label`
 

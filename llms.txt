@@ -56,6 +56,7 @@
 - [helix metrics](https://docs.helix-db.com/cli/command-reference/metrics)
 - [helix project](https://docs.helix-db.com/cli/command-reference/project)
 - [helix prune](https://docs.helix-db.com/cli/command-reference/prune)
+- [helix push](https://docs.helix-db.com/cli/command-reference/push)
 - [helix query](https://docs.helix-db.com/cli/command-reference/query)
 - [helix restart](https://docs.helix-db.com/cli/command-reference/restart)
 - [helix skills](https://docs.helix-db.com/cli/command-reference/skills)

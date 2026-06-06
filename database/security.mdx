@@ -13,73 +13,33 @@ through the Helix dashboard. Include the token in the `Authorization` header of 
 Authorization: Bearer <token>
 ```
 
-The SDK clients attach this header for you — set the key once with `withApiKey`
-(TypeScript), `with_api_key` (Rust), or `WithAPIKey` (Go) and every request the
-client sends is authenticated:
+The SDK clients attach this header for you — set the key once and every request is authenticated,
+via `withApiKey` (TypeScript), `with_api_key` (Rust), or `WithAPIKey` (Go):
 
-<CodeGroup>
-```ts TypeScript
+```ts
 import { Client } from "@helix-db/helix-db";
 
 const client = new Client("https://helix.example.com").withApiKey(token);
 ```
 
-```rust Rust
-use helix_db::Client;
-
-let client = Client::new(Some("https://helix.example.com"))?.with_api_key(Some(&token));
-```
-
-```go Go
-import helix "github.com/helixdb/helix-db/sdks/go"
-
-client, err := helix.NewClient("https://helix.example.com", helix.WithAPIKey(token))
-if err != nil {
-	return err
-}
-```
-</CodeGroup>
-
 Requests without a valid token are rejected at the gateway before reaching any database node.
-Token rotation and revocation are performed in the dashboard with immediate effect.
-
-## Role-Based Access Control
-
-Scoped API keys with role-based permissions - read-only, read-write, or restricted to specific
-operations - allowing least-privilege credentials for each service or environment.
-
-Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss RBAC requirements for
-your cluster.
-
-## SSO / SAML
-
-SSO and SAML integration for dashboard access, enabling teams to manage Helix users through an
-existing identity provider (Okta, Azure AD, Google Workspace, etc.) with centralized provisioning
-and deprovisioning.
-
-Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss SSO requirements for
-your organization.
-
-## Audit Logs
-
-Per-request audit logging covering timestamp, token identity, query name, source IP, and response
-status. Audit logs support compliance requirements (SOC 2, HIPAA, GDPR) and enable forensic
-analysis of access patterns.
-
-Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss audit logging
-requirements for your cluster.
+Token rotation and revocation take immediate effect from the dashboard.
 
 ## Encryption
 
 All traffic between clients and the gateway is encrypted in transit via TLS. Data at rest in
 object storage is encrypted using the storage provider's server-side encryption.
 
-## AWS PrivateLink
+## Enterprise features
 
-For workloads that require traffic to remain entirely within the AWS network, PrivateLink creates
-a private endpoint in your VPC that routes to Helix Cloud without traversing the public
-internet. This eliminates exposure to internet-based threats and satisfies network isolation
-requirements common in regulated environments.
+The following are available for enterprise clusters. Contact
+[founders@helix-db.com](mailto:founders@helix-db.com) to enable them for your deployment.
 
-Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss PrivateLink
-configuration for your cluster.
+- **Role-based access control.** Scoped API keys with read-only, read-write, or operation-restricted
+  permissions for least-privilege credentials per service or environment.
+- **SSO / SAML.** Dashboard access through your identity provider (Okta, Azure AD, Google Workspace)
+  with centralized provisioning and deprovisioning.
+- **Audit logs.** Per-request logging (timestamp, token identity, query name, source IP, response
+  status) for compliance (SOC 2, HIPAA, GDPR) and forensic analysis.
+- **AWS PrivateLink.** A private endpoint in your VPC that routes to Helix Cloud without traversing
+  the public internet, for network-isolation requirements in regulated environments.

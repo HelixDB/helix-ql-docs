@@ -29,17 +29,11 @@ The first interactive run signs you in to Helix Cloud through a GitHub device-co
 
 ## What it does
 
-1. Installs Helix skills with `npx skills add HelixDB/skills`.
-2. Installs the Helix docs MCP with `npx add-mcp https://docs.helix-db.com/mcp --name helixdb-docs`.
-3. Initializes a local project (`helix init local`) with a `dev` instance on port `6969`.
-4. Writes `HELIX_CHEF_PROMPT.md` — the build prompt handed to your coding agent (your build intent is substituted in; a Personal CRM is used as the default when you leave it blank).
-5. Writes starter dynamic query files (when no custom build intent is given):
-   - `examples/seed.json` inserts starter `User` nodes.
-   - `examples/read_users.json` reads the seeded users.
-6. Starts the local database (`helix start dev`, in-memory).
-7. Seeds starter data (`helix query dev --file examples/seed.json`).
-8. Detects an installed coding agent (Claude Code → Codex → OpenCode), asks for a permission mode, and launches it against the build prompt.
-9. Opens the generated app in your browser at `http://localhost:3000` once the agent's frontend is running.
+1. Installs the Helix skills (`npx skills add HelixDB/skills`) and docs MCP.
+2. Initializes a local project (`helix init local`) with a `dev` instance on port `6969`, then starts it in-memory.
+3. Writes `HELIX_CHEF_PROMPT.md` (your build intent, or a Personal CRM default) and, for the default build, starter query files under `examples/` — then seeds the data.
+4. Detects an installed coding agent (Claude Code → Codex → OpenCode), asks for a permission mode, and launches it against the build prompt.
+5. Opens the generated app at `http://localhost:3000` once the agent's frontend is running.
 
 <Note>
 `helix chef` does **not** start a local dashboard — port `3000` is reserved for the Next.js app the agent builds.

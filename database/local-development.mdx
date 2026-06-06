@@ -48,20 +48,15 @@ For installation details, Helix Cloud authentication, and the full command refer
 
 ### AI-assisted query authoring
 
-If you're developing with a coding agent, install the Helix skills bundle to get specialized agents for writing,
-optimizing, and translating HelixDB queries:
+If you develop with a coding agent, install the Helix skills bundle for writing, optimizing, and
+translating queries. Run it from your project root so the skills can inspect your local schema:
 
 ```bash
 npx skills add HelixDB/skills
 ```
 
-This installs skills such as `helix-query-authoring`, `helix-query-optimize`,
-`helix-query-json-dynamic`, `helix-query-from-cypher`, and `helix-query-from-gremlin`. Once
-installed, Claude will load the relevant skill automatically when you ask it to write a query,
-tune a slow traversal, or translate a Cypher/Gremlin query into the Helix Rust DSL.
-
-Run the command from the root of your Helix project so the skills can inspect your local schema,
-edges, and existing queries when generating new ones.
+The agent then loads the relevant skill automatically when you ask it to write a query, tune a
+slow traversal, or translate a Cypher/Gremlin query.
 
 ### Configuring disk mode
 

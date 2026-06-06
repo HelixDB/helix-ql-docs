@@ -318,21 +318,11 @@ how to bind parameters and organize queries into a `queries.json` bundle.
 
 ## How to read this guide
 
-Each page follows the same template:
-
-1. A short prose intro to the concept.
-2. One or more `<CodeGroup>` blocks. The **TypeScript** tab is the lead — every
-   example is written there first.
-3. The **Rust** tab mirrors the TypeScript exactly, with snake-case method names and
-   the trailing-underscore convention for Rust keywords (`where_`, `in_`, `as_`).
-4. The **Go** tab mirrors the same AST with `helix.ReadQuery` / `helix.WriteQuery`
-   dynamic request builders.
-5. The **JSON** tab is the serialized AST that every DSL produces. It is the body
-   you would POST to `/v1/query`; the same object appears inside a generated
-   `queries.json` bundle under `read_routes.<name>` or `write_routes.<name>`.
-
-You can also jump straight to any topic from the list below; the pages do not assume
-strict sequential reading, but anything earlier in the list is fair game later on.
+Each page leads with a short intro, then `<CodeGroup>` blocks in all four forms.
+TypeScript is the lead tab; Rust mirrors it with snake_case names and trailing
+underscores for keywords (`where_`, `in_`, `as_`); Go mirrors the same AST via
+`helix.ReadQuery` / `helix.WriteQuery`; and JSON is the serialized AST you POST to
+`/v1/query`. Pages can be read in any order.
 
 ## Next Steps
 

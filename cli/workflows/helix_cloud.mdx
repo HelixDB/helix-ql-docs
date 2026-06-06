@@ -7,7 +7,7 @@ icon: "cloud"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-The Helix CLI's Helix Cloud surface covers authentication, workspace/project/cluster selection, instance metadata sync, log retrieval, and dynamic queries against a remote gateway. Cluster provisioning and scaling happen in the Helix control plane — not in the CLI.
+The CLI handles authentication, workspace/project/cluster selection, metadata sync, log retrieval, and dynamic queries against a remote gateway. Cluster provisioning and scaling happen in the Helix control plane, not the CLI.
 
 ## Prerequisites
 
@@ -103,12 +103,7 @@ Override the variable name per-instance by setting `query_auth_env` under `[ente
 
 ## Common errors
 
-| Error | Resolution |
-|-------|------------|
-| `Authentication required. Run 'helix auth login' first.` | Run `helix auth login` (or set up an API key via `helix auth create-key`). |
-| `Enterprise gateway URL is not configured for '<instance>'.` | Run `helix sync <instance>`, or set `gateway_url` manually under `[enterprise.<instance>]`. |
-| `Environment variable HELIX_API_KEY is required for Enterprise query auth` | Export the variable named by `query_auth_env`. |
-| `live Enterprise logs are not supported yet` | Use `helix logs <instance> --range --start … --end …` instead of `--follow`. |
+For Helix Cloud auth, gateway, and logging errors, see [Troubleshooting](/cli/troubleshooting).
 
 ## What next?
 

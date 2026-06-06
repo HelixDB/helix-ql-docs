@@ -28,11 +28,10 @@ Caches reduce steady-state latency and accelerate cold starts.
 
 ## Key Properties
 
-- **Graph, vector, and text storage on object storage.** Nodes, edges, properties, vector
-  indexes, and text index artifacts all persist durably in object storage. No local disk is
-  required for correctness.
-- **Tiered caching.** Separate in-memory and SSD cache paths for graph data, vector data, and
-  text search artifacts keep hot-path reads fast.
+- **Everything on object storage.** Nodes, edges, properties, and vector/text index artifacts
+  persist durably in object storage — no local disk required for correctness.
+- **Tiered caching.** Separate in-memory and SSD cache paths for graph, vector, and text data keep
+  hot-path reads fast.
 - **Full ACID transactions.** Every query runs in a serializable snapshot isolation transaction.
   Concurrent reads and writes do not block each other.
 - **Dynamic query model.** Queries are authored in a Rust or TypeScript DSL and sent to the

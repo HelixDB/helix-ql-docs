@@ -5,15 +5,8 @@
 
 # Introduction
 
-Helix Cloud is an object-storage-backed graph database with integrated vector search and
-full-text search. It combines a property graph engine with approximate vector search and BM25
-full-text search on top of durable object storage, using SSD and in-memory caches for
-low-latency reads.
-
-Helix Cloud is a fundamentally different architecture and database compared to the opensource v1 
-version of HelixDB. That version used LMDB which was limited to sequential writes and could only handle 
-a relatively small amount of data. Helix Cloud uses a new LSM based storage engine backed by object 
-storage that can handle concurrent writes to the writer node and allows for virtually unlimited data storage.  
+Helix Cloud is an object-storage-backed graph database with integrated approximate vector
+search and BM25 full-text search, using SSD and in-memory caches for low-latency reads.
 
 ## HelixDB Cloud System at a Glance
 
@@ -23,15 +16,13 @@ Caches reduce steady-state latency and accelerate cold starts.
 
 ## Key Properties
 
-- **Graph, vector, and text storage on object storage.** Nodes, edges, properties, vector
-  indexes, and text index artifacts all persist durably in object storage. No local disk is
-  required for correctness.
-- **Tiered caching.** Separate in-memory and SSD cache paths for graph data, vector data, and
-  text search artifacts keep hot-path reads fast.
+- **Everything on object storage.** Nodes, edges, properties, and vector/text index artifacts
+  persist durably in object storage — no local disk required for correctness.
+- **Tiered caching.** Separate in-memory and SSD cache paths for graph, vector, and text data keep
+  hot-path reads fast.
 - **Full ACID transactions.** Every query runs in a serializable snapshot isolation transaction.
-  Concurrent reads and writes do not block each other.
-- **Dynamic query model.** Queries are authored in a Rust or TypeScript DSL and sent to the
-  runtime as dynamic HTTP requests that carry the query inline. No separate deployment step.
+- **Dynamic query model.** Queries are authored in a Rust, TypeScript, or Go DSL and sent to the
+  runtime as HTTP requests that carry the query inline — no deployment step.
 
 ## Next Steps
 
@@ -81,20 +72,15 @@ For installation details, Helix Cloud authentication, and the full command refer
 
 ### AI-assisted query authoring
 
-If you're developing with a coding agent, install the Helix skills bundle to get specialized agents for writing,
-optimizing, and translating HelixDB queries:
+If you develop with a coding agent, install the Helix skills bundle for writing, optimizing, and
+translating queries. Run it from your project root so the skills can inspect your local schema:
 
 ```bash
 npx skills add HelixDB/skills
 ```
 
-This installs skills such as `helix-query-authoring`, `helix-query-optimize`,
-`helix-query-json-dynamic`, `helix-query-from-cypher`, and `helix-query-from-gremlin`. Once
-installed, Claude will load the relevant skill automatically when you ask it to write a query,
-tune a slow traversal, or translate a Cypher/Gremlin query into the Helix Rust DSL.
-
-Run the command from the root of your Helix project so the skills can inspect your local schema,
-edges, and existing queries when generating new ones.
+The agent then loads the relevant skill automatically when you ask it to write a query, tune a
+slow traversal, or translate a Cypher/Gremlin query.
 
 ### Configuring disk mode
 
@@ -278,11 +264,9 @@ Inside the modules where you author queries, bring the DSL into scope with the p
 use helix_db::dsl::prelude::*;
 ```
 
-The prelude re-exports the common building blocks — `read_batch`, `write_batch`, the traversal
-builder `g()`, sub-traversal `sub()`, `NodeRef`/`EdgeRef`, `Predicate`/`SourcePredicate`, the
-projection helpers (`PropertyProjection`, `ExprProjection`), and `AggregateFunction`. See the
-[docs.rs reference](https://docs.rs/helix-db/latest/helix_db/) for the full surface
-and [Querying](/database/querying) for how the pieces fit together.
+The prelude re-exports the common building blocks — `read_batch`, `write_batch`, `g()`, `sub()`,
+`NodeRef`/`EdgeRef`, `Predicate`/`SourcePredicate`, the projection helpers, and more. See the
+[docs.rs reference](https://docs.rs/helix-db/latest/helix_db/) for the full surface.
 
 ## Setting up your queries
 
@@ -300,6 +284,8 @@ use helix_db::dsl::prelude::*;
 // Write query: insert a new User node.
 #[register]
 pub fn add_user(userId: String, name: String) -> WriteBatch {
+    // The macro reads parameter *names* at compile time, so the values themselves
+    // go unused in the body; this line silences the unused-variable warning.
     let _ = (&userId, &name);
     write_batch()
         .var_as(
@@ -341,22 +327,14 @@ fn main() {
 
 A few things to know about this snippet:
 
-- `#[register]` registers the function with the global query bundle so `generate_to_path` will
-  include it in `queries.json`. No manual list to maintain.
-- Calling the registered function with concrete arguments — e.g. `add_user("u-1".into(),
-  "Alice".into())` — returns a `DynamicQueryRequest` you POST to `/v1/query`. See
-  [Querying](/database/querying) for the full send path.
-- The generated dynamic request sets the top-level `query_name` to the Rust function name, so
-  gateway logs and query diagnostics show `add_user` instead of the fallback `__dynamic__`.
-- The `let _ = (&userId, &name);` line silences Rust's unused-variable warning — the macro reads
-  the parameter *names* at compile time to wire them into the JSON schema, so the values
-  themselves aren't used in the body.
-- `var_as("name", traversal)` binds a sub-result, and `.returning([...])` chooses which bound
-  names appear in the response payload.
+- `#[register]` adds the function to the global bundle, so `generate_to_path` picks it up — no
+  manual list to maintain.
+- Calling the function with concrete arguments returns a `DynamicQueryRequest` you POST to
+  `/v1/query`; the request's `query_name` is set to the function name (so logs show `add_user`,
+  not `__dynamic__`). See [Querying](/database/querying) for the send path.
 
-For the full builder catalog — edges, richer predicates, vector and text search, sub-traversals,
-and aggregations — see the [docs.rs reference](https://docs.rs/helix-db/latest/helix_db/)
-and [Querying](/database/querying).
+For the full builder catalog — edges, predicates, vector/text search, sub-traversals, aggregations
+— see the [docs.rs reference](https://docs.rs/helix-db/latest/helix_db/).
 
 ## Generate the bundle
 
@@ -378,10 +356,8 @@ This produces `queries.json` in the project root. From here you can:
 Queries for HelixDB can also be authored in TypeScript using the
 [`@helix-db/helix-db`](https://www.npmjs.com/package/@helix-db/helix-db) package.
 The TypeScript DSL builds the same JSON AST as the Rust [`helix-db`](/database/rust-project-setup)
-crate, so the resulting `queries.json` bundle is interchangeable with one generated by
-Rust. Use TypeScript when your service is already a Node.js codebase, when you want
-end-to-end type inference on parameters from the same language that calls the routes,
-or when you prefer to keep query authoring close to the application that consumes them.
+crate, so the resulting `queries.json` bundle is interchangeable. Use TypeScript when your service
+is already Node.js or you want end-to-end type inference on parameters.
 
 For the conceptual model and per-builder walkthrough, see the
 [Querying Guide](/database/querying-guide/overview).
@@ -509,16 +485,11 @@ export const queries = defineQueries({
 
 A few things to know about this snippet:
 
-- Each query is a plain function. Calling the function returns a serializable
-  `ReadBatch` or `WriteBatch`; nothing happens at module load.
-- The keys under `read` and `write` (`user_by_username`, `add_user`) name each query in
-  the bundle and back the typed `queries.call.*` helpers used to send them as dynamic
-  requests (see below). Names must be unique across reads *and* writes — a duplicate
-  throws `GenerateError` at bundle time.
-- `varAs("name", traversal)` binds a sub-result, and `.returning([...])` chooses which
-  bound names appear in the response payload.
-- `PropertyInput.param("name")` is how a parameter feeds into an `addN` property bag
-  or a `setProperty` call; for predicates use `Predicate.eqParam(...)` and friends.
+- The keys under `read` and `write` name each query in the bundle and back the typed
+  `queries.call.*` helpers (see below). Names must be unique across reads *and* writes — a
+  duplicate throws `GenerateError` at bundle time.
+- `PropertyInput.param("name")` feeds a parameter into an `addN` property bag or a
+  `setProperty`; for predicates use `Predicate.eqParam(...)` and friends.
 
 ## Add a generator entry point
 
@@ -569,10 +540,9 @@ const { user } = await client
   .send();
 ```
 
-`call.<name>` is fully typed: passing an unknown key or the wrong value type for a
-parameter is a compile error. The returned request also sets the top-level
-`query_name` to the registered route key, so gateway logs and query diagnostics
-show `user_by_username` instead of the fallback `__dynamic__`.
+`call.<name>` is fully typed — an unknown key or wrong parameter type is a compile error — and
+sets `query_name` to the route key so logs show `user_by_username`, not `__dynamic__`. See
+[Querying](/database/querying) for the full client send path.
 
 ## Next Steps
 
@@ -787,12 +757,8 @@ func ExecWithConflictRetry(ctx context.Context, client *helix.Client, build func
 
 ## Currently In Progress
 
-- ~~Local docker deployment~~ .
-- **More intelligent cache warming** (always improving)
-- ~~Dashboard improvements~~ /
 - **Supporting non-HA clusters**
-- **Reliability and availability improvements** (always improving) 
-- **Backups and point in time recovery**
+- **Backups and point-in-time recovery**
 - **Expand query plans to improve performance**
 
 ## Up Next
@@ -935,14 +901,12 @@ storage that can handle concurrent writes to the writer node and allows for virt
 
 ## Gateway
 
-The gateway is the entry point for all client traffic. For high availability, deploy at least
-three gateway instances per cluster. Smaller gateway fleets can be used for non-HA or test
-workloads, but they are not recommended for production. Gateways accept HTTP requests,
-authenticate the caller via Bearer token, accept the inline query payload, and route the request
-to the writer or a reader. Mutations are always routed to the
-writer. Read-only queries are distributed across readers and the writer. Gateways handle
-connection management, load balancing, token validation, and the translation from HTTP requests to
-the backend query RPC.
+The gateway is the entry point for all client traffic. It authenticates each request via Bearer
+token, accepts the inline query payload, and routes it: mutations always go to the writer,
+read-only queries are distributed across the readers and the writer.
+
+For high availability, deploy at least three gateway instances per cluster. Smaller fleets work for
+non-HA or test workloads but are not recommended for production.
 
 ## Writer
 
@@ -983,11 +947,9 @@ Each process (writer and readers) maintains local cache tiers for the data and i
   storage.
 
 Graph, vector, and text workloads use specialized cache paths so hot working sets do not fully
-contend with one another.
-
-On cold start, caches warm progressively as queries execute. Frequently accessed data reaches
-steady-state cache residency quickly. For predictable latency from the first query, caches can be
-pre-warmed, including text index generations.
+contend with one another. On cold start, caches warm progressively as queries execute; for
+predictable latency from the first query, caches (including text index generations) can be
+pre-warmed.
 
 ## Read Path
 
@@ -1016,9 +978,8 @@ Helix Cloud provides full ACID guarantees for every transaction.
 
 ## Atomicity
 
-Each query executes as a single atomic transaction. All mutations within a query either commit
-together or roll back entirely. There are no partial writes. If any step of a multi-traversal
-query fails, the entire transaction is aborted and no data is modified.
+Each query executes as a single transaction: all mutations commit together or roll back entirely.
+There are no partial writes — if any step fails, nothing is modified.
 
 ## Consistency
 
@@ -1029,11 +990,10 @@ value constraints) are enforced at write time, not retroactively.
 ## Isolation
 
 Transactions run with serializable snapshot isolation. Each transaction reads from a consistent
-point-in-time snapshot. Graph reads, vector search, and text search all observe that same
-snapshot. Write transactions also get read-your-writes, and indexed reads participate in normal
-conflict detection.
+point-in-time snapshot — graph reads, vector search, and text search all observe the same one — and
+write transactions additionally get read-your-writes.
 
-- Read-only queries see a consistent snapshot and are never blocked by writes.
+- Read-only queries are never blocked by writes.
 - Write transactions commit through the single writer process, so conflicting writes are detected
   before commit.
 
@@ -1053,19 +1013,17 @@ cluster.
 
 This baseline ensures:
 
-- **Reader redundancy.** If a reader becomes unavailable, the remaining readers and the writer
-  continue serving read traffic. A replacement reader is provisioned automatically.
-- **Gateway redundancy.** Gateway instances are stateless and interchangeable. Loss of one gateway
-  has no impact on availability. Traffic is redistributed across the remaining instances.
-- **Writer recovery.** If the writer becomes unavailable, a new writer process is started and
-  recovers its state from object storage. No committed data is lost. Write availability is
-  restored once the new writer is running.
-- **Infrastructure redundancy.** All supporting services (load balancers, metadata stores,
-  coordination layers) run with redundant infrastructure sized for high-availability clusters,
-  eliminating single points of failure across the cluster.
+- **Reader redundancy.** If a reader fails, the rest keep serving reads and a replacement is
+  provisioned automatically.
+- **Gateway redundancy.** Gateways are stateless and interchangeable; losing one just redistributes
+  traffic across the others.
+- **Writer recovery.** If the writer fails, a new one starts and recovers from object storage with
+  no committed data lost.
+- **Infrastructure redundancy.** Supporting services (load balancers, metadata stores, coordination
+  layers) run with no single points of failure.
 
-Object storage itself provides independent durability and availability guarantees. The database
-cluster can be fully rebuilt from object storage contents.
+The cluster can be fully rebuilt from object storage, which provides its own durability and
+availability guarantees.
 
 ## Service Level Agreements
 
@@ -1092,53 +1050,35 @@ through the Helix dashboard. Include the token in the `Authorization` header of 
 Authorization: Bearer <token>
 ```
 
-The SDK clients attach this header for you — set the key once with `withApiKey`
-(TypeScript), `with_api_key` (Rust), or `WithAPIKey` (Go) and every request the
-client sends is authenticated:
+The SDK clients attach this header for you — set the key once and every request is authenticated,
+via `withApiKey` (TypeScript), `with_api_key` (Rust), or `WithAPIKey` (Go):
+
+```ts
+
+const client = new Client("https://helix.example.com").withApiKey(token);
+```
 
 Requests without a valid token are rejected at the gateway before reaching any database node.
-Token rotation and revocation are performed in the dashboard with immediate effect.
-
-## Role-Based Access Control
-
-Scoped API keys with role-based permissions - read-only, read-write, or restricted to specific
-operations - allowing least-privilege credentials for each service or environment.
-
-Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss RBAC requirements for
-your cluster.
-
-## SSO / SAML
-
-SSO and SAML integration for dashboard access, enabling teams to manage Helix users through an
-existing identity provider (Okta, Azure AD, Google Workspace, etc.) with centralized provisioning
-and deprovisioning.
-
-Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss SSO requirements for
-your organization.
-
-## Audit Logs
-
-Per-request audit logging covering timestamp, token identity, query name, source IP, and response
-status. Audit logs support compliance requirements (SOC 2, HIPAA, GDPR) and enable forensic
-analysis of access patterns.
-
-Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss audit logging
-requirements for your cluster.
+Token rotation and revocation take immediate effect from the dashboard.
 
 ## Encryption
 
 All traffic between clients and the gateway is encrypted in transit via TLS. Data at rest in
 object storage is encrypted using the storage provider's server-side encryption.
 
-## AWS PrivateLink
+## Enterprise features
 
-For workloads that require traffic to remain entirely within the AWS network, PrivateLink creates
-a private endpoint in your VPC that routes to Helix Cloud without traversing the public
-internet. This eliminates exposure to internet-based threats and satisfies network isolation
-requirements common in regulated environments.
+The following are available for enterprise clusters. Contact
+[founders@helix-db.com](mailto:founders@helix-db.com) to enable them for your deployment.
 
-Contact [founders@helix-db.com](mailto:founders@helix-db.com) to discuss PrivateLink
-configuration for your cluster.
+- **Role-based access control.** Scoped API keys with read-only, read-write, or operation-restricted
+  permissions for least-privilege credentials per service or environment.
+- **SSO / SAML.** Dashboard access through your identity provider (Okta, Azure AD, Google Workspace)
+  with centralized provisioning and deprovisioning.
+- **Audit logs.** Per-request logging (timestamp, token identity, query name, source IP, response
+  status) for compliance (SOC 2, HIPAA, GDPR) and forensic analysis.
+- **AWS PrivateLink.** A private endpoint in your VPC that routes to Helix Cloud without traversing
+  the public internet, for network-isolation requirements in regulated environments.
 
 # Tradeoffs
 
@@ -1166,21 +1106,14 @@ vector, and text workloads with strong transactional guarantees. These choices h
 
 ## Design Choices
 
-**Object storage as the system of record.** Caches accelerate reads but are not required for
-correctness. This means cold starts are slower than systems that keep all data on local disk, but
-durability and cost characteristics are superior.
-
-**Single writer.** Serializing all writes through one process avoids distributed coordination at the
-cost of write throughput being bounded by a single node. In practice, batching and the high
-throughput of the writer process make this sufficient for most workloads.
-
-**Specialized cache paths.** Helix maintains separate cache paths for graph data, vector indexes,
-and text search artifacts. The tradeoff is less flexibility in cache allocation when only one
-workload dominates.
-
-**Dynamic query model.** Queries travel inline with each request, so there is no deploy step and
-ad-hoc queries are fully supported. The tradeoff is the small per-request cost of deserializing the
-query AST on every call.
+- **Object storage as the system of record.** Superior durability and cost, at the price of slower
+  cold starts than all-on-local-disk systems.
+- **Single writer.** Avoids distributed coordination; write throughput is bounded by one node, which
+  batching makes sufficient for most workloads.
+- **Specialized cache paths.** Graph, vector, and text caches don't contend, at the cost of less
+  flexible allocation when one workload dominates.
+- **Dynamic query model.** No deploy step and full ad-hoc support, at the cost of deserializing the
+  query AST on each call.
 
 # Limits
 
@@ -1303,10 +1236,9 @@ you want to skip the DSL and POST hand-written JSON, this is the body you send.
 Sending that envelope is one POST to `/v1/query`. The response is a JSON
 object keyed by the names from `.returning([...])`.
 
-`query_name` is optional operational metadata for gateway logs and query
-diagnostics. Use exactly the top-level field `query_name`; `name` and
-`queryName` are not accepted aliases. If `query_name` is missing or `null`, the
-gateway uses the fallback name `__dynamic__`. Blank strings are rejected.
+`query_name` is optional metadata for gateway logs and diagnostics. Use the exact
+field `query_name` (not `name` or `queryName`); it defaults to `__dynamic__` when
+missing or `null`, and blank strings are rejected.
 
 For larger envelopes, write the JSON to a file and use `curl --data-binary
 @file.json` — the inline `--data-raw` form gets unwieldy past a few steps.
@@ -1447,21 +1379,11 @@ how to bind parameters and organize queries into a `queries.json` bundle.
 
 ## How to read this guide
 
-Each page follows the same template:
-
-1. A short prose intro to the concept.
-2. One or more `<CodeGroup>` blocks. The **TypeScript** tab is the lead — every
-   example is written there first.
-3. The **Rust** tab mirrors the TypeScript exactly, with snake-case method names and
-   the trailing-underscore convention for Rust keywords (`where_`, `in_`, `as_`).
-4. The **Go** tab mirrors the same AST with `helix.ReadQuery` / `helix.WriteQuery`
-   dynamic request builders.
-5. The **JSON** tab is the serialized AST that every DSL produces. It is the body
-   you would POST to `/v1/query`; the same object appears inside a generated
-   `queries.json` bundle under `read_routes.<name>` or `write_routes.<name>`.
-
-You can also jump straight to any topic from the list below; the pages do not assume
-strict sequential reading, but anything earlier in the list is fair game later on.
+Each page leads with a short intro, then `<CodeGroup>` blocks in all four forms.
+TypeScript is the lead tab; Rust mirrors it with snake_case names and trailing
+underscores for keywords (`where_`, `in_`, `as_`); Go mirrors the same AST via
+`helix.ReadQuery` / `helix.WriteQuery`; and JSON is the serialized AST you POST to
+`/v1/query`. Pages can be read in any order.
 
 ## Next Steps
 
@@ -1689,14 +1611,11 @@ A typical multi-predicate filter:
 
 ### `SourcePredicate` vs `Predicate`
 
-Source steps (`nWhere`, `eWhere`, `nWithLabelWhere`, `eWithLabelWhere`) accept a
-*`SourcePredicate`*, which is deliberately smaller: comparison + `between` + `hasKey`
-+ `startsWith` + `and` / `or`. These are the predicates the storage layer can push
-down into an index lookup.
-
-Use a `SourcePredicate` when you want the filter to participate in index selection at
-the source step. Use `.where(Predicate.*)` when you need anything outside that set,
-or when you want the filter to run *after* a graph traversal step.
+Use a `SourcePredicate` at source steps when the filter should participate in index
+selection; use `.where(Predicate.*)` for anything outside that set or to filter after a
+traversal step. See
+[`SourcePredicate` vs `Predicate`](/database/querying-guide/reading-nodes#sourcepredicate-vs-predicate)
+for the full breakdown.
 
 ## Nested property paths
 
@@ -1804,11 +1723,9 @@ Up to this point every example has ended with `.valueMap([...])` to ship a few
 properties back to the caller. This page covers the full set of terminal projections:
 how to shape the output, compute derived values, and aggregate the stream.
 
-A traversal that ends in a terminal step (`.count`, `.values`, `.project`, ...)
-produces a final result rather than another node or edge stream. The TypeScript and
-Rust typestate machinery prevents you from chaining traversal steps after a terminal;
-the Go SDK records terminal steps in the same JSON AST and surfaces construction
-errors through `Validate`, `MarshalRequest`, or `Client.Exec`.
+A terminal step (`.count`, `.values`, `.project`, ...) ends the chain and produces a
+result rather than another stream. TypeScript and Rust block further chaining at
+compile time; Go reports it at serialization (`Validate`, `MarshalRequest`, or `Client.Exec`).
 
 ## Scalar terminals: `.count`, `.exists`, `.id`, `.label`
 
@@ -2732,9 +2649,9 @@ storage. Only index properties that are frequently filtered on. Unindexed proper
 queryable via `.where_(Predicate::...)`, but the route will scan the label rather than seek the
 index.
 
-Indexes address top-level properties only. A query may filter a nested object field with a dotted
-path such as `metadata.externalID`, but that filter is scan-only in V1 and cannot be declared as an
-equality or range index. Store frequently indexed metadata as explicit top-level properties.
+Indexes address top-level properties only. Nested fields (e.g. `metadata.externalID`) can be
+filtered with a dotted path but are scan-only in V1 — store frequently indexed metadata as
+top-level properties.
 
 The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
 or `write_batch()` route as shown in [Querying](/database/querying).
@@ -3050,27 +2967,18 @@ Multi-tenant architectures generally fall into one of three isolation levels.
 
 ## Row-Level Isolation in Helix Cloud
 
-Helix Cloud focuses on row-level isolation. This is the fundamental building block for
-multi-tenancy. It provides full flexibility to implement any tenancy model at the application
-layer without imposing structural constraints on the database.
+Helix Cloud focuses on row-level isolation, which lets you implement any tenancy model at the
+application layer without structural constraints on the database. Adding a tenant is a write, not a
+provisioning event.
 
-Assign a tenant identifier as a property on every node and edge. Index that property with an
-equality index. All queries filter on the tenant property, ensuring that each request only
-accesses data belonging to the requesting tenant.
+Assign a tenant identifier as a property on every node and edge, index it with an equality index,
+and filter every query on it so each request only sees its own tenant's data. This is the same
+mechanism as any property-based filtering: secondary indexes make the lookup fast, and snapshot
+isolation keeps concurrent tenants from interfering.
 
-This is the same mechanism used for any property-based filtering: secondary indexes make the
-lookup fast, and snapshot isolation guarantees that concurrent tenants do not interfere with each
-other.
-
-Row-level isolation keeps the architecture simple. The main model is still shared infrastructure:
-one writer fleet, one reader fleet, shared caches, and shared secondary indexes. Vector and text
-search can additionally use tenant-partitioned physical indexes when search isolation is needed.
-The tenant property in an index definition is the property name Helix reads from each node or edge
-to decide which tenant partition to use. When that property name is `tenant_id`, Helix maintains
-separate vector and text search structures for each distinct `tenant_id` value. This keeps
-tenant-scoped search working sets smaller and allows cache residency to track active tenants more
-closely. Tenants are still a data concern, not an infrastructure concern. Adding a new tenant is a
-write, not a provisioning event.
+The model stays shared infrastructure throughout — one writer fleet, one reader fleet, shared caches
+and secondary indexes. When search results also need isolating, vector and text search can use
+[tenant-partitioned indexes](#tenant-partitioned-search-indexes).
 
 ### In Practice
 
@@ -3197,9 +3105,8 @@ g().text_search_nodes(
 
 ## Considerations
 
-- **Noisy neighbors.** Tenants share compute and cache resources. A tenant issuing a high volume
-  of queries or large writes affects cache residency and query latency for other tenants.
-  Monitoring per-tenant query volume and applying rate limiting on your infrastructure mitigates this.
+- **Noisy neighbors.** Tenants share compute and cache, so a high-volume tenant can affect others'
+  latency. Monitor per-tenant query volume and apply rate limiting on your infrastructure to mitigate.
 - **Shared search semantics.** Secondary indexes remain shared. Tenant-scoped vector and text
   searches require an explicit tenant value for the configured tenant property, and the system
   remains shared infrastructure even when search indexes are partitioned by tenant.
@@ -3337,7 +3244,7 @@ The first step must be a source step (for example `NWhere`) before any terminal 
 
 # Helix Cloud
 
-The Helix CLI's Helix Cloud surface covers authentication, workspace/project/cluster selection, instance metadata sync, log retrieval, and dynamic queries against a remote gateway. Cluster provisioning and scaling happen in the Helix control plane — not in the CLI.
+The CLI handles authentication, workspace/project/cluster selection, metadata sync, log retrieval, and dynamic queries against a remote gateway. Cluster provisioning and scaling happen in the Helix control plane, not the CLI.
 
 ## Prerequisites
 
@@ -3359,12 +3266,7 @@ Override the variable name per-instance by setting `query_auth_env` under `[ente
 
 ## Common errors
 
-| Error | Resolution |
-|-------|------------|
-| `Authentication required. Run 'helix auth login' first.` | Run `helix auth login` (or set up an API key via `helix auth create-key`). |
-| `Enterprise gateway URL is not configured for '<instance>'.` | Run `helix sync <instance>`, or set `gateway_url` manually under `[enterprise.<instance>]`. |
-| `Environment variable HELIX_API_KEY is required for Enterprise query auth` | Export the variable named by `query_auth_env`. |
-| `live Enterprise logs are not supported yet` | Use `helix logs <instance> --range --start … --end …` instead of `--follow`. |
+For Helix Cloud auth, gateway, and logging errors, see [Troubleshooting](/cli/troubleshooting).
 
 ## What next?
 
@@ -3757,17 +3659,18 @@ helix -v, --verbose     Show detailed output with timing information
 | [`helix init`](/cli/command-reference/init) | `local`, `enterprise` | `-p`/`--path` | Local, Helix Cloud | Initialize a v2 Helix project |
 | [`helix chef`](/cli/command-reference/chef) | | | Local | Bootstrap a first Helix app with skills, docs MCP, starter queries, seed data, and a launched coding agent |
 | [`helix add`](/cli/command-reference/add) | `local`, `enterprise` | | Local, Helix Cloud | Add an instance to an existing project |
-| [`helix start`](/cli/command-reference/start) | | `--foreground`, `--port`, `--disk` | Local | Start a local instance (background by default) |
+| [`helix start`](/cli/command-reference/start) | | `--foreground`, `--port`, `--disk`, `--persist` | Local | Start a local instance (background by default) |
 | [`helix stop`](/cli/command-reference/stop) | | | Local | Stop a background local instance |
 | [`helix restart`](/cli/command-reference/restart) | | | Local | Restart a background local instance |
 | [`helix status`](/cli/command-reference/status) | | | Local, Helix Cloud | Show instance status |
 | [`helix logs`](/cli/command-reference/logs) | | `-f`/`--follow`, `-r`/`--range`, `--start`, `--end` | Local, Helix Cloud | View instance logs |
-| [`helix query`](/cli/command-reference/query) | | `-f`/`--file`, `--json`, `--warm`, `--host`, `--port`, `--compact` | Local, Helix Cloud | Send a dynamic query to `POST /v1/query` |
+| [`helix query`](/cli/command-reference/query) | | `-f`/`--file`, `--json`, `-e`/`--ts`, `--ts-file`, `--warm`, `--host`, `--port`, `--compact` | Local, Helix Cloud | Send a dynamic query (JSON or TypeScript DSL) to `POST /v1/query` |
 | [`helix auth`](/cli/command-reference/auth) | `login`, `logout`, `create-key` | | Helix Cloud | Manage Helix Cloud authentication |
 | [`helix workspace`](/cli/command-reference/workspace) | `list`, `show`, `switch` | `--format`, `--id` | Helix Cloud | Manage active workspace selection |
 | [`helix project`](/cli/command-reference/project) | `list`, `show`, `switch` | `--format`, `--id`, `--workspace-id` | Helix Cloud | Manage linked project selection |
-| [`helix cluster`](/cli/command-reference/cluster) | `list` | `--format`, `--workspace-id`, `--project-id` | Helix Cloud | List Helix Cloud clusters |
-| [`helix sync`](/cli/command-reference/sync) | | | Helix Cloud | Refresh Helix Cloud instance metadata in `helix.toml` |
+| [`helix cluster`](/cli/command-reference/cluster) | `list`, `indexes` | `--format`, `--workspace-id`, `--project-id`, `--cluster-id` | Helix Cloud | List Helix Cloud clusters and their indexes |
+| [`helix push`](/cli/command-reference/push) | | | Helix Cloud | Deploy a Helix Cloud instance to Helix Cloud |
+| [`helix sync`](/cli/command-reference/sync) | | `--dry-run`, `-y`/`--yes` | Helix Cloud | Refresh Helix Cloud instance metadata in `helix.toml` |
 | [`helix prune`](/cli/command-reference/prune) | | `-a`/`--all`, `-y`/`--yes` | Local | Remove Helix-owned local containers, volumes, and workspaces |
 | [`helix delete`](/cli/command-reference/delete) | | `-y`/`--yes` | Local, Helix Cloud | Delete an instance from `helix.toml` and local state |
 | [`helix skills`](/cli/command-reference/skills) | `install`, `update`, `list` | `--project` | — | Install, update, and list the Helix agent skills |
@@ -3894,17 +3797,11 @@ The first interactive run signs you in to Helix Cloud through a GitHub device-co
 
 ## What it does
 
-1. Installs Helix skills with `npx skills add HelixDB/skills`.
-2. Installs the Helix docs MCP with `npx add-mcp https://docs.helix-db.com/mcp --name helixdb-docs`.
-3. Initializes a local project (`helix init local`) with a `dev` instance on port `6969`.
-4. Writes `HELIX_CHEF_PROMPT.md` — the build prompt handed to your coding agent (your build intent is substituted in; a Personal CRM is used as the default when you leave it blank).
-5. Writes starter dynamic query files (when no custom build intent is given):
-   - `examples/seed.json` inserts starter `User` nodes.
-   - `examples/read_users.json` reads the seeded users.
-6. Starts the local database (`helix start dev`, in-memory).
-7. Seeds starter data (`helix query dev --file examples/seed.json`).
-8. Detects an installed coding agent (Claude Code → Codex → OpenCode), asks for a permission mode, and launches it against the build prompt.
-9. Opens the generated app in your browser at `http://localhost:3000` once the agent's frontend is running.
+1. Installs the Helix skills (`npx skills add HelixDB/skills`) and docs MCP.
+2. Initializes a local project (`helix init local`) with a `dev` instance on port `6969`, then starts it in-memory.
+3. Writes `HELIX_CHEF_PROMPT.md` (your build intent, or a Personal CRM default) and, for the default build, starter query files under `examples/` — then seeds the data.
+4. Detects an installed coding agent (Claude Code → Codex → OpenCode), asks for a permission mode, and launches it against the build prompt.
+5. Opens the generated app at `http://localhost:3000` once the agent's frontend is running.
 
 ## Interactive mode
 
@@ -3957,6 +3854,7 @@ helix cluster <SUBCOMMAND>
 | Sub-command | Description |
 |-------------|-------------|
 | `list` | List Helix Cloud clusters. |
+| `indexes` (alias `indices`) | List the indexes in a cluster. |
 
 ### `helix cluster list`
 
@@ -3964,6 +3862,15 @@ helix cluster <SUBCOMMAND>
 |------|------|-------------|---------|
 | `--workspace-id` | String | List clusters for a specific workspace. | Active workspace from `~/.helix/config` |
 | `--project-id` | String | Limit results to a specific project. | Linked project from `helix.toml`, if any |
+| `--format` | `human` \| `json` | Output format. | `human` |
+
+### `helix cluster indexes`
+
+List the indexes defined in a cluster. Alias: `helix cluster indices`.
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--cluster-id` | String | Cluster to inspect. | The current project's Enterprise instance, from `helix.toml` |
 | `--format` | `human` \| `json` | Output format. | `human` |
 
 ## Examples
@@ -3980,6 +3887,12 @@ helix cluster list --workspace-id ws_01HX...
 
 # Emit machine-readable JSON
 helix cluster list --format json
+
+# List indexes for the current project's Enterprise cluster
+helix cluster indexes
+
+# List indexes for a specific cluster as JSON
+helix cluster indexes --cluster-id ec_01HX... --format json
 ```
 
 Use the resulting cluster ID with [`helix init cloud`](/cli/command-reference/init), [`helix add cloud`](/cli/command-reference/add), or [`helix auth create-key`](/cli/command-reference/auth).
@@ -4400,15 +4313,58 @@ helix prune --all
 helix prune --all --yes
 ```
 
-# helix query
+# helix push
 
-Send a dynamic JSON request to `POST /v1/query` on a local or Helix Cloud instance.
+Deploy a Helix Cloud instance. `helix push` reads the `[enterprise.<instance>]` block in `helix.toml` and deploys it to Helix Cloud, then reports progress until the deploy completes.
+
+Requires Helix Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
 
 ## Usage
 
 ```bash
-helix query [INSTANCE] (--file <REQUEST.json> | --json '<JSON>') [OPTIONS]
+helix push [INSTANCE]
 ```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `INSTANCE` | Helix Cloud instance name from `helix.toml`. If omitted, the CLI prompts in a TTY, or fails listing the available `[enterprise.*]` instances when non-interactive. |
+
+## Behavior
+
+- Resolves the named `[enterprise.<instance>]` block and deploys it to Helix Cloud, streaming deploy progress.
+- Fails on a **local** instance with `Local instance '<name>' uses the v2 runtime. Run 'helix start <name>' instead.`
+- On deploy failure, the CLI hints to `check the cluster with 'helix status', and re-authenticate with 'helix auth login' if needed`.
+
+## Examples
+
+```bash
+# Deploy a named Helix Cloud instance
+helix push production
+
+# Deploy without naming the instance (prompts in a TTY)
+helix push
+```
+
+## Related
+
+- [`helix auth`](/cli/command-reference/auth) — authenticate with Helix Cloud before deploying
+- [`helix sync`](/cli/command-reference/sync) — refresh gateway/auth metadata after a deploy
+- [`helix query`](/cli/command-reference/query) — query the deployed instance
+- [`helix status`](/cli/command-reference/status) — check the deployed cluster's state
+
+# helix query
+
+Send a dynamic query to `POST /v1/query` on a local or Helix Cloud instance. You can supply the query as a raw JSON request (`--file`/`--json`) or write it in the TypeScript DSL (`-e`/`--ts`/`--ts-file`) and let the CLI build the request for you.
+
+## Usage
+
+```bash
+helix query [INSTANCE] (--file <REQUEST.json> | --json '<JSON>' | -e '<TS>' | --ts-file <QUERY.ts>) [OPTIONS]
+```
+
+Provide **exactly one** input: a JSON request (`--file` or `--json`) or a TypeScript DSL expression (`-e`/`--ts` or `--ts-file`). The four input flags are mutually exclusive.
 
 ## Arguments
 
@@ -4418,10 +4374,14 @@ helix query [INSTANCE] (--file <REQUEST.json> | --json '<JSON>') [OPTIONS]
 
 ## Available flags
 
+Exactly one input flag is required (`--file`, `--json`, `-e`/`--ts`, or `--ts-file`).
+
 | Flag | Type | Required | Description | Default |
 |------|------|----------|-------------|---------|
-| `-f`, `--file` | Path | Yes, unless `--json` is set | JSON request body file. | — |
-| `--json` | String | Yes, unless `--file` is set | Inline JSON request body. Mutually exclusive with `--file`. | — |
+| `-f`, `--file` | Path | One input required | JSON request body file. | — |
+| `--json` | String | One input required | Inline JSON request body. | — |
+| `-e`, `--ts` | String | One input required | TypeScript DSL expression, evaluated locally to build the request (like `mysql -e`). See [TypeScript DSL input](#typescript-dsl-input). | — |
+| `--ts-file` | Path | One input required | Path to a `.ts` file containing a TypeScript DSL expression. | — |
 | `--warm` | Boolean | No | Send the request as a cache-warming call (`X-Helix-Warm: true`). Read requests only. | `false` |
 | `--host` | String | No | Override the host for local instances. | `localhost` |
 | `--port` | Number | No | Override the port for local instances. | `[local.<instance>] port` (default `6969`) |
@@ -4433,7 +4393,7 @@ The JSON request must include:
 
 - `request_type` — lowercase `"read"` or `"write"`. Anything else is rejected with `request_type must be lowercase 'read' or 'write'`.
 - `query_name` — optional top-level query name for gateway logs and query diagnostics. Use exactly `query_name`; `name` and `queryName` are not accepted aliases. Missing or `null` falls back to `__dynamic__`.
-- `query` — the dynamic query object (same shape as `read_routes.<name>` / `write_routes.<name>` in `queries.json`). Missing `query` is rejected with `dynamic query request must include query`.
+- `query` — the dynamic query object: a `queries` array of `{ "Query": { "name", "steps", "condition" } }` entries plus a `returns` list naming what to return (see the example below). Missing `query` is rejected with `dynamic query request must include query`.
 - `parameters` — optional object of named parameters.
 
 `helix init local` scaffolds `examples/request.json` with a runnable read request:
@@ -4465,6 +4425,31 @@ Every query must begin with a source step (for example `NWhere`) before any term
 
 Use `--file` for checked-in or reusable requests, and `--json` for quick one-off requests from a shell. Quote inline JSON so your shell passes it as one argument.
 
+## TypeScript DSL input
+
+Instead of hand-writing JSON, you can pass a TypeScript DSL expression and let the CLI build the request — the same way `mysql -e` runs SQL from the shell:
+
+```bash
+# Inline expression with -e / --ts
+helix query dev -e 'readBatch().varAs("c", g().nWithLabel("User").count()).returning(["c"])'
+
+# Or from a .ts file
+helix query dev --ts-file queries/count_users.ts
+```
+
+How it works:
+
+- The expression must evaluate to a `readBatch()` or `writeBatch()` builder. `g`, `readBatch`, `writeBatch`, `defineParams`, and `param` are auto-imported and already in scope — you write only the expression, no imports.
+- The CLI evaluates it locally with Node using the published [`@helix-db/helix-db`](https://www.npmjs.com/package/@helix-db/helix-db) SDK, calls `.toDynamicJson()`, and posts the resulting dynamic-query JSON to `/v1/query`. The builders are pure (no I/O), so no instance needs to be running to *build* the request — only to run it. There is no separate compile step.
+- `request_type` is inferred automatically from whether you used `readBatch()` or `writeBatch()`.
+
+Requirements:
+
+- **Node.js 20+** on `PATH` (npm ships with it). On first use the CLI installs the SDK once into its cache directory; later runs reuse it.
+- For inline `-e` use, write a **single expression** with **no TypeScript type annotations** (it is evaluated as an expression, not compiled). Put more elaborate queries in a `--ts-file`.
+
+If Node is missing, the CLI tells you to install Node 20+ or fall back to `--json`/`--file`. For the full DSL surface, see the [`helix-query-typescript`](https://github.com/HelixDB/skills) skill.
+
 ## Validation rules
 
 | Rule | Error |
@@ -4483,7 +4468,7 @@ Use `--file` for checked-in or reusable requests, and `--json` for quick one-off
 For a Helix Cloud instance, `helix query` reads `[enterprise.<instance>]` in `helix.toml` and:
 
 - Posts to `<gateway_url>/v1/query`.
-- Sends an auth header named by `query_auth_header` (default `Authorization`) with the value read from the environment variable `query_auth_env` (default `HELIX_API_KEY`).
+- Sends an auth header named by `query_auth_header` (default `Authorization`) with the value read from the environment variable `query_auth_env` (default `HELIX_API_KEY`). The value is read from your shell environment or from a `.env` file in the project root (whichever is set), so you can keep the key out of your shell history.
 
 If `gateway_url` is missing, the CLI returns:
 
@@ -4513,6 +4498,9 @@ helix query dev --file examples/request.json --compact | jq '.node_count'
 
 # Send an inline JSON request body
 helix query dev --json '{"request_type":"read","query_name":"ad_hoc_read","query":{"queries":[],"returns":[]},"parameters":{}}'
+
+# Build the request from a TypeScript DSL expression instead of JSON
+helix query dev -e 'readBatch().varAs("c", g().nWithLabel("User").count()).returning(["c"])'
 
 # Target a Helix Cloud instance (requires HELIX_API_KEY in env and gateway_url in helix.toml)
 helix query production --file examples/request.json
@@ -4630,6 +4618,7 @@ helix start [INSTANCE] [OPTIONS]
 | `--foreground` | Boolean | Run attached and stop the container on Ctrl-C. Useful for streaming startup logs. | `false` |
 | `--port` | Number | Override the host port for this run. The container always listens on `8080` internally. | Value from `[local.<instance>] port` (default `6969`) |
 | `--disk` | Boolean | Use on-disk storage backed by a CLI-managed MinIO container for this run. | `false` |
+| `--persist` | Boolean | Write the resolved port and storage settings for this run back to `[local.<instance>]` in `helix.toml`, so future runs reuse them. | `false` |
 
 ## Behavior
 
@@ -4659,6 +4648,9 @@ helix start dev --port 9090
 
 # Start with persistent local storage for this run
 helix start dev --disk
+
+# Start on a new port and save it to helix.toml for future runs
+helix start dev --port 9090 --persist
 ```
 
 ## Related
@@ -4737,14 +4729,14 @@ helix stop staging || true
 
 # helix sync
 
-Refresh Helix Cloud instance metadata in `helix.toml`. `helix sync` fetches the latest gateway URL, auth header/env contract, and node-type information from Helix Cloud and writes it back to the local `[enterprise.<instance>]` block so subsequent [`helix query`](/cli/command-reference/query), [`helix logs`](/cli/command-reference/logs), and other Helix Cloud commands can target the instance.
+Refresh Helix Cloud instance metadata in `helix.toml`. `helix sync` fetches the latest gateway URL, auth contract, and node-type info from Helix Cloud and writes it back to the local `[enterprise.<instance>]` block, so [`helix query`](/cli/command-reference/query), [`helix logs`](/cli/command-reference/logs), and other Cloud commands can target the instance.
 
 Requires Helix Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
 
 ## Usage
 
 ```bash
-helix sync [INSTANCE]
+helix sync [INSTANCE] [OPTIONS]
 ```
 
 ## Arguments
@@ -4752,6 +4744,13 @@ helix sync [INSTANCE]
 | Argument | Description |
 |----------|-------------|
 | `INSTANCE` | Helix Cloud instance name to sync. If omitted, every `[enterprise.*]` instance in `helix.toml` is synced. |
+
+## Available flags
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `--dry-run` | Boolean | Fetch the remote state and print the changes `helix sync` would make, without writing anything. Mutually exclusive with `--yes`. | `false` |
+| `-y`, `--yes` | Boolean | Skip interactive conflict prompts and apply the reconciliation non-interactively (useful in CI). | `false` |
 
 ## What gets updated
 
@@ -4779,6 +4778,12 @@ helix sync production
 
 # Sync every Helix Cloud instance defined in helix.toml
 helix sync
+
+# Preview what would change without writing to helix.toml
+helix sync production --dry-run
+
+# Apply without interactive conflict prompts (CI)
+helix sync production --yes
 ```
 
 ## Related
