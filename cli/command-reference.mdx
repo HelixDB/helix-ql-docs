@@ -22,24 +22,25 @@ helix -v, --verbose     Show detailed output with timing information
 
 | Command | Subcommands | Flags | Scope | Description |
 |:--------|:------------|:------|:------|:------------|
-| [`helix init`](/cli/command-reference/init) | `local`, `enterprise` | `-p`/`--path` | Local, V2 Cloud | Initialize a v2 Helix project |
+| [`helix init`](/cli/command-reference/init) | `local`, `enterprise` | `-p`/`--path` | Local, Helix Cloud | Initialize a v2 Helix project |
 | [`helix chef`](/cli/command-reference/chef) | | | Local | Bootstrap a first Helix app with skills, docs MCP, starter queries, seed data, and a launched coding agent |
-| [`helix add`](/cli/command-reference/add) | `local`, `enterprise` | | Local, V2 Cloud | Add an instance to an existing project |
-| [`helix start`](/cli/command-reference/start) | | `--foreground`, `--port`, `--disk` | Local | Start a local instance (background by default) |
+| [`helix add`](/cli/command-reference/add) | `local`, `enterprise` | | Local, Helix Cloud | Add an instance to an existing project |
+| [`helix start`](/cli/command-reference/start) | | `--foreground`, `--port`, `--disk`, `--persist` | Local | Start a local instance (background by default) |
 | [`helix stop`](/cli/command-reference/stop) | | | Local | Stop a background local instance |
 | [`helix restart`](/cli/command-reference/restart) | | | Local | Restart a background local instance |
-| [`helix status`](/cli/command-reference/status) | | | Local, V2 Cloud | Show instance status |
-| [`helix logs`](/cli/command-reference/logs) | | `-f`/`--follow`, `-r`/`--range`, `--start`, `--end` | Local, V2 Cloud | View instance logs |
-| [`helix query`](/cli/command-reference/query) | | `-f`/`--file`, `--json`, `--warm`, `--host`, `--port`, `--compact` | Local, V2 Cloud | Send a dynamic query to `POST /v1/query` |
-| [`helix auth`](/cli/command-reference/auth) | `login`, `logout`, `create-key` | | V2 Cloud | Manage V2 Cloud authentication |
-| [`helix workspace`](/cli/command-reference/workspace) | `list`, `show`, `switch` | `--format`, `--id` | V2 Cloud | Manage active workspace selection |
-| [`helix project`](/cli/command-reference/project) | `list`, `show`, `switch` | `--format`, `--id`, `--workspace-id` | V2 Cloud | Manage linked project selection |
-| [`helix cluster`](/cli/command-reference/cluster) | `list` | `--format`, `--workspace-id`, `--project-id` | V2 Cloud | List V2 Cloud clusters |
-| [`helix sync`](/cli/command-reference/sync) | | | V2 Cloud | Refresh V2 Cloud instance metadata in `helix.toml` |
+| [`helix status`](/cli/command-reference/status) | | | Local, Helix Cloud | Show instance status |
+| [`helix logs`](/cli/command-reference/logs) | | `-f`/`--follow`, `-r`/`--range`, `--start`, `--end` | Local, Helix Cloud | View instance logs |
+| [`helix query`](/cli/command-reference/query) | | `-f`/`--file`, `--json`, `-e`/`--ts`, `--ts-file`, `--warm`, `--host`, `--port`, `--compact` | Local, Helix Cloud | Send a dynamic query (JSON or TypeScript DSL) to `POST /v1/query` |
+| [`helix auth`](/cli/command-reference/auth) | `login`, `logout`, `create-key` | | Helix Cloud | Manage Helix Cloud authentication |
+| [`helix workspace`](/cli/command-reference/workspace) | `list`, `show`, `switch` | `--format`, `--id` | Helix Cloud | Manage active workspace selection |
+| [`helix project`](/cli/command-reference/project) | `list`, `show`, `switch` | `--format`, `--id`, `--workspace-id` | Helix Cloud | Manage linked project selection |
+| [`helix cluster`](/cli/command-reference/cluster) | `list`, `indexes` | `--format`, `--workspace-id`, `--project-id`, `--cluster-id` | Helix Cloud | List Helix Cloud clusters and their indexes |
+| [`helix push`](/cli/command-reference/push) | | | Helix Cloud | Deploy a Helix Cloud instance to Helix Cloud |
+| [`helix sync`](/cli/command-reference/sync) | | `--dry-run`, `-y`/`--yes` | Helix Cloud | Refresh Helix Cloud instance metadata in `helix.toml` |
 | [`helix prune`](/cli/command-reference/prune) | | `-a`/`--all`, `-y`/`--yes` | Local | Remove Helix-owned local containers, volumes, and workspaces |
-| [`helix delete`](/cli/command-reference/delete) | | `-y`/`--yes` | Local, V2 Cloud | Delete an instance from `helix.toml` and local state |
+| [`helix delete`](/cli/command-reference/delete) | | `-y`/`--yes` | Local, Helix Cloud | Delete an instance from `helix.toml` and local state |
 | [`helix skills`](/cli/command-reference/skills) | `install`, `update`, `list` | `--project` | — | Install, update, and list the Helix agent skills |
-| [`helix metrics`](/cli/command-reference/metrics) | `full`, `basic`, `off`, `status` | | Local, V2 Cloud | Configure CLI telemetry |
+| [`helix metrics`](/cli/command-reference/metrics) | `full`, `basic`, `off`, `status` | | Local, Helix Cloud | Configure CLI telemetry |
 | [`helix update`](/cli/command-reference/update) | | `--force`, `--v1` | — | Update the CLI (and refresh installed skills) to the latest version |
 | [`helix feedback`](/cli/command-reference/feedback) | | | — | Send feedback to the Helix team |
 
@@ -58,10 +59,10 @@ helix -v, --verbose     Show detailed output with timing information
     The local init/run/query loop
   </Card>
   <Card
-    title="V2 Cloud"
+    title="Helix Cloud"
     icon="cloud"
     href="/cli/workflows/helix_cloud"
   >
-    Authenticate, link a project, and query an V2 Cloud cluster
+    Authenticate, link a project, and query a Helix Cloud cluster
   </Card>
 </CardGroup>

@@ -12,7 +12,7 @@ icon: "rocket"
 - **Docker** or **Podman** (for the local `enterprise-dev` runtime)
 - **Git** (recommended for version-controlling your project)
 - **Node.js/npm** if you use [`helix chef`](/cli/command-reference/chef), which runs `npx` for agent skills and MCP setup
-- A V2 Cloud account is only required if you want to query a V2 Cloud cluster from the CLI.
+- A Helix Cloud account is only required if you want to query a Helix Cloud cluster from the CLI.
 </Warning>
 
 ## Agent quickstart
@@ -64,7 +64,7 @@ In a TTY, `helix init` prompts you to pick `local` or `enterprise`. Pass the sub
 helix start dev
 ```
 
-`helix start` pulls `ghcr.io/helixdb/database-dev:latest`, starts a background container named `helix-<project>-dev`, publishes port `6969`, and waits until the local gateway accepts `POST /v1/query` before returning.
+`helix start` pulls `ghcr.io/helixdb/enterprise-dev:latest`, starts a background container named `helix-<project>-dev`, publishes port `6969`, and waits until the local gateway accepts `POST /v1/query` before returning.
 
 To stream logs in the foreground instead, use `helix start dev --foreground` and stop the container with Ctrl-C.
 
@@ -95,9 +95,9 @@ helix stop dev
 
 Edit `examples/request.json` (or write your own JSON files) and run `helix query dev --file …` again to iterate. See the [`helix query`](/cli/command-reference/query) reference for the request shape and validation rules.
 
-## V2 Cloud quickstart
+## Helix Cloud quickstart
 
-To query a V2 Cloud cluster from the CLI:
+To query a Helix Cloud cluster from the CLI:
 
 <Steps>
 
@@ -119,7 +119,7 @@ helix cluster list
 ```
 </Step>
 
-<Step title="Initialize or add a V2 Cloud instance">
+<Step title="Initialize or add a Helix Cloud instance">
 ```bash
 helix init cloud --cluster-id <cluster-id>
 # or, in an existing project:
@@ -170,8 +170,8 @@ helix query production --file examples/request.json
   <Card title="Local workflow" icon="computer" href="/cli/workflows/local">
     The full local init/run/query loop with iteration tips
   </Card>
-  <Card title="V2 Cloud workflow" icon="cloud" href="/cli/workflows/helix_cloud">
-    Authenticate, link a project, and query a V2 Cloud cluster
+  <Card title="Helix Cloud workflow" icon="cloud" href="/cli/workflows/helix_cloud">
+    Authenticate, link a project, and query a Helix Cloud cluster
   </Card>
   <Card title="CLI Command Reference" icon="terminal" href="/cli/command-reference">
     Every command, subcommand, and flag

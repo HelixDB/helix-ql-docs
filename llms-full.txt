@@ -76,7 +76,7 @@ helix query dev --file examples/request.json
 helix stop dev
 ```
 
-For installation details, V2 Cloud authentication, and the full command reference, see the
+For installation details, Helix Cloud authentication, and the full command reference, see the
 [CLI Getting Started guide](/cli/getting-started).
 
 ### AI-assisted query authoring
@@ -128,7 +128,7 @@ You can add this service to a local `docker-compose.yml`:
 ```yaml expandable
 services:
   helix:
-    image: ghcr.io/helixdb/database-dev
+    image: ghcr.io/helixdb/enterprise-dev
     restart: unless-stopped
     ports:
       - "6969:8080"
@@ -173,7 +173,7 @@ services:
         mc mb --ignore-existing local/helix-db
 
   helix:
-    image: ghcr.io/helixdb/database-dev:v0.1.0
+    image: ghcr.io/helixdb/enterprise-dev:v0.1.0
     restart: unless-stopped
     depends_on:
       minio-init:
@@ -3226,9 +3226,9 @@ helix chef
 
 Edit `examples/request.json` (or write your own JSON files) and run `helix query dev --file …` again to iterate. See the [`helix query`](/cli/command-reference/query) reference for the request shape and validation rules.
 
-## V2 Cloud quickstart
+## Helix Cloud quickstart
 
-To query a V2 Cloud cluster from the CLI:
+To query a Helix Cloud cluster from the CLI:
 
 ## Tips
 
@@ -3236,7 +3236,7 @@ To query a V2 Cloud cluster from the CLI:
 
 # Local Development
 
-Local development runs the prebuilt `ghcr.io/helixdb/database-dev:latest` container and exposes the gateway at `POST /v1/query`. By default, storage is in-memory. Use `--disk` when you want persistent local data backed by a CLI-managed MinIO volume.
+Local development runs the prebuilt `ghcr.io/helixdb/enterprise-dev:latest` container and exposes the gateway at `POST /v1/query`. By default, storage is in-memory. Use `--disk` when you want persistent local data backed by a CLI-managed MinIO volume.
 
 ## Prerequisites
 
@@ -3307,7 +3307,7 @@ helix logs dev               # one-shot dump from docker/podman logs
 helix logs dev --follow      # stream
 ```
 
-`--range`, `--start`, and `--end` are V2 Cloud-only and rejected for local instances.
+`--range`, `--start`, and `--end` are Helix Cloud-only and rejected for local instances.
 
 ## Cleaning up
 
@@ -3335,13 +3335,13 @@ The first step must be a source step (for example `NWhere`) before any terminal 
 
 ## What next?
 
-# V2 Cloud
+# Helix Cloud
 
-The Helix CLI's V2 Cloud surface covers authentication, workspace/project/cluster selection, instance metadata sync, log retrieval, and dynamic queries against a remote gateway. Cluster provisioning and scaling happen in the Helix control plane — not in the CLI.
+The Helix CLI's Helix Cloud surface covers authentication, workspace/project/cluster selection, instance metadata sync, log retrieval, and dynamic queries against a remote gateway. Cluster provisioning and scaling happen in the Helix control plane — not in the CLI.
 
 ## Prerequisites
 
-- A Helix Cloud account with at least one workspace and V2 Cloud cluster.
+- A Helix Cloud account with at least one workspace and Helix Cloud cluster.
 - A local Helix project (`helix init` in any directory).
 
 ## End-to-end flow
@@ -3374,7 +3374,7 @@ This page documents the configuration files the Helix CLI reads and writes:
 
 - `helix.toml` — per-project configuration in your project root.
 - `~/.helix/config` — user-global state, currently the selected workspace.
-- `~/.helix/credentials` — V2 Cloud credentials written by `helix auth login`.
+- `~/.helix/credentials` — Helix Cloud credentials written by `helix auth login`.
 
 ## `helix.toml`
 
@@ -3386,7 +3386,7 @@ name = "my-helix-app"
 
 [local.dev]
 port = 6969
-image = "ghcr.io/helixdb/database-dev"
+image = "ghcr.io/helixdb/enterprise-dev"
 tag = "latest"
 # Optional; defaults to in-memory when omitted.
 # storage = "disk"
@@ -3403,8 +3403,8 @@ At least one `[local.*]` or `[enterprise.*]` instance is required. The CLI rejec
 | Key | Type | Required | Default | Description |
 |-----|------|----------|---------|-------------|
 | `name` | String | Yes | — | Project name. Used in the container name pattern `helix-<project>-<instance>`. |
-| `id` | String | No | — | Linked V2 Cloud project ID. Set by [`helix project switch`](/cli/command-reference/project). |
-| `workspace_id` | String | No | — | Linked V2 Cloud workspace ID. Set by [`helix project switch`](/cli/command-reference/project). |
+| `id` | String | No | — | Linked Helix Cloud project ID. Set by [`helix project switch`](/cli/command-reference/project). |
+| `workspace_id` | String | No | — | Linked Helix Cloud workspace ID. Set by [`helix project switch`](/cli/command-reference/project). |
 | `container_runtime` | `docker` \| `podman` | No | `docker` | Runtime used to manage local containers. |
 
 ### `[local.<instance>]`
@@ -3414,7 +3414,7 @@ One block per local instance. The instance name is the table key (e.g. `[local.d
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `port` | Number | `6969` | Host port published to container port `8080`. |
-| `image` | String | `ghcr.io/helixdb/database-dev` | Container image used by [`helix start`](/cli/command-reference/start). |
+| `image` | String | `ghcr.io/helixdb/enterprise-dev` | Container image used by [`helix start`](/cli/command-reference/start). |
 | `tag` | String | `latest` | Image tag. |
 | `storage` | `memory` \| `disk` | `memory` | Local storage mode. `disk` uses a CLI-managed MinIO container and persistent volume. |
 
@@ -3433,11 +3433,11 @@ You can also use `helix start <instance> --disk` as a one-off disk-mode run with
 
 ### `[enterprise.<instance>]`
 
-One block per V2 Cloud instance. Most fields here are populated automatically by [`helix sync`](/cli/command-reference/sync).
+One block per Helix Cloud instance. Most fields here are populated automatically by [`helix sync`](/cli/command-reference/sync).
 
 | Key | Type | Required | Default | Description |
 |-----|------|----------|---------|-------------|
-| `cluster_id` | String | Yes | — | V2 Cloud cluster ID. List clusters with [`helix cluster list`](/cli/command-reference/cluster). |
+| `cluster_id` | String | Yes | — | Helix Cloud cluster ID. List clusters with [`helix cluster list`](/cli/command-reference/cluster). |
 | `workspace_id` | String | No | — | Workspace the cluster belongs to. |
 | `project_id` | String | No | — | Linked project ID. |
 | `gateway_url` | URL | No (required at query time) | — | Runtime gateway base URL. Populated by `helix sync` when available. |
@@ -3462,7 +3462,7 @@ User-global configuration written by [`helix workspace switch`](/cli/command-ref
 workspace_id = "ws_01HX..."
 ```
 
-This file is independent of any project directory and applies to every V2 Cloud command you run.
+This file is independent of any project directory and applies to every Helix Cloud command you run.
 
 ## `~/.helix/credentials`
 
@@ -3479,13 +3479,13 @@ Remove with `helix auth logout`. Never commit this file.
 
 | Variable | Used by | Description |
 |----------|---------|-------------|
-| `HELIX_API_KEY` (default) | [`helix query`](/cli/command-reference/query) | Per-cluster V2 Cloud API key sent in the configured auth header. The variable name is configurable per-instance via `query_auth_env`. |
+| `HELIX_API_KEY` (default) | [`helix query`](/cli/command-reference/query) | Per-cluster Helix Cloud API key sent in the configured auth header. The variable name is configurable per-instance via `query_auth_env`. |
 
 ## Troubleshooting
 
 - **Port conflict on `helix start`** — change the port in `[local.<instance>] port`, or pass `helix start <instance> --port <port>` to override for a single run.
 - **`Missing instances`** — `helix.toml` has no `[local.*]` or `[enterprise.*]` blocks. Add one with [`helix add`](/cli/command-reference/add).
-- **`Authentication required`** — run `helix auth login` for V2 Cloud commands.
+- **`Authentication required`** — run `helix auth login` for Helix Cloud commands.
 - **`gateway_url is still missing` after `helix sync`** — the cloud-side configuration has not been published yet. Re-run `helix sync` later, or set `gateway_url` manually under `[enterprise.<instance>]`.
 
 ## Next Steps
@@ -3565,7 +3565,7 @@ Either run `helix init` to scaffold a new project, or `cd` into a directory that
 | `project name is empty in <path>` | `[project] name` is blank. | Set a non-empty `name`. |
 | `<path> has no instances configured` | No `[local.*]` or `[enterprise.*]` blocks. | Run [`helix add local`](/cli/command-reference/add) or `helix add cloud`. |
 | `instance name is empty in <path>` | Empty key like `[local.""]`. | Give the instance a name. |
-| `cluster_id is empty for '<name>' in <path>` | Missing required V2 Cloud field. | Set `cluster_id` under `[enterprise.<name>]`. |
+| `cluster_id is empty for '<name>' in <path>` | Missing required Helix Cloud field. | Set `cluster_id` under `[enterprise.<name>]`. |
 | `Failed to parse helix.toml: invalid type` | Numbers quoted as strings. | Use bare numbers — `port = 6969`, not `port = "6969"`. |
 
 ### `Instance '<name>' not found`
@@ -3652,7 +3652,7 @@ helix auth logout
 helix auth login
 ```
 
-## V2 Cloud query issues
+## Helix Cloud query issues
 
 ### `gateway_url is not configured`
 
@@ -3687,11 +3687,11 @@ The JSON file is missing the top-level `query` object. See [`helix query`](/cli/
 
 ### `--range, --start, and --end are only supported for Enterprise logs`
 
-Range queries are V2 Cloud-only. For local instances, use `helix logs <instance> --follow` to tail the container.
+Range queries are Helix Cloud-only. For local instances, use `helix logs <instance> --follow` to tail the container.
 
 ### `live Enterprise logs are not supported yet`
 
-`helix logs --follow` on a V2 Cloud instance is rejected. Use `--range --start <rfc3339> --end <rfc3339>` instead.
+`helix logs --follow` on a Helix Cloud instance is rejected. Use `--range --start <rfc3339> --end <rfc3339>` instead.
 
 ## Destructive command issues
 
@@ -3754,24 +3754,24 @@ helix -v, --verbose     Show detailed output with timing information
 
 | Command | Subcommands | Flags | Scope | Description |
 |:--------|:------------|:------|:------|:------------|
-| [`helix init`](/cli/command-reference/init) | `local`, `enterprise` | `-p`/`--path` | Local, V2 Cloud | Initialize a v2 Helix project |
+| [`helix init`](/cli/command-reference/init) | `local`, `enterprise` | `-p`/`--path` | Local, Helix Cloud | Initialize a v2 Helix project |
 | [`helix chef`](/cli/command-reference/chef) | | | Local | Bootstrap a first Helix app with skills, docs MCP, starter queries, seed data, and a launched coding agent |
-| [`helix add`](/cli/command-reference/add) | `local`, `enterprise` | | Local, V2 Cloud | Add an instance to an existing project |
+| [`helix add`](/cli/command-reference/add) | `local`, `enterprise` | | Local, Helix Cloud | Add an instance to an existing project |
 | [`helix start`](/cli/command-reference/start) | | `--foreground`, `--port`, `--disk` | Local | Start a local instance (background by default) |
 | [`helix stop`](/cli/command-reference/stop) | | | Local | Stop a background local instance |
 | [`helix restart`](/cli/command-reference/restart) | | | Local | Restart a background local instance |
-| [`helix status`](/cli/command-reference/status) | | | Local, V2 Cloud | Show instance status |
-| [`helix logs`](/cli/command-reference/logs) | | `-f`/`--follow`, `-r`/`--range`, `--start`, `--end` | Local, V2 Cloud | View instance logs |
-| [`helix query`](/cli/command-reference/query) | | `-f`/`--file`, `--json`, `--warm`, `--host`, `--port`, `--compact` | Local, V2 Cloud | Send a dynamic query to `POST /v1/query` |
-| [`helix auth`](/cli/command-reference/auth) | `login`, `logout`, `create-key` | | V2 Cloud | Manage V2 Cloud authentication |
-| [`helix workspace`](/cli/command-reference/workspace) | `list`, `show`, `switch` | `--format`, `--id` | V2 Cloud | Manage active workspace selection |
-| [`helix project`](/cli/command-reference/project) | `list`, `show`, `switch` | `--format`, `--id`, `--workspace-id` | V2 Cloud | Manage linked project selection |
-| [`helix cluster`](/cli/command-reference/cluster) | `list` | `--format`, `--workspace-id`, `--project-id` | V2 Cloud | List V2 Cloud clusters |
-| [`helix sync`](/cli/command-reference/sync) | | | V2 Cloud | Refresh V2 Cloud instance metadata in `helix.toml` |
+| [`helix status`](/cli/command-reference/status) | | | Local, Helix Cloud | Show instance status |
+| [`helix logs`](/cli/command-reference/logs) | | `-f`/`--follow`, `-r`/`--range`, `--start`, `--end` | Local, Helix Cloud | View instance logs |
+| [`helix query`](/cli/command-reference/query) | | `-f`/`--file`, `--json`, `--warm`, `--host`, `--port`, `--compact` | Local, Helix Cloud | Send a dynamic query to `POST /v1/query` |
+| [`helix auth`](/cli/command-reference/auth) | `login`, `logout`, `create-key` | | Helix Cloud | Manage Helix Cloud authentication |
+| [`helix workspace`](/cli/command-reference/workspace) | `list`, `show`, `switch` | `--format`, `--id` | Helix Cloud | Manage active workspace selection |
+| [`helix project`](/cli/command-reference/project) | `list`, `show`, `switch` | `--format`, `--id`, `--workspace-id` | Helix Cloud | Manage linked project selection |
+| [`helix cluster`](/cli/command-reference/cluster) | `list` | `--format`, `--workspace-id`, `--project-id` | Helix Cloud | List Helix Cloud clusters |
+| [`helix sync`](/cli/command-reference/sync) | | | Helix Cloud | Refresh Helix Cloud instance metadata in `helix.toml` |
 | [`helix prune`](/cli/command-reference/prune) | | `-a`/`--all`, `-y`/`--yes` | Local | Remove Helix-owned local containers, volumes, and workspaces |
-| [`helix delete`](/cli/command-reference/delete) | | `-y`/`--yes` | Local, V2 Cloud | Delete an instance from `helix.toml` and local state |
+| [`helix delete`](/cli/command-reference/delete) | | `-y`/`--yes` | Local, Helix Cloud | Delete an instance from `helix.toml` and local state |
 | [`helix skills`](/cli/command-reference/skills) | `install`, `update`, `list` | `--project` | — | Install, update, and list the Helix agent skills |
-| [`helix metrics`](/cli/command-reference/metrics) | `full`, `basic`, `off`, `status` | | Local, V2 Cloud | Configure CLI telemetry |
+| [`helix metrics`](/cli/command-reference/metrics) | `full`, `basic`, `off`, `status` | | Local, Helix Cloud | Configure CLI telemetry |
 | [`helix update`](/cli/command-reference/update) | | `--force`, `--v1` | — | Update the CLI (and refresh installed skills) to the latest version |
 | [`helix feedback`](/cli/command-reference/feedback) | | | — | Send feedback to the Helix team |
 
@@ -3794,7 +3794,7 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 | Sub-command | Description |
 |-------------|-------------|
 | `local` | Add a local v2 development instance. |
-| `enterprise` | Add an V2 Cloud instance linked to a cluster. |
+| `enterprise` | Add a Helix Cloud instance linked to a cluster. |
 
 ### `helix add local`
 
@@ -3810,11 +3810,11 @@ Interactive local add prompts for the storage mode and defaults to in-memory.
 
 | Flag | Type | Required | Description | Default |
 |------|------|----------|-------------|---------|
-| `-n`, `--name` | String | Yes | V2 Cloud instance name. | — |
-| `--cluster-id` | String | Yes | V2 Cloud cluster ID. Find one with [`helix cluster list`](/cli/command-reference/cluster). | — |
+| `-n`, `--name` | String | Yes | Helix Cloud instance name. | — |
+| `--cluster-id` | String | Yes | Helix Cloud cluster ID. Find one with [`helix cluster list`](/cli/command-reference/cluster). | — |
 | `--gateway-url` | URL | No | Runtime gateway URL for dynamic queries. If omitted, run [`helix sync`](/cli/command-reference/sync) afterward to fetch it. | — |
 
-`helix add cloud` requires V2 Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
+`helix add cloud` requires Helix Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
 
 ## Examples
 
@@ -3825,17 +3825,17 @@ helix add local --name staging --port 9090
 # Add a local instance that uses persistent on-disk storage by default
 helix add local --name disk-dev --disk
 
-# Add a V2 Cloud instance with a known cluster ID
+# Add a Helix Cloud instance with a known cluster ID
 helix add cloud --name production --cluster-id ec_01HX...
 
-# Add a V2 Cloud instance and let helix sync fill in gateway/auth metadata
+# Add a Helix Cloud instance and let helix sync fill in gateway/auth metadata
 helix add cloud --name prod --cluster-id ec_01HX...
 helix sync prod
 ```
 
 # helix auth
 
-Manage V2 Cloud authentication. Credentials are stored in `~/.helix/credentials`.
+Manage Helix Cloud authentication. Credentials are stored in `~/.helix/credentials`.
 
 ## Usage
 
@@ -3849,7 +3849,7 @@ helix auth <SUBCOMMAND>
 |-------------|-------------|
 | `login` | Authenticate with Helix Cloud via a browser-based GitHub device flow. |
 | `logout` | Remove `~/.helix/credentials`. |
-| `create-key <CLUSTER>` | Rotate the API key for a specific V2 Cloud cluster. The new key prints once. |
+| `create-key <CLUSTER>` | Rotate the API key for a specific Helix Cloud cluster. The new key prints once. |
 
 ### `helix auth create-key`
 
@@ -3944,7 +3944,7 @@ helix cook
 
 # helix cluster
 
-List V2 Cloud clusters available to the active workspace or a specific project.
+List Helix Cloud clusters available to the active workspace or a specific project.
 
 ## Usage
 
@@ -3956,7 +3956,7 @@ helix cluster <SUBCOMMAND>
 
 | Sub-command | Description |
 |-------------|-------------|
-| `list` | List V2 Cloud clusters. |
+| `list` | List Helix Cloud clusters. |
 
 ### `helix cluster list`
 
@@ -3988,13 +3988,13 @@ Use the resulting cluster ID with [`helix init cloud`](/cli/command-reference/in
 
 - [`helix workspace`](/cli/command-reference/workspace) — manage the active workspace
 - [`helix project`](/cli/command-reference/project) — manage the linked project
-- [`helix sync`](/cli/command-reference/sync) — refresh V2 Cloud instance metadata
+- [`helix sync`](/cli/command-reference/sync) — refresh Helix Cloud instance metadata
 
 # helix delete
 
 Delete an instance from `helix.toml` and clean up any local runtime state for it.
 
-For local instances, Helix-owned containers, networks, disk-mode volumes, and the per-instance directory under `.helix/` are deleted. For V2 Cloud instances, only the `[enterprise.<name>]` block in `helix.toml` and any local workspace state are removed — the cluster itself is untouched.
+For local instances, Helix-owned containers, networks, disk-mode volumes, and the per-instance directory under `.helix/` are deleted. For Helix Cloud instances, only the `[enterprise.<name>]` block in `helix.toml` and any local workspace state are removed — the cluster itself is untouched.
 
 ## Usage
 
@@ -4075,7 +4075,7 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 | Sub-command | Description |
 |-------------|-------------|
 | `local` | Initialize a local v2 development project. |
-| `enterprise` | Initialize an V2 Cloud project linked to a cluster. |
+| `enterprise` | Initialize a Helix Cloud project linked to a cluster. |
 
 ## Top-level flags
 
@@ -4099,11 +4099,11 @@ Interactive local init prompts for the storage mode and defaults to in-memory.
 
 | Flag | Type | Required | Description | Default |
 |------|------|----------|-------------|---------|
-| `-n`, `--name` | String | No | V2 Cloud instance name. | `production` |
-| `--cluster-id` | String | Yes | V2 Cloud cluster ID. Find one with [`helix cluster list`](/cli/command-reference/cluster). | — |
+| `-n`, `--name` | String | No | Helix Cloud instance name. | `production` |
+| `--cluster-id` | String | Yes | Helix Cloud cluster ID. Find one with [`helix cluster list`](/cli/command-reference/cluster). | — |
 | `--gateway-url` | URL | No | Runtime gateway URL for dynamic queries. If omitted, run [`helix sync`](/cli/command-reference/sync) after init to fetch it. | — |
 
-`helix init cloud` requires V2 Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
+`helix init cloud` requires Helix Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
 
 ## What `helix init` produces
 
@@ -4149,7 +4149,7 @@ helix init local --name staging --port 9090
 # Local with persistent on-disk storage by default
 helix init local --disk
 
-# V2 Cloud project linked to an existing cluster
+# Helix Cloud project linked to an existing cluster
 helix init cloud --cluster-id ec_01HX... --gateway-url https://gateway.example.com
 ```
 
@@ -4169,10 +4169,10 @@ helix query <instance> --file <request.json>
 
 # helix logs
 
-View logs for a local or V2 Cloud instance.
+View logs for a local or Helix Cloud instance.
 
 - For **local** instances, logs come from `docker logs` / `podman logs`.
-- For **V2 Cloud** instances, logs are fetched over a time range from Helix Cloud and require `helix auth login`.
+- For **Helix Cloud** instances, logs are fetched over a time range from Helix Cloud and require `helix auth login`.
 
 ## Usage
 
@@ -4190,8 +4190,8 @@ helix logs [INSTANCE] [OPTIONS]
 
 | Flag | Type | Description | Default |
 |------|------|-------------|---------|
-| `-f`, `--follow` | Boolean | Stream live logs. **Local only** — rejected for V2 Cloud instances. | `false` |
-| `-r`, `--range` | Boolean | Query historical logs from Helix Cloud over a time range. **V2 Cloud only**. | `false` |
+| `-f`, `--follow` | Boolean | Stream live logs. **Local only** — rejected for Helix Cloud instances. | `false` |
+| `-r`, `--range` | Boolean | Query historical logs from Helix Cloud over a time range. **Helix Cloud only**. | `false` |
 | `--start` | RFC 3339 timestamp | Start of the range. Requires `--range`. | `--end` minus 1 hour |
 | `--end` | RFC 3339 timestamp | End of the range. Requires `--range`. | Now (UTC) |
 
@@ -4202,7 +4202,7 @@ helix logs [INSTANCE] [OPTIONS]
 local logs use docker/podman logs
 ```
 
-`--follow` against a V2 Cloud instance is rejected with:
+`--follow` against a Helix Cloud instance is rejected with:
 
 ```
 live Enterprise logs are not supported yet; use --range instead
@@ -4217,10 +4217,10 @@ helix logs dev
 # Stream local logs
 helix logs dev --follow
 
-# Last hour of V2 Cloud logs (defaults: end=now, start=end-1h)
+# Last hour of Helix Cloud logs (defaults: end=now, start=end-1h)
 helix logs production --range
 
-# Fixed V2 Cloud log range
+# Fixed Helix Cloud log range
 helix logs production \
   --range \
   --start 2026-05-12T10:00:00Z \
@@ -4276,7 +4276,7 @@ helix metrics status
 
 # helix project
 
-Manage the V2 Cloud project that this local project is linked to. Selection is persisted in `helix.toml` (under `[project] workspace_id` and `[project] id`).
+Manage the Helix Cloud project that this local project is linked to. Selection is persisted in `helix.toml` (under `[project] workspace_id` and `[project] id`).
 
 ## Usage
 
@@ -4340,7 +4340,7 @@ helix project list --workspace-id ws_01HX...
 
 - [`helix workspace`](/cli/command-reference/workspace) — manage the active workspace
 - [`helix cluster`](/cli/command-reference/cluster) — list clusters available in the workspace/project
-- [`helix sync`](/cli/command-reference/sync) — refresh V2 Cloud instance metadata
+- [`helix sync`](/cli/command-reference/sync) — refresh Helix Cloud instance metadata
 
 # helix prune
 
@@ -4402,7 +4402,7 @@ helix prune --all --yes
 
 # helix query
 
-Send a dynamic JSON request to `POST /v1/query` on a local or V2 Cloud instance.
+Send a dynamic JSON request to `POST /v1/query` on a local or Helix Cloud instance.
 
 ## Usage
 
@@ -4478,9 +4478,9 @@ Use `--file` for checked-in or reusable requests, and `--json` for quick one-off
 | Neither `--file` nor `--json` is provided | Clap usage error |
 | Both `--file` and `--json` are provided | Clap conflict error |
 
-## V2 Cloud targets
+## Helix Cloud targets
 
-For a V2 Cloud instance, `helix query` reads `[enterprise.<instance>]` in `helix.toml` and:
+For a Helix Cloud instance, `helix query` reads `[enterprise.<instance>]` in `helix.toml` and:
 
 - Posts to `<gateway_url>/v1/query`.
 - Sends an auth header named by `query_auth_header` (default `Authorization`) with the value read from the environment variable `query_auth_env` (default `HELIX_API_KEY`).
@@ -4514,14 +4514,14 @@ helix query dev --file examples/request.json --compact | jq '.node_count'
 # Send an inline JSON request body
 helix query dev --json '{"request_type":"read","query_name":"ad_hoc_read","query":{"queries":[],"returns":[]},"parameters":{}}'
 
-# Target a V2 Cloud instance (requires HELIX_API_KEY in env and gateway_url in helix.toml)
+# Target a Helix Cloud instance (requires HELIX_API_KEY in env and gateway_url in helix.toml)
 helix query production --file examples/request.json
 ```
 
 ## Related
 
 - [`helix start`](/cli/command-reference/start) — start a local instance to query against
-- [`helix sync`](/cli/command-reference/sync) — refresh V2 Cloud gateway/auth metadata
+- [`helix sync`](/cli/command-reference/sync) — refresh Helix Cloud gateway/auth metadata
 
 # helix restart
 
@@ -4633,7 +4633,7 @@ helix start [INSTANCE] [OPTIONS]
 
 ## Behavior
 
-- Pulls `ghcr.io/helixdb/database-dev:latest` (or the image/tag set in `[local.<instance>]`).
+- Pulls `ghcr.io/helixdb/enterprise-dev:latest` (or the image/tag set in `[local.<instance>]`).
 - Names the container `helix-<project>-<instance>` and publishes the configured port to container port `8080`.
 - Uses Docker or Podman based on `[project] container_runtime` in `helix.toml`.
 - Default storage is in-memory. Passing `--disk` starts a MinIO sidecar, creates the `helix-db` bucket, and runs `enterprise-dev` with S3-compatible storage environment variables.
@@ -4670,9 +4670,9 @@ helix start dev --disk
 
 # helix status
 
-Show the status of local and V2 Cloud instances configured in `helix.toml`.
+Show the status of local and Helix Cloud instances configured in `helix.toml`.
 
-For local instances, status comes from `docker ps -a` / `podman ps -a` filtered on `helix-<project>-<instance>` and includes the configured storage mode. For V2 Cloud instances, status reflects the cluster configuration recorded in `helix.toml`.
+For local instances, status comes from `docker ps -a` / `podman ps -a` filtered on `helix-<project>-<instance>` and includes the configured storage mode. For Helix Cloud instances, status reflects the cluster configuration recorded in `helix.toml`.
 
 ## Usage
 
@@ -4737,9 +4737,9 @@ helix stop staging || true
 
 # helix sync
 
-Refresh V2 Cloud instance metadata in `helix.toml`. `helix sync` fetches the latest gateway URL, auth header/env contract, and node-type information from Helix Cloud and writes it back to the local `[enterprise.<instance>]` block so subsequent [`helix query`](/cli/command-reference/query), [`helix logs`](/cli/command-reference/logs), and other V2 Cloud commands can target the instance.
+Refresh Helix Cloud instance metadata in `helix.toml`. `helix sync` fetches the latest gateway URL, auth header/env contract, and node-type information from Helix Cloud and writes it back to the local `[enterprise.<instance>]` block so subsequent [`helix query`](/cli/command-reference/query), [`helix logs`](/cli/command-reference/logs), and other Helix Cloud commands can target the instance.
 
-Requires V2 Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
+Requires Helix Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
 
 ## Usage
 
@@ -4751,11 +4751,11 @@ helix sync [INSTANCE]
 
 | Argument | Description |
 |----------|-------------|
-| `INSTANCE` | V2 Cloud instance name to sync. If omitted, every `[enterprise.*]` instance in `helix.toml` is synced. |
+| `INSTANCE` | Helix Cloud instance name to sync. If omitted, every `[enterprise.*]` instance in `helix.toml` is synced. |
 
 ## What gets updated
 
-For each matched V2 Cloud instance, `helix sync` overwrites these fields in `helix.toml` from the cloud-side configuration:
+For each matched Helix Cloud instance, `helix sync` overwrites these fields in `helix.toml` from the cloud-side configuration:
 
 - `gateway_url`
 - `query_auth_header` (defaults to `Authorization`)
@@ -4774,16 +4774,16 @@ Set it in helix.toml before using 'helix query <name>'.
 ## Examples
 
 ```bash
-# Sync a single V2 Cloud instance
+# Sync a single Helix Cloud instance
 helix sync production
 
-# Sync every V2 Cloud instance defined in helix.toml
+# Sync every Helix Cloud instance defined in helix.toml
 helix sync
 ```
 
 ## Related
 
-- [`helix auth`](/cli/command-reference/auth) — authenticate with V2 Cloud
+- [`helix auth`](/cli/command-reference/auth) — authenticate with Helix Cloud
 - [`helix query`](/cli/command-reference/query) — uses the synced `gateway_url` and auth contract
 - [`helix cluster`](/cli/command-reference/cluster) — list available clusters
 
@@ -4821,7 +4821,7 @@ helix update --v1
 
 # helix workspace
 
-Manage the active V2 Cloud workspace selection stored in `~/.helix/config`.
+Manage the active Helix Cloud workspace selection stored in `~/.helix/config`.
 
 ## Usage
 
@@ -4880,6 +4880,6 @@ helix workspace switch ws_01HX... --id
 ## Related
 
 - [`helix project`](/cli/command-reference/project) — link the local project to a workspace project
-- [`helix cluster`](/cli/command-reference/cluster) — list V2 Cloud clusters
-- [`helix auth`](/cli/command-reference/auth) — authenticate with V2 Cloud
+- [`helix cluster`](/cli/command-reference/cluster) — list Helix Cloud clusters
+- [`helix auth`](/cli/command-reference/auth) — authenticate with Helix Cloud
 

@@ -5,13 +5,15 @@ sidebarTitle: "query"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Send a dynamic JSON request to `POST /v1/query` on a local or V2 Cloud instance.
+Send a dynamic query to `POST /v1/query` on a local or Helix Cloud instance. You can supply the query as a raw JSON request (`--file`/`--json`) or write it in the TypeScript DSL (`-e`/`--ts`/`--ts-file`) and let the CLI build the request for you.
 
 ## Usage
 
 ```bash
-helix query [INSTANCE] (--file <REQUEST.json> | --json '<JSON>') [OPTIONS]
+helix query [INSTANCE] (--file <REQUEST.json> | --json '<JSON>' | -e '<TS>' | --ts-file <QUERY.ts>) [OPTIONS]
 ```
+
+Provide **exactly one** input: a JSON request (`--file` or `--json`) or a TypeScript DSL expression (`-e`/`--ts` or `--ts-file`). The four input flags are mutually exclusive.
 
 ## Arguments
 
@@ -21,10 +23,14 @@ helix query [INSTANCE] (--file <REQUEST.json> | --json '<JSON>') [OPTIONS]
 
 ## Available flags
 
+Exactly one input flag is required (`--file`, `--json`, `-e`/`--ts`, or `--ts-file`).
+
 | Flag | Type | Required | Description | Default |
 |------|------|----------|-------------|---------|
-| `-f`, `--file` | Path | Yes, unless `--json` is set | JSON request body file. | — |
-| `--json` | String | Yes, unless `--file` is set | Inline JSON request body. Mutually exclusive with `--file`. | — |
+| `-f`, `--file` | Path | One input required | JSON request body file. | — |
+| `--json` | String | One input required | Inline JSON request body. | — |
+| `-e`, `--ts` | String | One input required | TypeScript DSL expression, evaluated locally to build the request (like `mysql -e`). See [TypeScript DSL input](#typescript-dsl-input). | — |
+| `--ts-file` | Path | One input required | Path to a `.ts` file containing a TypeScript DSL expression. | — |
 | `--warm` | Boolean | No | Send the request as a cache-warming call (`X-Helix-Warm: true`). Read requests only. | `false` |
 | `--host` | String | No | Override the host for local instances. | `localhost` |
 | `--port` | Number | No | Override the port for local instances. | `[local.<instance>] port` (default `6969`) |
@@ -36,7 +42,7 @@ The JSON request must include:
 
 - `request_type` — lowercase `"read"` or `"write"`. Anything else is rejected with `request_type must be lowercase 'read' or 'write'`.
 - `query_name` — optional top-level query name for gateway logs and query diagnostics. Use exactly `query_name`; `name` and `queryName` are not accepted aliases. Missing or `null` falls back to `__dynamic__`.
-- `query` — the dynamic query object (same shape as `read_routes.<name>` / `write_routes.<name>` in `queries.json`). Missing `query` is rejected with `dynamic query request must include query`.
+- `query` — the dynamic query object: a `queries` array of `{ "Query": { "name", "steps", "condition" } }` entries plus a `returns` list naming what to return (see the example below). Missing `query` is rejected with `dynamic query request must include query`.
 - `parameters` — optional object of named parameters.
 
 `helix init local` scaffolds `examples/request.json` with a runnable read request:
@@ -68,6 +74,31 @@ Every query must begin with a source step (for example `NWhere`) before any term
 
 Use `--file` for checked-in or reusable requests, and `--json` for quick one-off requests from a shell. Quote inline JSON so your shell passes it as one argument.
 
+## TypeScript DSL input
+
+Instead of hand-writing JSON, you can pass a TypeScript DSL expression and let the CLI build the request — the same way `mysql -e` runs SQL from the shell:
+
+```bash
+# Inline expression with -e / --ts
+helix query dev -e 'readBatch().varAs("c", g().nWithLabel("User").count()).returning(["c"])'
+
+# Or from a .ts file
+helix query dev --ts-file queries/count_users.ts
+```
+
+How it works:
+
+- The expression must evaluate to a `readBatch()` or `writeBatch()` builder. `g`, `readBatch`, `writeBatch`, `defineParams`, and `param` are auto-imported and already in scope — you write only the expression, no imports.
+- The CLI evaluates it locally with Node using the published [`@helix-db/helix-db`](https://www.npmjs.com/package/@helix-db/helix-db) SDK, calls `.toDynamicJson()`, and posts the resulting dynamic-query JSON to `/v1/query`. The builders are pure (no I/O), so no instance needs to be running to *build* the request — only to run it. There is no separate compile step.
+- `request_type` is inferred automatically from whether you used `readBatch()` or `writeBatch()`.
+
+Requirements:
+
+- **Node.js 20+** on `PATH` (npm ships with it). On first use the CLI installs the SDK once into its cache directory; later runs reuse it.
+- For inline `-e` use, write a **single expression** with **no TypeScript type annotations** (it is evaluated as an expression, not compiled). Put more elaborate queries in a `--ts-file`.
+
+If Node is missing, the CLI tells you to install Node 20+ or fall back to `--json`/`--file`. For the full DSL surface, see the [`helix-query-typescript`](https://github.com/HelixDB/skills) skill.
+
 ## Validation rules
 
 | Rule | Error |
@@ -81,12 +112,12 @@ Use `--file` for checked-in or reusable requests, and `--json` for quick one-off
 | Neither `--file` nor `--json` is provided | Clap usage error |
 | Both `--file` and `--json` are provided | Clap conflict error |
 
-## V2 Cloud targets
+## Helix Cloud targets
 
-For a V2 Cloud instance, `helix query` reads `[enterprise.<instance>]` in `helix.toml` and:
+For a Helix Cloud instance, `helix query` reads `[enterprise.<instance>]` in `helix.toml` and:
 
 - Posts to `<gateway_url>/v1/query`.
-- Sends an auth header named by `query_auth_header` (default `Authorization`) with the value read from the environment variable `query_auth_env` (default `HELIX_API_KEY`).
+- Sends an auth header named by `query_auth_header` (default `Authorization`) with the value read from the environment variable `query_auth_env` (default `HELIX_API_KEY`). The value is read from your shell environment or from a `.env` file in the project root (whichever is set), so you can keep the key out of your shell history.
 
 If `gateway_url` is missing, the CLI returns:
 
@@ -117,11 +148,14 @@ helix query dev --file examples/request.json --compact | jq '.node_count'
 # Send an inline JSON request body
 helix query dev --json '{"request_type":"read","query_name":"ad_hoc_read","query":{"queries":[],"returns":[]},"parameters":{}}'
 
-# Target a V2 Cloud instance (requires HELIX_API_KEY in env and gateway_url in helix.toml)
+# Build the request from a TypeScript DSL expression instead of JSON
+helix query dev -e 'readBatch().varAs("c", g().nWithLabel("User").count()).returning(["c"])'
+
+# Target a Helix Cloud instance (requires HELIX_API_KEY in env and gateway_url in helix.toml)
 helix query production --file examples/request.json
 ```
 
 ## Related
 
 - [`helix start`](/cli/command-reference/start) — start a local instance to query against
-- [`helix sync`](/cli/command-reference/sync) — refresh V2 Cloud gateway/auth metadata
+- [`helix sync`](/cli/command-reference/sync) — refresh Helix Cloud gateway/auth metadata

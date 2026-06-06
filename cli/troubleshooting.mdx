@@ -81,7 +81,7 @@ Either run `helix init` to scaffold a new project, or `cd` into a directory that
 | `project name is empty in <path>` | `[project] name` is blank. | Set a non-empty `name`. |
 | `<path> has no instances configured` | No `[local.*]` or `[enterprise.*]` blocks. | Run [`helix add local`](/cli/command-reference/add) or `helix add cloud`. |
 | `instance name is empty in <path>` | Empty key like `[local.""]`. | Give the instance a name. |
-| `cluster_id is empty for '<name>' in <path>` | Missing required V2 Cloud field. | Set `cluster_id` under `[enterprise.<name>]`. |
+| `cluster_id is empty for '<name>' in <path>` | Missing required Helix Cloud field. | Set `cluster_id` under `[enterprise.<name>]`. |
 | `Failed to parse helix.toml: invalid type` | Numbers quoted as strings. | Use bare numbers — `port = 6969`, not `port = "6969"`. |
 
 ### `Instance '<name>' not found`
@@ -168,7 +168,7 @@ helix auth logout
 helix auth login
 ```
 
-## V2 Cloud query issues
+## Helix Cloud query issues
 
 ### `gateway_url is not configured`
 
@@ -203,11 +203,11 @@ The JSON file is missing the top-level `query` object. See [`helix query`](/cli/
 
 ### `--range, --start, and --end are only supported for Enterprise logs`
 
-Range queries are V2 Cloud-only. For local instances, use `helix logs <instance> --follow` to tail the container.
+Range queries are Helix Cloud-only. For local instances, use `helix logs <instance> --follow` to tail the container.
 
 ### `live Enterprise logs are not supported yet`
 
-`helix logs --follow` on a V2 Cloud instance is rejected. Use `--range --start <rfc3339> --end <rfc3339>` instead.
+`helix logs --follow` on a Helix Cloud instance is rejected. Use `--range --start <rfc3339> --end <rfc3339>` instead.
 
 ## Destructive command issues
 

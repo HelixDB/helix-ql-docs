@@ -6,7 +6,7 @@ icon: "computer"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Local development runs the prebuilt `ghcr.io/helixdb/database-dev:latest` container and exposes the gateway at `POST /v1/query`. By default, storage is in-memory. Use `--disk` when you want persistent local data backed by a CLI-managed MinIO volume.
+Local development runs the prebuilt `ghcr.io/helixdb/enterprise-dev:latest` container and exposes the gateway at `POST /v1/query`. By default, storage is in-memory. Use `--disk` when you want persistent local data backed by a CLI-managed MinIO volume.
 
 ## Prerequisites
 
@@ -113,7 +113,7 @@ helix logs dev               # one-shot dump from docker/podman logs
 helix logs dev --follow      # stream
 ```
 
-`--range`, `--start`, and `--end` are V2 Cloud-only and rejected for local instances.
+`--range`, `--start`, and `--end` are Helix Cloud-only and rejected for local instances.
 
 ## Cleaning up
 
@@ -142,7 +142,7 @@ The first step must be a source step (for example `NWhere`) before any terminal 
 ## What next?
 
 <CardGroup cols={2}>
-  <Card title="V2 Cloud workflow" icon="cloud" href="/cli/workflows/helix_cloud">
+  <Card title="Helix Cloud workflow" icon="cloud" href="/cli/workflows/helix_cloud">
     Authenticate, link a project, and query a remote cluster
   </Card>
   <Card title="CLI Command Reference" icon="terminal" href="/cli/command-reference">

@@ -5,10 +5,10 @@ sidebarTitle: "logs"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-View logs for a local or V2 Cloud instance.
+View logs for a local or Helix Cloud instance.
 
 - For **local** instances, logs come from `docker logs` / `podman logs`.
-- For **V2 Cloud** instances, logs are fetched over a time range from Helix Cloud and require `helix auth login`.
+- For **Helix Cloud** instances, logs are fetched over a time range from Helix Cloud and require `helix auth login`.
 
 ## Usage
 
@@ -26,8 +26,8 @@ helix logs [INSTANCE] [OPTIONS]
 
 | Flag | Type | Description | Default |
 |------|------|-------------|---------|
-| `-f`, `--follow` | Boolean | Stream live logs. **Local only** — rejected for V2 Cloud instances. | `false` |
-| `-r`, `--range` | Boolean | Query historical logs from Helix Cloud over a time range. **V2 Cloud only**. | `false` |
+| `-f`, `--follow` | Boolean | Stream live logs. **Local only** — rejected for Helix Cloud instances. | `false` |
+| `-r`, `--range` | Boolean | Query historical logs from Helix Cloud over a time range. **Helix Cloud only**. | `false` |
 | `--start` | RFC 3339 timestamp | Start of the range. Requires `--range`. | `--end` minus 1 hour |
 | `--end` | RFC 3339 timestamp | End of the range. Requires `--range`. | Now (UTC) |
 
@@ -38,7 +38,7 @@ helix logs [INSTANCE] [OPTIONS]
 local logs use docker/podman logs
 ```
 
-`--follow` against a V2 Cloud instance is rejected with:
+`--follow` against a Helix Cloud instance is rejected with:
 
 ```
 live Enterprise logs are not supported yet; use --range instead
@@ -53,10 +53,10 @@ helix logs dev
 # Stream local logs
 helix logs dev --follow
 
-# Last hour of V2 Cloud logs (defaults: end=now, start=end-1h)
+# Last hour of Helix Cloud logs (defaults: end=now, start=end-1h)
 helix logs production --range
 
-# Fixed V2 Cloud log range
+# Fixed Helix Cloud log range
 helix logs production \
   --range \
   --start 2026-05-12T10:00:00Z \

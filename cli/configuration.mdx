@@ -11,7 +11,7 @@ This page documents the configuration files the Helix CLI reads and writes:
 
 - `helix.toml` — per-project configuration in your project root.
 - `~/.helix/config` — user-global state, currently the selected workspace.
-- `~/.helix/credentials` — V2 Cloud credentials written by `helix auth login`.
+- `~/.helix/credentials` — Helix Cloud credentials written by `helix auth login`.
 
 ## `helix.toml`
 
@@ -23,7 +23,7 @@ name = "my-helix-app"
 
 [local.dev]
 port = 6969
-image = "ghcr.io/helixdb/database-dev"
+image = "ghcr.io/helixdb/enterprise-dev"
 tag = "latest"
 # Optional; defaults to in-memory when omitted.
 # storage = "disk"
@@ -40,8 +40,8 @@ At least one `[local.*]` or `[enterprise.*]` instance is required. The CLI rejec
 | Key | Type | Required | Default | Description |
 |-----|------|----------|---------|-------------|
 | `name` | String | Yes | — | Project name. Used in the container name pattern `helix-<project>-<instance>`. |
-| `id` | String | No | — | Linked V2 Cloud project ID. Set by [`helix project switch`](/cli/command-reference/project). |
-| `workspace_id` | String | No | — | Linked V2 Cloud workspace ID. Set by [`helix project switch`](/cli/command-reference/project). |
+| `id` | String | No | — | Linked Helix Cloud project ID. Set by [`helix project switch`](/cli/command-reference/project). |
+| `workspace_id` | String | No | — | Linked Helix Cloud workspace ID. Set by [`helix project switch`](/cli/command-reference/project). |
 | `container_runtime` | `docker` \| `podman` | No | `docker` | Runtime used to manage local containers. |
 
 ### `[local.<instance>]`
@@ -51,7 +51,7 @@ One block per local instance. The instance name is the table key (e.g. `[local.d
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `port` | Number | `6969` | Host port published to container port `8080`. |
-| `image` | String | `ghcr.io/helixdb/database-dev` | Container image used by [`helix start`](/cli/command-reference/start). |
+| `image` | String | `ghcr.io/helixdb/enterprise-dev` | Container image used by [`helix start`](/cli/command-reference/start). |
 | `tag` | String | `latest` | Image tag. |
 | `storage` | `memory` \| `disk` | `memory` | Local storage mode. `disk` uses a CLI-managed MinIO container and persistent volume. |
 
@@ -70,11 +70,11 @@ You can also use `helix start <instance> --disk` as a one-off disk-mode run with
 
 ### `[enterprise.<instance>]`
 
-One block per V2 Cloud instance. Most fields here are populated automatically by [`helix sync`](/cli/command-reference/sync).
+One block per Helix Cloud instance. Most fields here are populated automatically by [`helix sync`](/cli/command-reference/sync).
 
 | Key | Type | Required | Default | Description |
 |-----|------|----------|---------|-------------|
-| `cluster_id` | String | Yes | — | V2 Cloud cluster ID. List clusters with [`helix cluster list`](/cli/command-reference/cluster). |
+| `cluster_id` | String | Yes | — | Helix Cloud cluster ID. List clusters with [`helix cluster list`](/cli/command-reference/cluster). |
 | `workspace_id` | String | No | — | Workspace the cluster belongs to. |
 | `project_id` | String | No | — | Linked project ID. |
 | `gateway_url` | URL | No (required at query time) | — | Runtime gateway base URL. Populated by `helix sync` when available. |
@@ -99,7 +99,7 @@ User-global configuration written by [`helix workspace switch`](/cli/command-ref
 workspace_id = "ws_01HX..."
 ```
 
-This file is independent of any project directory and applies to every V2 Cloud command you run.
+This file is independent of any project directory and applies to every Helix Cloud command you run.
 
 ## `~/.helix/credentials`
 
@@ -116,13 +116,13 @@ Remove with `helix auth logout`. Never commit this file.
 
 | Variable | Used by | Description |
 |----------|---------|-------------|
-| `HELIX_API_KEY` (default) | [`helix query`](/cli/command-reference/query) | Per-cluster V2 Cloud API key sent in the configured auth header. The variable name is configurable per-instance via `query_auth_env`. |
+| `HELIX_API_KEY` (default) | [`helix query`](/cli/command-reference/query) | Per-cluster Helix Cloud API key sent in the configured auth header. The variable name is configurable per-instance via `query_auth_env`. |
 
 ## Troubleshooting
 
 - **Port conflict on `helix start`** — change the port in `[local.<instance>] port`, or pass `helix start <instance> --port <port>` to override for a single run.
 - **`Missing instances`** — `helix.toml` has no `[local.*]` or `[enterprise.*]` blocks. Add one with [`helix add`](/cli/command-reference/add).
-- **`Authentication required`** — run `helix auth login` for V2 Cloud commands.
+- **`Authentication required`** — run `helix auth login` for Helix Cloud commands.
 - **`gateway_url is still missing` after `helix sync`** — the cloud-side configuration has not been published yet. Re-run `helix sync` later, or set `gateway_url` manually under `[enterprise.<instance>]`.
 
 ## Next Steps

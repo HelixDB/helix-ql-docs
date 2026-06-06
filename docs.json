@@ -208,6 +208,7 @@
               "cli/command-reference/metrics",
               "cli/command-reference/project",
               "cli/command-reference/prune",
+              "cli/command-reference/push",
               "cli/command-reference/query",
               "cli/command-reference/restart",
               "cli/command-reference/skills",

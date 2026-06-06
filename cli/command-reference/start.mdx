@@ -30,10 +30,11 @@ helix start [INSTANCE] [OPTIONS]
 | `--foreground` | Boolean | Run attached and stop the container on Ctrl-C. Useful for streaming startup logs. | `false` |
 | `--port` | Number | Override the host port for this run. The container always listens on `8080` internally. | Value from `[local.<instance>] port` (default `6969`) |
 | `--disk` | Boolean | Use on-disk storage backed by a CLI-managed MinIO container for this run. | `false` |
+| `--persist` | Boolean | Write the resolved port and storage settings for this run back to `[local.<instance>]` in `helix.toml`, so future runs reuse them. | `false` |
 
 ## Behavior
 
-- Pulls `ghcr.io/helixdb/database-dev:latest` (or the image/tag set in `[local.<instance>]`).
+- Pulls `ghcr.io/helixdb/enterprise-dev:latest` (or the image/tag set in `[local.<instance>]`).
 - Names the container `helix-<project>-<instance>` and publishes the configured port to container port `8080`.
 - Uses Docker or Podman based on `[project] container_runtime` in `helix.toml`.
 - Default storage is in-memory. Passing `--disk` starts a MinIO sidecar, creates the `helix-db` bucket, and runs `enterprise-dev` with S3-compatible storage environment variables.
@@ -63,6 +64,9 @@ helix start dev --port 9090
 
 # Start with persistent local storage for this run
 helix start dev --disk
+
+# Start on a new port and save it to helix.toml for future runs
+helix start dev --port 9090 --persist
 ```
 
 ## Related

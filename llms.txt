@@ -39,7 +39,7 @@
 ## Using the helix CLI
 - [Getting started with HelixDB CLI](https://docs.helix-db.com/cli/getting-started): Install the Helix CLI v2, bootstrap a first app, run a local instance, and send your first dynamic query
 - [Local Development](https://docs.helix-db.com/cli/workflows/local): Run a local v2 instance and iterate on dynamic JSON queries
-- [V2 Cloud](https://docs.helix-db.com/cli/workflows/helix_cloud): Authenticate, link a project, and query a V2 Cloud cluster from the CLI
+- [Helix Cloud](https://docs.helix-db.com/cli/workflows/helix_cloud): Authenticate, link a project, and query a Helix Cloud cluster from the CLI
 - [Configuration Guide](https://docs.helix-db.com/cli/configuration): Reference for helix.toml, ~/.helix/config, and credentials
 - [Troubleshooting](https://docs.helix-db.com/cli/troubleshooting): Solutions to common issues and error messages in Helix CLI v2
 

@@ -20,7 +20,7 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 | Sub-command | Description |
 |-------------|-------------|
 | `local` | Initialize a local v2 development project. |
-| `enterprise` | Initialize an V2 Cloud project linked to a cluster. |
+| `enterprise` | Initialize a Helix Cloud project linked to a cluster. |
 
 ## Top-level flags
 
@@ -48,11 +48,11 @@ Interactive local init prompts for the storage mode and defaults to in-memory.
 
 | Flag | Type | Required | Description | Default |
 |------|------|----------|-------------|---------|
-| `-n`, `--name` | String | No | V2 Cloud instance name. | `production` |
-| `--cluster-id` | String | Yes | V2 Cloud cluster ID. Find one with [`helix cluster list`](/cli/command-reference/cluster). | — |
+| `-n`, `--name` | String | No | Helix Cloud instance name. | `production` |
+| `--cluster-id` | String | Yes | Helix Cloud cluster ID. Find one with [`helix cluster list`](/cli/command-reference/cluster). | — |
 | `--gateway-url` | URL | No | Runtime gateway URL for dynamic queries. If omitted, run [`helix sync`](/cli/command-reference/sync) after init to fetch it. | — |
 
-`helix init cloud` requires V2 Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
+`helix init cloud` requires Helix Cloud authentication. Run [`helix auth login`](/cli/command-reference/auth) first.
 
 ## What `helix init` produces
 
@@ -98,7 +98,7 @@ helix init local --name staging --port 9090
 # Local with persistent on-disk storage by default
 helix init local --disk
 
-# V2 Cloud project linked to an existing cluster
+# Helix Cloud project linked to an existing cluster
 helix init cloud --cluster-id ec_01HX... --gateway-url https://gateway.example.com
 ```
 

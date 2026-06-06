@@ -1,17 +1,17 @@
 ---
-title: "V2 Cloud"
-description: "Authenticate, link a project, and query a V2 Cloud cluster from the CLI"
-sidebarTitle: "V2 Cloud"
+title: "Helix Cloud"
+description: "Authenticate, link a project, and query a Helix Cloud cluster from the CLI"
+sidebarTitle: "Helix Cloud"
 icon: "cloud"
 ---
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-The Helix CLI's V2 Cloud surface covers authentication, workspace/project/cluster selection, instance metadata sync, log retrieval, and dynamic queries against a remote gateway. Cluster provisioning and scaling happen in the Helix control plane — not in the CLI.
+The Helix CLI's Helix Cloud surface covers authentication, workspace/project/cluster selection, instance metadata sync, log retrieval, and dynamic queries against a remote gateway. Cluster provisioning and scaling happen in the Helix control plane — not in the CLI.
 
 ## Prerequisites
 
-- A Helix Cloud account with at least one workspace and V2 Cloud cluster.
+- A Helix Cloud account with at least one workspace and Helix Cloud cluster.
 - A local Helix project (`helix init` in any directory).
 
 ## End-to-end flow
@@ -38,7 +38,7 @@ The Helix CLI's V2 Cloud surface covers authentication, workspace/project/cluste
     helix workspace switch <workspace-slug>
     ```
 
-    The selection is persisted in `~/.helix/config` and applies to all subsequent V2 Cloud commands.
+    The selection is persisted in `~/.helix/config` and applies to all subsequent Helix Cloud commands.
   </Step>
 
   <Step title="Link a project">
@@ -56,7 +56,7 @@ The Helix CLI's V2 Cloud surface covers authentication, workspace/project/cluste
     helix add cloud --name production --cluster-id <cluster-id>
     ```
 
-    Or scaffold a brand-new V2 Cloud-linked project with [`helix init cloud --cluster-id <cluster-id>`](/cli/command-reference/init).
+    Or scaffold a brand-new Helix Cloud-linked project with [`helix init cloud --cluster-id <cluster-id>`](/cli/command-reference/init).
   </Step>
 
   <Step title="Sync gateway and auth metadata">
@@ -86,7 +86,7 @@ The Helix CLI's V2 Cloud surface covers authentication, workspace/project/cluste
       --end   2026-05-12T01:00:00Z
     ```
 
-    V2 Cloud logs are queried over a time range. Live `--follow` is not yet supported for V2 Cloud instances.
+    Helix Cloud logs are queried over a time range. Live `--follow` is not yet supported for Helix Cloud instances.
   </Step>
 </Steps>
 

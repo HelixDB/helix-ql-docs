@@ -43,7 +43,7 @@ helix query dev --file examples/request.json
 helix stop dev
 ```
 
-For installation details, V2 Cloud authentication, and the full command reference, see the
+For installation details, Helix Cloud authentication, and the full command reference, see the
 [CLI Getting Started guide](/cli/getting-started).
 
 ### AI-assisted query authoring
@@ -113,7 +113,7 @@ You can add this service to a local `docker-compose.yml`:
 ```yaml expandable
 services:
   helix:
-    image: ghcr.io/helixdb/database-dev
+    image: ghcr.io/helixdb/enterprise-dev
     restart: unless-stopped
     ports:
       - "6969:8080"
@@ -158,7 +158,7 @@ services:
         mc mb --ignore-existing local/helix-db
 
   helix:
-    image: ghcr.io/helixdb/database-dev:v0.1.0
+    image: ghcr.io/helixdb/enterprise-dev:v0.1.0
     restart: unless-stopped
     depends_on:
       minio-init:
