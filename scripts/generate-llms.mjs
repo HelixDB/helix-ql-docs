@@ -11,7 +11,7 @@ const BASE_URL = 'https://docs.helix-db.com';
 
 const TITLE = '# HelixDB';
 const SUMMARY =
-  '> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored in a Rust DSL, deployed as stored procedures via the `helix` CLI, and invoked over HTTP.';
+  '> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored with Helix SDK DSLs or dynamic JSON and invoked over HTTP.';
 
 const OPTIONAL_PREFIXES = ['change-log/', 'benchmarks/'];
 

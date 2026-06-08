@@ -22,8 +22,8 @@ keeps the system easier to scale, secure, and operate.
 Queries are authored as a single `queries.json` artifact — graph traversals, property
 filters, vector searches, text searches, and mutations all expressed as JSON. A single query can
 chain multiple traversals, apply filters, and combine graph, vector, and text operations within
-one transaction. You build `queries.json` with the [Rust](/database/rust-project-setup) or
-[TypeScript](/database/typescript-project-setup) DSL.
+one transaction. You can build `queries.json` with the [Rust](/database/rust-project-setup),
+[TypeScript](/database/typescript-project-setup), or [Python](/database/python-project-setup) DSL.
 
 Queries are the only artifact that moves from development to production. There is no schema
 migration step, no ORM configuration, and no SQL to manage. The data model is implicit in the
@@ -90,7 +90,7 @@ Helix supports built-in query warming for read queries.
 - Send the normal read request to `POST /v1/query` with the same parameters you would use for a
   real read.
 - Add `X-Helix-Warm: true` or `X-Helix-Warm: 1`. The SDK clients set this for you via
-  `.warmOnly()` (TypeScript), `.warm_only()` (Rust), or `helix.WarmOnly()` (Go):
+  `.warmOnly()` (TypeScript), `.warm_only()` (Rust/Python), or `helix.WarmOnly()` (Go):
 
 <CodeGroup>
 ```ts TypeScript
@@ -104,6 +104,10 @@ let _: serde_json::Value = client.query().warm_only().dynamic(count_users()).sen
 ```go Go
 var out map[string]any
 err := client.Exec(ctx, CountUsers(), &out, helix.WarmOnly())
+```
+
+```python Python
+client.query().warm_only().dynamic(request).send()
 ```
 </CodeGroup>
 

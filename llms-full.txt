@@ -1,12 +1,19 @@
 # HelixDB
 
-> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored in a Rust DSL, deployed as stored procedures via the `helix` CLI, and invoked over HTTP. This file is the full markdown corpus for AI agents — Enterprise architecture, concepts, guarantees, and the complete CLI v2 reference.
+> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored with Helix SDK DSLs or dynamic JSON and invoked over HTTP. This file is the full markdown corpus for AI agents — Enterprise architecture, concepts, guarantees, and the complete CLI v2 reference.
 
 
 # Introduction
 
-Helix Cloud is an object-storage-backed graph database with integrated approximate vector
-search and BM25 full-text search, using SSD and in-memory caches for low-latency reads.
+Helix Cloud is an object-storage-backed graph database with integrated vector search and
+full-text search. It combines a property graph engine with approximate vector search and BM25
+full-text search on top of durable object storage, using SSD and in-memory caches for
+low-latency reads.
+
+Helix Cloud is a fundamentally different architecture and database compared to the opensource v1 
+version of HelixDB. That version used LMDB which was limited to sequential writes and could only handle 
+a relatively small amount of data. Helix Cloud uses a new LSM based storage engine backed by object 
+storage that can handle concurrent writes to the writer node and allows for virtually unlimited data storage.  
 
 ## HelixDB Cloud System at a Glance
 
@@ -21,8 +28,9 @@ Caches reduce steady-state latency and accelerate cold starts.
 - **Tiered caching.** Separate in-memory and SSD cache paths for graph, vector, and text data keep
   hot-path reads fast.
 - **Full ACID transactions.** Every query runs in a serializable snapshot isolation transaction.
-- **Dynamic query model.** Queries are authored in a Rust, TypeScript, or Go DSL and sent to the
-  runtime as HTTP requests that carry the query inline — no deployment step.
+  Concurrent reads and writes do not block each other.
+- **Dynamic query model.** Queries are authored in a Rust or TypeScript DSL and sent to the
+  runtime as dynamic HTTP requests that carry the query inline. No separate deployment step.
 
 ## Next Steps
 
@@ -100,12 +108,13 @@ setups below show the raw image configuration that the CLI disk mode mirrors.
 ## Installing the SDKs
 
 To author queries against your local instance, install the SDK for your language.
-TypeScript and Rust can generate bundles; Go v1 posts dynamic requests directly.
+TypeScript, Rust, and Python can generate bundles; Go v1 posts dynamic requests directly.
 
 For the full project layout, generator setup, and authoring walkthrough, see
 [TypeScript Project Setup](/database/typescript-project-setup),
-[Rust Project Setup](/database/rust-project-setup), and
-[Go Project Setup](/database/go-project-setup).
+[Rust Project Setup](/database/rust-project-setup),
+[Go Project Setup](/database/go-project-setup), and
+[Python Project Setup](/database/python-project-setup).
 
 ## In-Memory
 
@@ -753,12 +762,233 @@ func ExecWithConflictRetry(ctx context.Context, client *helix.Client, build func
 
 ## Next Steps
 
+# Python Project Setup
+
+Queries for HelixDB can be authored directly in Python with the `helix-db` package,
+imported as `helixdb`. The Python SDK pairs a query-builder DSL with a small
+sync HTTP client. The API is Pythonic (`read_batch`, `write_batch`, `var_as`,
+`value_map`) and emits the same dynamic-query JSON AST as the Rust, TypeScript,
+and Go SDKs.
+
+For the traversal model and query patterns themselves, see
+[Querying](/database/querying) and the [Querying Guide](/database/querying-guide/overview).
+
+## Prerequisites
+
+- Python 3.10 or later.
+- Optional: the [Helix CLI](/cli/getting-started) for local development and ad-hoc query testing.
+
+## Create a project
+
+```bash
+mkdir helix-python-app
+cd helix-python-app
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+## Add the dependency
+
+When installing from a checkout of the HelixDB monorepo:
+
+```bash
+pip install -e sdks/python
+```
+
+When installing from Git:
+
+```bash
+pip install 'git+https://github.com/HelixDB/helix-db.git#subdirectory=sdks/python'
+```
+
+Import the SDK from `helixdb`:
+
+```python
+from helixdb import Client, Predicate, define_params, g, param, read_batch, write_batch
+```
+
+A compatibility import path, `helix_db`, is also available for codebases that prefer
+underscore package names.
+
+## Write query functions
+
+Python query builders are normal functions returning `ReadBatch` or `WriteBatch`.
+Use `define_params` for runtime values and pass the returned refs into predicates,
+limits, property inputs, search inputs, and mutations.
+
+```python
+from helixdb import Predicate, Projection, define_params, g, param, read_batch
+
+find_users_params = define_params({
+    "tenant_id": param.string(),
+    "limit": param.i64(),
+})
+
+def find_users(p=find_users_params):
+    return (
+        read_batch()
+        .var_as(
+            "users",
+            g()
+            .n_with_label("User")
+            .where(Predicate.eq("tenantId", p.tenant_id))
+            .limit(p.limit)
+            .project([
+                Projection.property("$id", "id"),
+                Projection.property("name"),
+                Projection.property("tenantId"),
+            ]),
+        )
+        .returning(["users"])
+    )
+```
+
+Direct values are serialized as literals in the query AST. That is useful for true
+constants, but values that change per request should be declared as params so the
+query shape stays stable and the server can reuse cached work across requests.
+
+## Build dynamic requests
+
+A batch becomes a dynamic request with `to_dynamic_request(...)` or
+`to_dynamic_json(...)`:
+
+```python
+request = find_users().to_dynamic_request(
+    find_users_params,
+    {"tenant_id": "acme", "limit": 25},
+    query_name="find_users",
+)
+
+body = find_users().to_dynamic_json(
+    find_users_params,
+    {"tenant_id": "acme", "limit": 25},
+    query_name="find_users",
+)
+```
+
+The request includes `request_type`, `query_name`, `query`, `parameters`, and
+`parameter_types`, ready to POST to `/v1/query`.
+
+## Execute queries
+
+Create the client once and reuse it:
+
+```python
+from helixdb import Client, HelixError
+
+client = Client("http://localhost:6969")
+
+try:
+    response = client.query().dynamic(request).send()
+except HelixError as error:
+    if error.kind == "Remote":
+        raise RuntimeError(error.details) from error
+    raise
+
+users = response["users"]
+```
+
+For Helix Cloud, pass the cluster URL and API key:
+
+```python
+client = Client("https://helix.example.com", api_key="hx_secret")
+```
+
+Use request-builder options when a write must hit the writer node or wait for durability:
+
+```python
+created = (
+    client
+    .query()
+    .writer_only()
+    .should_await_durability(True)
+    .dynamic(create_user_request)
+    .send()
+)
+```
+
+Warm read-query caches with `warm_only()`:
+
+```python
+client.query().warm_only().dynamic(read_request).send()
+```
+
+Stored routes post to `/v1/query/{name}`:
+
+```python
+response = client.query().body({"tenant_id": "acme"}).stored("find_users").send()
+```
+
+## Write queries
+
+```python
+from helixdb import define_params, g, param, write_batch
+
+create_user_params = define_params({
+    "name": param.string(),
+    "tenant_id": param.string(),
+})
+
+def create_user(p=create_user_params):
+    return (
+        write_batch()
+        .var_as("user", g().add_n("User", {"name": p.name, "tenantId": p.tenant_id}))
+        .returning(["user"])
+    )
+```
+
+`read_batch().var_as(...)` rejects write traversals. Use `write_batch()` for any
+node/edge creation, property update/removal, drop, or index mutation.
+
+## Bundles
+
+Python can also generate query bundles:
+
+```python
+from helixdb import define_queries, register_read, register_write
+
+queries = define_queries({
+    "read": {"find_users": register_read(find_users, find_users_params)},
+    "write": {"create_user": register_write(create_user, create_user_params)},
+})
+
+# Dynamic request with query_name="find_users".
+request = queries.call.find_users({"tenant_id": "acme", "limit": 25})
+
+# Write queries.json.
+queries.generate("queries.json")
+```
+
+Route names must be unique across read and write routes. Bundles serialize with
+version `4`, matching the other SDKs.
+
+## Handle conflicts in application code
+
+The Python client does not retry HTTP `409 Conflict` responses automatically. Retry
+only when the operation is safe to replay. Remote errors are raised as `HelixError`
+with `kind == "Remote"`, `details`, and `status_code` populated.
+
+```python
+for attempt in range(3):
+    try:
+        return client.query().dynamic(request).send()
+    except HelixError as error:
+        if error.kind != "Remote" or error.status_code != 409 or attempt == 2:
+            raise
+```
+
+## Next Steps
+
 # Roadmap
 
 ## Currently In Progress
 
+- ~~Local docker deployment~~ .
+- **More intelligent cache warming** (always improving)
+- ~~Dashboard improvements~~ /
 - **Supporting non-HA clusters**
-- **Backups and point-in-time recovery**
+- **Reliability and availability improvements** (always improving) 
+- **Backups and point in time recovery**
 - **Expand query plans to improve performance**
 
 ## Up Next
@@ -785,8 +1015,8 @@ keeps the system easier to scale, secure, and operate.
 Queries are authored as a single `queries.json` artifact — graph traversals, property
 filters, vector searches, text searches, and mutations all expressed as JSON. A single query can
 chain multiple traversals, apply filters, and combine graph, vector, and text operations within
-one transaction. You build `queries.json` with the [Rust](/database/rust-project-setup) or
-[TypeScript](/database/typescript-project-setup) DSL.
+one transaction. You can build `queries.json` with the [Rust](/database/rust-project-setup),
+[TypeScript](/database/typescript-project-setup), or [Python](/database/python-project-setup) DSL.
 
 Queries are the only artifact that moves from development to production. There is no schema
 migration step, no ORM configuration, and no SQL to manage. The data model is implicit in the
@@ -853,7 +1083,7 @@ Helix supports built-in query warming for read queries.
 - Send the normal read request to `POST /v1/query` with the same parameters you would use for a
   real read.
 - Add `X-Helix-Warm: true` or `X-Helix-Warm: 1`. The SDK clients set this for you via
-  `.warmOnly()` (TypeScript), `.warm_only()` (Rust), or `helix.WarmOnly()` (Go):
+  `.warmOnly()` (TypeScript), `.warm_only()` (Rust/Python), or `helix.WarmOnly()` (Go):
 
 - Helix executes the query as a query warming request, discards the result body, and returns
   `204 No Content`.
@@ -978,8 +1208,9 @@ Helix Cloud provides full ACID guarantees for every transaction.
 
 ## Atomicity
 
-Each query executes as a single transaction: all mutations commit together or roll back entirely.
-There are no partial writes — if any step fails, nothing is modified.
+Each query executes as a single atomic transaction. All mutations within a query either commit
+together or roll back entirely. There are no partial writes. If any step of a multi-traversal
+query fails, the entire transaction is aborted and no data is modified.
 
 ## Consistency
 
@@ -990,10 +1221,11 @@ value constraints) are enforced at write time, not retroactively.
 ## Isolation
 
 Transactions run with serializable snapshot isolation. Each transaction reads from a consistent
-point-in-time snapshot — graph reads, vector search, and text search all observe the same one — and
-write transactions additionally get read-your-writes.
+point-in-time snapshot. Graph reads, vector search, and text search all observe that same
+snapshot. Write transactions also get read-your-writes, and indexed reads participate in normal
+conflict detection.
 
-- Read-only queries are never blocked by writes.
+- Read-only queries see a consistent snapshot and are never blocked by writes.
 - Write transactions commit through the single writer process, so conflicting writes are detected
   before commit.
 
@@ -1013,17 +1245,19 @@ cluster.
 
 This baseline ensures:
 
-- **Reader redundancy.** If a reader fails, the rest keep serving reads and a replacement is
-  provisioned automatically.
-- **Gateway redundancy.** Gateways are stateless and interchangeable; losing one just redistributes
-  traffic across the others.
-- **Writer recovery.** If the writer fails, a new one starts and recovers from object storage with
-  no committed data lost.
-- **Infrastructure redundancy.** Supporting services (load balancers, metadata stores, coordination
-  layers) run with no single points of failure.
+- **Reader redundancy.** If a reader becomes unavailable, the remaining readers and the writer
+  continue serving read traffic. A replacement reader is provisioned automatically.
+- **Gateway redundancy.** Gateway instances are stateless and interchangeable. Loss of one gateway
+  has no impact on availability. Traffic is redistributed across the remaining instances.
+- **Writer recovery.** If the writer becomes unavailable, a new writer process is started and
+  recovers its state from object storage. No committed data is lost. Write availability is
+  restored once the new writer is running.
+- **Infrastructure redundancy.** All supporting services (load balancers, metadata stores,
+  coordination layers) run with redundant infrastructure sized for high-availability clusters,
+  eliminating single points of failure across the cluster.
 
-The cluster can be fully rebuilt from object storage, which provides its own durability and
-availability guarantees.
+Object storage itself provides independent durability and availability guarantees. The database
+cluster can be fully rebuilt from object storage contents.
 
 ## Service Level Agreements
 
@@ -1106,14 +1340,21 @@ vector, and text workloads with strong transactional guarantees. These choices h
 
 ## Design Choices
 
-- **Object storage as the system of record.** Superior durability and cost, at the price of slower
-  cold starts than all-on-local-disk systems.
-- **Single writer.** Avoids distributed coordination; write throughput is bounded by one node, which
-  batching makes sufficient for most workloads.
-- **Specialized cache paths.** Graph, vector, and text caches don't contend, at the cost of less
-  flexible allocation when one workload dominates.
-- **Dynamic query model.** No deploy step and full ad-hoc support, at the cost of deserializing the
-  query AST on each call.
+**Object storage as the system of record.** Caches accelerate reads but are not required for
+correctness. This means cold starts are slower than systems that keep all data on local disk, but
+durability and cost characteristics are superior.
+
+**Single writer.** Serializing all writes through one process avoids distributed coordination at the
+cost of write throughput being bounded by a single node. In practice, batching and the high
+throughput of the writer process make this sufficient for most workloads.
+
+**Specialized cache paths.** Helix maintains separate cache paths for graph data, vector indexes,
+and text search artifacts. The tradeoff is less flexibility in cache allocation when only one
+workload dominates.
+
+**Dynamic query model.** Queries travel inline with each request, so there is no deploy step and
+ad-hoc queries are fully supported. The tradeoff is the small per-request cost of deserializing the
+query AST on every call.
 
 # Limits
 
@@ -1164,7 +1405,7 @@ fundamental architectural boundaries.
 | Limit             | Value                                |
 | ----------------- | ------------------------------------ |
 | Query model       | Dynamic queries                      |
-| Query language    | Rust DSL                             |
+| Query language    | SDK DSLs or dynamic JSON AST         |
 | Transaction scope | One transaction per query invocation |
 
 # Data Model
@@ -1205,7 +1446,7 @@ how it is read and mutated, see [Querying](/database/querying).
 Helix Cloud exposes a single query surface over HTTP. Every query — whether a
 deep graph traversal, a vector search, a bulk write, or all three at once — is
 expressed in the same composable DSL and executes as one serializable
-transaction. Queries are authored once in TypeScript, Rust, or Go (or by hand as
+transaction. Queries are authored once in TypeScript, Rust, Go, or Python (or by hand as
 JSON) and sent to the runtime as **dynamic** requests — the request body
 carries the query itself, so there is no separate deployment step. The
 [Querying Guide](/database/querying-guide/overview) walks the DSL end-to-end;
@@ -1213,13 +1454,14 @@ this page covers how a dynamic query looks on the wire.
 
 ## Installing the SDKs
 
-The TypeScript, Rust, and Go examples below are built with the Helix SDKs. Install the one for
-your language to follow along — all three emit the same dynamic query JSON.
+The TypeScript, Rust, Go, and Python examples below are built with the Helix SDKs. Install the one for
+your language to follow along — all four emit the same dynamic query JSON.
 
 For the full project layout and generator setup, see
-[TypeScript Project Setup](/database/typescript-project-setup) and
-[Rust Project Setup](/database/rust-project-setup). For Go's dynamic-first workflow,
-see [Go Project Setup](/database/go-project-setup).
+[TypeScript Project Setup](/database/typescript-project-setup),
+[Rust Project Setup](/database/rust-project-setup),
+[Go Project Setup](/database/go-project-setup), and
+[Python Project Setup](/database/python-project-setup).
 
 ## Dynamic queries
 
@@ -1228,7 +1470,7 @@ query plus a small envelope that names the request kind, an optional query name,
 and any runtime parameters. There is no deployment step — the query travels with
 the request, so the same DSL that builds it also produces the body you POST.
 
-The example below counts every `User` node. The TypeScript, Rust, and Go tabs are
+The example below counts every `User` node. The TypeScript, Rust, Go, and Python tabs are
 builder front-ends that produce the same JSON envelope; pick whichever your
 codebase already speaks. The JSON tab shows the resulting envelope verbatim — if
 you want to skip the DSL and POST hand-written JSON, this is the body you send.
@@ -1283,25 +1525,26 @@ contract.
 
 This guide is a tutorial walkthrough of the HelixDB query language. Each page builds
 on the last, starting from the simplest possible read and ending at parameter-bound
-bundles. Every example shows the **TypeScript**, **Rust**, **Go**, and **JSON** form
-side by side, so you can pick a client and follow along — or skim across all four to
-see how the surfaces relate.
+bundles. Key examples show the **TypeScript**, **Rust**, **Go**, **Python**, and **JSON** forms
+across the guide, so you can pick a client and follow along or skim across the surfaces
+to see how they relate.
 
-The four forms are not four different query languages; they are four encodings of
-the same query AST. The TypeScript, Rust, and Go DSLs are builders that emit the JSON
+These forms are not different query languages; they are encodings of
+the same query AST. The TypeScript, Rust, Go, and Python DSLs are builders that emit the JSON
 shape directly. If you copy the JSON column into a `POST /v1/query` body, it will
 execute the same query as the DSL above it.
 
 ## Installing the SDKs
 
-To follow along in TypeScript, Rust, or Go, install the SDK for that language. All
-three emit the same query AST, so you can switch between them — or use the JSON
+To follow along in TypeScript, Rust, Go, or Python, install the SDK for that language. All
+four emit the same query AST, so you can switch between them — or use the JSON
 column directly and skip the SDK entirely.
 
 For the full project layout and generator setup, see
 [TypeScript Project Setup](/database/typescript-project-setup),
-[Rust Project Setup](/database/rust-project-setup), and
-[Go Project Setup](/database/go-project-setup).
+[Rust Project Setup](/database/rust-project-setup),
+[Go Project Setup](/database/go-project-setup), and
+[Python Project Setup](/database/python-project-setup).
 
 ## The running example
 
@@ -1358,7 +1601,7 @@ Two things to notice:
 - The `posts` traversal starts from `NodeRef.var("user")` — that's how one named
   binding feeds into the next. The same name appears as `{"N": {"Var": "user"}}` in
   the JSON.
-- The TypeScript, Rust, and Go DSLs surface a friendly `nWithLabel` / `n_with_label` /
+- The TypeScript, Rust, Go, and Python DSLs surface friendly `nWithLabel` / `n_with_label` /
   `NWithLabel` alias, but this example uses `nWhere(SourcePredicate.eq("username", "alice"))`
   directly because the read is anchored on a unique property, not a label scan. The
   next page covers when to use each anchor.
@@ -1366,8 +1609,8 @@ Two things to notice:
 ## Sending the request
 
 The JSON above is the actual body for `POST /v1/query`. Below are the same request
-in four transports — TypeScript, Rust, and Go using their SDK clients, and `curl`
-straight from the shell. All four are interchangeable; pick whichever fits your
+in multiple transports — TypeScript, Rust, Go, and Python using their SDK clients, and `curl`
+straight from the shell. The transports are interchangeable; pick whichever fits your
 environment.
 
 The response is a JSON object keyed by the names from `.returning([...])` — here
@@ -2180,7 +2423,7 @@ parameterized query to the runtime.
 
 ## SDK workflows
 
-TypeScript and Rust support both direct dynamic requests and registered bundle
+TypeScript, Rust, and Python support both direct dynamic requests and registered bundle
 workflows. Go v1 is dynamic-first: write normal Go functions that return
 `helix.Request`, set the query name with `helix.ReadQuery("name")` or
 `helix.WriteQuery("name")`, and declare runtime parameters inline on the query
@@ -2222,17 +2465,41 @@ and pass the returned ref, for example `id := q.ParamString("id", userID)` and
 `helix.SourceEq("id", id)`. That keeps the request shape stable for server-cache
 reuse.
 
-## Declaring parameters with `defineParams`
+Python mirrors the TypeScript/Rust direct dynamic and bundle workflow with snake_case helpers:
 
-This section applies to TypeScript bundle and dynamic helpers. Rust derives a
+```python
+from helixdb import Predicate, define_params, g, param, read_batch
+
+params = define_params({"tenant_id": param.string(), "limit": param.i64()})
+
+def find_users(p=params):
+    return (
+        read_batch()
+        .var_as(
+            "users",
+            g()
+            .n_with_label("User")
+            .where(Predicate.eq("tenantId", p.tenant_id))
+            .limit(p.limit)
+            .value_map(["$id", "name", "tenantId"]),
+        )
+        .returning(["users"])
+    )
+
+request = find_users().to_dynamic_request(params, {"tenant_id": "acme", "limit": 25}, query_name="find_users")
+```
+
+## Declaring parameters with `defineParams` / `define_params`
+
+This section applies to TypeScript and Python bundle and dynamic helpers. Rust derives a
 similar schema from registered function arguments. Go declares the same schema
 inline through `q.Param*` methods as shown above.
 
-`defineParams({...})` takes a record of parameter names to `ParamSchema` constructors
-and returns a typed proxy. Each property of the returned proxy is a `ParamRef` you
-can pass into builder methods that expect one.
+`defineParams({...})` in TypeScript and `define_params({...})` in Python take a record
+of parameter names to `ParamSchema` constructors and return a proxy. Each property
+of the returned proxy is a `ParamRef` you can pass into builder methods that expect one.
 
-```ts
+```ts TypeScript
 
 const params = defineParams({
   tenant_id:     param.string(),
@@ -2243,55 +2510,57 @@ const params = defineParams({
 });
 ```
 
-The supported `param.*` constructors:
+```python Python
+from helixdb import define_params, param
 
-| Constructor | Wire type | Accepted JS values |
-|---|---|---|
-| `param.bool()` | `Bool` | `boolean` |
-| `param.i64()` | `I64` | `number` (safe int) or `bigint` |
-| `param.f64()` / `param.f32()` | `F64` / `F32` | `number` |
-| `param.string()` | `String` | `string` |
-| `param.dateTime()` | `DateTime` | `DateTime`, RFC3339 string, or epoch-millis number/bigint |
-| `param.bytes()` | `Bytes` | `Uint8Array` or `number[]` — **dynamic requests reject this** |
-| `param.value()` | `Value` | any JSON value (untyped) |
-| `param.object(inner?)` | `Object` | `Record<string, T>` if `inner` is given, else loose JSON |
-| `param.array(inner)` | `{Array: inner}` | array of values matching the inner schema |
+params = define_params({
+    "tenant_id": param.string(),
+    "username": param.string(),
+    "limit": param.i64(),
+    "query_vector": param.array(param.f32()),
+    "created_after": param.date_time(),
+})
+```
+
+The supported constructors share the same wire types; Python uses snake_case for the datetime helper:
+
+| TypeScript | Python | Wire type | Accepted dynamic values |
+|---|---|---|---|
+| `param.bool()` | `param.bool()` | `Bool` | `boolean` / `bool` |
+| `param.i64()` | `param.i64()` | `I64` | safe integer, `bigint`, or Python `int` |
+| `param.f64()` / `param.f32()` | `param.f64()` / `param.f32()` | `F64` / `F32` | finite number / `float` |
+| `param.string()` | `param.string()` | `String` | `string` / `str` |
+| `param.dateTime()` | `param.date_time()` | `DateTime` | `DateTime`, RFC3339 string, or epoch-millis integer; Python also accepts `datetime.datetime` |
+| `param.bytes()` | `param.bytes()` | `Bytes` | declarable, but dynamic JSON requests reject bytes values |
+| `param.value()` | `param.value()` | `Value` | any JSON value |
+| `param.object(inner?)` | `param.object(inner=None)` | `Object` | object values matching the optional inner schema |
+| `param.array(inner)` | `param.array(inner)` | `{Array: inner}` | arrays/lists matching the inner schema |
 
 `param.array(param.f32())` is what produces the `{"Array": "F32"}` shape required for
-vector parameters; `param.object(param.string())` produces `{"Array": "Object"}` rows
-inside a `forEachParam`.
+vector parameters. Use `param.array(param.object(...))` for row-style inputs to
+`forEachParam` / `for_each_param`.
 
 ## Referring to parameters inside a traversal
 
 There are three ways a parameter shows up inside a query, depending on what kind of
 value the builder expects:
 
-1. **Bound to a step argument that takes a `ParamRef`** — for `.limit(p.limit)`,
-   `.skip(p.skip)`, etc. The proxy returned by `defineParams` is the value to pass.
-2. **Inside a predicate** — `Predicate.eqParam("prop", "param_name")` and the rest
-   of the `*Param` family take the parameter *name as a string*, not the proxy.
-3. **As a property value or expression** — `PropertyInput.param("name")`,
-   `Expr.param("name")`, `NodeRef.param("name")`, `EdgeRef.param("name")`. All take
-   the name as a string.
+1. **Bound to a step argument that takes a `ParamRef`** - for `.limit(p.limit)`,
+   `.skip(p.skip)`, etc. The proxy returned by `defineParams` / `define_params` is
+   the value to pass.
+2. **Inside a predicate** - TypeScript offers `Predicate.eqParam("prop", "param_name")`
+   and the rest of the `*Param` family for string-keyed parameter refs. Python can
+   pass the `ParamRef` directly, for example `Predicate.eq("tenantId", p.tenant_id)`.
+3. **As a property value or expression** - `PropertyInput.param("name")`,
+   `Expr.param("name")`, `NodeRef.param("name")`, and `EdgeRef.param("name")` all take
+   the name as a string. In Python, `p.tenant_id.input()` is a shorthand when a method
+   expects a `PropertyInput`.
 
-In practice the proxy is mostly used to keep parameter names in sync — if you
-rename the field in `defineParams`, every reference through the proxy moves with it.
-For string-keyed refs (`PropertyInput.param("name")`), the name has to match
-exactly. A common convention is to assign the proxy to a `p` argument and read both
-forms from there:
-
-```ts
-function findUsers(p = params) {
-  return readBatch().varAs(
-    "users",
-    g()
-      .nWithLabel("User")
-      .where(Predicate.eqParam("tenantId", "tenant_id"))   // string name
-      .limit(p.limit)                                       // proxy ref
-      .valueMap(["$id", "username", "tenantId"]),
-  ).returning(["users"]);
-}
-```
+In practice the proxy is mostly used to keep parameter names in sync - if you
+rename the field in `defineParams` / `define_params`, every reference through the
+proxy moves with it. For string-keyed refs (`PropertyInput.param("name")`), the name
+has to match exactly. A common convention is to assign the proxy to a `p` argument
+and read both forms from there:
 
 ## Shipping a parameterized query
 
@@ -2302,7 +2571,8 @@ all serialize to the same dynamic envelope you POST to `/v1/query`.
 
 ### 1. From a batch directly
 
-The simplest case: build the batch, call `.toDynamicJson(params, values, options)`,
+The simplest case: build the batch, call `.toDynamicJson(params, values, options)`
+in TypeScript or `.to_dynamic_json(params, values, query_name=...)` in Python, then
 POST the resulting body to `/v1/query`. No deploy step. Best for ad-hoc queries,
 prototyping, and one-off integrations.
 
@@ -2322,40 +2592,35 @@ function userByUsername(p = params) {
 }
 ```
 
-The dynamic envelope produced by `.toDynamicJson(params, values, options)` is the body for
-`POST /v1/query`. Below are the four equivalent ways to send it:
+The dynamic envelope produced by `.toDynamicJson(...)` / `.to_dynamic_json(...)` is
+the body for `POST /v1/query`. Below are the five equivalent ways to send it:
 
 For larger envelopes, write the JSON to a file and use `--data-binary @file.json` —
 the inline `--data-raw` form works for small bodies but gets unwieldy fast.
 
 The three serialization helpers on a batch:
 
-| Method | Returns |
-|---|---|
-| `.toDynamicJson(params?, values?, options?)` | JSON string (full envelope: `request_type`, `query_name`, `query`, `parameters`, `parameter_types`) |
-| `.toDynamicRequest(params?, values?, options?)` | `DynamicQueryRequest` instance — useful when you want to mutate it before serializing |
-| `.toDynamicBytes(params?, values?, options?)` | `Uint8Array` of the JSON encoding — handy for `fetch` bodies that prefer bytes |
+| TypeScript | Python | Returns |
+|---|---|---|
+| `.toDynamicJson(params?, values?, options?)` | `.to_dynamic_json(params=None, values=None, query_name=...)` | JSON string (full envelope: `request_type`, `query_name`, `query`, `parameters`, `parameter_types`) |
+| `.toDynamicRequest(params?, values?, options?)` | `.to_dynamic_request(params=None, values=None, query_name=...)` | `DynamicQueryRequest` instance - useful when you want to mutate it before serializing |
+| `.toDynamicBytes(params?, values?, options?)` | `.to_dynamic_bytes(params=None, values=None, query_name=...)` | UTF-8 bytes of the JSON encoding |
 
-Pass `{ queryName: "..." }` as the final options argument when you want gateway
-logs and query diagnostics to identify a direct inline request. Direct requests
-without a name serialize `query_name: null`, which the gateway records as the
-fallback dynamic name `__dynamic__`.
+Pass `{ queryName: "..." }` as the final TypeScript options argument, or
+`query_name="..."` in Python, when you want gateway logs and query diagnostics to
+identify a direct inline request. Direct requests without a name serialize
+`query_name: null`, which the gateway records as the fallback dynamic name
+`__dynamic__`.
 
-For a parameter-less batch, omit `params` and `values`; pass only options if you
-want to name the request:
+For a parameter-less batch, omit `params` and `values`; pass only the name option
+if you want to name the request:
 
-```ts
-readBatch().varAs("count", g().nWithLabel("User").count()).toDynamicJson({
-  queryName: "count_users",
-});
-```
-
-`.toJsonString()` returns the *raw batch* (no envelope, no parameters), the form
-that goes into a bundle — covered below.
+`.toJsonString()` / `.to_json_string()` returns the *raw batch* (no envelope, no
+parameters), the form that goes into a bundle - covered below.
 
 ### 2. Registered bundles
 
-Registered bundles are available in TypeScript and Rust. Go v1 does not generate
+Registered bundles are available in TypeScript, Rust, and Python. Go v1 does not generate
 or register bundles; keep Go application queries dynamic-first with
 `client.Exec(ctx, request, &out)`.
 
@@ -2363,57 +2628,6 @@ To keep a set of queries organized and generate a single `queries.json` artifact
 wrap each query function with `registerRead` or `registerWrite` and pass them all to
 `defineQueries`. The bundle's `generate(path)` method writes a single `queries.json`
 in the exact shape the runtime expects.
-
-```ts
-  defineParams,
-  defineQueries,
-  g,
-  param,
-  Predicate,
-  readBatch,
-  registerRead,
-  registerWrite,
-  writeBatch,
-} from "@helix-db/helix-db";
-
-const readParams = defineParams({ username: param.string() });
-
-function userByUsername(p = readParams) {
-  return readBatch()
-    .varAs(
-      "user",
-      g().nWithLabel("User")
-         .where(Predicate.eqParam("username", "username"))
-         .valueMap(["$id", "username", "tier"]),
-    )
-    .returning(["user"]);
-}
-
-const writeParams = defineParams({
-  username: param.string(),
-  tier:     param.string(),
-});
-
-function addUser(p = writeParams) {
-  return writeBatch()
-    .varAs(
-      "newUser",
-      g().addN("User", {
-        username: PropertyInput.param("username"),
-        tier:     PropertyInput.param("tier"),
-      }),
-    )
-    .returning(["newUser"]);
-}
-
-export const queries = defineQueries({
-  read:  { user_by_username: registerRead(userByUsername, readParams) },
-  write: { add_user:         registerWrite(addUser, writeParams) },
-});
-
-// Build queries.json at deploy time.
-await queries.generate("queries.json");
-```
 
 The resulting bundle has this top-level shape:
 
@@ -2444,40 +2658,18 @@ at bundle time.
 
 ### 3. Typed call helpers
 
-`defineQueries(...)` also exposes a typed `call` map. Each entry is a function that
-takes the route's parameter values (inferred from `defineParams`) and returns a
-serializable `DynamicQueryRequest`. The argument is fully type-checked from the
-parameter schema; unknown keys, missing keys, and wrong value types are all compile
-errors:
-
-```ts
-queries.call.user_by_username({
-  username: "alice",
-  unexpected: true,  // ts(...): Object literal may only specify known properties
-});
-
-queries.call.user_by_username({
-  username: 1,  // ts(...): Type 'number' is not assignable to type 'string'
-});
-```
+`defineQueries(...)` / `define_queries(...)` also exposes a `call` map. Each entry
+is a function that takes the route's parameter values and returns a serializable
+`DynamicQueryRequest`. TypeScript infers the input type from `defineParams`; Python
+validates unknown keys, missing keys, and wrong value types at call time.
 
 The returned object serializes to the same dynamic envelope you would build by hand,
 so you POST it to `/v1/query`:
 
-```ts
-
-const client = new Client("https://helix.example.com");
-
-const { user } = await client
-  .query<{ user: unknown }>()
-  .dynamic(queries.call.user_by_username({ username: "alice" }))
-  .send();
-```
-
-`queries.call.*` keeps parameter names and types in sync with `defineParams`, so it
-is the most convenient way to send a registered query — in application code, tests,
-and scripts alike. The returned dynamic request sets `query_name` to the route
-key (`user_by_username` in this example) automatically.
+`queries.call.*` keeps parameter names and types in sync with `defineParams` /
+`define_params`, so it is the most convenient way to send a registered query - in
+application code, tests, and scripts alike. The returned dynamic request sets
+`query_name` to the route key (`user_by_username` in this example) automatically.
 
 ## How parameters serialize
 
@@ -2491,7 +2683,7 @@ At envelope position, the actual value is a *bare* JSON value, *not* a tagged
 `PropertyValue`. The shape `{"Array": "F32"}` you see in the `parameter_types` map
 is `QueryParamType`, the runtime coercion schema.
 
-A complete envelope produced by `toDynamicJson`:
+A complete envelope produced by `toDynamicJson` / `to_dynamic_json`:
 
 ```json
 {
@@ -2545,18 +2737,21 @@ After storage, query nested object fields with dotted paths such as
 
 ## Number handling: `bigint` for `i64`
 
-JavaScript `number` only has 53 bits of integer precision. The DSL accepts a plain
-`number` wherever it fits in a safe integer range, but for full `i64` (node ids,
-large counts, epoch nanos) you should pass a `bigint`:
+JavaScript `number` only has 53 bits of integer precision. The TypeScript DSL accepts
+a plain `number` wherever it fits in a safe integer range, but for full `i64` (node
+ids, large counts, epoch nanos) you should pass a `bigint`:
 
 ```ts
 g().n(9223372036854775807n);
 PropertyValue.i64(9223372036854775807n);
 ```
 
-`stringifyJson`, `.toJsonString()`, and `serializeQueryBundle` all preserve `bigint`
-without loss. Plain `JSON.stringify` does not — use the package's serializers when
-your payload may contain large integers.
+Python `int` values are arbitrary precision, so the Python SDK validates the value
+against the `i64` range and serializes it directly.
+
+`stringifyJson`, `.toJsonString()` / `.to_json_string()`, and `serializeQueryBundle`
+preserve large integers without loss. Plain `JSON.stringify` does not - use the
+package serializers when your TypeScript payload may contain large integers.
 
 ## DateTime handling
 
@@ -2572,22 +2767,11 @@ DateTime.parseRfc3339("2026-04-05T12:34:56.789+02:00").toRfc3339();
 // "2026-04-05T10:34:56.789Z"  (normalized to UTC)
 ```
 
-When a parameter is declared as `param.dateTime()`, the call helpers accept
-`DateTime`, an RFC3339 string, or an epoch-millis `number` / `bigint`:
+When a parameter is declared as `param.dateTime()` in TypeScript or
+`param.date_time()` in Python, the call helpers accept `DateTime`, an RFC3339
+string, or an epoch-millis integer. Python also accepts `datetime.datetime`:
 
-```ts
-queries.call.recent_posts({
-  since: DateTime.fromMillis(0),
-});
-queries.call.recent_posts({
-  since: "2026-01-01T00:00:00Z",  // auto-parsed
-});
-queries.call.recent_posts({
-  since: 1735689600000n,
-});
-```
-
-All three serialize to the same envelope:
+All of these values serialize to the same envelope:
 
 ```json
 {
@@ -2598,11 +2782,11 @@ All three serialize to the same envelope:
 
 ## Bytes parameters
 
-`param.bytes()` is declarable in `defineParams`, but the dynamic envelope cannot
-round-trip a `Uint8Array` faithfully. Attempting to
-`toDynamicJson(params, { payload: someBytes })` or to build a request with a
-bytes parameter through `queries.call.*` throws
-`DynamicQueryError.UnsupportedBytesParameter`.
+`param.bytes()` is declarable in `defineParams` / `define_params`, but the dynamic
+envelope cannot round-trip binary values faithfully. Attempting to call
+`toDynamicJson(params, { payload: someBytes })`, `to_dynamic_json(params, {"payload": b"..."})`,
+or to build a request with a bytes parameter through `queries.call.*` throws an
+unsupported-bytes dynamic query error.
 
 If you need to pass binary data, send it through a binary-aware client (the runtime's
 RPC interface) rather than the JSON dynamic envelope, which is the bottleneck.
@@ -2612,25 +2796,9 @@ RPC interface) rather than the JSON dynamic envelope, which is the bottleneck.
 The `queries.generate(path)` shortcut is enough for most projects. If you want to
 inspect or post-process the bundle first, the lower-level helpers are exported too:
 
-```ts
-  serializeQueryBundle,
-  writeQueryBundleToPath,
-  deserializeQueryBundle,
-  readQueryBundleFromPath,
-} from "@helix-db/helix-db";
-
-const bundle = queries.buildQueryBundle();
-const json = serializeQueryBundle(bundle);
-await writeQueryBundleToPath(bundle, "queries.json");
-
-// Reading and validating an existing bundle:
-const loaded = deserializeQueryBundle(json);              // throws if invalid
-const fromFile = await readQueryBundleFromPath("queries.json");
-```
-
-`deserializeQueryBundle` validates `version === 4` (the current bundle version); it
-will reject older or newer bundles so you catch mismatches at load time rather than
-at deploy time.
+`deserializeQueryBundle` / `deserialize_query_bundle` validates `version === 4` (the
+current bundle version); it will reject older or newer bundles so you catch mismatches
+at load time rather than at deploy time.
 
 ## Next Steps
 

@@ -10,7 +10,7 @@ const OUT = path.join(REPO_ROOT, 'llms-full.txt');
 
 const HEADER = `# HelixDB
 
-> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored in a Rust DSL, deployed as stored procedures via the \`helix\` CLI, and invoked over HTTP. This file is the full markdown corpus for AI agents — Enterprise architecture, concepts, guarantees, and the complete CLI v2 reference.
+> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored with Helix SDK DSLs or dynamic JSON and invoked over HTTP. This file is the full markdown corpus for AI agents — Enterprise architecture, concepts, guarantees, and the complete CLI v2 reference.
 
 `;
 

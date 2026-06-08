@@ -1,0 +1,237 @@
+---
+title: 'Python Project Setup'
+---
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Queries for HelixDB can be authored directly in Python with the `helix-db` package,
+imported as `helixdb`. The Python SDK pairs a query-builder DSL with a small
+sync HTTP client. The API is Pythonic (`read_batch`, `write_batch`, `var_as`,
+`value_map`) and emits the same dynamic-query JSON AST as the Rust, TypeScript,
+and Go SDKs.
+
+For the traversal model and query patterns themselves, see
+[Querying](/database/querying) and the [Querying Guide](/database/querying-guide/overview).
+
+## Prerequisites
+
+- Python 3.10 or later.
+- Optional: the [Helix CLI](/cli/getting-started) for local development and ad-hoc query testing.
+
+## Create a project
+
+```bash
+mkdir helix-python-app
+cd helix-python-app
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+## Add the dependency
+
+When installing from a checkout of the HelixDB monorepo:
+
+```bash
+pip install -e sdks/python
+```
+
+When installing from Git:
+
+```bash
+pip install 'git+https://github.com/HelixDB/helix-db.git#subdirectory=sdks/python'
+```
+
+Import the SDK from `helixdb`:
+
+```python
+from helixdb import Client, Predicate, define_params, g, param, read_batch, write_batch
+```
+
+A compatibility import path, `helix_db`, is also available for codebases that prefer
+underscore package names.
+
+## Write query functions
+
+Python query builders are normal functions returning `ReadBatch` or `WriteBatch`.
+Use `define_params` for runtime values and pass the returned refs into predicates,
+limits, property inputs, search inputs, and mutations.
+
+```python
+from helixdb import Predicate, Projection, define_params, g, param, read_batch
+
+find_users_params = define_params({
+    "tenant_id": param.string(),
+    "limit": param.i64(),
+})
+
+
+def find_users(p=find_users_params):
+    return (
+        read_batch()
+        .var_as(
+            "users",
+            g()
+            .n_with_label("User")
+            .where(Predicate.eq("tenantId", p.tenant_id))
+            .limit(p.limit)
+            .project([
+                Projection.property("$id", "id"),
+                Projection.property("name"),
+                Projection.property("tenantId"),
+            ]),
+        )
+        .returning(["users"])
+    )
+```
+
+Direct values are serialized as literals in the query AST. That is useful for true
+constants, but values that change per request should be declared as params so the
+query shape stays stable and the server can reuse cached work across requests.
+
+## Build dynamic requests
+
+A batch becomes a dynamic request with `to_dynamic_request(...)` or
+`to_dynamic_json(...)`:
+
+```python
+request = find_users().to_dynamic_request(
+    find_users_params,
+    {"tenant_id": "acme", "limit": 25},
+    query_name="find_users",
+)
+
+body = find_users().to_dynamic_json(
+    find_users_params,
+    {"tenant_id": "acme", "limit": 25},
+    query_name="find_users",
+)
+```
+
+The request includes `request_type`, `query_name`, `query`, `parameters`, and
+`parameter_types`, ready to POST to `/v1/query`.
+
+## Execute queries
+
+Create the client once and reuse it:
+
+```python
+from helixdb import Client, HelixError
+
+client = Client("http://localhost:6969")
+
+try:
+    response = client.query().dynamic(request).send()
+except HelixError as error:
+    if error.kind == "Remote":
+        raise RuntimeError(error.details) from error
+    raise
+
+users = response["users"]
+```
+
+For Helix Cloud, pass the cluster URL and API key:
+
+```python
+client = Client("https://helix.example.com", api_key="hx_secret")
+```
+
+Use request-builder options when a write must hit the writer node or wait for durability:
+
+```python
+created = (
+    client
+    .query()
+    .writer_only()
+    .should_await_durability(True)
+    .dynamic(create_user_request)
+    .send()
+)
+```
+
+Warm read-query caches with `warm_only()`:
+
+```python
+client.query().warm_only().dynamic(read_request).send()
+```
+
+Stored routes post to `/v1/query/{name}`:
+
+```python
+response = client.query().body({"tenant_id": "acme"}).stored("find_users").send()
+```
+
+## Write queries
+
+```python
+from helixdb import define_params, g, param, write_batch
+
+create_user_params = define_params({
+    "name": param.string(),
+    "tenant_id": param.string(),
+})
+
+
+def create_user(p=create_user_params):
+    return (
+        write_batch()
+        .var_as("user", g().add_n("User", {"name": p.name, "tenantId": p.tenant_id}))
+        .returning(["user"])
+    )
+```
+
+`read_batch().var_as(...)` rejects write traversals. Use `write_batch()` for any
+node/edge creation, property update/removal, drop, or index mutation.
+
+## Bundles
+
+Python can also generate query bundles:
+
+```python
+from helixdb import define_queries, register_read, register_write
+
+queries = define_queries({
+    "read": {"find_users": register_read(find_users, find_users_params)},
+    "write": {"create_user": register_write(create_user, create_user_params)},
+})
+
+# Dynamic request with query_name="find_users".
+request = queries.call.find_users({"tenant_id": "acme", "limit": 25})
+
+# Write queries.json.
+queries.generate("queries.json")
+```
+
+Route names must be unique across read and write routes. Bundles serialize with
+version `4`, matching the other SDKs.
+
+## Handle conflicts in application code
+
+The Python client does not retry HTTP `409 Conflict` responses automatically. Retry
+only when the operation is safe to replay. Remote errors are raised as `HelixError`
+with `kind == "Remote"`, `details`, and `status_code` populated.
+
+```python
+for attempt in range(3):
+    try:
+        return client.query().dynamic(request).send()
+    except HelixError as error:
+        if error.kind != "Remote" or error.status_code != 409 or attempt == 2:
+            raise
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Querying" icon="magnifying-glass" href="/database/querying">
+    Dynamic query envelopes, client execution, and transactions.
+  </Card>
+  <Card title="Parameters & bundles" icon="gear" href="/database/querying-guide/parameters-bundles">
+    Parameter serialization across TypeScript, Rust, Go, and Python.
+  </Card>
+  <Card title="Local Development" icon="laptop-code" href="/database/local-development">
+    Run HelixDB locally while developing queries.
+  </Card>
+  <Card title="Python SDK source" icon="github" href="https://github.com/HelixDB/helix-db/tree/main/sdks/python">
+    Python package source and README.
+  </Card>
+</CardGroup>

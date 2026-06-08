@@ -6,19 +6,19 @@ title: 'Querying Guide: Overview'
 
 This guide is a tutorial walkthrough of the HelixDB query language. Each page builds
 on the last, starting from the simplest possible read and ending at parameter-bound
-bundles. Every example shows the **TypeScript**, **Rust**, **Go**, and **JSON** form
-side by side, so you can pick a client and follow along — or skim across all four to
-see how the surfaces relate.
+bundles. Key examples show the **TypeScript**, **Rust**, **Go**, **Python**, and **JSON** forms
+across the guide, so you can pick a client and follow along or skim across the surfaces
+to see how they relate.
 
-The four forms are not four different query languages; they are four encodings of
-the same query AST. The TypeScript, Rust, and Go DSLs are builders that emit the JSON
+These forms are not different query languages; they are encodings of
+the same query AST. The TypeScript, Rust, Go, and Python DSLs are builders that emit the JSON
 shape directly. If you copy the JSON column into a `POST /v1/query` body, it will
 execute the same query as the DSL above it.
 
 ## Installing the SDKs
 
-To follow along in TypeScript, Rust, or Go, install the SDK for that language. All
-three emit the same query AST, so you can switch between them — or use the JSON
+To follow along in TypeScript, Rust, Go, or Python, install the SDK for that language. All
+four emit the same query AST, so you can switch between them — or use the JSON
 column directly and skip the SDK entirely.
 
 <CodeGroup>
@@ -33,12 +33,17 @@ cargo add helix-db
 ```bash Go
 go get github.com/helixdb/helix-db/sdks/go
 ```
+
+```bash Python
+pip install 'git+https://github.com/HelixDB/helix-db.git#subdirectory=sdks/python'
+```
 </CodeGroup>
 
 For the full project layout and generator setup, see
 [TypeScript Project Setup](/database/typescript-project-setup),
-[Rust Project Setup](/database/rust-project-setup), and
-[Go Project Setup](/database/go-project-setup).
+[Rust Project Setup](/database/rust-project-setup),
+[Go Project Setup](/database/go-project-setup), and
+[Python Project Setup](/database/python-project-setup).
 
 ## The running example
 
@@ -214,7 +219,7 @@ Two things to notice:
 - The `posts` traversal starts from `NodeRef.var("user")` — that's how one named
   binding feeds into the next. The same name appears as `{"N": {"Var": "user"}}` in
   the JSON.
-- The TypeScript, Rust, and Go DSLs surface a friendly `nWithLabel` / `n_with_label` /
+- The TypeScript, Rust, Go, and Python DSLs surface friendly `nWithLabel` / `n_with_label` /
   `NWithLabel` alias, but this example uses `nWhere(SourcePredicate.eq("username", "alice"))`
   directly because the read is anchored on a unique property, not a label scan. The
   next page covers when to use each anchor.
@@ -222,8 +227,8 @@ Two things to notice:
 ## Sending the request
 
 The JSON above is the actual body for `POST /v1/query`. Below are the same request
-in four transports — TypeScript, Rust, and Go using their SDK clients, and `curl`
-straight from the shell. All four are interchangeable; pick whichever fits your
+in multiple transports — TypeScript, Rust, Go, and Python using their SDK clients, and `curl`
+straight from the shell. The transports are interchangeable; pick whichever fits your
 environment.
 
 <CodeGroup>

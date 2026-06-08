@@ -1,6 +1,6 @@
 # HelixDB
 
-> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored in a Rust DSL, deployed as stored procedures via the `helix` CLI, and invoked over HTTP.
+> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored with Helix SDK DSLs or dynamic JSON and invoked over HTTP.
 
 ## Getting Started
 - [Introduction](https://docs.helix-db.com/database/introduction)
@@ -8,6 +8,7 @@
 - [Rust Project Setup](https://docs.helix-db.com/database/rust-project-setup)
 - [TypeScript Project Setup](https://docs.helix-db.com/database/typescript-project-setup)
 - [Go Project Setup](https://docs.helix-db.com/database/go-project-setup)
+- [Python Project Setup](https://docs.helix-db.com/database/python-project-setup)
 - [Roadmap](https://docs.helix-db.com/database/roadmap): What we're building and what's coming next
 - [Release Notes](https://docs.helix-db.com/database/release-notes): HelixDB Cloud Release Notes
 

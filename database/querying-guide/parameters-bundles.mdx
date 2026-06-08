@@ -12,7 +12,7 @@ parameterized query to the runtime.
 
 ## SDK workflows
 
-TypeScript and Rust support both direct dynamic requests and registered bundle
+TypeScript, Rust, and Python support both direct dynamic requests and registered bundle
 workflows. Go v1 is dynamic-first: write normal Go functions that return
 `helix.Request`, set the query name with `helix.ReadQuery("name")` or
 `helix.WriteQuery("name")`, and declare runtime parameters inline on the query
@@ -54,17 +54,41 @@ and pass the returned ref, for example `id := q.ParamString("id", userID)` and
 `helix.SourceEq("id", id)`. That keeps the request shape stable for server-cache
 reuse.
 
-## Declaring parameters with `defineParams`
+Python mirrors the TypeScript/Rust direct dynamic and bundle workflow with snake_case helpers:
 
-This section applies to TypeScript bundle and dynamic helpers. Rust derives a
+```python
+from helixdb import Predicate, define_params, g, param, read_batch
+
+params = define_params({"tenant_id": param.string(), "limit": param.i64()})
+
+def find_users(p=params):
+    return (
+        read_batch()
+        .var_as(
+            "users",
+            g()
+            .n_with_label("User")
+            .where(Predicate.eq("tenantId", p.tenant_id))
+            .limit(p.limit)
+            .value_map(["$id", "name", "tenantId"]),
+        )
+        .returning(["users"])
+    )
+
+request = find_users().to_dynamic_request(params, {"tenant_id": "acme", "limit": 25}, query_name="find_users")
+```
+
+## Declaring parameters with `defineParams` / `define_params`
+
+This section applies to TypeScript and Python bundle and dynamic helpers. Rust derives a
 similar schema from registered function arguments. Go declares the same schema
 inline through `q.Param*` methods as shown above.
 
-`defineParams({...})` takes a record of parameter names to `ParamSchema` constructors
-and returns a typed proxy. Each property of the returned proxy is a `ParamRef` you
-can pass into builder methods that expect one.
+`defineParams({...})` in TypeScript and `define_params({...})` in Python take a record
+of parameter names to `ParamSchema` constructors and return a proxy. Each property
+of the returned proxy is a `ParamRef` you can pass into builder methods that expect one.
 
-```ts
+```ts TypeScript
 import { defineParams, param } from "@helix-db/helix-db";
 
 const params = defineParams({
@@ -76,44 +100,60 @@ const params = defineParams({
 });
 ```
 
-The supported `param.*` constructors:
+```python Python
+from helixdb import define_params, param
 
-| Constructor | Wire type | Accepted JS values |
-|---|---|---|
-| `param.bool()` | `Bool` | `boolean` |
-| `param.i64()` | `I64` | `number` (safe int) or `bigint` |
-| `param.f64()` / `param.f32()` | `F64` / `F32` | `number` |
-| `param.string()` | `String` | `string` |
-| `param.dateTime()` | `DateTime` | `DateTime`, RFC3339 string, or epoch-millis number/bigint |
-| `param.bytes()` | `Bytes` | `Uint8Array` or `number[]` — **dynamic requests reject this** |
-| `param.value()` | `Value` | any JSON value (untyped) |
-| `param.object(inner?)` | `Object` | `Record<string, T>` if `inner` is given, else loose JSON |
-| `param.array(inner)` | `{Array: inner}` | array of values matching the inner schema |
+params = define_params({
+    "tenant_id": param.string(),
+    "username": param.string(),
+    "limit": param.i64(),
+    "query_vector": param.array(param.f32()),
+    "created_after": param.date_time(),
+})
+```
+
+The supported constructors share the same wire types; Python uses snake_case for the datetime helper:
+
+| TypeScript | Python | Wire type | Accepted dynamic values |
+|---|---|---|---|
+| `param.bool()` | `param.bool()` | `Bool` | `boolean` / `bool` |
+| `param.i64()` | `param.i64()` | `I64` | safe integer, `bigint`, or Python `int` |
+| `param.f64()` / `param.f32()` | `param.f64()` / `param.f32()` | `F64` / `F32` | finite number / `float` |
+| `param.string()` | `param.string()` | `String` | `string` / `str` |
+| `param.dateTime()` | `param.date_time()` | `DateTime` | `DateTime`, RFC3339 string, or epoch-millis integer; Python also accepts `datetime.datetime` |
+| `param.bytes()` | `param.bytes()` | `Bytes` | declarable, but dynamic JSON requests reject bytes values |
+| `param.value()` | `param.value()` | `Value` | any JSON value |
+| `param.object(inner?)` | `param.object(inner=None)` | `Object` | object values matching the optional inner schema |
+| `param.array(inner)` | `param.array(inner)` | `{Array: inner}` | arrays/lists matching the inner schema |
 
 `param.array(param.f32())` is what produces the `{"Array": "F32"}` shape required for
-vector parameters; `param.object(param.string())` produces `{"Array": "Object"}` rows
-inside a `forEachParam`.
+vector parameters. Use `param.array(param.object(...))` for row-style inputs to
+`forEachParam` / `for_each_param`.
 
 ## Referring to parameters inside a traversal
 
 There are three ways a parameter shows up inside a query, depending on what kind of
 value the builder expects:
 
-1. **Bound to a step argument that takes a `ParamRef`** — for `.limit(p.limit)`,
-   `.skip(p.skip)`, etc. The proxy returned by `defineParams` is the value to pass.
-2. **Inside a predicate** — `Predicate.eqParam("prop", "param_name")` and the rest
-   of the `*Param` family take the parameter *name as a string*, not the proxy.
-3. **As a property value or expression** — `PropertyInput.param("name")`,
-   `Expr.param("name")`, `NodeRef.param("name")`, `EdgeRef.param("name")`. All take
-   the name as a string.
+1. **Bound to a step argument that takes a `ParamRef`** - for `.limit(p.limit)`,
+   `.skip(p.skip)`, etc. The proxy returned by `defineParams` / `define_params` is
+   the value to pass.
+2. **Inside a predicate** - TypeScript offers `Predicate.eqParam("prop", "param_name")`
+   and the rest of the `*Param` family for string-keyed parameter refs. Python can
+   pass the `ParamRef` directly, for example `Predicate.eq("tenantId", p.tenant_id)`.
+3. **As a property value or expression** - `PropertyInput.param("name")`,
+   `Expr.param("name")`, `NodeRef.param("name")`, and `EdgeRef.param("name")` all take
+   the name as a string. In Python, `p.tenant_id.input()` is a shorthand when a method
+   expects a `PropertyInput`.
 
-In practice the proxy is mostly used to keep parameter names in sync — if you
-rename the field in `defineParams`, every reference through the proxy moves with it.
-For string-keyed refs (`PropertyInput.param("name")`), the name has to match
-exactly. A common convention is to assign the proxy to a `p` argument and read both
-forms from there:
+In practice the proxy is mostly used to keep parameter names in sync - if you
+rename the field in `defineParams` / `define_params`, every reference through the
+proxy moves with it. For string-keyed refs (`PropertyInput.param("name")`), the name
+has to match exactly. A common convention is to assign the proxy to a `p` argument
+and read both forms from there:
 
-```ts
+<CodeGroup>
+```ts TypeScript
 function findUsers(p = params) {
   return readBatch().varAs(
     "users",
@@ -126,6 +166,23 @@ function findUsers(p = params) {
 }
 ```
 
+```python Python
+def find_users(p=params):
+    return (
+        read_batch()
+        .var_as(
+            "users",
+            g()
+            .n_with_label("User")
+            .where(Predicate.eq("tenantId", p.tenant_id))  # proxy ref
+            .limit(p.limit)
+            .value_map(["$id", "username", "tenantId"]),
+        )
+        .returning(["users"])
+    )
+```
+</CodeGroup>
+
 ## Shipping a parameterized query
 
 A query built with `readBatch()` / `writeBatch()` is sent to the runtime as a
@@ -135,7 +192,8 @@ all serialize to the same dynamic envelope you POST to `/v1/query`.
 
 ### 1. From a batch directly
 
-The simplest case: build the batch, call `.toDynamicJson(params, values, options)`,
+The simplest case: build the batch, call `.toDynamicJson(params, values, options)`
+in TypeScript or `.to_dynamic_json(params, values, query_name=...)` in Python, then
 POST the resulting body to `/v1/query`. No deploy step. Best for ad-hoc queries,
 prototyping, and one-off integrations.
 
@@ -156,8 +214,8 @@ function userByUsername(p = params) {
 }
 ```
 
-The dynamic envelope produced by `.toDynamicJson(params, values, options)` is the body for
-`POST /v1/query`. Below are the four equivalent ways to send it:
+The dynamic envelope produced by `.toDynamicJson(...)` / `.to_dynamic_json(...)` is
+the body for `POST /v1/query`. Below are the five equivalent ways to send it:
 
 <CodeGroup>
 ```ts TypeScript
@@ -223,6 +281,29 @@ if err := client.Exec(ctx, UserByUsername("alice"), &response); err != nil {
 user := response.User
 ```
 
+```python Python
+from helixdb import Client, Predicate, define_params, g, param, read_batch
+
+params = define_params({"username": param.string()})
+
+def user_by_username(p=params):
+    return (
+        read_batch()
+        .var_as(
+            "user",
+            g()
+            .n_with_label("User")
+            .where(Predicate.eq("username", p.username))
+            .value_map(["$id", "username", "tier"]),
+        )
+        .returning(["user"])
+    )
+
+client = Client("https://helix.example.com")
+request = user_by_username().to_dynamic_request(params, {"username": "alice"}, query_name="user_by_username")
+user = client.query().dynamic(request).send()["user"]
+```
+
 ```bash curl
 curl -sS -X POST https://helix.example.com/v1/query \
   -H "content-type: application/json" \
@@ -254,32 +335,41 @@ the inline `--data-raw` form works for small bodies but gets unwieldy fast.
 
 The three serialization helpers on a batch:
 
-| Method | Returns |
-|---|---|
-| `.toDynamicJson(params?, values?, options?)` | JSON string (full envelope: `request_type`, `query_name`, `query`, `parameters`, `parameter_types`) |
-| `.toDynamicRequest(params?, values?, options?)` | `DynamicQueryRequest` instance — useful when you want to mutate it before serializing |
-| `.toDynamicBytes(params?, values?, options?)` | `Uint8Array` of the JSON encoding — handy for `fetch` bodies that prefer bytes |
+| TypeScript | Python | Returns |
+|---|---|---|
+| `.toDynamicJson(params?, values?, options?)` | `.to_dynamic_json(params=None, values=None, query_name=...)` | JSON string (full envelope: `request_type`, `query_name`, `query`, `parameters`, `parameter_types`) |
+| `.toDynamicRequest(params?, values?, options?)` | `.to_dynamic_request(params=None, values=None, query_name=...)` | `DynamicQueryRequest` instance - useful when you want to mutate it before serializing |
+| `.toDynamicBytes(params?, values?, options?)` | `.to_dynamic_bytes(params=None, values=None, query_name=...)` | UTF-8 bytes of the JSON encoding |
 
-Pass `{ queryName: "..." }` as the final options argument when you want gateway
-logs and query diagnostics to identify a direct inline request. Direct requests
-without a name serialize `query_name: null`, which the gateway records as the
-fallback dynamic name `__dynamic__`.
+Pass `{ queryName: "..." }` as the final TypeScript options argument, or
+`query_name="..."` in Python, when you want gateway logs and query diagnostics to
+identify a direct inline request. Direct requests without a name serialize
+`query_name: null`, which the gateway records as the fallback dynamic name
+`__dynamic__`.
 
-For a parameter-less batch, omit `params` and `values`; pass only options if you
-want to name the request:
+For a parameter-less batch, omit `params` and `values`; pass only the name option
+if you want to name the request:
 
-```ts
+<CodeGroup>
+```ts TypeScript
 readBatch().varAs("count", g().nWithLabel("User").count()).toDynamicJson({
   queryName: "count_users",
 });
 ```
 
-`.toJsonString()` returns the *raw batch* (no envelope, no parameters), the form
-that goes into a bundle — covered below.
+```python Python
+read_batch().var_as("count", g().n_with_label("User").count()).to_dynamic_json(
+    query_name="count_users",
+)
+```
+</CodeGroup>
+
+`.toJsonString()` / `.to_json_string()` returns the *raw batch* (no envelope, no
+parameters), the form that goes into a bundle - covered below.
 
 ### 2. Registered bundles
 
-Registered bundles are available in TypeScript and Rust. Go v1 does not generate
+Registered bundles are available in TypeScript, Rust, and Python. Go v1 does not generate
 or register bundles; keep Go application queries dynamic-first with
 `client.Exec(ctx, request, &out)`.
 
@@ -288,13 +378,15 @@ wrap each query function with `registerRead` or `registerWrite` and pass them al
 `defineQueries`. The bundle's `generate(path)` method writes a single `queries.json`
 in the exact shape the runtime expects.
 
-```ts
+<CodeGroup>
+```ts TypeScript
 import {
   defineParams,
   defineQueries,
   g,
   param,
   Predicate,
+  PropertyInput,
   readBatch,
   registerRead,
   registerWrite,
@@ -340,6 +432,62 @@ export const queries = defineQueries({
 await queries.generate("queries.json");
 ```
 
+```python Python
+from helixdb import (
+    Predicate,
+    PropertyInput,
+    define_params,
+    define_queries,
+    g,
+    param,
+    read_batch,
+    register_read,
+    register_write,
+    write_batch,
+)
+
+read_params = define_params({"username": param.string()})
+
+
+def user_by_username(p=read_params):
+    return (
+        read_batch()
+        .var_as(
+            "user",
+            g()
+            .n_with_label("User")
+            .where(Predicate.eq("username", p.username))
+            .value_map(["$id", "username", "tier"]),
+        )
+        .returning(["user"])
+    )
+
+write_params = define_params({"username": param.string(), "tier": param.string()})
+
+
+def add_user(p=write_params):
+    return (
+        write_batch()
+        .var_as(
+            "newUser",
+            g().add_n("User", {
+                "username": PropertyInput.param("username"),
+                "tier": PropertyInput.param("tier"),
+            }),
+        )
+        .returning(["newUser"])
+    )
+
+queries = define_queries({
+    "read": {"user_by_username": register_read(user_by_username, read_params)},
+    "write": {"add_user": register_write(add_user, write_params)},
+})
+
+# Build queries.json at deploy time.
+queries.generate("queries.json")
+```
+</CodeGroup>
+
 The resulting bundle has this top-level shape:
 
 ```json
@@ -369,13 +517,13 @@ at bundle time.
 
 ### 3. Typed call helpers
 
-`defineQueries(...)` also exposes a typed `call` map. Each entry is a function that
-takes the route's parameter values (inferred from `defineParams`) and returns a
-serializable `DynamicQueryRequest`. The argument is fully type-checked from the
-parameter schema; unknown keys, missing keys, and wrong value types are all compile
-errors:
+`defineQueries(...)` / `define_queries(...)` also exposes a `call` map. Each entry
+is a function that takes the route's parameter values and returns a serializable
+`DynamicQueryRequest`. TypeScript infers the input type from `defineParams`; Python
+validates unknown keys, missing keys, and wrong value types at call time.
 
-```ts
+<CodeGroup>
+```ts TypeScript
 queries.call.user_by_username({
   username: "alice",
   unexpected: true,  // ts(...): Object literal may only specify known properties
@@ -386,10 +534,22 @@ queries.call.user_by_username({
 });
 ```
 
+```python Python
+queries.call.user_by_username({"username": "alice"})
+
+# Raises TypeError: unknown parameter: unexpected
+queries.call.user_by_username({"username": "alice", "unexpected": True})
+
+# Raises TypeError during parameter conversion.
+queries.call.user_by_username({"username": 1})
+```
+</CodeGroup>
+
 The returned object serializes to the same dynamic envelope you would build by hand,
 so you POST it to `/v1/query`:
 
-```ts
+<CodeGroup>
+```ts TypeScript
 import { Client } from "@helix-db/helix-db";
 
 const client = new Client("https://helix.example.com");
@@ -400,10 +560,18 @@ const { user } = await client
   .send();
 ```
 
-`queries.call.*` keeps parameter names and types in sync with `defineParams`, so it
-is the most convenient way to send a registered query — in application code, tests,
-and scripts alike. The returned dynamic request sets `query_name` to the route
-key (`user_by_username` in this example) automatically.
+```python Python
+from helixdb import Client
+
+client = Client("https://helix.example.com")
+user = client.query().dynamic(queries.call.user_by_username({"username": "alice"})).send()["user"]
+```
+</CodeGroup>
+
+`queries.call.*` keeps parameter names and types in sync with `defineParams` /
+`define_params`, so it is the most convenient way to send a registered query - in
+application code, tests, and scripts alike. The returned dynamic request sets
+`query_name` to the route key (`user_by_username` in this example) automatically.
 
 ## How parameters serialize
 
@@ -417,7 +585,7 @@ At envelope position, the actual value is a *bare* JSON value, *not* a tagged
 `PropertyValue`. The shape `{"Array": "F32"}` you see in the `parameter_types` map
 is `QueryParamType`, the runtime coercion schema.
 
-A complete envelope produced by `toDynamicJson`:
+A complete envelope produced by `toDynamicJson` / `to_dynamic_json`:
 
 ```json
 {
@@ -471,18 +639,21 @@ After storage, query nested object fields with dotted paths such as
 
 ## Number handling: `bigint` for `i64`
 
-JavaScript `number` only has 53 bits of integer precision. The DSL accepts a plain
-`number` wherever it fits in a safe integer range, but for full `i64` (node ids,
-large counts, epoch nanos) you should pass a `bigint`:
+JavaScript `number` only has 53 bits of integer precision. The TypeScript DSL accepts
+a plain `number` wherever it fits in a safe integer range, but for full `i64` (node
+ids, large counts, epoch nanos) you should pass a `bigint`:
 
 ```ts
 g().n(9223372036854775807n);
 PropertyValue.i64(9223372036854775807n);
 ```
 
-`stringifyJson`, `.toJsonString()`, and `serializeQueryBundle` all preserve `bigint`
-without loss. Plain `JSON.stringify` does not — use the package's serializers when
-your payload may contain large integers.
+Python `int` values are arbitrary precision, so the Python SDK validates the value
+against the `i64` range and serializes it directly.
+
+`stringifyJson`, `.toJsonString()` / `.to_json_string()`, and `serializeQueryBundle`
+preserve large integers without loss. Plain `JSON.stringify` does not - use the
+package serializers when your TypeScript payload may contain large integers.
 
 ## DateTime handling
 
@@ -499,10 +670,12 @@ DateTime.parseRfc3339("2026-04-05T12:34:56.789+02:00").toRfc3339();
 // "2026-04-05T10:34:56.789Z"  (normalized to UTC)
 ```
 
-When a parameter is declared as `param.dateTime()`, the call helpers accept
-`DateTime`, an RFC3339 string, or an epoch-millis `number` / `bigint`:
+When a parameter is declared as `param.dateTime()` in TypeScript or
+`param.date_time()` in Python, the call helpers accept `DateTime`, an RFC3339
+string, or an epoch-millis integer. Python also accepts `datetime.datetime`:
 
-```ts
+<CodeGroup>
+```ts TypeScript
 queries.call.recent_posts({
   since: DateTime.fromMillis(0),
 });
@@ -514,7 +687,17 @@ queries.call.recent_posts({
 });
 ```
 
-All three serialize to the same envelope:
+```python Python
+from datetime import datetime, timezone
+from helixdb import DateTime
+
+queries.call.recent_posts({"since": DateTime.from_millis(0)})
+queries.call.recent_posts({"since": "2026-01-01T00:00:00Z"})
+queries.call.recent_posts({"since": datetime(2026, 1, 1, tzinfo=timezone.utc)})
+```
+</CodeGroup>
+
+All of these values serialize to the same envelope:
 
 ```json
 {
@@ -525,11 +708,11 @@ All three serialize to the same envelope:
 
 ## Bytes parameters
 
-`param.bytes()` is declarable in `defineParams`, but the dynamic envelope cannot
-round-trip a `Uint8Array` faithfully. Attempting to
-`toDynamicJson(params, { payload: someBytes })` or to build a request with a
-bytes parameter through `queries.call.*` throws
-`DynamicQueryError.UnsupportedBytesParameter`.
+`param.bytes()` is declarable in `defineParams` / `define_params`, but the dynamic
+envelope cannot round-trip binary values faithfully. Attempting to call
+`toDynamicJson(params, { payload: someBytes })`, `to_dynamic_json(params, {"payload": b"..."})`,
+or to build a request with a bytes parameter through `queries.call.*` throws an
+unsupported-bytes dynamic query error.
 
 If you need to pass binary data, send it through a binary-aware client (the runtime's
 RPC interface) rather than the JSON dynamic envelope, which is the bottleneck.
@@ -539,7 +722,8 @@ RPC interface) rather than the JSON dynamic envelope, which is the bottleneck.
 The `queries.generate(path)` shortcut is enough for most projects. If you want to
 inspect or post-process the bundle first, the lower-level helpers are exported too:
 
-```ts
+<CodeGroup>
+```ts TypeScript
 import {
   serializeQueryBundle,
   writeQueryBundleToPath,
@@ -556,9 +740,27 @@ const loaded = deserializeQueryBundle(json);              // throws if invalid
 const fromFile = await readQueryBundleFromPath("queries.json");
 ```
 
-`deserializeQueryBundle` validates `version === 4` (the current bundle version); it
-will reject older or newer bundles so you catch mismatches at load time rather than
-at deploy time.
+```python Python
+from helixdb import (
+    deserialize_query_bundle,
+    read_query_bundle_from_path,
+    serialize_query_bundle,
+    write_query_bundle_to_path,
+)
+
+bundle = queries.build_query_bundle()
+json_body = serialize_query_bundle(bundle)
+write_query_bundle_to_path(bundle, "queries.json")
+
+# Reading and validating an existing bundle:
+loaded = deserialize_query_bundle(json_body)              # raises if invalid
+from_file = read_query_bundle_from_path("queries.json")
+```
+</CodeGroup>
+
+`deserializeQueryBundle` / `deserialize_query_bundle` validates `version === 4` (the
+current bundle version); it will reject older or newer bundles so you catch mismatches
+at load time rather than at deploy time.
 
 ## Next Steps
 

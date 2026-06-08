@@ -7,7 +7,7 @@ title: 'Querying'
 Helix Cloud exposes a single query surface over HTTP. Every query — whether a
 deep graph traversal, a vector search, a bulk write, or all three at once — is
 expressed in the same composable DSL and executes as one serializable
-transaction. Queries are authored once in TypeScript, Rust, or Go (or by hand as
+transaction. Queries are authored once in TypeScript, Rust, Go, or Python (or by hand as
 JSON) and sent to the runtime as **dynamic** requests — the request body
 carries the query itself, so there is no separate deployment step. The
 [Querying Guide](/database/querying-guide/overview) walks the DSL end-to-end;
@@ -15,8 +15,8 @@ this page covers how a dynamic query looks on the wire.
 
 ## Installing the SDKs
 
-The TypeScript, Rust, and Go examples below are built with the Helix SDKs. Install the one for
-your language to follow along — all three emit the same dynamic query JSON.
+The TypeScript, Rust, Go, and Python examples below are built with the Helix SDKs. Install the one for
+your language to follow along — all four emit the same dynamic query JSON.
 
 <CodeGroup>
 ```bash TypeScript
@@ -30,12 +30,17 @@ cargo add helix-db
 ```bash Go
 go get github.com/helixdb/helix-db/sdks/go
 ```
+
+```bash Python
+pip install 'git+https://github.com/HelixDB/helix-db.git#subdirectory=sdks/python'
+```
 </CodeGroup>
 
 For the full project layout and generator setup, see
-[TypeScript Project Setup](/database/typescript-project-setup) and
-[Rust Project Setup](/database/rust-project-setup). For Go's dynamic-first workflow,
-see [Go Project Setup](/database/go-project-setup).
+[TypeScript Project Setup](/database/typescript-project-setup),
+[Rust Project Setup](/database/rust-project-setup),
+[Go Project Setup](/database/go-project-setup), and
+[Python Project Setup](/database/python-project-setup).
 
 ## Dynamic queries
 
@@ -44,7 +49,7 @@ query plus a small envelope that names the request kind, an optional query name,
 and any runtime parameters. There is no deployment step — the query travels with
 the request, so the same DSL that builds it also produces the body you POST.
 
-The example below counts every `User` node. The TypeScript, Rust, and Go tabs are
+The example below counts every `User` node. The TypeScript, Rust, Go, and Python tabs are
 builder front-ends that produce the same JSON envelope; pick whichever your
 codebase already speaks. The JSON tab shows the resulting envelope verbatim — if
 you want to skip the DSL and POST hand-written JSON, this is the body you send.
@@ -83,6 +88,19 @@ func CountUsers() helix.Request {
 		VarAs("user_count", helix.G().NWithLabel("User").Count()).
 		Returning("user_count")
 }
+```
+
+```python Python
+from helixdb import g, read_batch
+
+count_users = (
+    read_batch()
+    .var_as("user_count", g().n_with_label("User").count())
+    .returning(["user_count"])
+)
+
+# The request to POST to /v1/query.
+request = count_users.to_dynamic_request(query_name="count_users")
 ```
 
 ```json envelope
@@ -161,6 +179,16 @@ if err := client.Exec(ctx, CountUsers(), &response); err != nil {
 }
 
 userCount := response.UserCount
+```
+
+```python Python
+from helixdb import Client
+
+client = Client("https://helix.example.com")
+
+# Builds the envelope and POSTs it to /v1/query.
+response = client.query().dynamic(request).send()
+user_count = response["user_count"]
 ```
 
 ```bash curl
@@ -267,6 +295,30 @@ if err != nil {
 	return err
 }
 ```
+
+```python Python
+from helixdb import Client, HelixError
+
+client = Client("https://helix.example.com", api_key="hx_secret")
+
+try:
+    response = (
+        client
+        .query()
+        .warm_only()
+        .writer_only()
+        .should_await_durability(True)
+        .dynamic(request)
+        .send()
+    )
+except HelixError as error:
+    if error.kind == "Remote":
+        print(error.details)
+    raise
+
+# Deployed named routes (POST /v1/query/{name}) use .stored(name).
+client.query().body({"username": "alice"}).stored("user_by_username").send()
+```
 </CodeGroup>
 
 `send()` / `Exec` returns the parsed JSON response on HTTP `200`. Any other status
@@ -298,7 +350,7 @@ contract.
 
 <CardGroup cols={2}>
   <Card title="Querying Guide" icon="book-open" href="/database/querying-guide/overview">
-    Tutorial walkthrough of the DSL with TypeScript, Rust, Go, and JSON for every example.
+    Tutorial walkthrough of the DSL with TypeScript, Rust, Go, Python, and JSON examples.
   </Card>
   <Card title="Parameters & bundles" icon="gear" href="/database/querying-guide/parameters-bundles">
     `defineParams`, dynamic requests, bundles, and the typed `call` helpers in depth.
