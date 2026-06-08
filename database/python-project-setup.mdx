@@ -16,9 +16,22 @@ For the traversal model and query patterns themselves, see
 ## Prerequisites
 
 - Python 3.10 or later.
+- Optional: [uv](https://docs.astral.sh/uv/) for fast environment and dependency management.
 - Optional: the [Helix CLI](/cli/getting-started) for local development and ad-hoc query testing.
 
 ## Create a project
+
+With [uv](https://docs.astral.sh/uv/) (recommended):
+
+```bash
+uv init helix-python-app
+cd helix-python-app
+```
+
+`uv` creates and manages the virtual environment for you; there is no need to
+activate it manually when running commands through `uv run`.
+
+With `venv` and `pip`:
 
 ```bash
 mkdir helix-python-app
@@ -29,16 +42,18 @@ source .venv/bin/activate
 
 ## Add the dependency
 
-When installing from a checkout of the HelixDB monorepo:
+Install the [`helix-db`](https://pypi.org/project/helix-db/) package from PyPI.
+
+With `uv`:
 
 ```bash
-pip install -e sdks/python
+uv add helix-db
 ```
 
-When installing from Git:
+With `pip`:
 
 ```bash
-pip install 'git+https://github.com/HelixDB/helix-db.git#subdirectory=sdks/python'
+pip install helix-db
 ```
 
 Import the SDK from `helixdb`:
@@ -49,6 +64,12 @@ from helixdb import Client, Predicate, define_params, g, param, read_batch, writ
 
 A compatibility import path, `helix_db`, is also available for codebases that prefer
 underscore package names.
+
+With `uv`, run your script through the managed environment:
+
+```bash
+uv run main.py
+```
 
 ## Write query functions
 
