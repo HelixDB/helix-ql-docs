@@ -21,40 +21,33 @@ For the traversal model and query patterns themselves, see
 
 ## Create a project
 
-With [uv](https://docs.astral.sh/uv/) (recommended):
-
-```bash
+<CodeGroup>
+```bash uv
 uv init helix-python-app
 cd helix-python-app
 ```
 
-`uv` creates and manages the virtual environment for you; there is no need to
-activate it manually when running commands through `uv run`.
-
-With `venv` and `pip`:
-
-```bash
+```bash venv
 mkdir helix-python-app
 cd helix-python-app
 python3 -m venv .venv
 source .venv/bin/activate
 ```
+</CodeGroup>
 
 ## Add the dependency
 
 Install the [`helix-db`](https://pypi.org/project/helix-db/) package from PyPI.
 
-With `uv`:
-
-```bash
+<CodeGroup>
+```bash uv
 uv add helix-db
 ```
 
-With `pip`:
-
-```bash
+```bash pip
 pip install helix-db
 ```
+</CodeGroup>
 
 Import the SDK from `helixdb`:
 
