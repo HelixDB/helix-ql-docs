@@ -135,32 +135,27 @@
             "pages": [
               "database/introduction",
               "database/local-development",
-              "database/rust-project-setup",
-              "database/typescript-project-setup",
-              "database/go-project-setup",
-              "database/python-project-setup",
+              {
+                "group": "SDK SETUP",
+                "pages": [
+                  "database/rust-project-setup",
+                  "database/typescript-project-setup",
+                  "database/go-project-setup",
+                  "database/python-project-setup"
+                ]
+              },
               "database/roadmap",
               "database/release-notes"
             ]
           },
-          {
-            "group": "HelixDB Cloud",
-            "pages": [
-              "database/working-with-enterprise",
-              "database/architecture",
-              "database/guarantees",
-              "database/security",
-              "database/tradeoffs",
-              "database/limits"
-            ]
-          },
+       
           {
             "group": "Concepts & Examples",
             "pages": [
               "database/data-model",
               "database/querying",
               {
-                "group": "Querying Guide",
+                "group": "QUERYING GUIDE",
                 "pages": [
                   "database/querying-guide/overview",
                   "database/querying-guide/reading-nodes",
@@ -178,7 +173,19 @@
               "database/indexing/text",
               "database/multi-tenancy"
             ]
+          },
+          {
+            "group": "Platform",
+            "pages": [
+              "database/working-with-enterprise",
+              "database/architecture",
+              "database/guarantees",
+              "database/security",
+              "database/tradeoffs",
+              "database/limits"
+            ]
           }
+          
         ]
       },
       {
