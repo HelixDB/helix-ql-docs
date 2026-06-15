@@ -37,6 +37,32 @@ Caches reduce steady-state latency and accelerate cold starts.
 - **Dynamic query model.** Queries are authored in a Rust or TypeScript DSL and sent to the
   runtime as dynamic HTTP requests that carry the query inline. No separate deployment step.
 
+## Quickstart: your first write
+
+Install the CLI, scaffold a project, start a local instance, and round-trip a node:
+
+```bash
+# install the helix CLI
+curl -sSL "https://install.helix-db.com" | bash
+
+# scaffold a project and start a local instance (requires Docker or Podman)
+helix init local
+helix start dev
+
+# write a node
+helix query dev -e 'writeBatch().varAs("alice", g().addN("User", { username: "alice" })).returning(["alice"])'
+
+# read it back
+helix query dev -e 'readBatch().varAs("users", g().nWithLabel("User")).returning(["users"])'
+```
+
+`helix query -e` evaluates a TypeScript DSL expression (requires Node 20+). The same requests
+can be sent as JSON files with `helix query dev --file examples/request.json`, or from your
+application with the [TypeScript](/database/typescript-project-setup),
+[Rust](/database/rust-project-setup), [Go](/database/go-project-setup), or
+[Python](/database/python-project-setup) SDKs. The full walkthrough — including the Helix Cloud
+path — is in [Getting started with the CLI](/cli/getting-started).
+
 ## Next Steps
 
 <CardGroup cols={2}>

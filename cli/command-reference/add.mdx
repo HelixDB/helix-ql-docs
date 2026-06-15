@@ -22,6 +22,14 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 | `local` | Add a local v2 development instance. |
 | `enterprise` | Add a Helix Cloud instance linked to a cluster. |
 
+## Top-level flags
+
+| Flag | Type | Description | Default |
+|------|------|-------------|---------|
+| `-p`, `--path` | Path | Project directory containing `helix.toml`. | Found by walking up from the current directory |
+
+`--path` is accepted either before or after the subcommand: `helix add --path ./app local --name qa` and `helix add local --name qa --path ./app` both work.
+
 ### `helix add local`
 
 | Flag | Type | Required | Description | Default |

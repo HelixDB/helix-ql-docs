@@ -13,6 +13,23 @@ const TITLE = '# HelixDB';
 const SUMMARY =
   '> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored with Helix SDK DSLs or dynamic JSON and invoked over HTTP.';
 
+// Inline starter recipe so an agent's first fetch of llms.txt already contains
+// the install command and a runnable first write — without it, agents must
+// guess which page holds the setup commands.
+const QUICKSTART = [
+  'Quickstart (local instance requires Docker or Podman):',
+  '',
+  '```bash',
+  'curl -sSL "https://install.helix-db.com" | bash   # install the helix CLI',
+  'helix init local                                  # scaffold helix.toml + examples/',
+  'helix start dev                                   # start a local instance',
+  'helix query dev -e \'writeBatch().varAs("alice", g().addN("User", { username: "alice" })).returning(["alice"])\'',
+  'helix query dev -e \'readBatch().varAs("users", g().nWithLabel("User")).returning(["users"])\'',
+  '```',
+  '',
+  'Full walkthrough: https://docs.helix-db.com/cli/getting-started',
+].join('\n');
+
 const OPTIONAL_PREFIXES = ['change-log/', 'benchmarks/'];
 
 function readFrontmatter(slug) {
@@ -112,7 +129,7 @@ function build() {
     if (optSection) sections.push(optSection);
   }
 
-  const lines = [TITLE, '', SUMMARY, ''];
+  const lines = [TITLE, '', SUMMARY, '', QUICKSTART, ''];
   for (const s of sections) {
     lines.push(s, '');
   }

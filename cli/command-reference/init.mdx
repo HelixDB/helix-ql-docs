@@ -31,7 +31,7 @@ If you omit the subcommand in a TTY, the CLI prompts you to choose between `loca
 | `--no-skills` | Boolean | Skip installing the Helix agent skills + docs MCP. | Prompted in a TTY |
 
 <Note>
-`--skills` / `--no-skills` are accepted **either before or after** the subcommand — both `helix init --no-skills local` and `helix init local --no-skills` work. They are mutually exclusive. When neither is given, an interactive run prompts you and a non-interactive run skips the install. To install or refresh the skills later, use [`helix skills`](/cli/command-reference/skills).
+All top-level flags are accepted **either before or after** the subcommand — `helix init --path ./app local`, `helix init local --path ./app`, and `helix init local --no-skills` all work. `--skills` / `--no-skills` are mutually exclusive; when neither is given, an interactive run prompts you and a non-interactive run skips the install. To install or refresh the skills later, use [`helix skills`](/cli/command-reference/skills).
 </Note>
 
 ### `helix init local`

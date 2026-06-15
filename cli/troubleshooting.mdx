@@ -62,7 +62,7 @@ Use [`helix push <instance>`](/cli/command-reference/push) to deploy an Enterpri
 
 ### `--path` reported as an unexpected argument
 
-`--path` is only valid on [`helix init`](/cli/command-reference/init) (it sets the project directory). Other commands locate the project by walking up from the current directory to find `helix.toml`; `cd` into the project instead.
+`--path` is valid on [`helix init`](/cli/command-reference/init) and [`helix add`](/cli/command-reference/add), in either position (`helix init --path ./app local` or `helix init local --path ./app`). Older CLI versions only accepted `--path` *before* the subcommand — if you hit this error there, run [`helix update`](/cli/command-reference/update) or move the flag. Other commands locate the project by walking up from the current directory to find `helix.toml`; `cd` into the project instead.
 
 ## Project configuration issues
 
@@ -90,13 +90,20 @@ The instance is not listed in `helix.toml`. Check with `helix status` and add it
 
 ## Docker / Podman issues
 
-### Docker daemon not running
+### Docker not installed or daemon not running
 
 ```
-Docker is not available. Install/start docker and try again
+Docker is not installed (`docker` not found on PATH)
+Docker is not running
 ```
 
-A container runtime must be both **installed and running** — installing Docker is not enough if the daemon is stopped. `helix start` attempts to start it for you, but surfaces this error when it can't.
+(Older CLI versions print `Docker is not available. Install/start docker and try again` for both cases.)
+
+A container runtime must be both **installed and running** — installing Docker is not enough if the daemon is stopped. `helix start` attempts to start an installed-but-stopped daemon for you, and surfaces these errors when it can't. If Docker is missing but Podman is installed, the CLI suggests switching: set `[project] container_runtime = "podman"` in `helix.toml`.
+
+To install a runtime: macOS — `brew install --cask docker` (Docker Desktop) or `brew install colima docker && colima start`; Linux — `curl -fsSL https://get.docker.com | sh`, or `apt-get install -y podman`.
+
+To start an installed runtime:
 
 - **macOS:** `open -a Docker`, or `colima start` / `podman machine start`.
 - **Linux:** `sudo systemctl start docker`.

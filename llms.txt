@@ -2,28 +2,32 @@
 
 > HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored with Helix SDK DSLs or dynamic JSON and invoked over HTTP.
 
+Quickstart (local instance requires Docker or Podman):
+
+```bash
+curl -sSL "https://install.helix-db.com" | bash   # install the helix CLI
+helix init local                                  # scaffold helix.toml + examples/
+helix start dev                                   # start a local instance
+helix query dev -e 'writeBatch().varAs("alice", g().addN("User", { username: "alice" })).returning(["alice"])'
+helix query dev -e 'readBatch().varAs("users", g().nWithLabel("User")).returning(["users"])'
+```
+
+Full walkthrough: https://docs.helix-db.com/cli/getting-started
+
 ## Getting Started
 - [Introduction](https://docs.helix-db.com/database/introduction)
 - [Local Development](https://docs.helix-db.com/database/local-development)
-- [Rust Project Setup](https://docs.helix-db.com/database/rust-project-setup)
-- [TypeScript Project Setup](https://docs.helix-db.com/database/typescript-project-setup)
-- [Go Project Setup](https://docs.helix-db.com/database/go-project-setup)
-- [Python Project Setup](https://docs.helix-db.com/database/python-project-setup)
+- [Rust](https://docs.helix-db.com/database/rust-project-setup): How to setup a Rust project to use HelixDB
+- [TypeScript](https://docs.helix-db.com/database/typescript-project-setup): How to setup a TypeScript project to use HelixDB
+- [Go](https://docs.helix-db.com/database/go-project-setup): How to setup a Go project to use HelixDB
+- [Python](https://docs.helix-db.com/database/python-project-setup): How to setup a Python project to use HelixDB
 - [Roadmap](https://docs.helix-db.com/database/roadmap): What we're building and what's coming next
 - [Release Notes](https://docs.helix-db.com/database/release-notes): HelixDB Cloud Release Notes
-
-## HelixDB Cloud
-- [Working with HelixDB Cloud](https://docs.helix-db.com/database/working-with-enterprise)
-- [Architecture](https://docs.helix-db.com/database/architecture)
-- [Guarantees](https://docs.helix-db.com/database/guarantees)
-- [Security](https://docs.helix-db.com/database/security)
-- [Tradeoffs](https://docs.helix-db.com/database/tradeoffs)
-- [Limits](https://docs.helix-db.com/database/limits)
 
 ## Concepts & Examples
 - [Data Model](https://docs.helix-db.com/database/data-model)
 - [Querying](https://docs.helix-db.com/database/querying)
-- [Querying Guide: Overview](https://docs.helix-db.com/database/querying-guide/overview)
+- [Overview](https://docs.helix-db.com/database/querying-guide/overview)
 - [Reading nodes and edges](https://docs.helix-db.com/database/querying-guide/reading-nodes)
 - [Traversals](https://docs.helix-db.com/database/querying-guide/traversals)
 - [Filtering, ordering, paging](https://docs.helix-db.com/database/querying-guide/filtering)
@@ -36,6 +40,14 @@
 - [Vector Indexes](https://docs.helix-db.com/database/indexing/vector)
 - [Text Indexes](https://docs.helix-db.com/database/indexing/text)
 - [Multi-Tenancy](https://docs.helix-db.com/database/multi-tenancy)
+
+## Platform
+- [Working with HelixDB Cloud](https://docs.helix-db.com/database/working-with-enterprise)
+- [Architecture](https://docs.helix-db.com/database/architecture)
+- [Guarantees](https://docs.helix-db.com/database/guarantees)
+- [Security](https://docs.helix-db.com/database/security)
+- [Tradeoffs](https://docs.helix-db.com/database/tradeoffs)
+- [Limits](https://docs.helix-db.com/database/limits)
 
 ## Using the helix CLI
 - [Getting started with HelixDB CLI](https://docs.helix-db.com/cli/getting-started): Install the Helix CLI v2, bootstrap a first app, run a local instance, and send your first dynamic query

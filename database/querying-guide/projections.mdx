@@ -531,6 +531,126 @@ func AliceFollowsEdges() helix.Request {
 ```
 </CodeGroup>
 
+When you only need a small edge-facing shape, prefer `project(...)` on the edge
+stream instead of `edgeProperties()`. Endpoint-qualified projection sources read
+properties from the source or target node without traversing to each endpoint:
+
+- `$from.<property>` reads `<property>` from the edge's source node.
+- `$to.<property>` reads `<property>` from the edge's target node.
+
+This keeps one result row per edge and fetches only the requested edge and
+endpoint properties. `edgeProperties()` still returns full edge properties and
+uses `$from` / `$to` for the internal endpoint node ids.
+
+The raw JSON form is a normal `Project` entry, for example
+`{"source":"$from.resource_id","alias":"from_id"}` and
+`{"source":"$to.resource_id","alias":"to_id"}`.
+
+<CodeGroup>
+```ts TypeScript
+import { g, Projection, readBatch } from "@helix-db/helix-db";
+
+const relationships = readBatch()
+  .varAs(
+    "relationships",
+    g()
+      .eWithLabel("DESCRIBES")
+      .project([
+        Projection.fromEndpoint("resource_id", "from_id"),
+        Projection.toEndpoint("resource_id", "to_id"),
+        Projection.property("$id", "edge_id"),
+        Projection.property("confidence", "confidence"),
+      ]),
+  )
+  .returning(["relationships"]);
+```
+
+```python Python
+from helixdb import Projection, g, read_batch
+
+
+def list_describes_relationships():
+    return (
+        read_batch()
+        .var_as(
+            "relationships",
+            g()
+            .e_with_label("DESCRIBES")
+            .project([
+                Projection.from_endpoint("resource_id", "from_id"),
+                Projection.to_endpoint("resource_id", "to_id"),
+                Projection.property("$id", "edge_id"),
+                Projection.property("confidence", "confidence"),
+            ]),
+        )
+        .returning(["relationships"])
+    )
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn list_describes_relationships() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "relationships",
+            g().e_with_label("DESCRIBES").project(vec![
+                Projection::from_endpoint("resource_id", "from_id"),
+                Projection::to_endpoint("resource_id", "to_id"),
+                Projection::property("$id", "edge_id"),
+                Projection::property("confidence", "confidence"),
+            ]),
+        )
+        .returning(["relationships"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func ListDescribesRelationships() helix.Request {
+	return helix.ReadQuery("list_describes_relationships").
+		VarAs("relationships",
+			helix.G().
+				EWithLabel("DESCRIBES").
+				Project(
+					helix.ProjectFromEndpoint("resource_id", "from_id"),
+					helix.ProjectToEndpoint("resource_id", "to_id"),
+					helix.ProjectPropAs("$id", "edge_id"),
+					helix.ProjectPropAs("confidence", "confidence"),
+				),
+		).
+		Returning("relationships")
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "relationships",
+        "steps": [
+          { "EWhere": { "Eq": ["$label", { "String": "DESCRIBES" }] } },
+          {
+            "Project": [
+              { "source": "$from.resource_id", "alias": "from_id" },
+              { "source": "$to.resource_id",   "alias": "to_id" },
+              { "source": "$id",               "alias": "edge_id" },
+              { "source": "confidence",        "alias": "confidence" }
+            ]
+          }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["relationships"]
+}
+```
+</CodeGroup>
+
 ## Aggregations: `.group`, `.groupCount`, `.aggregateBy`
 
 For grouped counts and aggregate statistics:
