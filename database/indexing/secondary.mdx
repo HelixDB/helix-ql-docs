@@ -97,6 +97,16 @@ g().create_index_if_not_exists(
 )
 ```
 
+`node_range` uses ascending physical order. Use `node_range_desc` or
+`node_range_with_direction(..., RangeIndexDirection::Desc)` when the primary access
+pattern is descending order, such as newest-first feeds:
+
+```rust
+g().create_index_if_not_exists(
+    IndexSpec::node_range_desc("Event", "timestamp"),
+)
+```
+
 Range indexes use the same insert path as equality indexes; the property values are simply
 ordered by the index. Query with any of `gt`, `gte`, `lt`, `lte`, or `between`:
 
@@ -114,6 +124,9 @@ g().create_index_if_not_exists(
     IndexSpec::edge_range("RATED", "score"),
 )
 ```
+
+For descending physical order, use `IndexSpec::edge_range_desc("RATED", "score")` or
+`IndexSpec::edge_range_with_direction("RATED", "score", RangeIndexDirection::Desc)`.
 
 ```rust
 g().e_with_label_where(

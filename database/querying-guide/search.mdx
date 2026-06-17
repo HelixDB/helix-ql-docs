@@ -167,10 +167,10 @@ func CreateIndexes() helix.Request {
 |---|---|
 | `nodeEquality(label, prop)` | Secondary equality index. |
 | `nodeUniqueEquality(label, prop)` | Equality index with a uniqueness constraint. |
-| `nodeRange(label, prop)` | Range / ordering index. |
+| `nodeRange(label, prop)` / `nodeRangeDesc(label, prop)` / `nodeRangeWithDirection(label, prop, direction)` | Range / ordering index. Ascending is the default; use descending for newest-first or high-score-first scans. |
 | `nodeVector(label, prop, tenant?)` | ANN vector index. |
 | `nodeText(label, prop, tenant?)` | BM25 text index. |
-| `edgeEquality` / `edgeRange` / `edgeVector` / `edgeText` | Same shapes for edges. |
+| `edgeEquality` / `edgeRange` / `edgeRangeDesc` / `edgeRangeWithDirection` / `edgeVector` / `edgeText` | Same shapes for edges. |
 
 `tenant?` is the multi-tenancy partition key — see the bottom of this page.
 
