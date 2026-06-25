@@ -158,7 +158,7 @@ services:
         mc mb --ignore-existing local/helix-db
 
   helix:
-    image: ghcr.io/helixdb/enterprise-dev:v0.1.0
+    image: ghcr.io/helixdb/enterprise-dev:latest
     restart: unless-stopped
     depends_on:
       minio-init:

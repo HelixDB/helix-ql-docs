@@ -492,7 +492,7 @@ The resulting bundle has this top-level shape:
 
 ```json
 {
-  "version": 4,
+  "version": 5,
   "read_routes":  { "user_by_username": { "queries": [...], "returns": ["user"] } },
   "write_routes": { "add_user":         { "queries": [...], "returns": ["newUser"] } },
   "read_parameters": {
@@ -758,9 +758,12 @@ from_file = read_query_bundle_from_path("queries.json")
 ```
 </CodeGroup>
 
-`deserializeQueryBundle` / `deserialize_query_bundle` validates `version === 4` (the
-current bundle version); it will reject older or newer bundles so you catch mismatches
-at load time rather than at deploy time.
+`deserializeQueryBundle` / `deserialize_query_bundle` validates the bundle `version`
+and rejects anything it does not support, so you catch mismatches at load time rather
+than at deploy time. The TypeScript, Rust, and Go SDKs serialize at **v5** and accept
+both v4 and v5 on read. The Python SDK is still at **v4** and accepts only v4 — a v5
+bundle (for example one using row bindings, which Python does not support yet) will not
+load in Python.
 
 ## Next Steps
 

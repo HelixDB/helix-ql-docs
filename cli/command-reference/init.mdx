@@ -5,7 +5,7 @@ sidebarTitle: "init"
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Initialize a v2 Helix project. Creates `helix.toml`, a `.helix/` workspace directory, a `.gitignore` entry, and — for local projects — an `examples/request.json` scaffold.
+Initialize a v2 Helix project. Creates `helix.toml`, a `.helix/` workspace directory, a `.gitignore` entry, and — for local projects — an `AGENTS.md` for coding agents and an `examples/request.json` scaffold.
 
 ## Usage
 
@@ -59,6 +59,7 @@ Interactive local init prompts for the storage mode and defaults to in-memory.
 - `helix.toml` — project configuration with one `[local.<name>]` or `[enterprise.<name>]` instance.
 - `.helix/` — CLI-managed workspace state (ignored from git).
 - `.gitignore` — entries appended for `.helix/`, `target/`, and `*.log`.
+- `AGENTS.md` (local only) — instructions for coding agents picking up the project (never overwrites an existing `AGENTS.md`).
 - `examples/request.json` (local only) — a runnable read request you can send with `helix query`:
 
 ```json

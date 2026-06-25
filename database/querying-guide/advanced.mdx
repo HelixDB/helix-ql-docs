@@ -537,6 +537,173 @@ A few notes specific to `forEachParam`:
   value, for example `PropertyInput.param("metadata")`, then query the stored
   nested fields later with dotted paths such as `metadata.externalID`.
 
+## Correlate hops in one row: `bind` + `projectBindings`
+
+A normal terminal (`.valueMap`, `.project`) only sees the **final** stream, so it
+can't return a value captured earlier in the same traversal alongside a value
+from a later hop. Row bindings solve this: tag elements with `.bind(name)` as the
+traversal passes them, then assemble the output rows from those named bindings
+with `.projectBindings([...])` (preserves duplicate rows) or
+`.projectDistinctBindings([...])` (dedups identical rows).
+
+`.bind()` does not change the stream — each path keeps its own row-local
+bindings, so hops inside `union`, `optional`, and `choose` can still reference
+captures made before the branch. Each `projection` reads from a binding (or the
+current element) and emits one output column; `coalesce` takes the first present
+non-null reference from a list.
+
+<Note>
+Row bindings are available in the **TypeScript, Rust, and Go** SDKs. The Python
+SDK does not generate them yet — from Python, hand-write the `Bind` /
+`ProjectBindings` JSON AST shown in the JSON tab below.
+</Note>
+
+<CodeGroup>
+```ts TypeScript
+import { BindingProjection, g, readBatch, sub } from "@helix-db/helix-db";
+
+function serviceTopology() {
+  return readBatch()
+    .varAs(
+      "rows",
+      g()
+        .nWithLabel("Service")
+        .bind("service")
+        .out("ROUTES_TO").bind("pod")
+        .optional(sub().in("CREATES").bind("deployment"))
+        .union([
+          sub().in("MANAGES").bind("owner"),
+          sub().out("ROUTES_TO").bind("workload"),
+        ])
+        .projectDistinctBindings([
+          BindingProjection.binding("service", "$id", "service_id"),
+          BindingProjection.binding("pod", "name", "pod_name"),
+          BindingProjection.coalesce([
+            BindingProjection.bindingRef("deployment", "$id"),
+            BindingProjection.bindingRef("owner", "$id"),
+          ], "workload_id"),
+        ]),
+    )
+    .returning(["rows"]);
+}
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn service_topology() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "rows",
+            g().n_with_label("Service")
+                .bind("service")
+                .out(Some("ROUTES_TO")).bind("pod")
+                .optional(sub().in_(Some("CREATES")).bind("deployment"))
+                .union(vec![
+                    sub().in_(Some("MANAGES")).bind("owner"),
+                    sub().out(Some("ROUTES_TO")).bind("workload"),
+                ])
+                .project_distinct_bindings(vec![
+                    BindingProjection::binding("service", "$id", "service_id"),
+                    BindingProjection::binding("pod", "name", "pod_name"),
+                    BindingProjection::coalesce(
+                        vec![
+                            BindingValueRef::binding("deployment", "$id"),
+                            BindingValueRef::binding("owner", "$id"),
+                        ],
+                        "workload_id",
+                    ),
+                ]),
+        )
+        .returning(["rows"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func ServiceTopology() helix.Request {
+	return helix.ReadQuery("service_topology").
+		VarAs("rows",
+			helix.G().
+				NWithLabel("Service").
+				Bind("service").
+				Out("ROUTES_TO").Bind("pod").
+				Optional(helix.Sub().In("CREATES").Bind("deployment")).
+				Union(
+					helix.Sub().In("MANAGES").Bind("owner"),
+					helix.Sub().Out("ROUTES_TO").Bind("workload"),
+				).
+				ProjectDistinctBindings(
+					helix.ProjectNamedBinding("service", "$id", "service_id"),
+					helix.ProjectNamedBinding("pod", "name", "pod_name"),
+					helix.ProjectBindingCoalesce([]helix.BindingValueRef{
+						helix.NamedBindingValue("deployment", "$id"),
+						helix.NamedBindingValue("owner", "$id"),
+					}, "workload_id"),
+				),
+		).
+		Returning("rows")
+}
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query": {
+    "queries": [
+      {
+        "Query": {
+          "name": "rows",
+          "steps": [
+            { "NWhere": { "Eq": ["$label", { "String": "Service" }] } },
+            { "Bind": "service" },
+            { "Out": "ROUTES_TO" },
+            { "Bind": "pod" },
+            { "Optional": [{ "In": "CREATES" }, { "Bind": "deployment" }] },
+            { "Union": [
+              [{ "In": "MANAGES" }, { "Bind": "owner" }],
+              [{ "Out": "ROUTES_TO" }, { "Bind": "workload" }]
+            ] },
+            { "ProjectBindings": {
+              "projections": [
+                { "kind": "Property", "target": { "Binding": "service" }, "source": "$id", "alias": "service_id" },
+                { "kind": "Property", "target": { "Binding": "pod" }, "source": "name", "alias": "pod_name" },
+                { "kind": "Coalesce", "refs": [
+                  { "target": { "Binding": "deployment" }, "source": "$id" },
+                  { "target": { "Binding": "owner" }, "source": "$id" }
+                ], "alias": "workload_id" }
+              ],
+              "distinct": true
+            } }
+          ],
+          "condition": null
+        }
+      }
+    ],
+    "returns": ["rows"]
+  }
+}
+```
+</CodeGroup>
+
+A few notes on row bindings:
+
+- A `projection`'s `source` accepts stored properties and the virtual fields
+  `$id`, `$label`, `$from`, `$to`, `$distance`, `$score` — the same set as
+  `.project(...)`. The `target` is either a named binding or the current element
+  (`BindingProjection.current(...)` in TS, `"Current"` on the wire).
+- `coalesce` returns the first reference whose value is present and non-null,
+  which is the idiomatic way to merge alternative branches of a `union` into one
+  column.
+- `projectBindings` keeps one row per surviving path including duplicates;
+  `projectDistinctBindings` deduplicates identical projected rows. A wide
+  `union` or `repeat` fan-out can multiply rows, so prefer the distinct form
+  unless you need the duplicates.
+- Binding queries serialize at query-bundle **v5**. SDKs still read older v4
+  bundles, so this is backward-compatible for existing deployments.
+
 ## Next Steps
 
 <CardGroup cols={2}>

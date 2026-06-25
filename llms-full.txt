@@ -194,7 +194,7 @@ services:
         mc mb --ignore-existing local/helix-db
 
   helix:
-    image: ghcr.io/helixdb/enterprise-dev:v0.1.0
+    image: ghcr.io/helixdb/enterprise-dev:latest
     restart: unless-stopped
     depends_on:
       minio-init:
@@ -1714,6 +1714,27 @@ The raw JSON form is a normal `Project` entry, for example
 `{"source":"$from.resource_id","alias":"from_id"}` and
 `{"source":"$to.resource_id","alias":"to_id"}`.
 
+## Row bindings: `.projectBindings` for multi-hop correlation
+
+Every terminal above projects from the **final** stream. When one output row must
+combine values captured at **different hops** of the same traversal, use row
+bindings: tag elements with `.bind(name)` as the traversal passes them, then build
+the rows with `.projectBindings([...])` (keeps duplicates) or
+`.projectDistinctBindings([...])` (dedups identical rows).
+
+Each entry is a `BindingProjection`:
+
+- `BindingProjection.binding(name, source, alias)` — read `source` from a named
+  binding.
+- `BindingProjection.current(source, alias)` — read `source` from the current
+  element.
+- `BindingProjection.coalesce([ref, ...], alias)` — first present non-null
+  reference wins, where each `ref` is `BindingProjection.bindingRef(name, source)`
+  or `BindingProjection.currentRef(source)`.
+
+`source` accepts the same stored properties and virtual fields (`$id`, `$label`,
+`$from`, `$to`, `$distance`, `$score`) as `.project(...)`.
+
 ## Aggregations: `.group`, `.groupCount`, `.aggregateBy`
 
 For grouped counts and aggregate statistics:
@@ -2037,6 +2058,37 @@ A few notes specific to `forEachParam`:
   value, for example `PropertyInput.param("metadata")`, then query the stored
   nested fields later with dotted paths such as `metadata.externalID`.
 
+## Correlate hops in one row: `bind` + `projectBindings`
+
+A normal terminal (`.valueMap`, `.project`) only sees the **final** stream, so it
+can't return a value captured earlier in the same traversal alongside a value
+from a later hop. Row bindings solve this: tag elements with `.bind(name)` as the
+traversal passes them, then assemble the output rows from those named bindings
+with `.projectBindings([...])` (preserves duplicate rows) or
+`.projectDistinctBindings([...])` (dedups identical rows).
+
+`.bind()` does not change the stream — each path keeps its own row-local
+bindings, so hops inside `union`, `optional`, and `choose` can still reference
+captures made before the branch. Each `projection` reads from a binding (or the
+current element) and emits one output column; `coalesce` takes the first present
+non-null reference from a list.
+
+A few notes on row bindings:
+
+- A `projection`'s `source` accepts stored properties and the virtual fields
+  `$id`, `$label`, `$from`, `$to`, `$distance`, `$score` — the same set as
+  `.project(...)`. The `target` is either a named binding or the current element
+  (`BindingProjection.current(...)` in TS, `"Current"` on the wire).
+- `coalesce` returns the first reference whose value is present and non-null,
+  which is the idiomatic way to merge alternative branches of a `union` into one
+  column.
+- `projectBindings` keeps one row per surviving path including duplicates;
+  `projectDistinctBindings` deduplicates identical projected rows. A wide
+  `union` or `repeat` fan-out can multiply rows, so prefer the distinct form
+  unless you need the duplicates.
+- Binding queries serialize at query-bundle **v5**. SDKs still read older v4
+  bundles, so this is backward-compatible for existing deployments.
+
 ## Next Steps
 
 # Parameters and bundles
@@ -2259,7 +2311,7 @@ The resulting bundle has this top-level shape:
 
 ```json
 {
-  "version": 4,
+  "version": 5,
   "read_routes":  { "user_by_username": { "queries": [...], "returns": ["user"] } },
   "write_routes": { "add_user":         { "queries": [...], "returns": ["newUser"] } },
   "read_parameters": {
@@ -2422,9 +2474,12 @@ RPC interface) rather than the JSON dynamic envelope, which is the bottleneck.
 The `queries.generate(path)` shortcut is enough for most projects. If you want to
 inspect or post-process the bundle first, the lower-level helpers are exported too:
 
-`deserializeQueryBundle` / `deserialize_query_bundle` validates `version === 4` (the
-current bundle version); it will reject older or newer bundles so you catch mismatches
-at load time rather than at deploy time.
+`deserializeQueryBundle` / `deserialize_query_bundle` validates the bundle `version`
+and rejects anything it does not support, so you catch mismatches at load time rather
+than at deploy time. The TypeScript, Rust, and Go SDKs serialize at **v5** and accept
+both v4 and v5 on read. The Python SDK is still at **v4** and accepts only v4 — a v5
+bundle (for example one using row bindings, which Python does not support yet) will not
+load in Python.
 
 ## Next Steps
 
@@ -4200,7 +4255,7 @@ helix feedback
 
 # helix init
 
-Initialize a v2 Helix project. Creates `helix.toml`, a `.helix/` workspace directory, a `.gitignore` entry, and — for local projects — an `examples/request.json` scaffold.
+Initialize a v2 Helix project. Creates `helix.toml`, a `.helix/` workspace directory, a `.gitignore` entry, and — for local projects — an `AGENTS.md` for coding agents and an `examples/request.json` scaffold.
 
 ## Usage
 
@@ -4250,6 +4305,7 @@ Interactive local init prompts for the storage mode and defaults to in-memory.
 - `helix.toml` — project configuration with one `[local.<name>]` or `[enterprise.<name>]` instance.
 - `.helix/` — CLI-managed workspace state (ignored from git).
 - `.gitignore` — entries appended for `.helix/`, `target/`, and `*.log`.
+- `AGENTS.md` (local only) — instructions for coding agents picking up the project (never overwrites an existing `AGENTS.md`).
 - `examples/request.json` (local only) — a runnable read request you can send with `helix query`:
 
 ```json
@@ -4704,6 +4760,13 @@ Enterprise gateway URL is not configured for '<instance>'. Run 'helix sync <inst
 ```
 
 If the auth env var is missing, the CLI returns `Environment variable <NAME> is required for Enterprise query auth`.
+
+## Connection errors
+
+If the CLI cannot reach the instance, it reports `cannot reach Helix instance '<instance>' at <endpoint>` with a recovery hint tailored to the instance kind:
+
+- **Local** — `Start it with helix start <instance> and check it with helix status <instance>. If it runs on another host/port, pass --host/--port.`
+- **Enterprise** — `Check the gateway_url for '<instance>' in helix.toml and your network connection. helix sync <instance> refreshes the gateway metadata from Helix Cloud.`
 
 ## Output
 

@@ -651,6 +651,128 @@ func ListDescribesRelationships() helix.Request {
 ```
 </CodeGroup>
 
+## Row bindings: `.projectBindings` for multi-hop correlation
+
+Every terminal above projects from the **final** stream. When one output row must
+combine values captured at **different hops** of the same traversal, use row
+bindings: tag elements with `.bind(name)` as the traversal passes them, then build
+the rows with `.projectBindings([...])` (keeps duplicates) or
+`.projectDistinctBindings([...])` (dedups identical rows).
+
+Each entry is a `BindingProjection`:
+
+- `BindingProjection.binding(name, source, alias)` — read `source` from a named
+  binding.
+- `BindingProjection.current(source, alias)` — read `source` from the current
+  element.
+- `BindingProjection.coalesce([ref, ...], alias)` — first present non-null
+  reference wins, where each `ref` is `BindingProjection.bindingRef(name, source)`
+  or `BindingProjection.currentRef(source)`.
+
+`source` accepts the same stored properties and virtual fields (`$id`, `$label`,
+`$from`, `$to`, `$distance`, `$score`) as `.project(...)`.
+
+<CodeGroup>
+```ts TypeScript
+import { BindingProjection, g, readBatch, sub } from "@helix-db/helix-db";
+
+const orders = readBatch()
+  .varAs(
+    "rows",
+    g()
+      .nWithLabel("Customer")
+      .bind("customer")
+      .out("PLACED").bind("order")
+      .projectDistinctBindings([
+        BindingProjection.binding("customer", "$id", "customer_id"),
+        BindingProjection.binding("customer", "name", "customer_name"),
+        BindingProjection.binding("order", "$id", "order_id"),
+        BindingProjection.binding("order", "total", "order_total"),
+      ]),
+  )
+  .returning(["rows"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn orders() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "rows",
+            g().n_with_label("Customer")
+                .bind("customer")
+                .out(Some("PLACED")).bind("order")
+                .project_distinct_bindings(vec![
+                    BindingProjection::binding("customer", "$id", "customer_id"),
+                    BindingProjection::binding("customer", "name", "customer_name"),
+                    BindingProjection::binding("order", "$id", "order_id"),
+                    BindingProjection::binding("order", "total", "order_total"),
+                ]),
+        )
+        .returning(["rows"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func Orders() helix.Request {
+	return helix.ReadQuery("orders").
+		VarAs("rows",
+			helix.G().
+				NWithLabel("Customer").
+				Bind("customer").
+				Out("PLACED").Bind("order").
+				ProjectDistinctBindings(
+					helix.ProjectNamedBinding("customer", "$id", "customer_id"),
+					helix.ProjectNamedBinding("customer", "name", "customer_name"),
+					helix.ProjectNamedBinding("order", "$id", "order_id"),
+					helix.ProjectNamedBinding("order", "total", "order_total"),
+				),
+		).
+		Returning("rows")
+}
+```
+
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "rows",
+        "steps": [
+          { "NWhere": { "Eq": ["$label", { "String": "Customer" }] } },
+          { "Bind": "customer" },
+          { "Out": "PLACED" },
+          { "Bind": "order" },
+          { "ProjectBindings": {
+            "projections": [
+              { "kind": "Property", "target": { "Binding": "customer" }, "source": "$id", "alias": "customer_id" },
+              { "kind": "Property", "target": { "Binding": "customer" }, "source": "name", "alias": "customer_name" },
+              { "kind": "Property", "target": { "Binding": "order" }, "source": "$id", "alias": "order_id" },
+              { "kind": "Property", "target": { "Binding": "order" }, "source": "total", "alias": "order_total" }
+            ],
+            "distinct": true
+          } }
+        ],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["rows"]
+}
+```
+</CodeGroup>
+
+<Note>
+Row bindings are available in the TypeScript, Rust, and Go SDKs but **not** in the
+Python SDK yet — from Python, hand-write the `Bind` / `ProjectBindings` JSON AST.
+See [Advanced traversals](/database/querying-guide/advanced) for a fuller example
+that correlates across `union` and `optional` branches with `coalesce`.
+</Note>
+
 ## Aggregations: `.group`, `.groupCount`, `.aggregateBy`
 
 For grouped counts and aggregate statistics:

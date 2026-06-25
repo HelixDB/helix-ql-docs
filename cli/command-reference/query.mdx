@@ -127,6 +127,13 @@ Enterprise gateway URL is not configured for '<instance>'. Run 'helix sync <inst
 
 If the auth env var is missing, the CLI returns `Environment variable <NAME> is required for Enterprise query auth`.
 
+## Connection errors
+
+If the CLI cannot reach the instance, it reports `cannot reach Helix instance '<instance>' at <endpoint>` with a recovery hint tailored to the instance kind:
+
+- **Local** — `Start it with helix start <instance> and check it with helix status <instance>. If it runs on another host/port, pass --host/--port.`
+- **Enterprise** — `Check the gateway_url for '<instance>' in helix.toml and your network connection. helix sync <instance> refreshes the gateway metadata from Helix Cloud.`
+
 ## Output
 
 - A non-empty JSON response is pretty-printed by default; pass `--compact` to print on a single line.
