@@ -58,21 +58,6 @@ npx skills add HelixDB/skills
 The agent then loads the relevant skill automatically when you ask it to write a query, tune a
 slow traversal, or translate a Cypher/Gremlin query.
 
-### Configuring disk mode
-
-To make disk mode the default for a local instance, initialize or add it with `--disk`:
-
-```bash
-helix init local --disk
-helix add local --name persistent --disk
-```
-
-The CLI-managed disk mode starts a MinIO sidecar, creates the `helix-db` bucket, and keeps the
-MinIO volume across `helix stop`. Use `helix prune <instance>` to delete the persisted local data.
-
-If you'd rather manage the containers yourself with Docker Compose, the in-memory and on-disk
-setups below show the raw image configuration that the CLI disk mode mirrors.
-
 ## Installing the SDKs
 
 To author queries against your local instance, install the SDK for your language.
@@ -126,14 +111,35 @@ services:
 To run without a preloaded bundle, omit `PATH_TO_QUERIES` and the mounted `queries.json` volume;
 queries still execute as dynamic `POST /v1/query` requests.
 
-## On-Disk
+## On-Disk with Local MinIO
 
-For persistent local development, point the `enterprise-dev` image at an S3-compatible object
-store. The example below brings up MinIO, initializes the `helix-db` bucket, and configures the
-`enterprise-dev` container to read and write to it. Data persists across container restarts as
-long as the MinIO volume is preserved.
+Use this mode when you want persistent local data without operating your own object store.
 
-```yaml expandable
+### With the CLI
+
+Start an instance with a CLI-managed MinIO sidecar:
+
+```bash
+helix start dev --disk
+```
+
+To make disk mode the default for an instance, set it during initialization or when adding the
+instance:
+
+```bash
+helix init local --disk
+helix add local --name persistent --disk
+```
+
+The CLI creates the `helix-db` bucket and preserves the MinIO volume across `helix stop`. Use
+`helix prune <instance>` to delete the persisted data.
+
+### With Docker Compose
+
+To manage the local containers yourself, use this Compose file. It starts MinIO, creates the
+bucket, and connects `enterprise-dev` to it:
+
+```yaml docker-compose.yaml expandable
 services:
   minio:
     image: minio/minio:latest
@@ -181,78 +187,93 @@ volumes:
   minio-data:
 ```
 
-### Use your own MinIO or S3 deployment
+```bash
+docker compose up -d
+```
 
-If you already operate your own S3-compatible store, create the bucket first and give
-Helix a dedicated prefix. Helix does not create or delete resources in an externally managed
-object store.
+Data persists across restarts while the `minio-data` volume exists.
 
-#### With the CLI
+## Existing S3-Compatible Storage
+
+Use this mode when you already operate MinIO, AWS S3, or another S3-compatible object store.
+Create the bucket first and give each Helix instance a dedicated prefix. Helix does not create
+or delete resources in an externally managed object store.
+
+### With the CLI
 
 Put the credentials in a `.env` file in your project root (or export them in your shell):
 
-```dotenv
+```dotenv .env
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
 # Required only for temporary credentials:
 # AWS_SESSION_TOKEN=your-session-token
 ```
 
-Do not commit this file.
+<Warning>Do not commit your `.env` file.</Warning>
 
-Then point an existing local instance at your MinIO deployment. `--persist` saves the storage
-configuration to `helix.toml`, so `helix restart` and future `helix start` commands reuse it:
+Then configure the existing local instance for your provider:
 
-```bash
-helix start dev \
-  --storage-uri s3://helix-db/my-app \
-  --s3-region us-east-1 \
-  --s3-endpoint-url https://minio.example.com \
-  --persist
+<Tabs>
+  <Tab title="MinIO">
+    ```bash
+    helix start dev \
+      --storage-uri s3://helix-db/my-app \
+      --s3-region us-east-1 \
+      --s3-endpoint-url https://minio.example.com \
+      --persist
+    ```
+
+    For a plain HTTP endpoint, use an `http://` URL and add `--s3-allow-http`.
+  </Tab>
+  <Tab title="AWS S3">
+    ```bash
+    helix start dev \
+      --storage-uri s3://my-bucket/my-app \
+      --s3-region eu-west-2 \
+      --persist
+    ```
+  </Tab>
+</Tabs>
+
+`--persist` writes the resolved storage configuration to `helix.toml`. The same S3 flags are
+accepted by `helix init local` and `helix add local`. The CLI loads the project-root `.env` and
+forwards AWS credentials on both start and restart.
+
+### With Docker Compose
+
+The equivalent raw container configuration is:
+
+```yaml docker-compose.yaml expandable
+services:
+  helix:
+    image: ghcr.io/helixdb/enterprise-dev:latest
+    restart: unless-stopped
+    ports:
+      - "6969:8080"
+    env_file:
+      - .env
+    environment:
+      S3_BUCKET: helix-db
+      S3_REGION: us-east-1
+      DB_PATH: my-app/
+      AWS_ENDPOINT: https://minio.example.com
 ```
 
-For a plain HTTP endpoint, use an `http://` URL and add `--s3-allow-http`. For AWS S3, omit
-`--s3-endpoint-url`:
-
 ```bash
-helix start dev \
-  --storage-uri s3://my-bucket/my-app \
-  --s3-region eu-west-2 \
-  --persist
+docker compose up -d
 ```
 
-The same S3 flags are accepted by `helix init local` and `helix add local`. The CLI loads the
-project-root `.env` on both start and restart and forwards the AWS credential variables to the
-container.
-
-#### With the container directly
-
-Export the credentials in your shell, then pass the storage configuration to `enterprise-dev`:
-
-```bash
-docker run -d \
-  --name helix-dev \
-  --restart unless-stopped \
-  -p 6969:8080 \
-  -e S3_BUCKET=helix-db \
-  -e S3_REGION=us-east-1 \
-  -e DB_PATH=my-app/ \
-  -e AWS_ACCESS_KEY_ID \
-  -e AWS_SECRET_ACCESS_KEY \
-  -e AWS_SESSION_TOKEN \
-  -e AWS_ENDPOINT=https://minio.example.com \
-  ghcr.io/helixdb/enterprise-dev:latest
-```
-
-Omit `AWS_SESSION_TOKEN` when using long-lived credentials. For an HTTP endpoint, also pass
-`-e AWS_ALLOW_HTTP=true`. For AWS S3, omit `AWS_ENDPOINT` and `AWS_ALLOW_HTTP`.
+For a plain HTTP endpoint, add `AWS_ALLOW_HTTP: "true"`. For AWS S3, remove `AWS_ENDPOINT` and
+set `S3_BUCKET`, `S3_REGION`, and `DB_PATH` for your bucket and prefix.
 
 <Note>
 The endpoint must be reachable from inside the Helix container. `localhost` refers to the
-container itself, not the host or another MinIO container.
+container itself. `helix stop`, `helix restart`, `helix prune`, and `docker compose down` do not
+delete externally managed object-store data.
 </Note>
 
-### Environment variables
+### Environment Variable Reference
 
 | Variable                | Description                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------- |
