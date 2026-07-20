@@ -246,7 +246,30 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 # AWS_SESSION_TOKEN=your-session-token
 ```
 
+Do not commit your `.env` file.
+
 Then configure the existing local instance for your provider:
+
+#### MinIO
+
+```bash
+helix start dev \
+  --storage-uri s3://helix-db/my-app \
+  --s3-region us-east-1 \
+  --s3-endpoint-url https://minio.example.com \
+  --persist
+```
+
+For a plain HTTP endpoint, use an `http://` URL and add `--s3-allow-http`.
+
+#### AWS S3
+
+```bash
+helix start dev \
+  --storage-uri s3://my-bucket/my-app \
+  --s3-region eu-west-2 \
+  --persist
+```
 
 `--persist` writes the resolved storage configuration to `helix.toml`. The same S3 flags are
 accepted by `helix init local` and `helix add local`. The CLI loads the project-root `.env` and
@@ -278,6 +301,12 @@ docker compose up -d
 
 For a plain HTTP endpoint, add `AWS_ALLOW_HTTP: "true"`. For AWS S3, remove `AWS_ENDPOINT` and
 set `S3_BUCKET`, `S3_REGION`, and `DB_PATH` for your bucket and prefix.
+
+The endpoint must be reachable from inside the Helix container. `localhost` refers to the
+container itself.
+
+`helix stop`, `helix restart`, `helix prune`, and `docker compose down` do not delete externally
+managed object-store data.
 
 ### Environment Variable Reference
 
