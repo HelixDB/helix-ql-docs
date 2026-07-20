@@ -219,7 +219,7 @@ volumes:
 
 ### Use your own MinIO or S3 deployment
 
-If you already operate MinIO or another S3-compatible store, create the bucket first and give
+If you already operate your own S3-compatible store, create the bucket first and give
 Helix a dedicated prefix. Helix does not create or delete resources in an externally managed
 object store.
 
