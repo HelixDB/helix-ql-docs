@@ -181,6 +181,77 @@ volumes:
   minio-data:
 ```
 
+### Use your own MinIO or S3 deployment
+
+If you already operate your own S3-compatible store, create the bucket first and give
+Helix a dedicated prefix. Helix does not create or delete resources in an externally managed
+object store.
+
+#### With the CLI
+
+Put the credentials in a `.env` file in your project root (or export them in your shell):
+
+```dotenv
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+# Required only for temporary credentials:
+# AWS_SESSION_TOKEN=your-session-token
+```
+
+Do not commit this file.
+
+Then point an existing local instance at your MinIO deployment. `--persist` saves the storage
+configuration to `helix.toml`, so `helix restart` and future `helix start` commands reuse it:
+
+```bash
+helix start dev \
+  --storage-uri s3://helix-db/my-app \
+  --s3-region us-east-1 \
+  --s3-endpoint-url https://minio.example.com \
+  --persist
+```
+
+For a plain HTTP endpoint, use an `http://` URL and add `--s3-allow-http`. For AWS S3, omit
+`--s3-endpoint-url`:
+
+```bash
+helix start dev \
+  --storage-uri s3://my-bucket/my-app \
+  --s3-region eu-west-2 \
+  --persist
+```
+
+The same S3 flags are accepted by `helix init local` and `helix add local`. The CLI loads the
+project-root `.env` on both start and restart and forwards the AWS credential variables to the
+container.
+
+#### With the container directly
+
+Export the credentials in your shell, then pass the storage configuration to `enterprise-dev`:
+
+```bash
+docker run -d \
+  --name helix-dev \
+  --restart unless-stopped \
+  -p 6969:8080 \
+  -e S3_BUCKET=helix-db \
+  -e S3_REGION=us-east-1 \
+  -e DB_PATH=my-app/ \
+  -e AWS_ACCESS_KEY_ID \
+  -e AWS_SECRET_ACCESS_KEY \
+  -e AWS_SESSION_TOKEN \
+  -e AWS_ENDPOINT=https://minio.example.com \
+  ghcr.io/helixdb/enterprise-dev:latest
+```
+
+Omit `AWS_SESSION_TOKEN` when using long-lived credentials. For an HTTP endpoint, also pass
+`-e AWS_ALLOW_HTTP=true`. For AWS S3, omit `AWS_ENDPOINT` and `AWS_ALLOW_HTTP`.
+
+<Note>
+The endpoint must be reachable from inside the Helix container. `localhost` refers to the
+container itself, not the host or another MinIO container.
+</Note>
+
 ### Environment variables
 
 | Variable                | Description                                                                  |
@@ -190,6 +261,7 @@ volumes:
 | `DB_PATH`               | Prefix inside the bucket where the database keeps its files.                 |
 | `AWS_ACCESS_KEY_ID`     | Access key for the object store.                                             |
 | `AWS_SECRET_ACCESS_KEY` | Secret key for the object store.                                             |
+| `AWS_SESSION_TOKEN`     | Optional session token for temporary AWS credentials.                       |
 | `AWS_ENDPOINT`          | Custom endpoint URL — required for MinIO and other non-AWS S3 providers.     |
 | `AWS_ALLOW_HTTP`        | Set to `true` when the endpoint is plain HTTP (e.g. local MinIO).            |
 
