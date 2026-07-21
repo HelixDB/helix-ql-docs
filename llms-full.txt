@@ -246,30 +246,7 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 # AWS_SESSION_TOKEN=your-session-token
 ```
 
-Do not commit your `.env` file.
-
 Then configure the existing local instance for your provider:
-
-#### MinIO
-
-```bash
-helix start dev \
-  --storage-uri s3://helix-db/my-app \
-  --s3-region us-east-1 \
-  --s3-endpoint-url https://minio.example.com \
-  --persist
-```
-
-For a plain HTTP endpoint, use an `http://` URL and add `--s3-allow-http`.
-
-#### AWS S3
-
-```bash
-helix start dev \
-  --storage-uri s3://my-bucket/my-app \
-  --s3-region eu-west-2 \
-  --persist
-```
 
 `--persist` writes the resolved storage configuration to `helix.toml`. The same S3 flags are
 accepted by `helix init local` and `helix add local`. The CLI loads the project-root `.env` and
@@ -301,12 +278,6 @@ docker compose up -d
 
 For a plain HTTP endpoint, add `AWS_ALLOW_HTTP: "true"`. For AWS S3, remove `AWS_ENDPOINT` and
 set `S3_BUCKET`, `S3_REGION`, and `DB_PATH` for your bucket and prefix.
-
-The endpoint must be reachable from inside the Helix container. `localhost` refers to the
-container itself.
-
-`helix stop`, `helix restart`, `helix prune`, and `docker compose down` do not delete externally
-managed object-store data.
 
 ### Environment Variable Reference
 
@@ -2577,136 +2548,33 @@ load in Python.
 
 # Secondary Indexes
 
-Secondary indexes accelerate property-based filtering on the labeled property graph. Two flavors
-are available, each on both nodes and edges:
+Secondary indexes accelerate property-based filtering on the labeled property graph. They are
+available on both nodes and edges:
 
-- **Equality indexes** map `property = value` to the set of matching IDs. Use them for exact-match
-  lookups like "all users with `status = active`."
-- **Range indexes** provide ordered scans over numeric and string properties. Use them for
-  comparisons like `timestamp > T` or `score >= 4`.
+- **Equality indexes** map `property = value` to matching IDs.
+- **Range indexes** provide ordered scans for numeric and string comparisons.
 
-Secondary indexes are opt-in. They speed up reads at the cost of additional write overhead and
-storage. Only index properties that are frequently filtered on. Unindexed properties remain
-queryable via `.where_(Predicate::...)`, but the route will scan the label rather than seek the
-index.
+Indexes are opt-in. They speed up reads at the cost of write overhead and storage. Only top-level
+properties can be indexed; dotted paths remain scan-only in V1.
 
-Indexes address top-level properties only. Nested fields (e.g. `metadata.externalID`) can be
-filtered with a dotted path but are scan-only in V1 — store frequently indexed metadata as
-top-level properties.
+## Create Secondary Indexes
 
-The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
-or `write_batch()` route as shown in [Querying](/database/querying).
+Index creation is an idempotent write route. This example creates node and edge variants for both
+index families:
 
-## Equality Index — Nodes
+Range indexes use ascending physical order by default. For newest-first or high-score-first access,
+use `nodeRangeDesc` / `node_range_desc` / `NodeRangeDescIndex` and the matching edge helpers.
 
-Declare the index as part of your schema setup write batch:
+## Equality Lookups
 
-```rust
-g().create_index_if_not_exists(
-    IndexSpec::node_equality("User", "status"),
-)
-```
+Use the source-predicate form to push equality filters into the index:
 
-Insert a node carrying the indexed property:
+## Range Lookups
 
-```rust
-g().add_n(
-    "User",
-    vec![
-        ("userId", PropertyInput::from("u-42")),
-        ("status", PropertyInput::from("active")),
-    ],
-)
-```
+Range indexes support `gt`, `gte`, `lt`, `lte`, and `between` source predicates:
 
-Query through the index using the source-predicate form. `n_with_label_where` pushes the
-predicate down to the index so the route never scans the full label:
-
-```rust
-g().n_with_label_where(
-    "User",
-    SourcePredicate::eq("status", "active"),
-)
-```
-
-## Equality Index — Edges
-
-Declare an equality index on an edge property:
-
-```rust
-g().create_index_if_not_exists(
-    IndexSpec::edge_equality("FOLLOWS", "since_year"),
-)
-```
-
-Create an edge between two known nodes. `add_e` is called from a node-state traversal — the
-current node is the edge's source, and the second argument is the target:
-
-```rust
-g().n(NodeRef::param("source"))
-    .add_e(
-        "FOLLOWS",
-        NodeRef::param("target"),
-        vec![("since_year", PropertyInput::from(2024i64))],
-    )
-```
-
-Query the edge index directly with `e_with_label_where`:
-
-```rust
-g().e_with_label_where(
-    "FOLLOWS",
-    SourcePredicate::eq("since_year", 2024i64),
-)
-```
-
-## Range Index — Nodes
-
-Declare a range index on a numeric or string property:
-
-```rust
-g().create_index_if_not_exists(
-    IndexSpec::node_range("Event", "timestamp"),
-)
-```
-
-`node_range` uses ascending physical order. Use `node_range_desc` or
-`node_range_with_direction(..., RangeIndexDirection::Desc)` when the primary access
-pattern is descending order, such as newest-first feeds:
-
-```rust
-g().create_index_if_not_exists(
-    IndexSpec::node_range_desc("Event", "timestamp"),
-)
-```
-
-Range indexes use the same insert path as equality indexes; the property values are simply
-ordered by the index. Query with any of `gt`, `gte`, `lt`, `lte`, or `between`:
-
-```rust
-g().n_with_label_where(
-    "Event",
-    SourcePredicate::gt("timestamp", 1_700_000_000i64),
-)
-```
-
-## Range Index — Edges
-
-```rust
-g().create_index_if_not_exists(
-    IndexSpec::edge_range("RATED", "score"),
-)
-```
-
-For descending physical order, use `IndexSpec::edge_range_desc("RATED", "score")` or
-`IndexSpec::edge_range_with_direction("RATED", "score", RangeIndexDirection::Desc)`.
-
-```rust
-g().e_with_label_where(
-    "RATED",
-    SourcePredicate::gte("score", 4i64),
-)
-```
+Indexes are maintained automatically when indexed values are inserted or updated. See
+[Mutations](/database/querying-guide/mutations) for write examples.
 
 ## See Also
 
@@ -2715,197 +2583,61 @@ For tenant-scoped equality lookups using the same secondary-index machinery, see
 
 # Vector Indexes
 
-Vector indexes enable approximate nearest neighbor (ANN) search on numeric array properties.
-Helix supports vector indexes on both nodes and edges. Values are normalized to float32 for
-indexing, and supported distance metrics are cosine, euclidean, and manhattan. The query vector
-must match the configured index dimension exactly.
+Vector indexes enable approximate nearest-neighbor search on numeric array properties. They are
+available on nodes and edges, normalize values to float32, and support cosine, euclidean, and
+manhattan distance. Query vectors must match the indexed vectors' dimension.
 
-Vector index properties are top-level properties. Nested object fields are not indexed as vectors;
-store embeddings directly on the node or edge property you pass to the vector-search builder.
+Vector properties must be top-level. The optional tenant property partitions an index; pass no
+tenant property for a global index, or see [Multi-Tenancy](/database/multi-tenancy).
 
-Vector search is approximate by design, trading a small amount of recall for significantly faster
-search over large datasets. The third argument to the index-creation builders is an optional
-tenant property name; pass `None::<&str>` for a global index, or see
-[Multi-Tenancy](/database/multi-tenancy) for the partitioned variant.
+## Create Vector Indexes
 
-The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
-or `write_batch()` route as shown in [Querying](/database/querying).
+Index creation is an idempotent write route:
 
-## Vector Index — Nodes
+Write embeddings as float arrays on the indexed property. Node and edge mutation examples are in
+[Mutations](/database/querying-guide/mutations).
 
-Declare the index. The second argument is the property that holds the embedding:
+## Search Nodes and Edges
 
-```rust
-g().create_vector_index_nodes("Doc", "embedding", None::<&str>)
-```
+The search source returns the nearest `k` hits in ascending distance order:
 
-Insert a node with both the application data and the embedding. `PropertyInput::from(Vec<f32>)`
-works through the generic conversion path from any type that `PropertyValue` accepts:
+Direct hits expose the virtual `$distance` field. Project it before traversing away from the hit
+stream if the response needs the score.
 
-```rust
-g().add_n(
-    "Doc",
-    vec![
-        ("title", PropertyInput::from("Intro to vector search")),
-        ("embedding", PropertyInput::from(vec![0.12f32, 0.85, -0.04])),
-    ],
-)
-```
+## Parameterized Search
 
-kNN search returns the top `k` nearest nodes. Pass `None::<PropertyValue>` for the tenant
-argument when the index is not partitioned:
+Use the `_with` form when the vector and result limit come from request parameters:
 
-```rust
-g().vector_search_nodes(
-    "Doc",
-    "embedding",
-    vec![0.12f32, 0.85, -0.04],
-    10,
-    None::<PropertyValue>,
-)
-```
-
-## Vector Index — Edges
-
-Edges can carry embeddings too — useful when the relationship itself is what you want to retrieve
-by similarity (e.g., citation context, relation-typed embeddings).
-
-```rust
-g().create_vector_index_edges("CITES", "embedding", None::<&str>)
-```
-
-```rust
-g().n(NodeRef::param("source"))
-    .add_e(
-        "CITES",
-        NodeRef::param("target"),
-        vec![("embedding", PropertyInput::from(vec![0.12f32, 0.85, -0.04]))],
-    )
-```
-
-```rust
-g().vector_search_edges(
-    "CITES",
-    "embedding",
-    vec![0.12f32, 0.85, -0.04],
-    10,
-    None::<PropertyValue>,
-)
-```
-
-## Parameterized Searches
-
-The plain `vector_search_nodes` / `vector_search_edges` builders take a literal `Vec<f32>` and a
-`usize` for `k`. For routes that receive the query vector and limit from request parameters, use
-the `_with` variants. They accept `PropertyInput::param(...)` for the vector and `Expr::param(...)`
-for `k`:
-
-```rust
-g().vector_search_nodes_with(
-    "Doc",
-    "embedding",
-    PropertyInput::param("queryVector"),
-    Expr::param("limit"),
-    None::<PropertyInput>,
-)
-```
-
-The same pattern applies to `vector_search_edges_with`.
+The same parameter pattern applies to `vectorSearchEdgesWith` and its snake_case variants.
 
 # Text Indexes
 
-Text indexes provide BM25 full-text search on node and edge properties. They are stored durably
-like other indexes rather than rebuilt transiently per query. Indexed values can be `String` or
-`StringArray`, with configurable analyzer presets and optional term positions.
+Text indexes provide durable BM25 full-text search over node and edge properties. Indexed values
+can be `String` or `StringArray`, with configurable analyzers and optional term positions.
 
-Text index properties are top-level properties. Nested object fields are not flattened into BM25;
-store searchable text directly on the property you pass to the text-search builder.
+Text properties must be top-level. The optional tenant property partitions an index;
+tenant-partitioned text indexes currently require that property to be named `tenant_id`. See
+[Multi-Tenancy](/database/multi-tenancy).
 
-The third argument to the index-creation builders is an optional tenant property name; pass
-`None::<&str>` for a global index. Tenant-partitioned text indexes currently require the
-partition property name to be `tenant_id` — see [Multi-Tenancy](/database/multi-tenancy) for the
-partitioned variant.
+## Create Text Indexes
 
-The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
-or `write_batch()` route as shown in [Querying](/database/querying).
+Index creation is an idempotent write route:
 
-## Text Index — Nodes
+Write strings or string arrays on the indexed property. Node and edge mutation examples are in
+[Mutations](/database/querying-guide/mutations).
 
-Declare the index. The second argument is the text property:
+## Search Nodes and Edges
 
-```rust
-g().create_text_index_nodes("Doc", "body", None::<&str>)
-```
+The search source returns the best `k` BM25 matches:
 
-Insert a node carrying the indexed text:
+Direct hits expose the virtual `$distance` field, where a smaller value is more relevant. Project
+it before traversing away from the hit stream if the response needs the score.
 
-```rust
-g().add_n(
-    "Doc",
-    vec![
-        ("title", PropertyInput::from("Distributed databases")),
-        ("body", PropertyInput::from("CAP theorem and consensus protocols")),
-    ],
-)
-```
+## Parameterized Search
 
-Run a BM25 search. The third argument is the query string, the fourth is `k`:
+Use the `_with` form when the text and result limit come from request parameters:
 
-```rust
-g().text_search_nodes(
-    "Doc",
-    "body",
-    "consensus protocols",
-    10,
-    None::<PropertyValue>,
-)
-```
-
-## Text Index — Edges
-
-Edges can be text-indexed when the relationship carries searchable content — for example a
-reviewer's comment on a paper:
-
-```rust
-g().create_text_index_edges("Reviewed", "comment", None::<&str>)
-```
-
-```rust
-g().n(NodeRef::param("source"))
-    .add_e(
-        "Reviewed",
-        NodeRef::param("target"),
-        vec![("comment", PropertyInput::from("Thorough write-up"))],
-    )
-```
-
-```rust
-g().text_search_edges(
-    "Reviewed",
-    "comment",
-    "thorough write-up",
-    10,
-    None::<PropertyValue>,
-)
-```
-
-## Parameterized Searches
-
-For routes that receive the query string and limit from request parameters, use the `_with`
-variants. They accept `PropertyInput::param(...)` for the query text and `Expr::param(...)` for
-`k`:
-
-```rust
-g().text_search_nodes_with(
-    "Doc",
-    "body",
-    PropertyInput::param("query"),
-    Expr::param("limit"),
-    None::<PropertyInput>,
-)
-```
-
-The same pattern applies to `text_search_edges_with`.
+The same parameter pattern applies to `textSearchEdgesWith` and its snake_case variants.
 
 # Multi-Tenancy
 

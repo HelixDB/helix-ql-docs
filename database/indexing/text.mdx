@@ -4,95 +4,256 @@ title: 'Text Indexes'
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Text indexes provide BM25 full-text search on node and edge properties. They are stored durably
-like other indexes rather than rebuilt transiently per query. Indexed values can be `String` or
-`StringArray`, with configurable analyzer presets and optional term positions.
+Text indexes provide durable BM25 full-text search over node and edge properties. Indexed values
+can be `String` or `StringArray`, with configurable analyzers and optional term positions.
 
-Text index properties are top-level properties. Nested object fields are not flattened into BM25;
-store searchable text directly on the property you pass to the text-search builder.
+Text properties must be top-level. The optional tenant property partitions an index;
+tenant-partitioned text indexes currently require that property to be named `tenant_id`. See
+[Multi-Tenancy](/database/multi-tenancy).
 
-The third argument to the index-creation builders is an optional tenant property name; pass
-`None::<&str>` for a global index. Tenant-partitioned text indexes currently require the
-partition property name to be `tenant_id` — see [Multi-Tenancy](/database/multi-tenancy) for the
-partitioned variant.
+## Create Text Indexes
 
-The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
-or `write_batch()` route as shown in [Querying](/database/querying).
+Index creation is an idempotent write route:
 
-## Text Index — Nodes
+<CodeGroup>
+```ts TypeScript
+import { g, IndexSpec, writeBatch } from "@helix-db/helix-db";
 
-Declare the index. The second argument is the text property:
-
-```rust
-g().create_text_index_nodes("Doc", "body", None::<&str>)
+const createTextIndexes = writeBatch()
+  .varAs("doc_body", g().createIndexIfNotExists(IndexSpec.nodeText("Doc", "body")))
+  .varAs("review_comment", g().createIndexIfNotExists(IndexSpec.edgeText("REVIEWED", "comment")));
 ```
 
-Insert a node carrying the indexed text:
+```rust Rust
+use helix_db::dsl::prelude::*;
 
-```rust
-g().add_n(
-    "Doc",
-    vec![
-        ("title", PropertyInput::from("Distributed databases")),
-        ("body", PropertyInput::from("CAP theorem and consensus protocols")),
-    ],
+#[register]
+pub fn create_text_indexes() -> WriteBatch {
+    write_batch()
+        .var_as(
+            "doc_body",
+            g().create_index_if_not_exists(IndexSpec::node_text("Doc", "body", None::<&str>)),
+        )
+        .var_as(
+            "review_comment",
+            g().create_index_if_not_exists(IndexSpec::edge_text("REVIEWED", "comment", None::<&str>)),
+        )
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func CreateTextIndexes() helix.Request {
+	return helix.WriteQuery("create_text_indexes").
+		VarAs("doc_body", helix.G().CreateIndexIfNotExists(helix.NodeTextIndex("Doc", "body"))).
+		VarAs("review_comment", helix.G().CreateIndexIfNotExists(helix.EdgeTextIndex("REVIEWED", "comment"))).
+		Returning()
+}
+```
+
+```python Python
+from helixdb import IndexSpec, g, write_batch
+
+create_text_indexes = (
+    write_batch()
+    .var_as("doc_body", g().create_index_if_not_exists(IndexSpec.node_text("Doc", "body")))
+    .var_as("review_comment", g().create_index_if_not_exists(IndexSpec.edge_text("REVIEWED", "comment")))
 )
 ```
 
-Run a BM25 search. The third argument is the query string, the fourth is `k`:
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "doc_body",
+        "steps": [{ "CreateIndex": { "spec": { "NodeText": { "label": "Doc", "property": "body" } }, "if_not_exists": true } }],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "review_comment",
+        "steps": [{ "CreateIndex": { "spec": { "EdgeText": { "label": "REVIEWED", "property": "comment" } }, "if_not_exists": true } }],
+        "condition": null
+      }
+    }
+  ],
+  "returns": []
+}
+```
+</CodeGroup>
 
-```rust
-g().text_search_nodes(
-    "Doc",
-    "body",
-    "consensus protocols",
-    10,
-    None::<PropertyValue>,
+Write strings or string arrays on the indexed property. Node and edge mutation examples are in
+[Mutations](/database/querying-guide/mutations).
+
+## Search Nodes and Edges
+
+The search source returns the best `k` BM25 matches:
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch } from "@helix-db/helix-db";
+
+const textSearch = readBatch()
+  .varAs("docs", g().textSearchNodes("Doc", "body", "consensus protocols", 10, null))
+  .varAs("reviews", g().textSearchEdges("REVIEWED", "comment", "thorough write-up", 10, null))
+  .returning(["docs", "reviews"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn text_search() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "docs",
+            g().text_search_nodes("Doc", "body", "consensus protocols", 10, None::<PropertyValue>),
+        )
+        .var_as(
+            "reviews",
+            g().text_search_edges("REVIEWED", "comment", "thorough write-up", 10, None::<PropertyValue>),
+        )
+        .returning(["docs", "reviews"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func TextSearch() helix.Request {
+	return helix.ReadQuery("text_search").
+		VarAs("docs", helix.G().TextSearchNodes("Doc", "body", "consensus protocols", 10)).
+		VarAs("reviews", helix.G().TextSearchEdges("REVIEWED", "comment", "thorough write-up", 10)).
+		Returning("docs", "reviews")
+}
+```
+
+```python Python
+from helixdb import g, read_batch
+
+text_search = (
+    read_batch()
+    .var_as("docs", g().text_search_nodes("Doc", "body", "consensus protocols", 10))
+    .var_as("reviews", g().text_search_edges("REVIEWED", "comment", "thorough write-up", 10))
+    .returning(["docs", "reviews"])
 )
 ```
 
-## Text Index — Edges
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "docs",
+        "steps": [{ "TextSearchNodes": { "label": "Doc", "property": "body", "query_text": { "Value": { "String": "consensus protocols" } }, "k": { "Literal": 10 } } }],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "reviews",
+        "steps": [{ "TextSearchEdges": { "label": "REVIEWED", "property": "comment", "query_text": { "Value": { "String": "thorough write-up" } }, "k": { "Literal": 10 } } }],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["docs", "reviews"]
+}
+```
+</CodeGroup>
 
-Edges can be text-indexed when the relationship carries searchable content — for example a
-reviewer's comment on a paper:
+Direct hits expose the virtual `$distance` field, where a smaller value is more relevant. Project
+it before traversing away from the hit stream if the response needs the score.
 
-```rust
-g().create_text_index_edges("Reviewed", "comment", None::<&str>)
+## Parameterized Search
+
+Use the `_with` form when the text and result limit come from request parameters:
+
+<CodeGroup>
+```ts TypeScript
+import { defineParams, Expr, g, param, PropertyInput, readBatch, StreamBound } from "@helix-db/helix-db";
+
+const params = defineParams({ query: param.string(), limit: param.i64() });
+
+function searchDocs(p = params) {
+  return readBatch()
+    .varAs(
+      "docs",
+      g().textSearchNodesWith(
+        "Doc",
+        "body",
+        PropertyInput.param("query"),
+        StreamBound.expr(Expr.param("limit")),
+        null,
+      ),
+    )
+    .returning(["docs"]);
+}
 ```
 
-```rust
-g().n(NodeRef::param("source"))
-    .add_e(
-        "Reviewed",
-        NodeRef::param("target"),
-        vec![("comment", PropertyInput::from("Thorough write-up"))],
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn search_docs(query: String, limit: i64) -> ReadBatch {
+    let _ = (&query, &limit);
+    read_batch()
+        .var_as(
+            "docs",
+            g().text_search_nodes_with(
+                "Doc",
+                "body",
+                PropertyInput::param("query"),
+                Expr::param("limit"),
+                None::<PropertyInput>,
+            ),
+        )
+        .returning(["docs"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func SearchDocs(query string, limit int64) helix.Request {
+	q := helix.ReadQuery("search_docs")
+	text := q.ParamString("query", query)
+	k := q.ParamI64("limit", limit)
+
+	return q.
+		VarAs("docs", helix.G().TextSearchNodesWith("Doc", "body", text.Input(), k.Bound(), nil)).
+		Returning("docs")
+}
+```
+
+```python Python
+from helixdb import define_params, g, param, read_batch
+
+params = define_params({"query": param.string(), "limit": param.i64()})
+
+def search_docs(p=params):
+    return (
+        read_batch()
+        .var_as("docs", g().text_search_nodes_with("Doc", "body", p.query.input(), p.limit, None))
+        .returning(["docs"])
     )
 ```
 
-```rust
-g().text_search_edges(
-    "Reviewed",
-    "comment",
-    "thorough write-up",
-    10,
-    None::<PropertyValue>,
-)
+```json JSON
+{
+  "request_type": "read",
+  "query_name": "search_docs",
+  "query": {
+    "queries": [{ "Query": { "name": "docs", "steps": [{ "TextSearchNodes": { "label": "Doc", "property": "body", "query_text": { "Expr": { "Param": "query" } }, "k": { "Expr": { "Param": "limit" } } } }], "condition": null } }],
+    "returns": ["docs"]
+  },
+  "parameters": { "query": "consensus protocols", "limit": 10 },
+  "parameter_types": { "query": "String", "limit": "I64" }
+}
 ```
+</CodeGroup>
 
-## Parameterized Searches
-
-For routes that receive the query string and limit from request parameters, use the `_with`
-variants. They accept `PropertyInput::param(...)` for the query text and `Expr::param(...)` for
-`k`:
-
-```rust
-g().text_search_nodes_with(
-    "Doc",
-    "body",
-    PropertyInput::param("query"),
-    Expr::param("limit"),
-    None::<PropertyInput>,
-)
-```
-
-The same pattern applies to `text_search_edges_with`.
+The same parameter pattern applies to `textSearchEdgesWith` and its snake_case variants.

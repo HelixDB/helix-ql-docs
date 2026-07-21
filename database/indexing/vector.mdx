@@ -4,99 +4,256 @@ title: 'Vector Indexes'
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Vector indexes enable approximate nearest neighbor (ANN) search on numeric array properties.
-Helix supports vector indexes on both nodes and edges. Values are normalized to float32 for
-indexing, and supported distance metrics are cosine, euclidean, and manhattan. The query vector
-must match the configured index dimension exactly.
+Vector indexes enable approximate nearest-neighbor search on numeric array properties. They are
+available on nodes and edges, normalize values to float32, and support cosine, euclidean, and
+manhattan distance. Query vectors must match the indexed vectors' dimension.
 
-Vector index properties are top-level properties. Nested object fields are not indexed as vectors;
-store embeddings directly on the node or edge property you pass to the vector-search builder.
+Vector properties must be top-level. The optional tenant property partitions an index; pass no
+tenant property for a global index, or see [Multi-Tenancy](/database/multi-tenancy).
 
-Vector search is approximate by design, trading a small amount of recall for significantly faster
-search over large datasets. The third argument to the index-creation builders is an optional
-tenant property name; pass `None::<&str>` for a global index, or see
-[Multi-Tenancy](/database/multi-tenancy) for the partitioned variant.
+## Create Vector Indexes
 
-The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
-or `write_batch()` route as shown in [Querying](/database/querying).
+Index creation is an idempotent write route:
 
-## Vector Index — Nodes
+<CodeGroup>
+```ts TypeScript
+import { g, IndexSpec, writeBatch } from "@helix-db/helix-db";
 
-Declare the index. The second argument is the property that holds the embedding:
-
-```rust
-g().create_vector_index_nodes("Doc", "embedding", None::<&str>)
+const createVectorIndexes = writeBatch()
+  .varAs("doc_embedding", g().createIndexIfNotExists(IndexSpec.nodeVector("Doc", "embedding")))
+  .varAs("citation_embedding", g().createIndexIfNotExists(IndexSpec.edgeVector("CITES", "embedding")));
 ```
 
-Insert a node with both the application data and the embedding. `PropertyInput::from(Vec<f32>)`
-works through the generic conversion path from any type that `PropertyValue` accepts:
+```rust Rust
+use helix_db::dsl::prelude::*;
 
-```rust
-g().add_n(
-    "Doc",
-    vec![
-        ("title", PropertyInput::from("Intro to vector search")),
-        ("embedding", PropertyInput::from(vec![0.12f32, 0.85, -0.04])),
-    ],
+#[register]
+pub fn create_vector_indexes() -> WriteBatch {
+    write_batch()
+        .var_as(
+            "doc_embedding",
+            g().create_index_if_not_exists(IndexSpec::node_vector("Doc", "embedding", None::<&str>)),
+        )
+        .var_as(
+            "citation_embedding",
+            g().create_index_if_not_exists(IndexSpec::edge_vector("CITES", "embedding", None::<&str>)),
+        )
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func CreateVectorIndexes() helix.Request {
+	return helix.WriteQuery("create_vector_indexes").
+		VarAs("doc_embedding", helix.G().CreateIndexIfNotExists(helix.NodeVectorIndex("Doc", "embedding"))).
+		VarAs("citation_embedding", helix.G().CreateIndexIfNotExists(helix.EdgeVectorIndex("CITES", "embedding"))).
+		Returning()
+}
+```
+
+```python Python
+from helixdb import IndexSpec, g, write_batch
+
+create_vector_indexes = (
+    write_batch()
+    .var_as("doc_embedding", g().create_index_if_not_exists(IndexSpec.node_vector("Doc", "embedding")))
+    .var_as("citation_embedding", g().create_index_if_not_exists(IndexSpec.edge_vector("CITES", "embedding")))
 )
 ```
 
-kNN search returns the top `k` nearest nodes. Pass `None::<PropertyValue>` for the tenant
-argument when the index is not partitioned:
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "doc_embedding",
+        "steps": [{ "CreateIndex": { "spec": { "NodeVector": { "label": "Doc", "property": "embedding" } }, "if_not_exists": true } }],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "citation_embedding",
+        "steps": [{ "CreateIndex": { "spec": { "EdgeVector": { "label": "CITES", "property": "embedding" } }, "if_not_exists": true } }],
+        "condition": null
+      }
+    }
+  ],
+  "returns": []
+}
+```
+</CodeGroup>
 
-```rust
-g().vector_search_nodes(
-    "Doc",
-    "embedding",
-    vec![0.12f32, 0.85, -0.04],
-    10,
-    None::<PropertyValue>,
+Write embeddings as float arrays on the indexed property. Node and edge mutation examples are in
+[Mutations](/database/querying-guide/mutations).
+
+## Search Nodes and Edges
+
+The search source returns the nearest `k` hits in ascending distance order:
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch } from "@helix-db/helix-db";
+
+const vectorSearch = readBatch()
+  .varAs("docs", g().vectorSearchNodes("Doc", "embedding", [0.12, 0.85, -0.04], 10, null))
+  .varAs("citations", g().vectorSearchEdges("CITES", "embedding", [0.12, 0.85, -0.04], 10, null))
+  .returning(["docs", "citations"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn vector_search() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "docs",
+            g().vector_search_nodes("Doc", "embedding", vec![0.12f32, 0.85, -0.04], 10, None::<PropertyValue>),
+        )
+        .var_as(
+            "citations",
+            g().vector_search_edges("CITES", "embedding", vec![0.12f32, 0.85, -0.04], 10, None::<PropertyValue>),
+        )
+        .returning(["docs", "citations"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func VectorSearch() helix.Request {
+	return helix.ReadQuery("vector_search").
+		VarAs("docs", helix.G().VectorSearchNodes("Doc", "embedding", []float32{0.12, 0.85, -0.04}, 10)).
+		VarAs("citations", helix.G().VectorSearchEdges("CITES", "embedding", []float32{0.12, 0.85, -0.04}, 10)).
+		Returning("docs", "citations")
+}
+```
+
+```python Python
+from helixdb import g, read_batch
+
+vector_search = (
+    read_batch()
+    .var_as("docs", g().vector_search_nodes("Doc", "embedding", [0.12, 0.85, -0.04], 10))
+    .var_as("citations", g().vector_search_edges("CITES", "embedding", [0.12, 0.85, -0.04], 10))
+    .returning(["docs", "citations"])
 )
 ```
 
-## Vector Index — Edges
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "docs",
+        "steps": [{ "VectorSearchNodes": { "label": "Doc", "property": "embedding", "query_vector": { "Value": { "F32Array": [0.12, 0.85, -0.04] } }, "k": { "Literal": 10 } } }],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "citations",
+        "steps": [{ "VectorSearchEdges": { "label": "CITES", "property": "embedding", "query_vector": { "Value": { "F32Array": [0.12, 0.85, -0.04] } }, "k": { "Literal": 10 } } }],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["docs", "citations"]
+}
+```
+</CodeGroup>
 
-Edges can carry embeddings too — useful when the relationship itself is what you want to retrieve
-by similarity (e.g., citation context, relation-typed embeddings).
+Direct hits expose the virtual `$distance` field. Project it before traversing away from the hit
+stream if the response needs the score.
 
-```rust
-g().create_vector_index_edges("CITES", "embedding", None::<&str>)
+## Parameterized Search
+
+Use the `_with` form when the vector and result limit come from request parameters:
+
+<CodeGroup>
+```ts TypeScript
+import { defineParams, Expr, g, param, PropertyInput, readBatch, StreamBound } from "@helix-db/helix-db";
+
+const params = defineParams({ query_vector: param.array(param.f32()), limit: param.i64() });
+
+function semanticSearch(p = params) {
+  return readBatch()
+    .varAs(
+      "docs",
+      g().vectorSearchNodesWith(
+        "Doc",
+        "embedding",
+        PropertyInput.param("query_vector"),
+        StreamBound.expr(Expr.param("limit")),
+        null,
+      ),
+    )
+    .returning(["docs"]);
+}
 ```
 
-```rust
-g().n(NodeRef::param("source"))
-    .add_e(
-        "CITES",
-        NodeRef::param("target"),
-        vec![("embedding", PropertyInput::from(vec![0.12f32, 0.85, -0.04]))],
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn semantic_search(query_vector: Vec<f32>, limit: i64) -> ReadBatch {
+    let _ = (&query_vector, &limit);
+    read_batch()
+        .var_as(
+            "docs",
+            g().vector_search_nodes_with(
+                "Doc",
+                "embedding",
+                PropertyInput::param("query_vector"),
+                Expr::param("limit"),
+                None::<PropertyInput>,
+            ),
+        )
+        .returning(["docs"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func SemanticSearch(queryVector []float32, limit int64) helix.Request {
+	q := helix.ReadQuery("semantic_search")
+	vector := q.ParamArray("query_vector", queryVector, helix.ParamTypeF32())
+	k := q.ParamI64("limit", limit)
+
+	return q.
+		VarAs("docs", helix.G().VectorSearchNodesWith("Doc", "embedding", vector.Input(), k.Bound(), nil)).
+		Returning("docs")
+}
+```
+
+```python Python
+from helixdb import define_params, g, param, read_batch
+
+params = define_params({"query_vector": param.array(param.f32()), "limit": param.i64()})
+
+def semantic_search(p=params):
+    return (
+        read_batch()
+        .var_as("docs", g().vector_search_nodes_with("Doc", "embedding", p.query_vector.input(), p.limit, None))
+        .returning(["docs"])
     )
 ```
 
-```rust
-g().vector_search_edges(
-    "CITES",
-    "embedding",
-    vec![0.12f32, 0.85, -0.04],
-    10,
-    None::<PropertyValue>,
-)
+```json JSON
+{
+  "request_type": "read",
+  "query_name": "semantic_search",
+  "query": {
+    "queries": [{ "Query": { "name": "docs", "steps": [{ "VectorSearchNodes": { "label": "Doc", "property": "embedding", "query_vector": { "Expr": { "Param": "query_vector" } }, "k": { "Expr": { "Param": "limit" } } } }], "condition": null } }],
+    "returns": ["docs"]
+  },
+  "parameters": { "query_vector": [0.12, 0.85, -0.04], "limit": 10 },
+  "parameter_types": { "query_vector": { "Array": "F32" }, "limit": "I64" }
+}
 ```
+</CodeGroup>
 
-## Parameterized Searches
-
-The plain `vector_search_nodes` / `vector_search_edges` builders take a literal `Vec<f32>` and a
-`usize` for `k`. For routes that receive the query vector and limit from request parameters, use
-the `_with` variants. They accept `PropertyInput::param(...)` for the vector and `Expr::param(...)`
-for `k`:
-
-```rust
-g().vector_search_nodes_with(
-    "Doc",
-    "embedding",
-    PropertyInput::param("queryVector"),
-    Expr::param("limit"),
-    None::<PropertyInput>,
-)
-```
-
-The same pattern applies to `vector_search_edges_with`.
+The same parameter pattern applies to `vectorSearchEdgesWith` and its snake_case variants.

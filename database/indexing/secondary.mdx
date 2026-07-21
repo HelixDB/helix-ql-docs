@@ -4,136 +4,277 @@ title: 'Secondary Indexes'
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Secondary indexes accelerate property-based filtering on the labeled property graph. Two flavors
-are available, each on both nodes and edges:
+Secondary indexes accelerate property-based filtering on the labeled property graph. They are
+available on both nodes and edges:
 
-- **Equality indexes** map `property = value` to the set of matching IDs. Use them for exact-match
-  lookups like "all users with `status = active`."
-- **Range indexes** provide ordered scans over numeric and string properties. Use them for
-  comparisons like `timestamp > T` or `score >= 4`.
+- **Equality indexes** map `property = value` to matching IDs.
+- **Range indexes** provide ordered scans for numeric and string comparisons.
 
-Secondary indexes are opt-in. They speed up reads at the cost of additional write overhead and
-storage. Only index properties that are frequently filtered on. Unindexed properties remain
-queryable via `.where_(Predicate::...)`, but the route will scan the label rather than seek the
-index.
+Indexes are opt-in. They speed up reads at the cost of write overhead and storage. Only top-level
+properties can be indexed; dotted paths remain scan-only in V1.
 
-Indexes address top-level properties only. Nested fields (e.g. `metadata.externalID`) can be
-filtered with a dotted path but are scan-only in V1 — store frequently indexed metadata as
-top-level properties.
+## Create Secondary Indexes
 
-The DSL fragments below are bare traversals. To execute them, wrap each one in a `read_batch()`
-or `write_batch()` route as shown in [Querying](/database/querying).
+Index creation is an idempotent write route. This example creates node and edge variants for both
+index families:
 
-## Equality Index — Nodes
+<CodeGroup>
+```ts TypeScript
+import { g, IndexSpec, writeBatch } from "@helix-db/helix-db";
 
-Declare the index as part of your schema setup write batch:
+const createSecondaryIndexes = writeBatch()
+  .varAs("user_status", g().createIndexIfNotExists(IndexSpec.nodeEquality("User", "status")))
+  .varAs("follows_since", g().createIndexIfNotExists(IndexSpec.edgeEquality("FOLLOWS", "since_year")))
+  .varAs("event_time", g().createIndexIfNotExists(IndexSpec.nodeRange("Event", "timestamp")))
+  .varAs("rating_score", g().createIndexIfNotExists(IndexSpec.edgeRange("RATED", "score")));
+```
 
-```rust
-g().create_index_if_not_exists(
-    IndexSpec::node_equality("User", "status"),
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn create_secondary_indexes() -> WriteBatch {
+    write_batch()
+        .var_as(
+            "user_status",
+            g().create_index_if_not_exists(IndexSpec::node_equality("User", "status")),
+        )
+        .var_as(
+            "follows_since",
+            g().create_index_if_not_exists(IndexSpec::edge_equality("FOLLOWS", "since_year")),
+        )
+        .var_as(
+            "event_time",
+            g().create_index_if_not_exists(IndexSpec::node_range("Event", "timestamp")),
+        )
+        .var_as(
+            "rating_score",
+            g().create_index_if_not_exists(IndexSpec::edge_range("RATED", "score")),
+        )
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func CreateSecondaryIndexes() helix.Request {
+	return helix.WriteQuery("create_secondary_indexes").
+		VarAs("user_status", helix.G().CreateIndexIfNotExists(helix.NodeEqualityIndex("User", "status"))).
+		VarAs("follows_since", helix.G().CreateIndexIfNotExists(helix.EdgeEqualityIndex("FOLLOWS", "since_year"))).
+		VarAs("event_time", helix.G().CreateIndexIfNotExists(helix.NodeRangeIndex("Event", "timestamp"))).
+		VarAs("rating_score", helix.G().CreateIndexIfNotExists(helix.EdgeRangeIndex("RATED", "score"))).
+		Returning()
+}
+```
+
+```python Python
+from helixdb import IndexSpec, g, write_batch
+
+create_secondary_indexes = (
+    write_batch()
+    .var_as("user_status", g().create_index_if_not_exists(IndexSpec.node_equality("User", "status")))
+    .var_as("follows_since", g().create_index_if_not_exists(IndexSpec.edge_equality("FOLLOWS", "since_year")))
+    .var_as("event_time", g().create_index_if_not_exists(IndexSpec.node_range("Event", "timestamp")))
+    .var_as("rating_score", g().create_index_if_not_exists(IndexSpec.edge_range("RATED", "score")))
 )
 ```
 
-Insert a node carrying the indexed property:
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "user_status",
+        "steps": [{ "CreateIndex": { "spec": { "NodeEquality": { "label": "User", "property": "status", "unique": false } }, "if_not_exists": true } }],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "follows_since",
+        "steps": [{ "CreateIndex": { "spec": { "EdgeEquality": { "label": "FOLLOWS", "property": "since_year" } }, "if_not_exists": true } }],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "event_time",
+        "steps": [{ "CreateIndex": { "spec": { "NodeRange": { "label": "Event", "property": "timestamp" } }, "if_not_exists": true } }],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "rating_score",
+        "steps": [{ "CreateIndex": { "spec": { "EdgeRange": { "label": "RATED", "property": "score" } }, "if_not_exists": true } }],
+        "condition": null
+      }
+    }
+  ],
+  "returns": []
+}
+```
+</CodeGroup>
 
-```rust
-g().add_n(
-    "User",
-    vec![
-        ("userId", PropertyInput::from("u-42")),
-        ("status", PropertyInput::from("active")),
-    ],
+Range indexes use ascending physical order by default. For newest-first or high-score-first access,
+use `nodeRangeDesc` / `node_range_desc` / `NodeRangeDescIndex` and the matching edge helpers.
+
+## Equality Lookups
+
+Use the source-predicate form to push equality filters into the index:
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch, SourcePredicate } from "@helix-db/helix-db";
+
+const equalityLookups = readBatch()
+  .varAs("active_users", g().nWithLabelWhere("User", SourcePredicate.eq("status", "active")))
+  .varAs("recent_follows", g().eWithLabelWhere("FOLLOWS", SourcePredicate.eq("since_year", 2024)))
+  .returning(["active_users", "recent_follows"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn equality_lookups() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "active_users",
+            g().n_with_label_where("User", SourcePredicate::eq("status", "active")),
+        )
+        .var_as(
+            "recent_follows",
+            g().e_with_label_where("FOLLOWS", SourcePredicate::eq("since_year", 2024i64)),
+        )
+        .returning(["active_users", "recent_follows"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func EqualityLookups() helix.Request {
+	return helix.ReadQuery("equality_lookups").
+		VarAs("active_users", helix.G().NWithLabelWhere("User", helix.SourceEq("status", "active"))).
+		VarAs("recent_follows", helix.G().EWithLabelWhere("FOLLOWS", helix.SourceEq("since_year", int64(2024)))).
+		Returning("active_users", "recent_follows")
+}
+```
+
+```python Python
+from helixdb import SourcePredicate, g, read_batch
+
+equality_lookups = (
+    read_batch()
+    .var_as("active_users", g().n_with_label_where("User", SourcePredicate.eq("status", "active")))
+    .var_as("recent_follows", g().e_with_label_where("FOLLOWS", SourcePredicate.eq("since_year", 2024)))
+    .returning(["active_users", "recent_follows"])
 )
 ```
 
-Query through the index using the source-predicate form. `n_with_label_where` pushes the
-predicate down to the index so the route never scans the full label:
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "active_users",
+        "steps": [{ "NWhere": { "And": [{ "Eq": ["$label", { "String": "User" }] }, { "Eq": ["status", { "String": "active" }] }] } }],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "recent_follows",
+        "steps": [{ "EWhere": { "And": [{ "Eq": ["$label", { "String": "FOLLOWS" }] }, { "Eq": ["since_year", { "I64": 2024 }] }] } }],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["active_users", "recent_follows"]
+}
+```
+</CodeGroup>
 
-```rust
-g().n_with_label_where(
-    "User",
-    SourcePredicate::eq("status", "active"),
+## Range Lookups
+
+Range indexes support `gt`, `gte`, `lt`, `lte`, and `between` source predicates:
+
+<CodeGroup>
+```ts TypeScript
+import { g, readBatch, SourcePredicate } from "@helix-db/helix-db";
+
+const rangeLookups = readBatch()
+  .varAs("recent_events", g().nWithLabelWhere("Event", SourcePredicate.gt("timestamp", 1_700_000_000)))
+  .varAs("high_ratings", g().eWithLabelWhere("RATED", SourcePredicate.gte("score", 4)))
+  .returning(["recent_events", "high_ratings"]);
+```
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[register]
+pub fn range_lookups() -> ReadBatch {
+    read_batch()
+        .var_as(
+            "recent_events",
+            g().n_with_label_where("Event", SourcePredicate::gt("timestamp", 1_700_000_000i64)),
+        )
+        .var_as(
+            "high_ratings",
+            g().e_with_label_where("RATED", SourcePredicate::gte("score", 4i64)),
+        )
+        .returning(["recent_events", "high_ratings"])
+}
+```
+
+```go Go
+import helix "github.com/helixdb/helix-db/sdks/go"
+
+func RangeLookups() helix.Request {
+	return helix.ReadQuery("range_lookups").
+		VarAs("recent_events", helix.G().NWithLabelWhere("Event", helix.SourceGt("timestamp", int64(1_700_000_000)))).
+		VarAs("high_ratings", helix.G().EWithLabelWhere("RATED", helix.SourceGte("score", int64(4)))).
+		Returning("recent_events", "high_ratings")
+}
+```
+
+```python Python
+from helixdb import SourcePredicate, g, read_batch
+
+range_lookups = (
+    read_batch()
+    .var_as("recent_events", g().n_with_label_where("Event", SourcePredicate.gt("timestamp", 1_700_000_000)))
+    .var_as("high_ratings", g().e_with_label_where("RATED", SourcePredicate.gte("score", 4)))
+    .returning(["recent_events", "high_ratings"])
 )
 ```
 
-## Equality Index — Edges
-
-Declare an equality index on an edge property:
-
-```rust
-g().create_index_if_not_exists(
-    IndexSpec::edge_equality("FOLLOWS", "since_year"),
-)
+```json JSON
+{
+  "queries": [
+    {
+      "Query": {
+        "name": "recent_events",
+        "steps": [{ "NWhere": { "And": [{ "Eq": ["$label", { "String": "Event" }] }, { "Gt": ["timestamp", { "I64": 1700000000 }] }] } }],
+        "condition": null
+      }
+    },
+    {
+      "Query": {
+        "name": "high_ratings",
+        "steps": [{ "EWhere": { "And": [{ "Eq": ["$label", { "String": "RATED" }] }, { "Gte": ["score", { "I64": 4 }] }] } }],
+        "condition": null
+      }
+    }
+  ],
+  "returns": ["recent_events", "high_ratings"]
+}
 ```
+</CodeGroup>
 
-Create an edge between two known nodes. `add_e` is called from a node-state traversal — the
-current node is the edge's source, and the second argument is the target:
-
-```rust
-g().n(NodeRef::param("source"))
-    .add_e(
-        "FOLLOWS",
-        NodeRef::param("target"),
-        vec![("since_year", PropertyInput::from(2024i64))],
-    )
-```
-
-Query the edge index directly with `e_with_label_where`:
-
-```rust
-g().e_with_label_where(
-    "FOLLOWS",
-    SourcePredicate::eq("since_year", 2024i64),
-)
-```
-
-## Range Index — Nodes
-
-Declare a range index on a numeric or string property:
-
-```rust
-g().create_index_if_not_exists(
-    IndexSpec::node_range("Event", "timestamp"),
-)
-```
-
-`node_range` uses ascending physical order. Use `node_range_desc` or
-`node_range_with_direction(..., RangeIndexDirection::Desc)` when the primary access
-pattern is descending order, such as newest-first feeds:
-
-```rust
-g().create_index_if_not_exists(
-    IndexSpec::node_range_desc("Event", "timestamp"),
-)
-```
-
-Range indexes use the same insert path as equality indexes; the property values are simply
-ordered by the index. Query with any of `gt`, `gte`, `lt`, `lte`, or `between`:
-
-```rust
-g().n_with_label_where(
-    "Event",
-    SourcePredicate::gt("timestamp", 1_700_000_000i64),
-)
-```
-
-## Range Index — Edges
-
-```rust
-g().create_index_if_not_exists(
-    IndexSpec::edge_range("RATED", "score"),
-)
-```
-
-For descending physical order, use `IndexSpec::edge_range_desc("RATED", "score")` or
-`IndexSpec::edge_range_with_direction("RATED", "score", RangeIndexDirection::Desc)`.
-
-```rust
-g().e_with_label_where(
-    "RATED",
-    SourcePredicate::gte("score", 4i64),
-)
-```
+Indexes are maintained automatically when indexed values are inserted or updated. See
+[Mutations](/database/querying-guide/mutations) for write examples.
 
 ## See Also
 
