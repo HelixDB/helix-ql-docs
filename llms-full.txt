@@ -3867,6 +3867,10 @@ choose a managed plan, and create API keys.
     Enter a workspace name, select the region for future dedicated clusters,
     and select **Create Workspace**.
 
+    <Note>
+      New workspaces currently support only the `us-east-1` region.
+    </Note>
+
     <Frame>
       <img src="/images/helix-cloud/dashboard/02-create-workspace.png" alt="Create a Workspace form with workspace name and region fields" />
     </Frame>
