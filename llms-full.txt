@@ -3970,6 +3970,12 @@ to source control.
   <Card title="Security" icon="lock" href="/database/helix-cloud/operate/security">
     Review authentication, encryption, and API key handling.
   </Card>
+  <Card title="TypeScript SDK setup" icon="code" href="/database/helix-db/start-here/sdk-setup/typescript-project-setup">
+    Install the SDK and connect a Node.js application.
+  </Card>
+  <Card title="Query walkthrough" icon="rocket" href="/database/helix-db/core-concepts/overview">
+    Build and run a query step by step.
+  </Card>
 
 # Architecture
 
