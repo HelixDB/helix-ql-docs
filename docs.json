@@ -187,6 +187,7 @@
             "group": "Start Here",
             "pages": [
               "database/helix-cloud/start-here/working-with-enterprise",
+              "database/helix-cloud/start-here/using-the-dashboard",
               "database/helix-cloud/start-here/architecture"
             ]
           },

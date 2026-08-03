@@ -1,0 +1,135 @@
+---
+title: "Using the Dashboard"
+description: "Sign in, create a workspace and project, provision a database, and test the connection"
+sidebarTitle: "Using the Dashboard"
+pageType: "Tutorial"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="green" size="sm">Tutorial</Badge></div>
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Use the Helix Cloud dashboard to organize databases into workspaces and projects,
+choose a managed plan, and create API keys.
+
+<Steps>
+  <Step title="Sign in">
+    Open the [Helix Cloud dashboard](https://helix-db.com/login) and select
+    **GitHub Login**. When prompted, enter the one-time verification code from
+    the email sent by WorkOS.
+
+    <Frame>
+      <img src="/images/helix-cloud/dashboard/01-login.png" alt="Helix Cloud login page with the GitHub Login button" />
+    </Frame>
+  </Step>
+
+  <Step title="Create a workspace">
+    Enter a workspace name, select the region for future dedicated clusters,
+    and select **Create Workspace**.
+
+    <Frame>
+      <img src="/images/helix-cloud/dashboard/02-create-workspace.png" alt="Create a Workspace form with workspace name and region fields" />
+    </Frame>
+  </Step>
+
+  <Step title="Create a project">
+    Select **Create Project**, then give the project a name. Projects group the
+    databases and dedicated clusters for an application or environment.
+
+    <Frame>
+      <img src="/images/helix-cloud/dashboard/03-create-project.png" alt="Helix Cloud project list with the Create Project action" />
+    </Frame>
+  </Step>
+
+  <Step title="Start creating a database">
+    Open the project and select **Create Database**.
+
+    <Frame>
+      <img src="/images/helix-cloud/dashboard/04-project-databases.png" alt="Empty project with options to create a database or deploy a dedicated cluster" />
+    </Frame>
+  </Step>
+
+  <Step title="Choose a name and plan">
+    Keep **Database** selected, enter a database name, choose a monthly plan,
+    and select **Create Database**. The plan determines the included read and
+    write query allowance.
+
+    <Frame>
+      <img src="/images/helix-cloud/dashboard/05-create-database.png" alt="Create Database form with database name and monthly plan options" />
+    </Frame>
+  </Step>
+
+  <Step title="Copy the connection details">
+    Wait for the database status to become **Active**, then open it. In
+    **Connect**, copy the endpoint and database ID. In **API Keys**, create a key
+    or use an existing one and copy its value when it is shown.
+
+    <Frame>
+      <img src="/images/helix-cloud/dashboard/06-database-details.png" alt="Active database details page with endpoint, database ID, API keys, and query insights" />
+    </Frame>
+  </Step>
+</Steps>
+
+## Test the connection
+
+Set the three values copied from the database page, then send this read-only
+query. It counts `User` nodes, so it also succeeds on a new database with a count
+of `0`.
+
+```bash
+export HELIX_ENDPOINT="https://<cluster>.cluster.helix-db.com"
+export HELIX_DATABASE_ID="<database-id>"
+export HELIX_API_KEY="<api-key>"
+
+curl --fail-with-body --silent --show-error \
+  "$HELIX_ENDPOINT/v2/query" \
+  --header "Authorization: Bearer $HELIX_API_KEY" \
+  --header "x-helix-tenant-id: $HELIX_DATABASE_ID" \
+  --header "Content-Type: application/json" \
+  --data-binary @- <<'JSON'
+{
+  "request_type": "read",
+  "query_name": "connection_test",
+  "query": {
+    "read": {
+      "entries": [
+        {
+          "query": {
+            "name": "user_count",
+            "root": {
+              "count": {
+                "input": {
+                  "nodes_where": {
+                    "predicate": {
+                      "eq": {
+                        "left": { "property": "$label" },
+                        "right": { "constant": { "string": "User" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "returns": ["user_count"]
+    }
+  }
+}
+JSON
+```
+
+Keep API keys in a secrets manager or environment variable. Do not commit them
+to source control.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Helix Cloud overview" icon="cloud" href="/database/helix-cloud/start-here/working-with-enterprise">
+    Connect from an SDK and understand Cloud request routing.
+  </Card>
+  <Card title="Security" icon="lock" href="/database/helix-cloud/operate/security">
+    Review authentication, encryption, and API key handling.
+  </Card>
+</CardGroup>
