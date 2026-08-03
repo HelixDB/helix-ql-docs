@@ -1,0 +1,57 @@
+---
+title: "Deployment options"
+description: "Compare Cloud, local server, and embedded execution"
+sidebarTitle: "Deployment options"
+pageType: "Concept"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="purple" size="sm">Concept</Badge></div>
+
+All deployment options use the same queries and SDK tooling. Choose based on deployment, storage, and operational ownership.
+
+| Mode | Best for | Interface | Storage | Availability |
+| --- | --- | --- | --- | --- |
+| HelixDB Cloud | Production services and managed operations | HTTPS | Managed object storage | Highly available |
+| Local server | Development and production-shaped testing | HTTP | Memory or S3-compatible storage | Single node |
+| Embedded | In-process applications and local tools | Native SDK call | Memory, disk, or object storage | In process |
+
+## HelixDB Cloud
+
+HelixDB Cloud runs a highly available, multi-tenant cluster to provide performant and cost-effective querying at scale. Use it when
+you want managed deployment, storage, database authentication, and high availability.
+
+HelixDB Cloud supports multi-tenant and single-tenant deployments. BYOC is coming soon.
+
+## Self hosting HelixDB
+
+Self hosting allows you to run the database on your own infrastructure.
+You can use the local server mode to test your application code before deploying to production.
+
+The local container exposes the same `POST /v2/query` interface as Cloud. It is the
+default development target because application code does not change when you deploy.
+
+## HelixDB Embedded
+
+Embedded clients open the engine in-process and avoid HTTP.
+You can use the embedded mode to test your application code before deploying to production.
+
+## Our recommendation
+
+- Start with the local server when building a networked application.
+- Use Cloud when you need managed production operation.
+- Use embedded when process-local execution materially simplifies your architecture
+  and the target SDK's native packaging fits your distribution model.
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Local development" icon="computer" href="/database/helix-db/start-here/local-development/local-server">
+    Run the server locally with memory or persistent storage.
+  </Card>
+  <Card title="Helix Cloud" icon="cloud" href="/database/helix-cloud/start-here/working-with-enterprise">
+    Connect applications to a managed cluster.
+  </Card>
+  <Card title="Embedded" icon="microchip" href="/database/helix-db/start-here/local-development/embedded-database">
+    Open a writer or reader and review current SDK availability.
+  </Card>
+</CardGroup>

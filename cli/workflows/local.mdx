@@ -2,11 +2,14 @@
 title: "Local Development"
 description: "Run a local v2 instance and iterate on dynamic JSON queries"
 icon: "computer"
+pageType: "Guide"
 ---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Local development runs the prebuilt `ghcr.io/helixdb/enterprise-dev:latest` container and exposes the gateway at `POST /v1/query`. By default, storage is in-memory. Use `--disk` when you want persistent local data backed by a CLI-managed MinIO volume.
+Local development runs the prebuilt `ghcr.io/helixdb/helixdb:v0.0.3` container and exposes the standalone server at `POST /v2/query`. By default, storage is in-memory. Use `--disk` when you want persistent local data backed by a CLI-managed MinIO volume.
 
 ## Prerequisites
 
@@ -39,7 +42,7 @@ Use the manual flow below when you want to scaffold and run each step yourself.
     helix start dev
     ```
 
-    Starts a background container named `helix-my-helix-app-dev` on port `6969`. The CLI waits until the gateway accepts `POST /v1/query` before returning.
+    Starts a background container named `helix-my-helix-app-dev` on port `6969`. The CLI waits until the gateway accepts `POST /v2/query` before returning.
 
     For attached log streaming use `helix start dev --foreground` and stop with Ctrl-C.
 
@@ -51,7 +54,9 @@ Use the manual flow below when you want to scaffold and run each step yourself.
     helix query dev --file examples/request.json
     ```
 
-    The example counts `User` nodes. Try `--compact` to print on one line, or `--warm` to populate caches without printing a response.
+    The example counts `User` nodes. Try `--compact` to print on one line, or
+    `--warm` to populate the standalone process caches while returning the normal
+    response.
   </Step>
 </Steps>
 
@@ -134,10 +139,11 @@ A request JSON file must contain:
 - `request_type`: lowercase `"read"` or `"write"`.
 - `query_name` (optional): top-level operational name for logs and query diagnostics. Missing or
   `null` falls back to `__dynamic__`.
-- `query`: the query object — `queries[]` entries such as `{"Query": {"name": "...", "steps": [...], "condition": null}}`, plus a `returns[]` list.
-- `parameters` (optional): named parameter values.
+- `query`: exactly one `read` or `write` batch with `entries[]` and `returns[]`.
+- `parameters` and `parameter_types` (optional): named values and their declared types.
 
-The first step must be a source step (for example `NWhere`) before any terminal step like `Count`. See [`helix query`](/cli/command-reference/query) for the validation rules.
+Each entry contains one nested operation-tree `root`; source operations appear at the
+innermost input. See [`helix query`](/cli/command-reference/query) for the request shape.
 
 ## What next?
 

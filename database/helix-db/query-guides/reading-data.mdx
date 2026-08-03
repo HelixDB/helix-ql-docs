@@ -1,0 +1,201 @@
+---
+title: "Reading data"
+description: "Start a traversal from IDs, labels, properties, or previous query results"
+pageType: "Guide"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
+
+Every traversal starts from a source. Choose the narrowest source that matches the
+data you already know.
+
+## Source choices
+
+| Intent | Builder |
+| --- | --- |
+| One or more node IDs | `n(NodeRef…)` |
+| Nodes with a label | `nWithLabel` / `n_with_label` |
+| Nodes matching a source predicate | `nWhere` / `n_where` |
+| One or more edge IDs | `e(EdgeRef…)` |
+| Edges with a label | `eWithLabel` / `e_with_label` |
+| Earlier named entry | `NodeRef.var(...)` / `NodeVar(...)` |
+
+Source predicates are eligible for index push-down. General `.where(...)` filters the
+current stream after its source.
+
+## Read active users
+
+<CodeGroup>
+
+```rust Rust
+read_batch()
+    .var_as(
+        "users",
+        g()
+            .n_with_label("User")
+            .where_(Predicate::eq("status", "active"))
+            .limit(25)
+            .value_map(Some(vec!["$id", "name"])),
+    )
+    .returning(["users"]);
+```
+
+```ts TypeScript
+readBatch()
+  .varAs(
+    "users",
+    g()
+      .nWithLabel("User")
+      .where(Predicate.eq("status", "active"))
+      .limit(25)
+      .valueMap(["$id", "name"]),
+  )
+  .returning(["users"]);
+```
+
+```go Go
+helix.ReadQuery("active_users").
+	VarAs(
+		"users",
+		helix.G().
+			NWithLabel("User").
+			Where(helix.PredEq("status", "active")).
+			Limit(25).
+			ValueMap("$id", "name"),
+	).
+	Returning("users")
+```
+
+```python Python
+(
+    read_batch()
+    .var_as(
+        "users",
+        g()
+        .n_with_label("User")
+        .where(Predicate.eq("status", "active"))
+        .limit(25)
+        .value_map(["$id", "name"]),
+    )
+    .returning(["users"])
+)
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query_name": "active_users",
+  "query": {
+    "read": {
+      "entries": [{
+        "query": {
+          "name": "users",
+          "root": {
+            "value_map": {
+              "input": {
+                "limit": {
+                  "input": {
+                    "where": {
+                      "input": {
+                        "nodes_where": {
+                          "predicate": {
+                            "eq": {
+                              "left": { "property": "$label" },
+                              "right": { "constant": { "string": "User" } }
+                            }
+                          }
+                        }
+                      },
+                      "predicate": {
+                        "eq": {
+                          "left": { "property": "status" },
+                          "right": { "constant": { "string": "active" } }
+                        }
+                      }
+                    }
+                  },
+                  "count": { "literal": 25 }
+                }
+              },
+              "properties": ["$id", "name"]
+            }
+          }
+        }
+      }],
+      "returns": ["users"]
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+## Read by indexed property
+
+Use a source predicate when the property has a compatible index:
+
+<CodeGroup>
+
+```rust Rust
+g().n_where(SourcePredicate::eq("email", "alice@example.com"))
+```
+
+```ts TypeScript
+g().nWhere(SourcePredicate.eq("email", "alice@example.com"))
+```
+
+```go Go
+helix.G().NWhere(helix.SourceEq("email", "alice@example.com"))
+```
+
+```python Python
+g().n_where(SourcePredicate.eq("email", "alice@example.com"))
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query_name": "user_by_email",
+  "query": {
+    "read": {
+      "entries": [{
+        "query": {
+          "name": "user",
+          "root": {
+            "nodes_where": {
+              "predicate": {
+                "eq": {
+                  "left": { "property": "email" },
+                  "right": {
+                    "constant": { "string": "alice@example.com" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }],
+      "returns": ["user"]
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+## Read an earlier result
+
+Use `NodeRef.var("user")` (or the equivalent SDK reference) as the source of a later
+entry. Named references are transaction-local; they do not create stored variables or
+routes.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Traverse relationships" icon="route" href="/database/helix-db/query-guides/traversals">
+    Follow outgoing and incoming edges.
+  </Card>
+  <Card title="Filter and order" icon="filter" href="/database/helix-db/query-guides/filtering">
+    Narrow and page the current stream.
+  </Card>
+</CardGroup>

@@ -131,61 +131,76 @@
         "tab": "HelixDB",
         "groups": [
           {
-            "group": "Getting Started",
+            "group": "Start Here",
             "pages": [
-              "database/introduction",
-              "database/local-development",
+              "database/helix-db/start-here/introduction",
+              "database/helix-db/start-here/quickstart",
+              "database/helix-db/start-here/run-modes",
+              {
+                "group": "LOCAL DEVELOPMENT",
+                "pages": [
+                  "database/helix-db/start-here/local-development/local-server",
+                  "database/helix-db/start-here/local-development/embedded-database"
+                ]
+              },
               {
                 "group": "SDK SETUP",
                 "pages": [
-                  "database/rust-project-setup",
-                  "database/typescript-project-setup",
-                  "database/go-project-setup",
-                  "database/python-project-setup"
+                  "database/helix-db/start-here/sdk-setup/rust-project-setup",
+                  "database/helix-db/start-here/sdk-setup/typescript-project-setup",
+                  "database/helix-db/start-here/sdk-setup/go-project-setup",
+                  "database/helix-db/start-here/sdk-setup/python-project-setup"
                 ]
               },
-              "database/roadmap",
-              "database/release-notes"
-            ]
-          },
-       
-          {
-            "group": "Concepts & Examples",
-            "pages": [
-              "database/data-model",
-              "database/querying",
-              {
-                "group": "QUERYING GUIDE",
-                "pages": [
-                  "database/querying-guide/overview",
-                  "database/querying-guide/reading-nodes",
-                  "database/querying-guide/traversals",
-                  "database/querying-guide/filtering",
-                  "database/querying-guide/projections",
-                  "database/querying-guide/mutations",
-                  "database/querying-guide/search",
-                  "database/querying-guide/advanced",
-                  "database/querying-guide/parameters-bundles"
-                ]
-              },
-              "database/indexing/secondary",
-              "database/indexing/vector",
-              "database/indexing/text",
-              "database/multi-tenancy"
+              "database/helix-db/start-here/roadmap",
+              "database/helix-db/start-here/release-notes"
             ]
           },
           {
-            "group": "Platform",
+            "group": "Core Concepts",
             "pages": [
-              "database/working-with-enterprise",
-              "database/architecture",
-              "database/guarantees",
-              "database/security",
-              "database/tradeoffs",
-              "database/limits"
+              "database/helix-db/core-concepts/data-model",
+              "database/helix-db/core-concepts/overview"
+            ]
+          },
+          {
+            "group": "Query Guides",
+            "pages": [
+              "database/helix-db/query-guides/writing-data",
+              "database/helix-db/query-guides/reading-data",
+              "database/helix-db/query-guides/secondary-indexes",
+              "database/helix-db/query-guides/vector-indexes",
+              "database/helix-db/query-guides/text-indexes",
+              "database/helix-db/query-guides/traversals",
+              "database/helix-db/query-guides/filtering",
+              "database/helix-db/query-guides/projections",
+              "database/helix-db/query-guides/advanced",
+              "database/helix-db/query-guides/parameters"
             ]
           }
-          
+        ]
+      },
+      {
+        "tab": "Helix Cloud",
+        "groups": [
+          {
+            "group": "Start Here",
+            "pages": [
+              "database/helix-cloud/start-here/working-with-enterprise",
+              "database/helix-cloud/start-here/architecture"
+            ]
+          },
+          {
+            "group": "Operate",
+            "pages": [
+              "database/helix-cloud/operate/multi-tenancy",
+              "database/helix-cloud/operate/guarantees",
+              "database/helix-cloud/operate/security",
+              "database/helix-cloud/operate/tradeoffs",
+              "database/helix-cloud/operate/limits",
+              "database/helix-cloud/operate/troubleshooting"
+            ]
+          }
         ]
       },
       {
@@ -230,7 +245,6 @@
           }
         ]
       }
-
     ]
   },
   "logo": {
@@ -238,6 +252,204 @@
     "dark": "/logo/dark.svg",
     "href": "https://www.helix-db.com"
   },
+  "redirects": [
+    {
+      "source": "/database/querying-guide/parameters-bundles",
+      "destination": "/database/helix-db/query-guides/parameters"
+    },
+    {
+      "source": "/database/indexing/restricted-vector",
+      "destination": "/database/helix-db/query-guides/filtering#vector-prefiltering"
+    },
+    {
+      "source": "/database/introduction",
+      "destination": "/database/helix-db/start-here/introduction"
+    },
+    {
+      "source": "/database/quickstart",
+      "destination": "/database/helix-db/start-here/quickstart"
+    },
+    {
+      "source": "/database/run-modes",
+      "destination": "/database/helix-db/start-here/run-modes"
+    },
+    {
+      "source": "/database/local-development",
+      "destination": "/database/helix-db/start-here/local-development/local-server"
+    },
+    {
+      "source": "/database/helix-db/start-here/local-development",
+      "destination": "/database/helix-db/start-here/local-development/local-server"
+    },
+    {
+      "source": "/database/rust-project-setup",
+      "destination": "/database/helix-db/start-here/sdk-setup/rust-project-setup"
+    },
+    {
+      "source": "/database/typescript-project-setup",
+      "destination": "/database/helix-db/start-here/sdk-setup/typescript-project-setup"
+    },
+    {
+      "source": "/database/go-project-setup",
+      "destination": "/database/helix-db/start-here/sdk-setup/go-project-setup"
+    },
+    {
+      "source": "/database/python-project-setup",
+      "destination": "/database/helix-db/start-here/sdk-setup/python-project-setup"
+    },
+    {
+      "source": "/database/roadmap",
+      "destination": "/database/helix-db/start-here/roadmap"
+    },
+    {
+      "source": "/database/release-notes",
+      "destination": "/database/helix-db/start-here/release-notes"
+    },
+    {
+      "source": "/database/data-model",
+      "destination": "/database/helix-db/core-concepts/data-model"
+    },
+    {
+      "source": "/database/querying",
+      "destination": "/database/helix-db/core-concepts/overview"
+    },
+    {
+      "source": "/database/helix-db/core-concepts/querying",
+      "destination": "/database/helix-db/core-concepts/overview"
+    },
+    {
+      "source": "/database/querying-guide/overview",
+      "destination": "/database/helix-db/core-concepts/overview"
+    },
+    {
+      "source": "/database/querying-guide/reading-nodes",
+      "destination": "/database/helix-db/query-guides/reading-data"
+    },
+    {
+      "source": "/database/helix-db/query-guides/reading-nodes",
+      "destination": "/database/helix-db/query-guides/reading-data"
+    },
+    {
+      "source": "/database/helix-db/query-guides/read-data",
+      "destination": "/database/helix-db/query-guides/reading-data"
+    },
+    {
+      "source": "/database/querying-guide/traversals",
+      "destination": "/database/helix-db/query-guides/traversals"
+    },
+    {
+      "source": "/database/querying-guide/filtering",
+      "destination": "/database/helix-db/query-guides/filtering"
+    },
+    {
+      "source": "/database/querying-guide/projections",
+      "destination": "/database/helix-db/query-guides/projections"
+    },
+    {
+      "source": "/database/querying-guide/mutations",
+      "destination": "/database/helix-db/query-guides/writing-data"
+    },
+    {
+      "source": "/database/helix-db/query-guides/mutations",
+      "destination": "/database/helix-db/query-guides/writing-data"
+    },
+    {
+      "source": "/database/querying-guide/search",
+      "destination": "/database/helix-db/query-guides/vector-indexes"
+    },
+    {
+      "source": "/database/helix-db/query-guides/search",
+      "destination": "/database/helix-db/query-guides/vector-indexes"
+    },
+    {
+      "source": "/database/querying-guide/advanced",
+      "destination": "/database/helix-db/query-guides/advanced"
+    },
+    {
+      "source": "/database/querying-guide/parameters",
+      "destination": "/database/helix-db/query-guides/parameters"
+    },
+    {
+      "source": "/database/indexing/secondary",
+      "destination": "/database/helix-db/query-guides/secondary-indexes"
+    },
+    {
+      "source": "/database/helix-db/indexes-and-search/secondary",
+      "destination": "/database/helix-db/query-guides/secondary-indexes"
+    },
+    {
+      "source": "/database/indexing/vector",
+      "destination": "/database/helix-db/query-guides/vector-indexes"
+    },
+    {
+      "source": "/database/helix-db/indexes-and-search/vector",
+      "destination": "/database/helix-db/query-guides/vector-indexes"
+    },
+    {
+      "source": "/database/indexing/text",
+      "destination": "/database/helix-db/query-guides/text-indexes"
+    },
+    {
+      "source": "/database/helix-db/indexes-and-search/text",
+      "destination": "/database/helix-db/query-guides/text-indexes"
+    },
+    {
+      "source": "/database/indexing/vector-prefiltering",
+      "destination": "/database/helix-db/query-guides/filtering#vector-prefiltering"
+    },
+    {
+      "source": "/database/helix-db/indexes-and-search/vector-prefiltering",
+      "destination": "/database/helix-db/query-guides/filtering#vector-prefiltering"
+    },
+    {
+      "source": "/database/indexing/backfills",
+      "destination": "/database/helix-cloud/operate/troubleshooting#index-operation-is-blocked"
+    },
+    {
+      "source": "/database/helix-db/indexes-and-search/backfills",
+      "destination": "/database/helix-cloud/operate/troubleshooting#index-operation-is-blocked"
+    },
+    {
+      "source": "/database/embedded",
+      "destination": "/database/helix-db/start-here/local-development/embedded-database"
+    },
+    {
+      "source": "/database/helix-db/embedded-and-analytics/embedded",
+      "destination": "/database/helix-db/start-here/local-development/embedded-database"
+    },
+    {
+      "source": "/database/working-with-enterprise",
+      "destination": "/database/helix-cloud/start-here/working-with-enterprise"
+    },
+    {
+      "source": "/database/architecture",
+      "destination": "/database/helix-cloud/start-here/architecture"
+    },
+    {
+      "source": "/database/multi-tenancy",
+      "destination": "/database/helix-cloud/operate/multi-tenancy"
+    },
+    {
+      "source": "/database/guarantees",
+      "destination": "/database/helix-cloud/operate/guarantees"
+    },
+    {
+      "source": "/database/security",
+      "destination": "/database/helix-cloud/operate/security"
+    },
+    {
+      "source": "/database/tradeoffs",
+      "destination": "/database/helix-cloud/operate/tradeoffs"
+    },
+    {
+      "source": "/database/limits",
+      "destination": "/database/helix-cloud/operate/limits"
+    },
+    {
+      "source": "/database/troubleshooting",
+      "destination": "/database/helix-cloud/operate/troubleshooting"
+    }
+  ],
   "search": {
     "prompt": "Search HelixDB Docs"
   },

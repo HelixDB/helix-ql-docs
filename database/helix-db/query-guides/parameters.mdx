@@ -1,0 +1,193 @@
+---
+title: "Bind typed query parameters"
+description: "Keep the operation tree stable while request values change"
+sidebarTitle: "Parameters"
+pageType: "Guide"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
+
+Parameters separate request-specific values from the operation tree. A request carries
+both `parameters` and `parameter_types`, allowing the runtime to validate values before
+execution and reuse a stable query shape.
+
+## Define and bind parameters
+
+<CodeGroup>
+
+```rust Rust
+use helix_db::dsl::prelude::*;
+
+#[query]
+fn find_users(tenant_id: String, limit: i64) -> ReadBatch {
+    read_batch()
+        .var_as(
+            "users",
+            g()
+                .n_with_label("User")
+                .where_(Predicate::eq("tenantId", tenant_id))
+                .limit(limit)
+                .value_map(Some(vec!["$id", "name", "tenantId"])),
+        )
+        .returning(["users"])
+}
+
+let request = find_users("acme".to_string(), 25);
+```
+
+```ts TypeScript
+const params = defineParams({
+  tenant_id: param.string(),
+  limit: param.i64(),
+});
+
+const query = readBatch()
+  .varAs(
+      "users",
+      g()
+      .nWithLabel("User")
+      .where(Predicate.eq("tenantId", params.tenant_id))
+      .limit(params.limit)
+      .valueMap(["$id", "name", "tenantId"]),
+  )
+  .returning(["users"]);
+
+const request = query.toQueryRequest(
+  params,
+  { tenant_id: "acme", limit: 25n },
+  { queryName: "find_users" },
+);
+```
+
+```go Go
+q := helix.ReadQuery("find_users")
+tenant := q.ParamString("tenant_id", "acme")
+limit := q.ParamI64("limit", 25)
+
+request := q.
+	VarAs(
+		"users",
+		helix.G().
+			NWithLabel("User").
+			Where(helix.PredEq("tenantId", tenant)).
+			Limit(limit).
+			ValueMap("$id", "name", "tenantId"),
+	).
+	Returning("users")
+```
+
+```python Python
+params = define_params({
+    "tenant_id": param.string(),
+    "limit": param.i64(),
+})
+
+query = (
+    read_batch()
+    .var_as(
+        "users",
+        g()
+        .n_with_label("User")
+        .where(Predicate.eq("tenantId", params.tenant_id))
+        .limit(params.limit)
+        .value_map(["$id", "name", "tenantId"]),
+    )
+    .returning(["users"])
+)
+
+request = query.to_query_request(
+    params,
+    {"tenant_id": "acme", "limit": 25},
+    query_name="find_users",
+)
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query_name": "find_users",
+  "query": {
+    "read": {
+      "entries": [{
+        "query": {
+          "name": "users",
+          "root": {
+            "value_map": {
+              "input": {
+                "limit": {
+                  "input": {
+                    "where": {
+                      "input": {
+                        "nodes_where": {
+                          "predicate": {
+                            "eq": {
+                              "left": { "property": "$label" },
+                              "right": { "constant": { "string": "User" } }
+                            }
+                          }
+                        }
+                      },
+                      "predicate": {
+                        "eq": {
+                          "left": { "property": "tenantId" },
+                          "right": { "param": "tenant_id" }
+                        }
+                      }
+                    }
+                  },
+                  "count": { "expr": { "param": "limit" } }
+                }
+              },
+              "properties": ["$id", "name", "tenantId"]
+            }
+          }
+        }
+      }],
+      "returns": ["users"]
+    }
+  },
+  "parameters": {
+    "tenant_id": "acme",
+    "limit": 25
+  },
+  "parameter_types": {
+    "tenant_id": "string",
+    "limit": "i64"
+  }
+}
+```
+
+</CodeGroup>
+
+## Supported parameter families
+
+- `bool`
+- `i64`, `f64`, and `f32`
+- `string`
+- `date_time`
+- `bytes`
+- generic property `value`
+- typed objects and arrays
+
+JSON cannot represent a bytes parameter directly; use an SDK's byte request encoder.
+
+## Query names
+
+`query_name` is optional diagnostic metadata. It does not create a stored endpoint.
+Unnamed requests serialize it as `null`.
+
+<Warning>
+Current SDKs do not support stored routes, query registration, or query bundles. Build
+the request at runtime and send it to `POST /v2/query`.
+</Warning>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Writing data" icon="pen" href="/database/helix-db/query-guides/writing-data">
+    Pass runtime values into create, update, and delete operations.
+  </Card>
+  <Card title="Reading data" icon="database" href="/database/helix-db/query-guides/reading-data">
+    Apply parameters to indexed sources and filters.
+  </Card>
+</CardGroup>

@@ -4,7 +4,10 @@ description: "Solutions to common issues and error messages in Helix CLI v2"
 sidebarTitle: "Troubleshooting"
 icon: "wrench"
 mode: "wide"
+pageType: "Troubleshooting"
 ---
+
+<div className="flex flex-wrap gap-2"><Badge color="orange" size="sm">Troubleshooting</Badge></div>
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
@@ -156,7 +159,7 @@ local Helix did not become ready in time
 hint: check logs with 'helix logs' or verify port 6969 is reachable
 ```
 
-The `enterprise-dev` container started but did not accept `POST /v1/query` within ~30 seconds. Tail the container with `helix logs <instance> --follow` to investigate.
+The `helixdb` container started but did not accept `POST /v2/query` within ~30 seconds. Tail the container with `helix logs <instance> --follow` to investigate.
 
 ## Authentication issues
 
@@ -196,7 +199,8 @@ export HELIX_API_KEY="..."
 
 ### `--warm is only valid for read requests`
 
-`helix query --warm` is rejected for write requests. Remove `--warm` or change `request_type` to `"read"`.
+`helix query --warm` is rejected for write requests before any backend executes.
+Remove `--warm` or change `request_type` to `"read"`.
 
 ### `request_type must be lowercase 'read' or 'write'`
 

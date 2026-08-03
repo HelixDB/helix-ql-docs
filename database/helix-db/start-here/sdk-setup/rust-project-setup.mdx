@@ -1,0 +1,104 @@
+---
+title: "Rust SDK"
+description: "Build typed HelixDB queries and execute them over HTTP or an embedded engine"
+sidebarTitle: "Rust"
+icon: "rust"
+pageType: "Guide"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
+
+The forthcoming v3 `helix-db` crate provides the query DSL, request types, async
+HTTP client, native graph helpers, and a feature-gated embedded client.
+
+<Note>
+The v3 SDK packages have not been published yet. The package names and installation
+commands on this page describe the upcoming v3 release.
+</Note>
+
+## Install
+
+```toml Cargo.toml
+[dependencies]
+helix-db = "3.0.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+## Define a query
+
+```rust
+use helix_db::dsl::prelude::*;
+
+#[query]
+fn find_users(tenant_id: String, limit: i64) -> ReadBatch {
+    read_batch()
+        .var_as(
+            "users",
+            g()
+                .n_with_label("User")
+                .where_(Predicate::eq("tenantId", tenant_id))
+                .limit(limit)
+                .value_map(Some(vec!["$id", "name", "tenantId"])),
+        )
+        .returning(["users"])
+}
+```
+
+`#[query]` converts typed arguments into request parameters and sets `query_name` to
+the function name.
+
+## Execute
+
+```rust
+use helix_db::Client;
+
+let client = Client::new(Some("http://localhost:6969"))?;
+let request = find_users("acme".to_string(), 25);
+let response: serde_json::Value = client.query(request).send().await?;
+```
+
+Use `.with_api_key(Some("hx_..."))` for Helix Cloud. Request-builder options can
+require the writer, require a warm read, or control durability waiting.
+
+## Build without the macro
+
+```rust
+let request = QueryRequest::read(
+    read_batch()
+        .var_as("count", g().n_with_label("User").count())
+        .returning(["count"]),
+)
+.with_query_name("count_users");
+```
+
+## Embedded runtime
+
+Enable the `embedded` feature:
+
+```bash
+cargo add helix-db@3.0.0 --features embedded
+```
+
+See [Embedded database](/database/helix-db/start-here/local-development/embedded-database)
+for storage, cache, and handle configuration.
+
+## Verify
+
+Rust SDK documentation examples are doctests:
+
+```bash
+cargo test --manifest-path sdks/rust/Cargo.toml --doc
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Query tutorial" icon="route" href="/database/helix-db/core-concepts/overview">
+    Learn the batch and traversal model.
+  </Card>
+  <Card title="Reading data" icon="database" href="/database/helix-db/query-guides/reading-data">
+    Select data by ID, label, or indexed property.
+  </Card>
+</CardGroup>

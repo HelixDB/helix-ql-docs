@@ -3,6 +3,8 @@
     "dev": "mintlify dev",
     "generate-llms": "node scripts/generate-llms.mjs && node scripts/generate-llms-full.mjs",
     "check-llms": "node scripts/generate-llms.mjs --check && node scripts/generate-llms-full.mjs --check",
+    "check-docs": "node scripts/check-docs.mjs",
+    "check": "npm run check-docs && npm run check-llms",
     "add-llms-directive": "node scripts/add-llms-directive.mjs"
   },
   "dependencies": {

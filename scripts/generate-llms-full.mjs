@@ -10,7 +10,7 @@ const OUT = path.join(REPO_ROOT, 'llms-full.txt');
 
 const HEADER = `# HelixDB
 
-> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored with Helix SDK DSLs or dynamic JSON and invoked over HTTP. This file is the full markdown corpus for AI agents — Enterprise architecture, concepts, guarantees, and the complete CLI v2 reference.
+> HelixDB combines a property graph, approximate vector search, and BM25 full-text search behind one operation-tree query model. Requests run through Cloud, a local server, or the embedded runtime. This file is the full markdown corpus for AI agents.
 
 `;
 
@@ -37,35 +37,52 @@ function loadPage(slug) {
   const raw = fs.readFileSync(file, 'utf8');
 
   let title = slugToTitle(slug);
+  let pageType = null;
+  let status = null;
   let body = raw;
 
   const fmMatch = body.match(/^---\n([\s\S]*?)\n---\n?/);
   if (fmMatch) {
     const fm = fmMatch[1];
     const titleLine = fm.match(/^title:\s*["']?(.+?)["']?\s*$/m);
+    const pageTypeLine = fm.match(/^pageType:\s*["']?(.+?)["']?\s*$/m);
+    const statusLine = fm.match(/^status:\s*["']?(.+?)["']?\s*$/m);
     if (titleLine) title = titleLine[1];
+    if (pageTypeLine) pageType = pageTypeLine[1];
+    if (statusLine) status = statusLine[1];
     body = body.slice(fmMatch[0].length);
   }
 
-  body = body.replace(/^import\s+[^\n]*\n/gm, '');
+  body = body
+    .split(/(```[\s\S]*?```)/g)
+    .map((segment) => {
+      if (segment.startsWith('```')) return segment;
 
-  body = body.replace(
-    /^>\s*For the complete documentation index optimized for AI agents,\s*see \[llms\.txt\]\(\/llms\.txt\)\.\s*$/gm,
-    ''
-  );
+      let markdown = segment.replace(/^import\s+[^\n]*\n/gm, '');
+      markdown = markdown.replace(
+        /^\{\/\* (?:(?:client-setup|package-install): no JSON representation|single-sdk-examples: TypeScript) \*\/\}\s*$/gm,
+        '',
+      );
+      markdown = markdown.replace(
+        /^>\s*For the complete documentation index optimized for AI agents,\s*see \[llms\.txt\]\(\/llms\.txt\)\.\s*$/gm,
+        '',
+      );
 
-  // Strip self-closing JSX components: <ComponentName ... />
-  body = body.replace(/^<[A-Z][A-Za-z0-9]*\b[\s\S]*?\/>\s*$/gm, '');
-
-  // Strip paired JSX components on their own lines: <ComponentName ...>...</ComponentName>
-  body = body.replace(
-    /^<([A-Z][A-Za-z0-9]*)\b[^>]*>[\s\S]*?<\/\1>\s*$/gm,
-    ''
-  );
+      // Remove JSX presentation while retaining nested Markdown. Code fences
+      // are split out above so language imports and examples remain exact.
+      markdown = markdown.replace(/^<[A-Z][A-Za-z0-9]*\b[\s\S]*?\/>\s*$/gm, '');
+      markdown = markdown.replace(
+        /^<([A-Z][A-Za-z0-9]*)\b[^>]*>.*<\/\1>\s*$/gm,
+        '',
+      );
+      markdown = markdown.replace(/^<\/?[A-Z][A-Za-z0-9]*\b[^>]*>\s*$/gm, '');
+      return markdown;
+    })
+    .join('');
 
   body = body.replace(/\n{3,}/g, '\n\n').trim();
 
-  return { title, body };
+  return { title, pageType, status, body };
 }
 
 function build() {
@@ -90,7 +107,11 @@ function build() {
       }
       if (pages.length === 0) continue;
       for (const p of pages) {
-        parts.push(`# ${p.title}\n\n${p.body}\n`);
+        const metadata = [
+          `Page type: ${p.pageType ?? 'Unknown'}`,
+          p.status ? `Status: ${p.status}` : null,
+        ].filter(Boolean);
+        parts.push(`# ${p.title}\n\n${metadata.join('\n')}\n\n${p.body}\n`);
       }
     }
   }

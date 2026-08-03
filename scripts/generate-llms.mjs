@@ -11,7 +11,7 @@ const BASE_URL = 'https://docs.helix-db.com';
 
 const TITLE = '# HelixDB';
 const SUMMARY =
-  '> HelixDB Enterprise is an object-storage-backed graph database with integrated approximate vector search and BM25 full-text search. Queries are authored with Helix SDK DSLs or dynamic JSON and invoked over HTTP.';
+  '> HelixDB combines a property graph, approximate vector search, and BM25 full-text search behind one operation-tree query model. Requests run through Cloud, a local server, or the embedded runtime.';
 
 // Inline starter recipe so an agent's first fetch of llms.txt already contains
 // the install command and a runnable first write — without it, agents must
@@ -41,9 +41,13 @@ function readFrontmatter(slug) {
   const body = match[1];
   const titleLine = body.match(/^title:\s*["']?(.+?)["']?\s*$/m);
   const descLine = body.match(/^description:\s*["']?(.+?)["']?\s*$/m);
+  const pageTypeLine = body.match(/^pageType:\s*["']?(.+?)["']?\s*$/m);
+  const statusLine = body.match(/^status:\s*["']?(.+?)["']?\s*$/m);
   return {
     title: titleLine ? titleLine[1] : slugToTitle(slug),
     description: descLine ? descLine[1] : null,
+    pageType: pageTypeLine ? pageTypeLine[1] : null,
+    status: statusLine ? statusLine[1] : null,
   };
 }
 
@@ -76,7 +80,12 @@ function makeBullet(slug, missingSlugs) {
   }
   const url = `${BASE_URL}/${slug}`;
   const desc = fm.description ? `: ${fm.description}` : '';
-  return `- [${fm.title}](${url})${desc}`;
+  const metadata = [
+    fm.pageType ? `Page type: ${fm.pageType}` : null,
+    fm.status ? `Status: ${fm.status}` : null,
+  ].filter(Boolean);
+  const suffix = metadata.length > 0 ? ` — ${metadata.join('; ')}` : '';
+  return `- [${fm.title}](${url})${desc}${suffix}`;
 }
 
 function makeSection(name, slugs, missingSlugs) {

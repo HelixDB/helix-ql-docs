@@ -1,0 +1,176 @@
+---
+title: "Traverse relationships"
+description: "Follow edges, retain row-local bindings, and control duplicate paths"
+sidebarTitle: "Traversals"
+pageType: "Guide"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
+
+Traversal operations consume the current stream and produce the next stream.
+
+| Operation | Result |
+| --- | --- |
+| `out(label)` | Destination nodes of outgoing edges |
+| `in(label)` | Source nodes of incoming edges |
+| `both(label)` | Adjacent nodes in either direction |
+| `outE(label)` / `inE(label)` | The edges themselves |
+| `outN()` / `inN()` | Move from an edge to its endpoint |
+| `dedup()` | Remove duplicate results |
+
+## Follow a named result
+
+<CodeGroup>
+
+```rust Rust
+read_batch()
+    .var_as(
+        "user",
+        g().n_where(SourcePredicate::eq("username", "alice")),
+    )
+    .var_as(
+        "friends",
+        g()
+            .n(NodeRef::var("user"))
+            .out(Some("FOLLOWS"))
+            .dedup()
+            .limit(25)
+            .value_map(Some(vec!["$id", "username"])),
+    )
+    .returning(["friends"]);
+```
+
+```ts TypeScript
+readBatch()
+  .varAs("user", g().nWhere(SourcePredicate.eq("username", "alice")))
+  .varAs(
+    "friends",
+    g()
+      .n(NodeRef.var("user"))
+      .out("FOLLOWS")
+      .dedup()
+      .limit(25)
+      .valueMap(["$id", "username"]),
+  )
+  .returning(["friends"]);
+```
+
+```go Go
+helix.ReadQuery("friends").
+	VarAs("user", helix.G().NWhere(helix.SourceEq("username", "alice"))).
+	VarAs(
+		"friends",
+		helix.G().
+			N(helix.NodeVar("user")).
+			Out("FOLLOWS").
+			Dedup().
+			Limit(25).
+			ValueMap("$id", "username"),
+	).
+	Returning("friends")
+```
+
+```python Python
+(
+    read_batch()
+    .var_as("user", g().n_where(SourcePredicate.eq("username", "alice")))
+    .var_as(
+        "friends",
+        g()
+        .n(NodeRef.var("user"))
+        .out("FOLLOWS")
+        .dedup()
+        .limit(25)
+        .value_map(["$id", "username"]),
+    )
+    .returning(["friends"])
+)
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query_name": "friends",
+  "query": {
+    "read": {
+      "entries": [
+        {
+          "query": {
+            "name": "user",
+            "root": {
+              "nodes_where": {
+                "predicate": {
+                  "eq": {
+                    "left": { "property": "username" },
+                    "right": { "constant": { "string": "alice" } }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "query": {
+            "name": "friends",
+            "root": {
+              "value_map": {
+                "input": {
+                  "limit": {
+                    "input": {
+                      "dedup": {
+                        "input": {
+                          "out": {
+                            "input": {
+                              "nodes": {
+                                "reference": { "var": "user" }
+                              }
+                            },
+                            "label": "FOLLOWS"
+                          }
+                        }
+                      }
+                    },
+                    "count": { "literal": 25 }
+                  }
+                },
+                "properties": ["$id", "username"]
+              }
+            }
+          }
+        }
+      ],
+      "returns": ["friends"]
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+## Preserve correlated values
+
+Use `bind` when a result row must retain values from multiple points in one traversal:
+
+Bind the starting service as `service`, traverse `ROUTES_TO`, bind the result as
+`workload`, then project both bindings with `projectDistinctBindings` (or the
+language-equivalent builder). Bindings are row-local. Branches can bind optional
+values and coalesce them during projection without joining unrelated paths.
+
+## Avoid accidental path growth
+
+- Filter as close to the source as possible.
+- Use a label on relationship steps when the schema provides one.
+- Add `dedup()` when multiple paths can reach the same entity.
+- Bound recursive traversal with a maximum depth.
+- Project only the fields needed by the caller.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Project response rows" icon="table-columns" href="/database/helix-db/query-guides/projections">
+    Shape current values and named bindings.
+  </Card>
+  <Card title="Branch and repeat" icon="code-branch" href="/database/helix-db/query-guides/advanced">
+    Compose optional, union, choose, and repeat operations.
+  </Card>
+</CardGroup>

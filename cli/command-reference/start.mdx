@@ -1,11 +1,14 @@
 ---
 title: "helix start"
 sidebarTitle: "start"
+pageType: "Reference"
 ---
+
+<div className="flex flex-wrap gap-2"><Badge color="gray" size="sm">Reference</Badge></div>
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
-Start a local v2 instance. By default the container starts in the background and the CLI waits until the local gateway accepts `POST /v1/query` requests before returning.
+Start a local v2 instance. By default the container starts in the background and the CLI waits until the local gateway accepts `POST /v2/query` requests before returning.
 
 <Note>
 `helix run` is a backwards-compatible alias for `helix start`.
@@ -34,15 +37,15 @@ helix start [INSTANCE] [OPTIONS]
 
 ## Behavior
 
-- Pulls `ghcr.io/helixdb/enterprise-dev:latest` (or the image/tag set in `[local.<instance>]`).
+- Pulls `ghcr.io/helixdb/helixdb:v0.0.3` (or the image/tag set in `[local.<instance>]`).
 - Names the container `helix-<project>-<instance>` and publishes the configured port to container port `8080`.
 - Uses Docker or Podman based on `[project] container_runtime` in `helix.toml`.
-- Default storage is in-memory. Passing `--disk` starts a MinIO sidecar, creates the `helix-db` bucket, and runs `enterprise-dev` with S3-compatible storage environment variables.
-- Background mode (`-d`, `--restart unless-stopped`) waits up to ~30 seconds for `POST /v1/query` readiness and prints the URL and container name when ready.
+- Default storage is in-memory. Passing `--disk` starts a MinIO sidecar, creates the `helix-db` bucket, and runs `helixdb` with S3-compatible storage environment variables.
+- Background mode (`-d`, `--restart unless-stopped`) waits up to ~30 seconds for `POST /v2/query` readiness and prints the URL and container name when ready.
 - Foreground mode (`--rm`) streams the container's stdout/stderr until Ctrl-C, then removes the container.
 
 <Warning>
-The default `enterprise-dev` storage mode is in-memory. Stopping or restarting an in-memory instance wipes all local data.
+The default `helixdb` storage mode is in-memory. Stopping or restarting an in-memory instance wipes all local data.
 </Warning>
 
 With `--disk`, `helix stop` removes the Helix and MinIO containers but keeps the persistent local volume. `helix prune` removes that volume and deletes the persisted local data.

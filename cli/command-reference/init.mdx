@@ -1,7 +1,10 @@
 ---
 title: "helix init"
 sidebarTitle: "init"
+pageType: "Reference"
 ---
+
+<div className="flex flex-wrap gap-2"><Badge color="gray" size="sm">Reference</Badge></div>
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
@@ -65,22 +68,33 @@ Interactive local init prompts for the storage mode and defaults to in-memory.
 ```json
 {
   "request_type": "read",
+  "query_name": "node_count",
   "query": {
-    "queries": [
-      {
-        "Query": {
-          "name": "node_count",
-          "steps": [
-            { "NWhere": { "Eq": ["$label", { "String": "User" }] } },
-            "Count"
-          ],
-          "condition": null
+    "read": {
+      "entries": [
+        {
+          "query": {
+            "name": "node_count",
+            "root": {
+              "count": {
+                "input": {
+                  "nodes_where": {
+                    "predicate": {
+                      "eq": {
+                        "left": { "property": "$label" },
+                        "right": { "constant": { "string": "User" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
-      }
-    ],
-    "returns": ["node_count"]
-  },
-  "parameters": {}
+      ],
+      "returns": ["node_count"]
+    }
+  }
 }
 ```
 

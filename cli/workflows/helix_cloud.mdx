@@ -3,7 +3,10 @@ title: "Helix Cloud"
 description: "Authenticate, link a project, and query a Helix Cloud cluster from the CLI"
 sidebarTitle: "Helix Cloud"
 icon: "cloud"
+pageType: "Guide"
 ---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
@@ -75,7 +78,7 @@ The CLI handles authentication, workspace/project/cluster selection, metadata sy
     helix query production --file examples/request.json
     ```
 
-    `helix query` posts to `<gateway_url>/v1/query` with the header named by `query_auth_header` (default `Authorization`).
+    `helix query` posts to `<gateway_url>/v2/query` with the header named by `query_auth_header` (default `Authorization`).
   </Step>
 
   <Step title="Pull historical logs">

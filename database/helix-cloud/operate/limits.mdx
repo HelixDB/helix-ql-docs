@@ -1,0 +1,79 @@
+---
+title: 'Limits'
+pageType: "Reference"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="gray" size="sm">Reference</Badge></div>
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+Current constraints and practical limits. These reflect the current implementation, not
+fundamental architectural boundaries.
+
+## Data Model
+
+| Limit                  | Value                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| Node and edge ID range | 64-bit unsigned integer (max 2^64 - 1); JSON responses encode lifecycle identifiers as decimal strings |
+| Property value types   | boolean, integer, float, string, bytes, typed primitive arrays, generic arrays, and objects    |
+| Nested structures      | Stored object/array values are supported. Dotted-path lookup such as `metadata.externalID` works in scan-time filters, expressions, projections, `values`, filtered `valueMap`, and fallback ordering. Arrays are opaque; there is no array-index path syntax. |
+| Reserved property keys | `$label` (used for label-based filtering and label-scoped secondary, vector, and text indexes) |
+
+## Vector Indexes
+
+| Limit                    | Value                                                                                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope                    | Node and edge properties                                                                                                                 |
+| Supported property types | Numeric array properties (`float32[]`, `float64[]`, `int64[]`) normalized to `float32` for indexing                                      |
+| Tenant partitioning      | Optional by configured tenant property name. Tenant-scoped searches require a tenant value. Unknown tenant partitions return no results. |
+| Dimension matching       | Vectors must exactly match the configured index dimension                                                                                |
+| Distance metrics         | cosine, euclidean, manhattan                                                                                                             |
+| Search type              | Approximate nearest neighbor (ANN)                                                                                                       |
+| Restricted search        | Final membership is the exact current traversal stream; ranking may still use approximate index structures                              |
+
+## Text Indexes
+
+| Limit                    | Value                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope                    | Node and edge properties                                                                                                                                      |
+| Supported property types | Top-level `String` and `StringArray` properties. Nested object fields are not flattened for BM25.                                                            |
+| Unsupported values       | `null` and non-string values are rejected                                                                                                                     |
+| Analyzer config          | Preset analyzers: `standard`, `standard_stem_en`, `whitespace_lowercase`                                                                                      |
+| Term positions           | Optional                                                                                                                                                      |
+| Tenant partitioning      | Optional. Tenant-partitioned text indexes currently require the partition property name to be `tenant_id`, and tenant-scoped searches require a tenant value. |
+
+## Secondary Indexes
+
+| Limit            | Value                                                                                                      |
+| ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| Equality indexes | Supported on top-level node and edge properties. Nested dotted paths are scan-only in V1.                    |
+| Range indexes    | Supported on top-level numeric and string properties. Nested dotted paths are scan-only in V1.               |
+| Encoding         | Range indexes use lexicographic string encoding. Values must be encoded consistently for correct ordering. |
+
+## Queries
+
+| Limit             | Value                                |
+| ----------------- | ------------------------------------ |
+| Query model       | Dynamic queries                      |
+| Query language    | SDK DSLs or dynamic JSON AST         |
+| Transaction scope | One transaction per query invocation |
+| Request envelope   | One `read` or `write` operation-tree batch with named entries and explicit returns |
+
+## Index lifecycle
+
+| Limit | Value |
+| --- | --- |
+| Activation | Asynchronous and atomic after scan, catch-up, and validation |
+| Progress | Monotonic entity/byte/operation counters; no percentage or total-work estimate |
+| Controls | Poll all operations; retry blocked operations; abort eligible constructing builds |
+| Memory reporting | Cache and batch budgets do not constitute a hard process-RSS cap |
+
+## Embedded runtime
+
+| Limit | Value |
+| --- | --- |
+| Storage sources | In-memory, local disk, and S3-compatible object storage |
+| Handle modes | Writer or read-only |
+| Server options | Gateway headers and routing options are rejected |
+| Packaging | Install the SDK and its embedded runtime package |
+| Cache configuration | Fixed when the handle opens |

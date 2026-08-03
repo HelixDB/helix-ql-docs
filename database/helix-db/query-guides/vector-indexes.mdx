@@ -1,0 +1,144 @@
+---
+title: "Vector indexes"
+description: "Create dimensioned vector indexes and run nearest-neighbor search"
+pageType: "Guide"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
+
+Vector indexes rank node or edge embeddings by distance. Every definition requires a
+non-zero dimension and a distance metric.
+
+## Supported metrics
+
+- Cosine
+- Euclidean
+- Manhattan
+
+The indexed value and every query vector must have exactly the declared dimension.
+
+## Create a vector index
+
+<CodeGroup>
+
+```rust Rust
+write_batch()
+    .var_as(
+        "index",
+        g().create_vector_index_nodes(
+            "Doc",
+            "embedding",
+            std::num::NonZeroUsize::new(3).expect("non-zero dimension"),
+            VectorDistanceMetric::Cosine,
+            None::<&str>,
+        ),
+    )
+    .returning(["index"]);
+```
+
+```ts TypeScript
+writeBatch()
+  .varAs(
+    "index",
+    g().createVectorIndexNodes(
+      "Doc",
+      "embedding",
+      3,
+      VectorDistanceMetric.Cosine,
+      null,
+    ),
+  )
+  .returning(["index"]);
+```
+
+```go Go
+helix.WriteQuery("create_doc_vector_index").
+	VarAs(
+		"index",
+		helix.G().CreateVectorIndexNodes(
+			"Doc",
+			"embedding",
+			3,
+			helix.VectorDistanceCosine,
+		),
+	).
+	Returning("index")
+```
+
+```python Python
+(
+    write_batch()
+    .var_as(
+        "index",
+        g().create_vector_index_nodes(
+            "Doc",
+            "embedding",
+            3,
+            VectorDistanceMetric.COSINE,
+        ),
+    )
+    .returning(["index"])
+)
+```
+
+```json JSON
+{
+  "request_type": "write",
+  "query_name": "create_doc_vector_index",
+  "query": {
+    "write": {
+      "entries": [{
+        "query": {
+          "name": "index",
+          "root": {
+            "create_index": {
+              "spec": {
+                "node_vector": {
+                  "label": "Doc",
+                  "property": "embedding",
+                  "dimension": 3,
+                  "metric": "cosine"
+                }
+              },
+              "if_not_exists": true
+            }
+          }
+        }
+      }],
+      "returns": ["index"]
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+Pass a tenant property as the final argument to partition the index.
+
+## Search
+
+Start with the SDK's vector-search operation for label `Doc`, property `embedding`,
+a query vector, and a result limit of `10`. `$distance` is available on the hit
+stream; project it before traversing away from the hit if it must remain in the
+response.
+
+## Operational notes
+
+- Creation returns before the backfill necessarily finishes.
+- Malformed source vectors can block the operation.
+- A new generation remains hidden until validation and activation succeed.
+- Dropping an index is also a durable lifecycle operation.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Project search results" icon="table-columns" href="/database/helix-db/query-guides/projections">
+    Preserve ranked hit metadata before continuing a traversal.
+  </Card>
+  <Card title="Vector prefiltering" icon="filter" href="/database/helix-db/query-guides/filtering#vector-prefiltering">
+    Rank only an exact traversal-defined candidate set.
+  </Card>
+  <Card title="Troubleshoot index operations" icon="wrench" href="/database/helix-cloud/operate/troubleshooting#index-operation-is-blocked">
+    Resolve blocked builds and lifecycle errors.
+  </Card>
+</CardGroup>

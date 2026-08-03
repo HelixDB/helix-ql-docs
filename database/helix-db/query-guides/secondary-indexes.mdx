@@ -1,0 +1,125 @@
+---
+title: "Secondary indexes"
+description: "Accelerate equality, uniqueness, and ordered property lookups"
+pageType: "Guide"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
+
+Secondary indexes narrow node or edge sources by property. Index creation is
+asynchronous and includes existing data through a durable backfill.
+
+## Index families
+
+| Family | Use |
+| --- | --- |
+| Equality | Exact property matches |
+| Unique equality | Exact matches plus uniqueness enforcement |
+| Range ascending | Ordered comparisons and ascending scans |
+| Range descending | Descending-first ordered scans |
+
+Definitions include the entity kind, label, property, and range direction where
+applicable.
+
+## Create an equality index
+
+<CodeGroup>
+
+```rust Rust
+write_batch()
+    .var_as(
+        "index",
+        g().create_index_if_not_exists(IndexSpec::node_equality("User", "status")),
+    )
+    .returning(["index"]);
+```
+
+```ts TypeScript
+writeBatch()
+  .varAs(
+    "index",
+    g().createIndexIfNotExists(IndexSpec.nodeEquality("User", "status")),
+  )
+  .returning(["index"]);
+```
+
+```go Go
+helix.WriteQuery("create_user_status_index").
+	VarAs(
+		"index",
+		helix.G().CreateIndexIfNotExists(
+			helix.NodeEqualityIndex("User", "status"),
+		),
+	).
+	Returning("index")
+```
+
+```python Python
+(
+    write_batch()
+    .var_as(
+        "index",
+        g().create_index_if_not_exists(
+            IndexSpec.node_equality("User", "status")
+        ),
+    )
+    .returning(["index"])
+)
+```
+
+```json JSON
+{
+  "request_type": "write",
+  "query_name": "create_user_status_index",
+  "query": {
+    "write": {
+      "entries": [{
+        "query": {
+          "name": "index",
+          "root": {
+            "create_index": {
+              "spec": {
+                "node_equality": {
+                  "label": "User",
+                  "property": "status",
+                  "unique": false
+                }
+              },
+              "if_not_exists": true
+            }
+          }
+        }
+      }],
+      "returns": ["index"]
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+The returned DDL receipt identifies the durable operation. Poll it until the index is
+active before depending on indexed performance.
+
+## Query indexed data
+
+Use `nWhere(SourcePredicate.eq("status", "active"))` (or the language-equivalent
+snake_case builder) for index push-down, then project the required fields. A general
+`.where(...)` remains useful after traversal but may filter a larger intermediate
+stream.
+
+## Unique indexes
+
+A unique equality backfill becomes blocked if existing data contains duplicates. Fix
+the source data, then retry the same operation instead of creating a new definition.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Troubleshoot index operations" icon="wrench" href="/database/helix-cloud/operate/troubleshooting#index-operation-is-blocked">
+    Resolve blocked builds and lifecycle errors.
+  </Card>
+  <Card title="Filtering" icon="filter" href="/database/helix-db/query-guides/filtering">
+    Match predicates to source and post-traversal filters.
+  </Card>
+</CardGroup>

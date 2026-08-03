@@ -2,14 +2,17 @@
 title: "Getting started with HelixDB CLI"
 description: "Install the Helix CLI v2, bootstrap a first app, run a local instance, and send your first dynamic query"
 icon: "rocket"
+pageType: "Tutorial"
 ---
+
+<div className="flex flex-wrap gap-2"><Badge color="green" size="sm">Tutorial</Badge></div>
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
 <Warning>
 **Prerequisites**
 
-- **Docker** or **Podman** (for the local `enterprise-dev` runtime)
+- **Docker** or **Podman** (for the local `helixdb` runtime)
 - **Git** (recommended for version-controlling your project)
 - **Node.js/npm** if you use [`helix chef`](/cli/command-reference/chef), which runs `npx` for agent skills and MCP setup
 - A Helix Cloud account is only required if you want to query a Helix Cloud cluster from the CLI.
@@ -64,14 +67,14 @@ In a TTY, `helix init` prompts you to pick `local` or `enterprise`. Pass the sub
 helix start dev
 ```
 
-`helix start` pulls `ghcr.io/helixdb/enterprise-dev:latest`, starts a background container named `helix-<project>-dev`, publishes port `6969`, and waits until the local gateway accepts `POST /v1/query` before returning.
+`helix start` pulls `ghcr.io/helixdb/helixdb:v0.0.3`, starts a background container named `helix-<project>-dev`, publishes port `6969`, and waits until the local server accepts `POST /v2/query` before returning.
 
 To stream logs in the foreground instead, use `helix start dev --foreground` and stop the container with Ctrl-C.
 
 For persistent local data, use `helix start dev --disk`. Disk mode starts a CLI-managed MinIO sidecar and keeps data across `helix stop`.
 
 <Warning>
-The default `enterprise-dev` storage mode is in-memory. Stopping or restarting an in-memory instance wipes all local data.
+The default `helixdb` storage mode is in-memory. Stopping or restarting an in-memory instance wipes all local data.
 </Warning>
 </Step>
 
@@ -80,7 +83,9 @@ The default `enterprise-dev` storage mode is in-memory. Stopping or restarting a
 helix query dev --file examples/request.json
 ```
 
-The example request runs a read query that counts `User` nodes. Pass `--compact` to print on a single line, or `--warm` to populate caches without printing a response body.
+The example request runs a read query that counts `User` nodes. Pass `--compact`
+to print on a single line, or `--warm` to populate caches. A standalone local
+warm read prints its normal response; Helix Cloud fanout returns no body.
 </Step>
 
 <Step title="Stop the instance when you are done">
@@ -144,8 +149,8 @@ helix query production --file examples/request.json
 <AccordionGroup>
   <Accordion title="Iterating on queries">
     - Edit `examples/request.json` (or any other file) and run `helix query dev --file …` again.
-    - Read requests can be replayed with `--warm` to pre-populate caches without printing output.
-    - Every dynamic query must start with a source step (for example `NWhere`) before a terminal step like `Count`.
+    - Read requests can be replayed with `--warm` to pre-populate caches. Helix Cloud fanout returns no response body; standalone local warming returns the normal body.
+    - Every traversal must contain a source operation before a terminal operation such as `count`.
   </Accordion>
   <Accordion title="Scripting and CI">
     - Pass subcommands explicitly (`helix init local …`, `helix add cloud …`) — the CLI never prompts when stdin is not a TTY.

@@ -1,0 +1,102 @@
+---
+title: "TypeScript SDK"
+description: "Build typed HelixDB requests for Node.js applications"
+sidebarTitle: "TypeScript"
+icon: "square-js"
+pageType: "Guide"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
+
+The forthcoming v3 TypeScript SDK targets Node.js 20 or newer and emits the same
+operation-tree AST as the v3 Rust, Go, and Python SDKs.
+
+<Note>
+The v3 SDK packages have not been published yet. The package names and installation
+commands on this page describe the upcoming v3 release.
+</Note>
+
+## Install
+
+```bash
+npm install @helix-db/helix-db@3.0.0
+```
+
+The package is ESM. Set `"type": "module"` or compile to ESM.
+
+## Define a query
+
+```ts
+import {
+  Predicate,
+  defineParams,
+  g,
+  param,
+  readBatch,
+} from "@helix-db/helix-db";
+
+export const findUsersParams = defineParams({
+  tenantId: param.string(),
+  limit: param.i64(),
+});
+
+export function findUsers() {
+  return readBatch()
+    .varAs(
+      "users",
+      g()
+        .nWithLabel("User")
+        .where(Predicate.eq("tenantId", findUsersParams.tenantId))
+        .limit(findUsersParams.limit)
+        .valueMap(["$id", "name", "tenantId"]),
+    )
+    .returning(["users"]);
+}
+```
+
+## Execute
+
+```ts
+import { Client } from "@helix-db/helix-db";
+
+const request = findUsers().toQueryRequest(
+  findUsersParams,
+  { tenantId: "acme", limit: 25n },
+  { queryName: "find_users" },
+);
+
+const result = await Client.server("http://localhost:6969")
+  .query(request)
+  .send();
+```
+
+Use `withApiKey("hx_...")` for Helix Cloud.
+
+## Integer safety
+
+The SDK preserves 64-bit integers as `bigint`. Use `stringifyJson` or the request's
+serialization methods instead of `JSON.stringify` when a value can contain `bigint`.
+
+## Embedded runtime
+
+Install the SDK and embedded runtime with
+`npm install @helix-db/helix-db@3.0.0 @helix-db/uniffi`. See
+[Embedded database](/database/helix-db/start-here/local-development/embedded-database)
+for storage, cache, and handle configuration.
+
+## Verify
+
+```bash
+npm --prefix sdks/typescript test
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Query tutorial" icon="route" href="/database/helix-db/core-concepts/overview">
+    Build reads, writes, and parameters.
+  </Card>
+  <Card title="Embedded database" icon="microchip" href="/database/helix-db/start-here/local-development/embedded-database">
+    Open HelixDB directly inside your process.
+  </Card>
+</CardGroup>

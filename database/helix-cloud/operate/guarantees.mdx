@@ -1,0 +1,70 @@
+---
+title: 'Guarantees'
+pageType: "Reference"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="gray" size="sm">Reference</Badge></div>
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+HelixDB executes each query request as one transaction over a committed snapshot.
+
+## Atomicity
+
+All mutations in one write batch commit together or roll back. A failed operation does
+not leave earlier mutations from the same request committed.
+
+## Consistency
+
+Constraints such as unique indexed values, property encodings, vector dimensions, and
+text index value requirements are checked before the relevant write or index
+generation becomes active.
+
+## Isolation
+
+Transactions use serializable snapshot isolation:
+
+- A request reads graph and index state from one committed snapshot.
+- A write request reads its own mutations before commit.
+- Conflicting writes are detected at commit; the request fails instead of committing
+  against stale transactional state.
+- Secondary, vector, and text lookups participate in the same request transaction.
+
+## Durability
+
+Canonical data is persisted by the selected storage source. In Cloud, local memory and
+disk caches are performance layers; object storage is canonical.
+
+Server clients can explicitly set `shouldAwaitDurability(true)` /
+`should_await_durability(true)` when the acknowledgement must wait for the configured
+durability boundary, or `false` when the application accepts an earlier
+acknowledgement. Embedded mode rejects this server-only option.
+
+## Index activation
+
+Index creation and deletion use durable lifecycle operations:
+
+- A build scans existing entities and catches up concurrent mutations.
+- A constructing generation is hidden from queries.
+- Validation completes before one atomic activation step.
+- A blocked or aborted generation never becomes partially queryable.
+
+## Readers and read-after-write
+
+The writer can serve a newly committed state immediately. A reader observes it after
+refreshing to a snapshot that contains the commit, so a request routed to a reader may
+temporarily lag.
+
+Use a writer-only server request when a separate request requires read-after-write:
+
+Set `writerOnly()` / `writer_only(true)` / the equivalent Go request option before
+sending the read.
+
+Embedded writer handles execute against their local writer. Embedded reader handles
+are read-only and refresh according to the underlying reader lifecycle.
+
+## Cloud availability
+
+Cloud availability and recovery depend on the purchased deployment topology. Contact
+[founders@helix-db.com](mailto:founders@helix-db.com) for current redundancy and SLA
+terms instead of assuming a topology from the SDK contract.

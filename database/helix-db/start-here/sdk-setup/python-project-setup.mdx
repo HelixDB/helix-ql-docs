@@ -1,0 +1,91 @@
+---
+title: "Python SDK"
+description: "Build HelixDB requests with an idiomatic synchronous Python client"
+sidebarTitle: "Python"
+icon: "python"
+pageType: "Guide"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
+
+The forthcoming v3 Python SDK is packaged as `helix-db` and imported as `helixdb`.
+Its builder methods use `snake_case` and produce the same operation-tree AST as the
+other v3 SDKs.
+
+<Note>
+The v3 SDK packages have not been published yet. Python keeps the `helix-db` package
+and `helixdb` import names defined by the v3 source; no package version is invented
+before release.
+</Note>
+
+## Install
+
+```bash
+python -m pip install helix-db
+```
+
+## Define a query
+
+```python
+from helixdb import Predicate, define_params, g, param, read_batch
+
+find_users_params = define_params({
+    "tenant_id": param.string(),
+    "limit": param.i64(),
+})
+
+def find_users():
+    return (
+        read_batch()
+        .var_as(
+            "users",
+            g()
+            .n_with_label("User")
+            .where(Predicate.eq("tenantId", find_users_params.tenant_id))
+            .limit(find_users_params.limit)
+            .value_map(["$id", "name", "tenantId"]),
+        )
+        .returning(["users"])
+    )
+```
+
+## Execute
+
+```python
+from helixdb import Client
+
+request = find_users().to_query_request(
+    find_users_params,
+    {"tenant_id": "acme", "limit": 25},
+    query_name="find_users",
+)
+result = Client("http://localhost:6969").query(request)
+```
+
+The query-only client has no native runtime dependency.
+
+## Embedded runtime
+
+Install the SDK and embedded runtime with
+`python -m pip install helix-db helix-db-embedded`. See
+[Embedded database](/database/helix-db/start-here/local-development/embedded-database)
+for storage, cache, and handle configuration.
+
+## Verify
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 \
+PYTHONPATH=sdks/python/src \
+python -m unittest discover sdks/python/tests
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Query tutorial" icon="route" href="/database/helix-db/core-concepts/overview">
+    Follow the shared batch and traversal model.
+  </Card>
+  <Card title="Embedded database" icon="microchip" href="/database/helix-db/start-here/local-development/embedded-database">
+    Open an in-process writer or reader.
+  </Card>
+</CardGroup>

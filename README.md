@@ -1,32 +1,55 @@
-# Mintlify Starter Kit
+# HelixDB documentation
 
-Click on `Use this template` to copy the Mintlify starter kit, The starter kit contains examples including
+This directory is the canonical source for the public HelixDB documentation.
+Mintlify reads `docs.json`; `llms.txt` and `llms-full.txt` are generated artifacts.
 
-- Guide pages
-- Navigation
-- Customizations
-- API Reference pages
-- Use of popular components
+## Page contract
 
-### Development
+Every route in `docs.json` must have exactly one custom `pageType`:
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mintlify) to preview the documentation changes locally. To install, use the following command
+- `Tutorial`
+- `Guide`
+- `Concept`
+- `Reference`
+- `Troubleshooting`
 
+Render the same value as the first badge after frontmatter. Optional maturity
+`status` values are `Preview`, `Beta`, or `Deprecated` and require a second matching
+badge. Do not use Mintlify's native `tag` field because it adds the type to the
+sidebar.
+
+Database page paths mirror the sidebar hierarchy under
+`database/helix-db/<group>/` and `database/helix-cloud/<group>/`. Keep redirects
+when moving an existing public route.
+
+## Local checks
+
+```bash
+npm install
+npm run generate-llms
+npm run check
+npx mint broken-links --check-anchors --check-redirects --check-snippets
+npx mint dev --no-open
 ```
-npm i -g mintlify
+
+`npm run check-docs` validates navigation, page metadata, badges, redirects, legacy
+AST/API markers, JSON examples, and Rust/TypeScript/Go/Python/JSON code groups.
+Client-construction groups may omit JSON when immediately marked with
+`{/* client-setup: no JSON representation */}`.
+Package-install groups use Bash snippets for each SDK and
+`{/* package-install: no JSON representation */}`.
+
+The shared SDK parity suite verifies that Rust, TypeScript, Go, and Python serialize
+the same operation-tree requests:
+
+```bash
+cd ../sdks/typescript
+npm run parity:generate
+npm run parity:compare-json
 ```
 
-Run the following command at the root of your documentation (where mint.json is)
+## Generated files
 
-```
-mintlify dev
-```
-
-### Publishing Changes
-
-Install our Github App to auto propagate changes from your repo to your deployment. Changes will be deployed to production automatically after pushing to the default branch. Find the link to install on your dashboard.
-
-#### Troubleshooting
-
-- Mintlify dev isn't running - Run `mintlify install` it'll re-install dependencies.
-- Page loads as a 404 - Make sure you are running in a folder with `mint.json`
+Run `npm run generate-llms` after changing navigation or page content. The generators
+write page type and maturity as plain text so metadata remains available after JSX is
+removed.

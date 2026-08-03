@@ -1,0 +1,43 @@
+---
+title: 'Security'
+pageType: "Reference"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="gray" size="sm">Reference</Badge></div>
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+## Authentication
+
+All API requests to Helix Cloud are authenticated with a Bearer token. Tokens are managed
+through the Helix dashboard. Include the token in the `Authorization` header of every request:
+
+```
+Authorization: Bearer <token>
+```
+
+The SDK clients attach this header for you—set the key once with `withApiKey`
+(TypeScript), `with_api_key` (Rust and Python), or `WithAPIKey` (Go). See the
+[cross-language Cloud connection example](/database/helix-cloud/start-here/working-with-enterprise#connect-and-send-a-request).
+
+Requests without a valid token are rejected at the gateway before reaching any database node.
+Token rotation and revocation take immediate effect from the dashboard.
+
+## Encryption
+
+All traffic between clients and the gateway is encrypted in transit via TLS. Data at rest in
+object storage is encrypted using the storage provider's server-side encryption.
+
+## Enterprise features
+
+The following are available for enterprise clusters. Contact
+[founders@helix-db.com](mailto:founders@helix-db.com) to enable them for your deployment.
+
+- **Role-based access control.** Scoped API keys with read-only, read-write, or operation-restricted
+  permissions for least-privilege credentials per service or environment.
+- **SSO / SAML.** Dashboard access through your identity provider (Okta, Azure AD, Google Workspace)
+  with centralized provisioning and deprovisioning.
+- **Audit logs.** Per-request logging (timestamp, token identity, query name, source IP, response
+  status) for compliance (SOC 2, HIPAA, GDPR) and forensic analysis.
+- **AWS PrivateLink.** A private endpoint in your VPC that routes to Helix Cloud without traversing
+  the public internet, for network-isolation requirements in regulated environments.

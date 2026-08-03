@@ -1,0 +1,68 @@
+---
+title: 'Release Notes'
+description: 'HelixDB Cloud Release Notes'
+icon: ''
+rss: true
+pageType: "Reference"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="gray" size="sm">Reference</Badge></div>
+
+> For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
+
+<Update
+  label="June 2026"
+  rss={{
+    title: "Row bindings, Python SDK, and CLI improvements",
+    description: "Multi-hop row bindings across the TypeScript/Rust/Go SDKs, a new Python SDK, and CLI 3.0.6 improvements"
+  }}
+>
+- **[Row bindings](/database/helix-db/query-guides/advanced)** — `bind` + `projectBindings` / `projectDistinctBindings` correlate values captured at different hops of a single traversal.
+- **Python SDK** — new zero-dependency synchronous SDK (`helix-db`, imported as `helixdb`).
+- **CLI 3.0.6** — `--path` flag on `helix add`.
+</Update>
+
+<Update
+  label="May 2026"
+  rss={{
+    title: "SDK updates & query improvements",
+    description: "Better cache metrics for better query insights, query plan improvements, `helix chef` command for local bootstrap, and CLI DX improvements"
+  }}
+>
+- **Go SDK**
+- **Better cache metrics for better query insights**
+- **Query plan improvements**
+- **`helix chef` command for local bootstrap**
+- **CLI DX improvements**
+</Update>
+
+<Update
+  label="April 2026"
+  rss={{
+    title: "Better, Faster, Stronger",
+    description: "Major performancy improvements and better reliability"
+  }}
+>
+- **Local docker deployment**
+- **Query plan improvements**
+- **Query insights, metrics and suggestions**
+- **Stability and reliability improvements**
+- **Better memory usage and caching**
+</Update>
+
+<Update
+  label="March 2026"
+  rss={{
+    title: "HelixDB Enterprise v1.0.0",
+    description: "HelixDB Enterprise launched on April 2, 2026"
+  }}
+>
+
+## Launch 🚀
+
+- Graph database with vector search and full-text search
+- Fully ACID
+- Queries via Rust DSL
+- Backed by object storage
+- Multi-tenancy included by default
+</Update>

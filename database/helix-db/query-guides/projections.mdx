@@ -1,0 +1,133 @@
+---
+title: "Shape query results"
+description: "Return properties, computed values, aggregates, and correlated binding rows"
+sidebarTitle: "Projections"
+pageType: "Guide"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
+
+Projection operations turn a traversal stream into the response shape your application
+needs. They are terminal: a projection finishes that traversal entry.
+
+## Choose a projection
+
+| Intent | Operation |
+| --- | --- |
+| Selected fields | `valueMap` / `value_map` |
+| Renamed or computed fields | `project` |
+| Correlated row fields | `projectBindings` / `project_bindings` |
+| Scalar values | `id`, `label`, `values` |
+| Aggregates | `count`, `sum`, `min`, `max`, `mean`, `groupCount` |
+
+Virtual fields include `$id`, `$label`, `$from`, `$to`, `$distance`, and `$score`
+where the preceding operation provides them.
+
+## Rename fields
+
+<CodeGroup>
+
+```rust Rust
+g().n_with_label("User").project(vec![
+    PropertyProjection::renamed("$id", "user_id"),
+    PropertyProjection::new("name"),
+])
+```
+
+```ts TypeScript
+g().nWithLabel("User").project([
+  PropertyProjection.renamed("$id", "user_id"),
+  PropertyProjection.new("name"),
+])
+```
+
+```go Go
+helix.G().NWithLabel("User").Project(
+	helix.ProjectPropAs("$id", "user_id"),
+	helix.ProjectPropAs("name", "name"),
+)
+```
+
+```python Python
+g().n_with_label("User").project([
+    PropertyProjection.renamed("$id", "user_id"),
+    PropertyProjection.new("name"),
+])
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query_name": "project_users",
+  "query": {
+    "read": {
+      "entries": [{
+        "query": {
+          "name": "users",
+          "root": {
+            "project": {
+              "input": {
+                "nodes_where": {
+                  "predicate": {
+                    "eq": {
+                      "left": { "property": "$label" },
+                      "right": { "constant": { "string": "User" } }
+                    }
+                  }
+                }
+              },
+              "projections": [
+                {
+                  "property": {
+                    "source": "$id",
+                    "alias": "user_id"
+                  }
+                },
+                {
+                  "property": {
+                    "source": "name",
+                    "alias": "name"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }],
+      "returns": ["users"]
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+## Project correlated bindings
+
+`projectDistinctBindings` removes duplicate projected tuples. Missing optional bindings
+remain row-local and can be handled with `coalesce`. Bind each candidate path first,
+then project `BindingProjection` values from those named row-local bindings.
+
+## Aggregate
+
+Append `count()` to a filtered traversal and return that named entry; aggregation runs
+inside the transaction instead of materializing every row in the client.
+
+## Keep responses small
+
+- Project only fields the caller uses.
+- Project `$distance` before traversing away from a search hit if the score is needed
+  later.
+- Use aggregates in the engine instead of returning full rows for client-side counting.
+- Add `distinct` only when duplicate elimination is semantically required.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Bindings and branches" icon="code-branch" href="/database/helix-db/query-guides/advanced">
+    Preserve row-local values across optional and union operations.
+  </Card>
+  <Card title="Vector search" icon="magnifying-glass" href="/database/helix-db/query-guides/vector-indexes">
+    Create an index, rank vector hits, and preserve distance metadata.
+  </Card>
+</CardGroup>

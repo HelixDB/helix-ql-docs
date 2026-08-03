@@ -1,0 +1,294 @@
+---
+title: "Filtering"
+description: "Narrow traversal streams with predicates and exact vector candidate sets"
+sidebarTitle: "Filtering"
+pageType: "Guide"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
+
+Use a source predicate to select the initial candidates and `.where(...)` for
+expression-based filtering later in a traversal. Vector prefiltering applies the same
+idea to similarity search by ranking only an exact traversal-defined candidate set.
+
+## Common predicates
+
+| Intent | Builder |
+| --- | --- |
+| Equality | `eq(property, value)` |
+| Comparison | `gt`, `gte`, `lt`, `lte` |
+| Inclusive range | `between` |
+| Set membership | `isIn` / `is_in` |
+| Property exists | `hasKey` / `has_key` |
+| Prefix | `startsWith` / `starts_with` |
+| Boolean composition | `and`, `or`, `not` |
+
+Values can be literals or typed parameter expressions.
+
+## Filter a stream
+
+<CodeGroup>
+
+```rust Rust
+g()
+    .n_with_label("User")
+    .where_(Predicate::gte("score", 100))
+    .value_map(Some(vec!["$id", "name", "score"]))
+```
+
+```ts TypeScript
+import { Predicate, g } from "@helix-db/helix-db";
+
+g()
+  .nWithLabel("User")
+  .where(Predicate.gte("score", 100))
+  .valueMap(["$id", "name", "score"])
+```
+
+```go Go
+helix.G().
+	NWithLabel("User").
+	Where(helix.PredGte("score", int64(100))).
+	ValueMap("$id", "name", "score")
+```
+
+```python Python
+(
+    g()
+    .n_with_label("User")
+    .where(Predicate.gte("score", 100))
+    .value_map(["$id", "name", "score"])
+)
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query_name": "ranked_users",
+  "query": {
+    "read": {
+      "entries": [{
+        "query": {
+          "name": "users",
+          "root": {
+            "value_map": {
+              "input": {
+                "where": {
+                  "input": {
+                    "nodes_where": {
+                      "predicate": {
+                        "eq": {
+                          "left": { "property": "$label" },
+                          "right": { "constant": { "string": "User" } }
+                        }
+                      }
+                    }
+                  },
+                  "predicate": {
+                    "gte": {
+                      "left": { "property": "score" },
+                      "right": { "constant": { "i64": 100 } }
+                    }
+                  }
+                }
+              },
+              "properties": ["$id", "name", "score"]
+            }
+          }
+        }
+      }],
+      "returns": ["users"]
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+## Vector prefiltering
+
+Vector prefiltering starts with a node or edge traversal, then ranks only the exact
+members of that stream. Use it when graph membership is a correctness boundary, such
+as “documents this user may access” or “products reachable from this category.”
+
+The execution order is **graph traversal → exact candidate membership → vector
+ranking → top k**. The traversal membership is authoritative. Approximate index
+structures may accelerate ranking, but a result outside the candidate set cannot be
+returned.
+
+### Rank a node stream
+
+This request finds projects owned by the current user, ranks that exact set by
+embedding distance, and returns the top five.
+
+<Note>
+This query requires an active three-dimensional cosine vector index on
+`Project.embedding`. Create and activate that index before running the request.
+</Note>
+
+<CodeGroup>
+
+```rust Rust
+read_batch()
+    .var_as(
+        "matches",
+        g()
+            .n_with_label_where("User", SourcePredicate::eq("username", "alice"))
+            .out(Some("OWNS"))
+            .vector_search(
+                "Project",
+                "embedding",
+                vec![1.0f32, 0.0, 0.0],
+                5,
+                None,
+            )
+            .value_map(Some(vec!["$id", "name", "$distance"])),
+    )
+    .returning(["matches"]);
+```
+
+```ts TypeScript
+readBatch()
+  .varAs(
+    "matches",
+    g()
+      .nWithLabelWhere("User", SourcePredicate.eq("username", "alice"))
+      .out("OWNS")
+      .vectorSearch("Project", "embedding", [1, 0, 0], 5, null)
+      .valueMap(["$id", "name", "$distance"]),
+  )
+  .returning(["matches"]);
+```
+
+```go Go
+helix.ReadQuery("owned_project_matches").
+	VarAs(
+		"matches",
+		helix.G().
+			NWithLabelWhere("User", helix.SourceEq("username", "alice")).
+			Out("OWNS").
+			VectorSearchNodesWithin("Project", "embedding", []float32{1, 0, 0}, 5).
+			ValueMap("$id", "name", "$distance"),
+	).
+	Returning("matches")
+```
+
+```python Python
+(
+    read_batch()
+    .var_as(
+        "matches",
+        g()
+        .n_with_label_where(
+            "User", SourcePredicate.eq("username", "alice")
+        )
+        .out("OWNS")
+        .vector_search(
+            "Project", "embedding", [1.0, 0.0, 0.0], 5
+        )
+        .value_map(["$id", "name", "$distance"]),
+    )
+    .returning(["matches"])
+)
+```
+
+```json JSON
+{
+  "request_type": "read",
+  "query_name": "owned_project_matches",
+  "query": {
+    "read": {
+      "entries": [{
+        "query": {
+          "name": "matches",
+          "root": {
+            "value_map": {
+              "input": {
+                "vector_search_nodes_within": {
+                  "input": {
+                    "out": {
+                      "input": {
+                        "nodes_where": {
+                          "predicate": {
+                            "and": {
+                              "predicates": [
+                                {
+                                  "eq": {
+                                    "left": { "property": "$label" },
+                                    "right": { "constant": { "string": "User" } }
+                                  }
+                                },
+                                {
+                                  "eq": {
+                                    "left": { "property": "username" },
+                                    "right": { "constant": { "string": "alice" } }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "label": "OWNS"
+                    }
+                  },
+                  "label": "Project",
+                  "property": "embedding",
+                  "query_vector": {
+                    "value": { "f32_array": [1, 0, 0] }
+                  },
+                  "k": { "literal": 5 }
+                }
+              },
+              "properties": ["$id", "name", "$distance"]
+            }
+          }
+        }
+      }],
+      "returns": ["matches"]
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+Use `VectorSearchEdgesWithin` in Go after an edge traversal. Rust, TypeScript, and
+Python select the node or edge wire operation from the current traversal state.
+
+### Requirements
+
+- Create a compatible vector index for the candidate label and property.
+- Match the index dimension exactly.
+- Use the same tenant partition value as the index when it is tenant-partitioned.
+- Preserve `$distance` in a projection before traversing away from a ranked hit.
+- Bound the candidate traversal when its size can grow without application limits.
+
+<Note>
+Exact membership does not mean the vector engine exhaustively compares every
+candidate embedding. It means the final result is checked against the exact traversal
+set.
+</Note>
+
+### When to search without a prefilter
+
+Use a source vector search when the whole indexed label and optional tenant partition
+is the intended candidate set. Use vector prefiltering when relationships,
+permissions, or earlier filters define membership.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Typed parameters" icon="sliders" href="/database/helix-db/query-guides/parameters">
+    Move request-specific filter values out of the AST.
+  </Card>
+  <Card title="Indexes" icon="gauge-high" href="/database/helix-db/query-guides/secondary-indexes">
+    Back equality and range predicates with an index.
+  </Card>
+  <Card title="Vector indexes" icon="circle-nodes" href="/database/helix-db/query-guides/vector-indexes">
+    Create the dimensioned index used for ranking.
+  </Card>
+  <Card title="Project search results" icon="table-columns" href="/database/helix-db/query-guides/projections">
+    Preserve ranked hit metadata before continuing a traversal.
+  </Card>
+</CardGroup>

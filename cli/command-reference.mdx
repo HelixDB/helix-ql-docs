@@ -1,7 +1,10 @@
 ---
 title: "CLI Command Reference"
 description: "Complete reference for all Helix CLI v2 commands and options"
+pageType: "Reference"
 ---
+
+<div className="flex flex-wrap gap-2"><Badge color="gray" size="sm">Reference</Badge></div>
 
 > For the complete documentation index optimized for AI agents, see [llms.txt](/llms.txt).
 
@@ -11,7 +14,7 @@ This page lists every command in Helix CLI v2. Click any command for full flag a
 
 These options are available for every command:
 
-```bash
+```text
 helix --help, -h        Show help for the command
 helix --version, -V     Print the CLI version
 helix --quiet           Suppress output (errors and final result only)
@@ -30,7 +33,7 @@ helix -v, --verbose     Show detailed output with timing information
 | [`helix restart`](/cli/command-reference/restart) | | | Local | Restart a background local instance |
 | [`helix status`](/cli/command-reference/status) | | | Local, Helix Cloud | Show instance status |
 | [`helix logs`](/cli/command-reference/logs) | | `-f`/`--follow`, `-r`/`--range`, `--start`, `--end` | Local, Helix Cloud | View instance logs |
-| [`helix query`](/cli/command-reference/query) | | `-f`/`--file`, `--json`, `-e`/`--ts`, `--ts-file`, `--warm`, `--host`, `--port`, `--compact` | Local, Helix Cloud | Send a dynamic query (JSON or TypeScript DSL) to `POST /v1/query` |
+| [`helix query`](/cli/command-reference/query) | | `-f`/`--file`, `--json`, `-e`/`--ts`, `--ts-file`, `--warm`, `--host`, `--port`, `--compact` | Local, Helix Cloud | Send a dynamic query (JSON or TypeScript DSL) to `POST /v2/query` |
 | [`helix auth`](/cli/command-reference/auth) | `login`, `logout`, `create-key` | | Helix Cloud | Manage Helix Cloud authentication |
 | [`helix workspace`](/cli/command-reference/workspace) | `list`, `show`, `switch` | `--format`, `--id` | Helix Cloud | Manage active workspace selection |
 | [`helix project`](/cli/command-reference/project) | `list`, `show`, `switch` | `--format`, `--id`, `--workspace-id` | Helix Cloud | Manage linked project selection |

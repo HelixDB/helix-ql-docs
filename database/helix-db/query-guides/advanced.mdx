@@ -1,0 +1,52 @@
+---
+title: "Branch, repeat, and condition queries"
+description: "Compose sub-traversals and gate named entries without leaving one transaction"
+sidebarTitle: "Advanced patterns"
+pageType: "Guide"
+---
+
+<div className="flex flex-wrap gap-2"><Badge color="blue" size="sm">Guide</Badge></div>
+
+`sub()` starts an inline traversal that consumes the current stream. Use it for
+branching operations; use `g()` only for a top-level traversal entry.
+
+## Branching operations
+
+| Operation | Behavior |
+| --- | --- |
+| `optional(sub)` | Keep the input when the branch has no result |
+| `union(subs)` | Concatenate results from every branch |
+| `choose(predicate, then, else)` | Select one branch |
+| `coalesce(subs)` | Use the first non-empty branch |
+| `repeat(sub, config)` | Apply a traversal with an explicit bound |
+
+## Retain row-local values
+
+Bind the starting service, use `optional` and `union` sub-traversals to bind each
+candidate workload path, then use `projectDistinctBindings` with `coalesce` to produce
+one stable row shape. See [projections](/database/helix-db/query-guides/projections#project-correlated-bindings).
+
+## Gate later entries
+
+Batch conditions refer to earlier entry results:
+
+Create the `user` entry, then add `posts` with `varAsIf` / `var_as_if` and a
+`varNotEmpty("user")` condition. Conditions serialize inside the named entry, not as
+a separate step.
+
+## Bound recursive work
+
+Recursive and fan-out operations must have application-level bounds. Prefer explicit
+depth, candidate, and response limits. A response `limit` does not necessarily bound
+all work performed before that operation.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Projection and bindings" icon="table-columns" href="/database/helix-db/query-guides/projections">
+    Emit stable rows from correlated paths.
+  </Card>
+  <Card title="Parameters" icon="sliders" href="/database/helix-db/query-guides/parameters">
+    Bind values and bounds at request time.
+  </Card>
+</CardGroup>
